@@ -550,8 +550,8 @@
         function updateCardProgress(name, status) {
             var card = document.querySelector('[data-name="' + encodeURIComponent(name) + '"]');
             if (!card) return; // Carte hors de la page courante, pas grave
-            var fill = card.querySelector('.progress-fill-inline');
-            var text = card.querySelector('.progress-text');
+            var fill = card.querySelector('.cc-bar i');
+            var text = card.querySelector('.cc-pct');
             if (fill) { fill.classList.remove('progress-loading-anim'); fill.style.width = status.percentage + '%'; }
             if (text) text.textContent = status.completed + '/' + status.total;
         }
@@ -653,6 +653,24 @@
         // =====================================================================
         // AFFICHAGE AVEC PAGINATION
         // =====================================================================
+        // ── Helpers cartes riches ──
+        var VC_ROLE = { po:'#7C3AED', marketing:'#7C3AED', com:'#2563EB', ebf:'#E8A100', data:'#00875A', superadmin:'#0f766e' };
+        function vcInitials(n){ return n.trim().split(/\s+/).map(function(p){return p[0];}).join('').toUpperCase().slice(0,2); }
+        function vcChannel(data){ var chs=data.channels||[]; var c=(chs[0]&&(chs[0].content||chs[0].deliverableName)||'').toUpperCase();
+            if(c.indexOf('SMS')>=0)return{cls:'sms',label:'SMS'}; if(c.indexOf('PUSH')>=0||c.indexOf('NOTIF')>=0)return{cls:'push',label:'PSH'};
+            if(c.indexOf('LP')>=0||c.indexOf('WEB')>=0||c.indexOf('SITE')>=0||c.indexOf('LANDING')>=0)return{cls:'lp',label:'WEB'}; return{cls:'mail',label:'@'}; }
+        function vcMeta(data){ var chs=data.channels||[]; var primary=chs[0]&&(chs[0].content||chs[0].deliverableName)||'Campagne'; var extra=chs.length>1?' +'+(chs.length-1):''; var mk=data.market?' · '+data.market:''; return security.escapeHtml(primary+extra+mk); }
+        function vcStatus(data,wf){ var label=(wf&&data.workflow)?((wf.getCurrentStepLabel(data)||'').trim()):''; if(wf&&data.workflow&&wf.isCompleted(data))return{label:'Terminée',text:'Terminée',key:'done',pct:100};
+            var L=label.toLowerCase(); var pct=50,key='prod',text=label||'En cours';
+            if(/affect/.test(L)){pct=10;key='maq';text='Affectation';} else if(/kick/.test(L)){pct=18;key='maq';text='Kick-off';}
+            else if(/révision|revision/.test(L)){pct=35;key='urgent';text='Révision';} else if(/validation|valider/.test(L)){pct=55;key='valid';text='À valider';}
+            else if(/maquette/.test(L)){pct=28;key='maq';text='Maquette';} else if(/ciblage|bat|test|mise en prod|mep/.test(L)){pct=70;key='prod';text='En production';}
+            return{label:label,text:text,key:key,pct:pct}; }
+        function vcAvatars(data){ var seen={},people=[]; function add(n,r){ if(!n||seen[n])return; seen[n]=1; people.push({name:n,role:r}); }
+            add(data.po,'po'); var asn=(data.workflow&&data.workflow.assignments)||{}; ['com','ebf','data'].forEach(function(r){ var v=asn[r]; if(Array.isArray(v))v.forEach(function(x){add(x,r);}); else add(v,r); });
+            var h=''; people.slice(0,3).forEach(function(p){ h+='<span class="av" style="background:'+(VC_ROLE[p.role]||'#64748b')+'" title="'+security.escapeHtml(p.name)+'">'+security.escapeHtml(vcInitials(p.name))+'</span>'; });
+            var more=people.length-3; if(more>0)h+='<span class="av" style="background:#94a3b8">+'+more+'</span>'; return h; }
+
         function displayCampaigns() {
             var grid    = document.getElementById('campaigns-grid');
             var countEl = document.getElementById('results-count');
@@ -672,68 +690,31 @@
             var start     = currentPage * PAGE_SIZE;
             var paginated = filteredCampaigns.slice(start, start + PAGE_SIZE);
 
+            var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
             var html = performance.buildHtml(paginated, function(campaign) {
-                var date        = new Date(campaign.lastModified);
-                var dateStr     = date.toLocaleDateString('fr-FR');
-                var data        = campaign.data;
-                var detailsUrl  = 'details.html?name=' + encodeURIComponent(campaign.name);
-                var encodedName = encodeURIComponent(campaign.name);
+                var data        = campaign.data || {};
+                var name        = campaign.name;
+                var dateStr     = new Date(campaign.lastModified).toLocaleDateString('fr-FR');
+                var detailsUrl  = 'details.html?name=' + encodeURIComponent(name);
+                var encodedName = encodeURIComponent(name);
                 var completion  = campaign.completionStatus || { percentage: -1, completed: 0, total: 0 };
                 var isLoading   = completion.percentage === -1;
 
-                var parts = [];
-                // data-name permet de retrouver la carte pour la mise à jour DOM
-                parts.push('<a href="' + detailsUrl + '" class="campaign-card-link" data-name="' + encodedName + '">');
-                parts.push('<div class="campaign-card">');
-                parts.push('  <div class="campaign-header">');
-                parts.push('    <div class="campaign-title-group">');
-                parts.push('      <h3 class="campaign-name">' + security.escapeHtml(campaign.name) + '</h3>');
-                if (data.taskName) {
-                    parts.push('      <p class="campaign-subtitle">' + security.escapeHtml(data.taskName) + '</p>');
-                }
-                parts.push('    </div>');
-                parts.push('  </div>');
-                parts.push('  <div class="campaign-meta">');
-                if (data.ub1)     parts.push('    <span class="meta-tag ub-tag">'   + security.escapeHtml(data.ub1)     + '</span>');
-                if (data.typeCom) parts.push('    <span class="meta-tag type-tag">' + security.escapeHtml(data.typeCom) + '</span>');
-                parts.push('  </div>');
+                var st    = vcStatus(data, wf);
+                var chan  = vcChannel(data);
+                var pct   = (completion.percentage >= 0) ? completion.percentage : st.pct;
+                var pctTxt = isLoading ? '…' : (completion.percentage >= 0 ? completion.completed + '/' + completion.total : Math.round(pct) + '%');
 
-                if (data.canaux && data.canaux.length > 0) {
-                    parts.push('  <div class="campaign-canaux">');
-                    var canauxEscaped = data.canaux.slice(0, 3).map(function(c) { return security.escapeHtml(c); }).join(', ');
-                    parts.push('    <strong>Canaux :</strong> ' + canauxEscaped);
-                    if (data.canaux.length > 3) parts.push(' <span class="more-count">+' + (data.canaux.length - 3) + '</span>');
-                    parts.push('  </div>');
-                }
-
-                // Barre de progression — animation si en cours de chargement
-                parts.push('  <div class="campaign-progress">');
-                parts.push('    <div class="progress-bar-inline">');
-                if (isLoading) {
-                    parts.push('      <div class="progress-fill-inline progress-loading-anim"></div>');
-                } else {
-                    parts.push('      <div class="progress-fill-inline" style="width:' + completion.percentage + '%"></div>');
-                }
-                parts.push('    </div>');
-                parts.push('    <span class="progress-text">' + (isLoading ? '…' : completion.completed + '/' + completion.total) + '</span>');
-                parts.push('  </div>');
-
-                // Badge étape workflow
-                var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
-                if (wf && data.workflow) {
-                    var stepLabel = wf.getCurrentStepLabel(data);
-                    var isTerminee = wf.isCompleted(data);
-                    var badgeColor = isTerminee ? '#2e7d32' : '#308276';
-                    parts.push('  <div style="margin:4px 0 0;"><span style="display:inline-block;background:' + badgeColor + ';color:#fff;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;">' + security.escapeHtml(stepLabel) + '</span></div>');
-                }
-
-                parts.push('  <div class="campaign-footer">');
-                parts.push('    <span class="campaign-date">' + dateStr + '</span>');
-                parts.push('  </div>');
-                parts.push('</div>');
-                parts.push('</a>');
-
-                return parts.join('');
+                var p = [];
+                p.push('<a href="' + detailsUrl + '" class="campaign-card-link cc k-' + st.key + '" data-name="' + encodedName + '">');
+                p.push('<div class="cc-row1"><div class="cc-chan"><div class="cc-ci ' + chan.cls + '">' + chan.label + '</div>');
+                p.push('<div style="min-width:0"><h3>' + security.escapeHtml(name) + '</h3><div class="cc-meta">' + vcMeta(data) + '</div></div></div>');
+                p.push('<span class="cc-pill ' + st.key + '">' + security.escapeHtml(st.text) + '</span></div>');
+                p.push('<div class="cc-prog"><div class="cc-lab"><span>' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-pct">' + pctTxt + '</span></div>');
+                p.push('<div class="cc-bar"><i' + (isLoading ? ' class="progress-loading-anim"' : '') + ' style="width:' + (isLoading ? 0 : pct) + '%"></i></div></div>');
+                p.push('<div class="cc-foot"><div class="cc-avs">' + vcAvatars(data) + '</div><div class="cc-date">📅 ' + dateStr + '</div></div>');
+                p.push('</a>');
+                return p.join('');
             });
 
             grid.innerHTML = html;
@@ -801,8 +782,8 @@
         /* Section de recherche */
         .search-section {
             margin-top: 24px;
-            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-            border: 1px solid #e0e4e8;
+            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            border: 1px solid var(--line);
             padding: 24px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -816,7 +797,7 @@
             width: 100%;
             padding: 16px 20px;
             font-size: 16px;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             border-radius: 8px;
             background: #ffffff;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -825,7 +806,7 @@
 
         .search-bar input:focus {
             outline: none;
-            border-color: #308276;
+            border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(48, 130, 118, 0.1);
             transform: translateY(-1px);
         }
@@ -848,38 +829,38 @@
         .filter-group label {
             font-size: 13px;
             font-weight: 700;
-            color: #495057;
+            color: var(--gray-700);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .filter-group select {
             padding: 10px 14px;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             border-radius: 8px;
             background: #ffffff;
-            color: #212529;
+            color: var(--ink);
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .filter-group select:hover {
-            border-color: #308276;
+            border-color: var(--primary);
             box-shadow: 0 2px 8px rgba(48, 130, 118, 0.1);
         }
 
         .filter-group select:focus {
             outline: none;
-            border-color: #308276;
+            border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(48, 130, 118, 0.1);
         }
 
         /* Section des résultats */
         .results-section {
             margin-top: 24px;
-            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-            border: 1px solid #e0e4e8;
+            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            border: 1px solid var(--line);
             padding: 24px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
@@ -891,14 +872,14 @@
             align-items: center;
             margin-bottom: 24px;
             padding-bottom: 16px;
-            border-bottom: 2px solid #e9ecef;
+            border-bottom: 2px solid var(--line);
         }
 
         .results-header h2 {
             margin: 0;
             font-size: 20px;
             font-weight: 700;
-            color: #212529;
+            color: var(--ink);
         }
 
         .sort-controls {
@@ -910,14 +891,14 @@
         .sort-controls label {
             font-size: 13px;
             font-weight: 700;
-            color: #495057;
+            color: var(--gray-700);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .sort-controls select {
             padding: 8px 12px;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             border-radius: 8px;
             background: #ffffff;
             font-weight: 500;
@@ -926,7 +907,7 @@
         }
 
         .sort-controls select:hover {
-            border-color: #308276;
+            border-color: var(--primary);
             box-shadow: 0 2px 8px rgba(48, 130, 118, 0.1);
         }
 
@@ -944,8 +925,8 @@
         }
 
         .campaign-card {
-            background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-            border: 1px solid #e0e4e8;
+            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            border: 1px solid var(--line);
             border-radius: 12px;
             padding: 24px;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -962,7 +943,7 @@
             left: 0;
             width: 4px;
             height: 100%;
-            background: linear-gradient(180deg, #308276 0%, #245f56 100%);
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%);
             transform: scaleY(0);
             transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -990,7 +971,7 @@
         }
 
         .campaign-card-link:hover .campaign-card {
-            border-color: #308276;
+            border-color: var(--primary);
             box-shadow: 0 12px 32px rgba(48, 130, 118, 0.15);
             transform: translateY(-6px) scale(1.01);
         }
@@ -1013,7 +994,7 @@
             margin: 0 0 6px 0;
             font-size: 18px;
             font-weight: 700;
-            color: #212529;
+            color: var(--ink);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1021,13 +1002,13 @@
         }
 
         .campaign-card-link:hover .campaign-name {
-            color: #308276;
+            color: var(--primary);
         }
 
         .campaign-subtitle {
             margin: 0;
             font-size: 14px;
-            color: #6c757d;
+            color: var(--muted);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1052,15 +1033,15 @@
         }
 
         .ub-tag {
-            background: linear-gradient(135deg, #e3f2fd 0%, #d1e7fd 100%);
-            color: #1565c0;
-            border: 1px solid #bbdefb;
+            background: linear-gradient(135deg, var(--blue-50) 0%, var(--blue-50) 100%);
+            color: var(--blue);
+            border: 1px solid var(--blue-50);
         }
 
         .type-tag {
-            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
-            color: #6a1b9a;
-            border: 1px solid #ce93d8;
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            color: var(--violet);
+            border: 1px solid var(--violet);
         }
 
         .campaign-card-link:hover .meta-tag {
@@ -1071,19 +1052,19 @@
         .campaign-canaux {
             margin-bottom: 12px;
             font-size: 13px;
-            color: #6c757d;
+            color: var(--muted);
             position: relative;
             z-index: 1;
         }
 
         .campaign-canaux strong {
-            color: #212529;
+            color: var(--ink);
             font-weight: 600;
         }
 
         .more-count {
             font-weight: 700;
-            color: #308276;
+            color: var(--primary);
             background: rgba(48, 130, 118, 0.1);
             padding: 2px 6px;
             border-radius: 4px;
@@ -1094,14 +1075,14 @@
             justify-content: space-between;
             align-items: center;
             padding-top: 12px;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid var(--line);
             position: relative;
             z-index: 1;
         }
 
         .campaign-date {
             font-size: 13px;
-            color: #6c757d;
+            color: var(--muted);
             font-weight: 500;
         }
 
@@ -1118,7 +1099,7 @@
         .progress-bar-inline {
             flex: 1;
             height: 8px;
-            background: #e9ecef;
+            background: var(--line);
             border-radius: 10px;
             overflow: hidden;
             min-width: 90px;
@@ -1127,14 +1108,14 @@
 
         .progress-fill-inline {
             height: 100%;
-            background: linear-gradient(90deg, #308276 0%, #245f56 100%);
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-hover) 100%);
             transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 1px 3px rgba(48, 130, 118, 0.3);
         }
 
         .progress-text {
             font-size: 0.75rem;
-            color: #6c757d;
+            color: var(--muted);
             white-space: nowrap;
             font-weight: 600;
         }
@@ -1143,7 +1124,7 @@
         .loading-text {
             text-align: center;
             padding: 60px 32px;
-            color: #6c757d;
+            color: var(--muted);
             font-style: italic;
             font-size: 16px;
         }
@@ -1151,7 +1132,7 @@
         .empty-text {
             text-align: center;
             padding: 60px 32px;
-            color: #6c757d;
+            color: var(--muted);
             font-size: 16px;
             font-weight: 500;
         }
@@ -1162,7 +1143,7 @@
         }
 
         .error-text {
-            color: #dc3545;
+            color: var(--red);
             margin-bottom: 24px;
             font-weight: 600;
         }
@@ -1175,7 +1156,7 @@
         }
         .progress-loading-anim {
             animation: progressPulse 1.6s ease-in-out infinite;
-            background: linear-gradient(90deg, #dee2e6 0%, #adb5bd 50%, #dee2e6 100%);
+            background: linear-gradient(90deg, var(--line) 0%, var(--muted-2) 50%, var(--line) 100%);
         }
 
         /* === Pagination === */
@@ -1189,14 +1170,14 @@
             gap: 6px;
             flex-wrap: wrap;
             padding: 20px 0 4px;
-            border-top: 1px solid #e9ecef;
+            border-top: 1px solid var(--line);
         }
         .pg-btn {
             padding: 7px 13px;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             border-radius: 8px;
             background: #ffffff;
-            color: #212529;
+            color: var(--ink);
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
@@ -1204,14 +1185,14 @@
             line-height: 1;
         }
         .pg-btn:hover:not(:disabled) {
-            border-color: #308276;
-            color: #308276;
+            border-color: var(--primary);
+            color: var(--primary);
             background: rgba(48, 130, 118, 0.06);
         }
         .pg-btn.pg-active {
-            background: linear-gradient(135deg, #308276, #245f56);
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
             color: #ffffff;
-            border-color: #245f56;
+            border-color: var(--primary-hover);
             box-shadow: 0 2px 8px rgba(48, 130, 118, 0.3);
         }
         .pg-btn:disabled {
@@ -1219,18 +1200,41 @@
             cursor: not-allowed;
         }
         .pg-ellipsis {
-            color: #6c757d;
+            color: var(--muted);
             font-weight: 600;
             padding: 0 2px;
             user-select: none;
         }
         .pg-info {
             font-size: 12px;
-            color: #6c757d;
+            color: var(--muted);
             font-weight: 500;
             margin-left: 10px;
             white-space: nowrap;
         }
+
+        /* ── Cartes de campagne riches (cohérentes avec le dashboard) ── */
+        #campaigns-grid.campaigns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+        .cc { background: var(--bg-card,#fff); border: 1px solid var(--line,#eaefec); border-radius: var(--radius,16px); padding: 18px; box-shadow: var(--shadow-xs); display: flex; flex-direction: column; gap: 13px; text-decoration: none; color: inherit; position: relative; overflow: hidden; transition: box-shadow .18s, transform .18s, border-color .18s; }
+        .cc::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--primary); }
+        .cc.k-valid::before { background:var(--amber); } .cc.k-maq::before { background:var(--blue); } .cc.k-urgent::before { background:var(--red); } .cc.k-done::before { background:var(--green-600); }
+        .cc:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--green-100); }
+        .cc-row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+        .cc-chan { display:flex; align-items:flex-start; gap:11px; min-width:0; }
+        .cc-ci { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:800; flex-shrink:0; }
+        .cc-ci.mail{background:var(--blue);} .cc-ci.sms{background:#0FA56E;} .cc-ci.push{background:var(--violet);} .cc-ci.lp{background:var(--amber);}
+        .cc h3 { font-size:14.5px; font-weight:750; line-height:1.3; letter-spacing:-.2px; color:var(--ink); margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+        .cc-meta { font-size:11.5px; color:var(--muted-2); margin-top:3px; font-weight:550; }
+        .cc-pill { font-size:10.5px; font-weight:800; padding:4px 10px; border-radius:999px; white-space:nowrap; display:inline-flex; align-items:center; gap:5px; flex-shrink:0; }
+        .cc-pill::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+        .cc-pill.prod{background:var(--green-50);color:var(--green-600);} .cc-pill.valid{background:var(--amber-50);color:#9a6b00;} .cc-pill.maq{background:var(--blue-50);color:#1d4ed8;} .cc-pill.urgent{background:var(--red-50);color:var(--red);} .cc-pill.done{background:var(--green-50);color:var(--green-700);}
+        .cc-prog { display:flex; flex-direction:column; gap:7px; }
+        .cc-lab { display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); font-weight:650; }
+        .cc-bar { height:8px; border-radius:99px; background:#eef2f0; overflow:hidden; }
+        .cc-bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#12C386,#00875A); }
+        .cc-foot { display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--line); padding-top:12px; }
+        .cc-avs { display:flex; } .cc-avs .av { width:27px; height:27px; border-radius:50%; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #fff; margin-left:-7px; } .cc-avs .av:first-child { margin-left:0; }
+        .cc-date { font-size:11.5px; color:var(--muted-2); font-weight:700; white-space:nowrap; }
     </style>
 </body>
 </html>
