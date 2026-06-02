@@ -991,10 +991,6 @@
                             </select>
                         </div> 
 <div class="form-group">
-                            <label for="domaine">Domaine / Segment :</label>
-                            <input type="text" id="domaine" placeholder="Ex : Épargne, Crédit, Assurance...">
-                        </div>
-                        <div class="form-group">
                             <label for="campagneLiee">Campagne liée <span style="font-weight:400;color:#888;">(optionnel)</span></label>
                             <input type="text" id="campagneLiee" placeholder="Nom exact de la campagne liée...">
                         </div>
@@ -1051,7 +1047,7 @@
                             <label>Segments <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
                             <div style="margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden;">
 
-                                <div style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);">Particuliers</div>
+                                <div data-seg-header style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;"><span>Particuliers</span><label style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--primary);cursor:pointer;text-transform:none;letter-spacing:0;"><input type="checkbox" class="seg-all-cb"> Tout sélectionner</label></div>
                                 <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid var(--line);">
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Actif"> Actif</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Etudiant"> Etudiant</label>
@@ -1071,7 +1067,7 @@
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Mineurs"> Mineurs</label>
                                 </div>
 
-                                <div style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);">Pro</div>
+                                <div data-seg-header style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;"><span>Pro</span><label style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--primary);cursor:pointer;text-transform:none;letter-spacing:0;"><input type="checkbox" class="seg-all-cb"> Tout sélectionner</label></div>
                                 <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid var(--line);">
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - PLS"> Pro - PLS</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - Commerçants"> Pro - Commerçants</label>
@@ -1081,7 +1077,7 @@
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Entreprises"> Entreprises</label>
                                 </div>
 
-                                <div style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);">Agri</div>
+                                <div data-seg-header style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;"><span>Agri</span><label style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--primary);cursor:pointer;text-transform:none;letter-spacing:0;"><input type="checkbox" class="seg-all-cb"> Tout sélectionner</label></div>
                                 <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;">
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Agri - Managers"> Agri - Managers</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Agris"> Agris</label>
@@ -1381,7 +1377,6 @@
                 if (data.typology) $("#typology").value = data.typology;
                 if (data.market) $("#market").value = data.market;
                 if (data.recurrence) $("#recurrence").value = data.recurrence;
-                if (data.domaine) $("#domaine").value = data.domaine;
                 if (data.campagneLiee) $("#campagneLiee").value = data.campagneLiee;
                 if (data.juridique && data.juridique.required) {
                     const jurReq = document.getElementById('juridiqueRequired');
@@ -1762,7 +1757,6 @@
                 html += '  <div class="summary-item"><span class="summary-label">Typologie :</span><span class="summary-value">' + ($("#typology").value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Marché :</span><span class="summary-value">' + ($("#market").value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Récurrence :</span><span class="summary-value">' + ($("#recurrence").value || '-') + '</span></div>';
-                if ($("#domaine").value) html += '  <div class="summary-item"><span class="summary-label">Domaine / Segment :</span><span class="summary-value">' + $("#domaine").value + '</span></div>';
                 var reqTeams = [];
                 if ($("#teamMarketing").checked) reqTeams.push("Marketing");
                 if ($("#teamCom").checked) reqTeams.push("Com");
@@ -1830,6 +1824,25 @@
                 document.getElementById('juridiqueCommentGroup').style.display = this.checked ? 'block' : 'none';
             });
 
+            // ── Segments : "Tout sélectionner" par groupe (Particuliers / Pro / Agri) ──
+            (function() {
+                var masters = document.querySelectorAll('.seg-all-cb');
+                masters.forEach(function(master) {
+                    var header = master.closest('[data-seg-header]');
+                    var grid = header && header.nextElementSibling;
+                    if (!grid) return;
+                    var cbs = grid.querySelectorAll('.segment-cb');
+                    master.addEventListener('change', function() {
+                        cbs.forEach(function(cb) { cb.checked = master.checked; });
+                    });
+                    cbs.forEach(function(cb) {
+                        cb.addEventListener('change', function() {
+                            master.checked = Array.prototype.every.call(cbs, function(x) { return x.checked; });
+                        });
+                    });
+                });
+            })();
+
             // ── URLs ComStore dynamiques ──
             window.addComStoreRow = function(chanIdx) {
                 var list = document.getElementById('urlComStoreList' + chanIdx);
@@ -1889,7 +1902,6 @@
                 text += 'Typologie           : ' + (data.typology || '-') + '\n';
                 text += 'Marché              : ' + (data.market || '-') + '\n';
                 text += 'Récurrence          : ' + (data.recurrence || '-') + '\n';
-                if (data.domaine) text += 'Domaine / Segment   : ' + data.domaine + '\n';
                 text += '\n';
 
                 // Section 2 : Segmentation
@@ -2223,7 +2235,6 @@
                     typology: $("#typology").value,
                     market: $("#market").value,
                     recurrence: $("#recurrence").value,
-                    domaine: $("#domaine").value,
                     campagneLiee: $("#campagneLiee").value.trim(),
                     juridique: (function() {
                         var req = document.getElementById('juridiqueRequired');
@@ -2338,7 +2349,6 @@
                     typology: $("#typology").value,
                     market: $("#market").value,
                     recurrence: $("#recurrence").value,
-                    domaine: $("#domaine").value,
                     requiredTeams: [],
                     segments: [],
                     ubs: [],
