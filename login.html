@@ -8,121 +8,213 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23006A4E'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'%3EIM%3C/text%3E%3C/svg%3E">
 
-    <!-- Styles CSS externes -->
     <link rel="stylesheet" href="css/theme.css">
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/components.css">
 
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: var(--bg, #f8fafc);
-            padding: 24px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            color: var(--ink, #0c1a14);
+            -webkit-font-smoothing: antialiased;
+            background: var(--bg, #f4f7f5);
         }
-        .login-card {
-            background: var(--bg-card, #fff);
-            border: 1px solid var(--line, #e2e8f0);
-            border-top: 4px solid var(--red, #E2001A);
-            border-radius: 18px;
-            box-shadow: var(--shadow-lg, 0 18px 40px rgba(12,30,22,0.12));
-            width: 100%;
-            max-width: 440px;
-            padding: 40px 36px;
-        }
-        .login-brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            justify-content: center;
-            margin-bottom: 8px;
-        }
-        .login-brand .brand-mark {
-            width: 44px; height: 44px;
-            border-radius: 10px;
-            background: var(--gradient, linear-gradient(135deg, #16a34a 0%, #15803d 100%));
+        .login-wrap { display: flex; min-height: 100vh; }
+
+        /* ── Panneau de marque (gauche) ── */
+        .login-aside {
+            flex: 1.05;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(150deg, #005C3D 0%, #00875A 52%, #0FB07E 100%);
             color: #fff;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 18px; letter-spacing: -1px;
+            padding: 48px 52px;
+            display: flex;
+            flex-direction: column;
         }
-        .login-brand .brand-name { font-size: 18px; font-weight: 700; color: var(--ink, #0f172a); }
-        .login-brand .brand-name span { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted, #64748b); font-weight: 600; }
-        .login-title { text-align: center; font-size: 15px; color: var(--muted, #64748b); margin: 0 0 28px; }
-        .login-field { margin-bottom: 18px; }
-        .login-field label { display: block; font-size: 13px; font-weight: 600; color: var(--ink, #0f172a); margin-bottom: 6px; }
-        .login-field select {
-            width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
-            border: 1px solid var(--line, #e2e8f0); border-radius: 10px; background: #fff; color: var(--ink, #0f172a);
+        .login-aside::before { content: ""; position: absolute; top: -120px; right: -120px; width: 420px; height: 420px; border-radius: 50%; background: rgba(255,255,255,0.07); }
+        .login-aside::after  { content: ""; position: absolute; bottom: -160px; left: -80px; width: 360px; height: 360px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+
+        .aside-brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
+        .aside-brand .mark { width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,0.16); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; letter-spacing: -1px; }
+        .aside-brand .nm { font-weight: 800; font-size: 17px; }
+        .aside-brand .nm span { display: block; font-size: 10px; font-weight: 700; letter-spacing: 2px; opacity: 0.8; text-transform: uppercase; }
+
+        .aside-body { position: relative; z-index: 2; margin-top: auto; margin-bottom: auto; max-width: 460px; }
+        .aside-body h1 { font-size: 34px; font-weight: 850; line-height: 1.15; letter-spacing: -1px; }
+        .aside-body .lead { font-size: 15px; opacity: 0.92; margin-top: 14px; line-height: 1.6; }
+        .feats { margin-top: 28px; display: flex; flex-direction: column; gap: 13px; }
+        .feat { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 550; }
+        .feat .chk { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+        .aside-foot { position: relative; z-index: 2; font-size: 12.5px; opacity: 0.8; font-weight: 500; }
+
+        /* Aperçu produit flottant */
+        .float-card {
+            position: absolute; z-index: 2; right: 46px; top: 96px; width: 268px;
+            background: rgba(255,255,255,0.14); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.22); border-radius: 16px; padding: 15px;
+            box-shadow: 0 18px 40px rgba(0,40,26,0.28);
         }
-        .login-field select:disabled { background: #f1f5f9; color: #94a3b8; }
-        .login-field select:focus { outline: none; border-color: var(--primary, #16a34a); box-shadow: 0 0 0 3px rgba(22,163,74,0.12); }
+        .float-card .fc-top { display: flex; align-items: center; justify-content: space-between; }
+        .float-card .fc-chan { display: flex; align-items: center; gap: 9px; }
+        .float-card .fc-ci { width: 30px; height: 30px; border-radius: 9px; background: #7C3AED; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+        .float-card .fc-t { font-size: 12.5px; font-weight: 750; line-height: 1.25; }
+        .float-card .fc-m { font-size: 10.5px; opacity: 0.85; }
+        .float-card .fc-pill { font-size: 9.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: rgba(255,255,255,0.22); }
+        .float-card .fc-bar { height: 7px; border-radius: 99px; background: rgba(255,255,255,0.22); margin-top: 13px; overflow: hidden; }
+        .float-card .fc-bar i { display: block; height: 100%; width: 70%; border-radius: 99px; background: #fff; }
+        .float-card .fc-lab { display: flex; justify-content: space-between; font-size: 10.5px; opacity: 0.9; margin-top: 8px; font-weight: 650; }
+        .float-chip {
+            position: absolute; z-index: 2; right: 92px; top: 296px;
+            background: #fff; color: var(--ink); border-radius: 14px; padding: 12px 16px;
+            box-shadow: 0 18px 40px rgba(0,40,26,0.28); display: flex; align-items: center; gap: 11px;
+        }
+        .float-chip .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--green-50); color: var(--primary); display: flex; align-items: center; justify-content: center; }
+        .float-chip .big { font-size: 19px; font-weight: 850; line-height: 1; letter-spacing: -.5px; }
+        .float-chip .sm { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+        /* ── Formulaire (droite) ── */
+        .login-main { flex: 0.95; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+        .login-box { width: 100%; max-width: 400px; }
+        .login-box h2 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+        .login-box .sub { font-size: 14px; color: var(--muted, #56655e); margin-top: 6px; }
+
+        .field { margin-top: 18px; }
+        .field label { display: block; font-size: 13px; font-weight: 650; margin-bottom: 7px; }
+        .field select {
+            width: 100%; padding: 13px 14px; font-size: 15px; font-family: inherit;
+            border: 1px solid var(--line, #eaefec); border-radius: 12px; background: #fff; color: var(--ink, #0c1a14);
+            cursor: pointer; transition: border-color .15s, box-shadow .15s;
+        }
+        .field select:disabled { background: #f3f6f4; color: #9aa8a0; cursor: not-allowed; }
+        .field select:focus { outline: none; border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
+
+        /* Aperçu utilisateur sélectionné */
+        .user-preview { display: none; align-items: center; gap: 12px; margin-top: 20px; padding: 12px 14px; border: 1px solid var(--line, #eaefec); border-radius: 14px; background: var(--green-50, #e8f6ef); }
+        .user-preview.show { display: flex; }
+        .user-preview .av { width: 40px; height: 40px; border-radius: 50%; background: var(--primary, #00875A); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 14px; }
+        .user-preview .nm { font-size: 14px; font-weight: 750; line-height: 1.25; }
+        .user-preview .nm span { display: block; font-size: 12px; color: var(--green-600, #00734C); font-weight: 600; }
+
         .btn-connect {
-            width: 100%; margin-top: 8px; padding: 14px; font-size: 16px; font-weight: 600;
-            border: none; border-radius: 10px; cursor: pointer; color: #fff;
-            background: var(--gradient, linear-gradient(135deg, #16a34a 0%, #15803d 100%));
-            transition: filter .2s ease, transform .1s ease;
+            width: 100%; margin-top: 22px; padding: 14px; font-size: 16px; font-weight: 700;
+            border: none; border-radius: 12px; cursor: pointer; color: #fff;
+            background: var(--gradient, linear-gradient(135deg, #12C386, #00734C));
+            box-shadow: 0 8px 20px rgba(0,135,90,0.28);
+            transition: filter .2s ease, transform .1s ease, box-shadow .2s ease;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .btn-connect:hover:not(:disabled) { filter: brightness(1.05); }
+        .btn-connect:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 10px 26px rgba(0,135,90,0.34); }
         .btn-connect:active:not(:disabled) { transform: translateY(1px); }
-        .btn-connect:disabled { opacity: .6; cursor: not-allowed; }
-        .login-hint { margin-top: 16px; font-size: 12px; color: var(--muted, #64748b); text-align: center; line-height: 1.5; }
-        .login-error {
-            display: none; margin-bottom: 18px; padding: 12px 14px; border-radius: 10px;
-            background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 14px; line-height: 1.4;
-        }
+        .btn-connect:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+        .login-hint { margin-top: 18px; font-size: 12px; color: var(--muted-2, #8b988f); text-align: center; line-height: 1.6; }
+        .login-error { display: none; margin-top: 18px; padding: 12px 14px; border-radius: 12px; background: var(--red-50, #fdeaec); border: 1px solid #fecaca; color: #991b1b; font-size: 14px; line-height: 1.4; }
         .login-error.show { display: block; }
-        #compat-banner {
-            display: none; margin-bottom: 18px; padding: 14px 16px; border-radius: 10px;
-            background: #f8d7da; border: 1px solid #f5c2c7; color: #842029; font-size: 13px; line-height: 1.5;
+        #compat-banner { display: none; margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #fdeaec; border: 1px solid #f5c2c7; color: #842029; font-size: 13px; line-height: 1.5; }
+
+        /* Logo mobile (caché en desktop) */
+        .mobile-brand { display: none; }
+
+        @media (max-width: 920px) {
+            .login-aside { display: none; }
+            .login-main { flex: 1; }
+            .mobile-brand { display: flex; align-items: center; justify-content: center; gap: 11px; margin-bottom: 26px; }
+            .mobile-brand .mark { width: 44px; height: 44px; border-radius: 12px; background: var(--gradient); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; box-shadow: 0 6px 14px rgba(0,135,90,0.3); }
+            .mobile-brand .nm { font-weight: 800; font-size: 17px; }
+            .mobile-brand .nm span { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 1.8px; color: var(--muted-2); text-transform: uppercase; }
         }
     </style>
 </head>
 
 <body>
-    <main class="login-card" role="main">
-        <div class="login-brand">
-            <div class="brand-mark">IM</div>
-            <div class="brand-name">Impulsion<span>Marketing</span></div>
-        </div>
-        <p class="login-title">Connexion à l'espace de pilotage des campagnes</p>
-
-        <div id="compat-banner" role="alert">
-            <strong>⚠️ Navigateur non compatible.</strong>
-            Cette application nécessite <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>
-            (version 86+) sur ordinateur. Firefox, Safari et les navigateurs mobiles ne sont pas supportés.
+<div class="login-wrap">
+    <!-- Panneau de marque -->
+    <aside class="login-aside">
+        <div class="aside-brand">
+            <div class="mark">IM</div>
+            <div class="nm">Impulsion<span>Marketing</span></div>
         </div>
 
-        <div id="login-error" class="login-error" role="alert"></div>
-
-        <div class="login-field">
-            <label for="login-team">Service</label>
-            <select id="login-team">
-                <option value="">Sélectionnez votre service…</option>
-                <option value="superadmin">Super Admin</option>
-                <option value="marketing">Marketing</option>
-                <option value="com">Com</option>
-                <option value="ebf">EBF</option>
-                <option value="data">Data</option>
-            </select>
+        <!-- Aperçu produit flottant -->
+        <div class="float-card">
+            <div class="fc-top">
+                <div class="fc-chan"><div class="fc-ci">PSH</div><div><div class="fc-t">Push Notif MaBanque</div><div class="fc-m">PUSH · Tous marchés</div></div></div>
+                <span class="fc-pill">En prod</span>
+            </div>
+            <div class="fc-bar"><i></i></div>
+            <div class="fc-lab"><span>Réalisation BAT</span><span>70%</span></div>
+        </div>
+        <div class="float-chip">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/></svg></div>
+            <div><div class="big">24</div><div class="sm">campagnes actives</div></div>
         </div>
 
-        <div class="login-field">
-            <label for="login-name">Nom</label>
-            <select id="login-name" disabled>
-                <option value="">Sélectionnez d'abord un service…</option>
-            </select>
+        <div class="aside-body">
+            <h1>Vos campagnes, du brief à la mise en production.</h1>
+            <p class="lead">L'espace de pilotage des campagnes marketing du Crédit Agricole Toulouse 31.</p>
+            <div class="feats">
+                <div class="feat"><span class="chk">✓</span> Workflow COM · EBF · Data centralisé</div>
+                <div class="feat"><span class="chk">✓</span> Validation et suivi en temps réel</div>
+                <div class="feat"><span class="chk">✓</span> Comité éditorial & zones du site web</div>
+            </div>
         </div>
 
-        <button id="btn-connect" class="btn-connect" disabled>Se connecter</button>
+        <div class="aside-foot">© 2026 Crédit Agricole Toulouse 31 — Usage interne</div>
+    </aside>
 
-        <p class="login-hint">
-            Le dossier de travail est rechargé automatiquement.<br>
-            La sélection du dossier ne vous sera demandée qu'à la première connexion.
-        </p>
+    <!-- Formulaire -->
+    <main class="login-main">
+        <div class="login-box">
+            <div class="mobile-brand"><div class="mark">IM</div><div class="nm">Impulsion<span>Marketing</span></div></div>
+
+            <h2>Connexion</h2>
+            <p class="sub">Choisissez votre service et votre nom pour accéder à votre espace.</p>
+
+            <div id="compat-banner" role="alert">
+                <strong>⚠️ Navigateur non compatible.</strong>
+                Cette application nécessite <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>
+                (version 86+) sur ordinateur. Firefox, Safari et les navigateurs mobiles ne sont pas supportés.
+            </div>
+
+            <div id="login-error" class="login-error" role="alert"></div>
+
+            <div class="field">
+                <label for="login-team">Service</label>
+                <select id="login-team">
+                    <option value="">Sélectionnez votre service…</option>
+                    <option value="superadmin">Super Admin</option>
+                    <option value="marketing">Marketing</option>
+                    <option value="com">Com</option>
+                    <option value="ebf">EBF</option>
+                    <option value="data">Data</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="login-name">Nom</label>
+                <select id="login-name" disabled>
+                    <option value="">Sélectionnez d'abord un service…</option>
+                </select>
+            </div>
+
+            <div id="user-preview" class="user-preview">
+                <div class="av" id="preview-av">?</div>
+                <div class="nm" id="preview-nm">—<span id="preview-role">—</span></div>
+            </div>
+
+            <button id="btn-connect" class="btn-connect" disabled>
+                Se connecter
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+
+            <p class="login-hint">
+                Le dossier de travail est rechargé automatiquement.<br>
+                La sélection du dossier n'est demandée qu'à la première connexion.
+            </p>
+        </div>
     </main>
+</div>
 
     <!-- Modules applicatifs -->
     <script src="js/bundle.js"></script>
@@ -137,16 +229,12 @@
             var nameSelect = document.getElementById('login-name');
             var btnConnect = document.getElementById('btn-connect');
             var errorBox = document.getElementById('login-error');
+            var preview = document.getElementById('user-preview');
 
-            function showError(msg) {
-                errorBox.innerHTML = msg;
-                errorBox.classList.add('show');
-            }
-            function clearError() {
-                errorBox.classList.remove('show');
-            }
+            function showError(msg) { errorBox.innerHTML = msg; errorBox.classList.add('show'); }
+            function clearError() { errorBox.classList.remove('show'); }
 
-            // Vérifier la compatibilité du navigateur (File System Access API)
+            // Compatibilité navigateur (File System Access API)
             if (typeof window.showDirectoryPicker !== 'function') {
                 document.getElementById('compat-banner').style.display = 'block';
                 teamSelect.disabled = true;
@@ -154,7 +242,20 @@
                 return;
             }
 
-            // Remplir le sélecteur de noms selon le service choisi
+            function initialsOf(name) {
+                return name.trim().split(/\s+/).map(function (p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
+            }
+
+            function updatePreview() {
+                var name = nameSelect.value;
+                if (!name) { preview.classList.remove('show'); return; }
+                var user = users.getUsersByRole(teamSelect.value).filter(function (u) { return u.name === name; })[0];
+                document.getElementById('preview-av').textContent = initialsOf(name);
+                document.getElementById('preview-nm').firstChild.textContent = name;
+                document.getElementById('preview-role').textContent = user ? user.roleLabel : '';
+                preview.classList.add('show');
+            }
+
             function populateNames(role) {
                 nameSelect.innerHTML = '';
                 if (!role) {
@@ -165,42 +266,32 @@
                 }
                 var list = users.getUsersByRole(role);
                 var opt = document.createElement('option');
-                opt.value = '';
-                opt.textContent = 'Sélectionnez votre nom…';
+                opt.value = ''; opt.textContent = 'Sélectionnez votre nom…';
                 nameSelect.appendChild(opt);
                 list.forEach(function (u) {
                     var o = document.createElement('option');
-                    o.value = u.name;
-                    o.textContent = u.name;
+                    o.value = u.name; o.textContent = u.name;
                     nameSelect.appendChild(o);
                 });
                 nameSelect.disabled = false;
                 updateButtonState();
             }
 
-            function updateButtonState() {
-                btnConnect.disabled = !nameSelect.value;
-            }
+            function updateButtonState() { btnConnect.disabled = !nameSelect.value; }
 
-            // Pré-remplir si un utilisateur est déjà connu (retour sur l'app)
+            // Pré-remplir si un utilisateur est déjà connu
             var current = users.getCurrentUser();
             if (current) {
                 teamSelect.value = current.role;
                 populateNames(current.role);
                 nameSelect.value = current.name;
                 updateButtonState();
+                updatePreview();
             }
 
-            teamSelect.addEventListener('change', function () {
-                clearError();
-                populateNames(teamSelect.value);
-            });
-            nameSelect.addEventListener('change', function () {
-                clearError();
-                updateButtonState();
-            });
+            teamSelect.addEventListener('change', function () { clearError(); populateNames(teamSelect.value); updatePreview(); });
+            nameSelect.addEventListener('change', function () { clearError(); updateButtonState(); updatePreview(); });
 
-            // Connexion : enregistre l'identité puis (re)charge le dossier de travail
             btnConnect.addEventListener('click', function () {
                 var name = nameSelect.value;
                 if (!name) { showError('Veuillez sélectionner votre nom.'); return; }
@@ -211,9 +302,7 @@
                 btnConnect.textContent = 'Connexion…';
 
                 connectFolder()
-                    .then(function () {
-                        window.location.href = 'Impulsion-Marketing.html';
-                    })
+                    .then(function () { window.location.href = 'Impulsion-Marketing.html'; })
                     .catch(function (err) {
                         btnConnect.disabled = false;
                         btnConnect.textContent = 'Se connecter';
@@ -233,11 +322,9 @@
                     if (info) {
                         return directoryStorage.getRootHandleWithCheck().then(function (result) {
                             if (result.status === 'success') return true;
-                            // permission refusée définitivement ou handle invalide → re-sélection
                             return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
                         });
                     }
-                    // Aucun dossier mémorisé : première utilisation
                     return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
                 });
             }
