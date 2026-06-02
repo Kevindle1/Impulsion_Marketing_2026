@@ -1,8 +1,8 @@
 ' ============================================================
 '  Impulsion Marketing — Lanceur de l'application
 '  Ouvre l'app en mode "application" (fenêtre dédiée, sans barre
-'  d'adresse ni onglets), via Microsoft Edge (intégré à Windows)
-'  ou Google Chrome. Double-cliquer ce fichier pour démarrer.
+'  d'adresse ni onglets), via Google Chrome (ou Microsoft Edge).
+'  Crée aussi un raccourci sur le Bureau. Double-cliquer pour démarrer.
 ' ============================================================
 Option Explicit
 Dim objShell, objFSO, appDir, browser, htmlPath, candidates, i
@@ -12,6 +12,24 @@ Set objFSO   = CreateObject("Scripting.FileSystemObject")
 
 ' Dossier du script = racine de l'application (robuste, peu importe d'où on lance)
 appDir = objFSO.GetParentFolderName(WScript.ScriptFullName)
+
+' Créer (une fois) un raccourci "Impulsion Marketing" sur le Bureau, avec l'icône de l'app.
+On Error Resume Next
+Dim desktopDir, lnkPath, lnk
+desktopDir = objShell.SpecialFolders("Desktop")
+lnkPath = desktopDir & "\Impulsion Marketing.lnk"
+If Not objFSO.FileExists(lnkPath) Then
+    Set lnk = objShell.CreateShortcut(lnkPath)
+    lnk.TargetPath = "wscript.exe"
+    lnk.Arguments = """" & WScript.ScriptFullName & """"
+    lnk.WorkingDirectory = appDir
+    lnk.Description = "Impulsion Marketing — pilotage des campagnes"
+    If objFSO.FileExists(appDir & "\impulsion.ico") Then
+        lnk.IconLocation = appDir & "\impulsion.ico, 0"
+    End If
+    lnk.Save
+End If
+On Error Goto 0
 
 ' Navigateurs candidats : Google Chrome d'abord, puis Microsoft Edge en secours.
 candidates = Array( _
