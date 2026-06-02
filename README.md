@@ -8,10 +8,9 @@ Il centralise la création des campagnes, le suivi du workflow de production (CO
 
 ## Lancer l'application
 
-1. Ouvrir **Microsoft Edge** ou **Google Chrome**
-2. Lancer `Impulsion-Marketing.vbs` (ou ouvrir `login.html` dans le navigateur)
-3. Sur l'écran de connexion : choisir son **service** puis son **nom**, et cliquer **« Se connecter »**
-4. Au tout premier lancement uniquement : sélectionner le dossier `Impulsion Marketing` sur `V://` lorsque le navigateur le demande
+1. **Double-cliquer `Impulsion Marketing.vbs`** — l'app s'ouvre en **mode application** (fenêtre dédiée, sans barre d'adresse ni onglets), via Google Chrome (ou Edge). Ne pas ouvrir le `.html` directement : il s'afficherait dans un onglet de navigateur classique.
+2. Sur l'écran de connexion : choisir son **service** puis son **nom**, et cliquer **« Se connecter »**
+3. Au tout premier lancement uniquement : sélectionner le dossier `Impulsion Marketing` sur `V://` lorsque le navigateur le demande
 
 > Le dossier est mémorisé automatiquement — les connexions suivantes le rechargent en un clic.
 > Pour changer d'utilisateur, cliquer sur **« Se déconnecter »** dans l'en-tête (retour à l'écran de connexion).

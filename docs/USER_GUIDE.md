@@ -4,7 +4,7 @@
 
 ## Premier lancement
 
-1. Ouvrir l'application dans **Edge** ou **Chrome** (raccourci `Impulsion-Marketing.vbs`, ou fichier `login.html`)
+1. **Double-cliquer `Impulsion Marketing.vbs`** : l'app s'ouvre en mode application (fenêtre dédiée, sans barre d'adresse), via Chrome ou Edge
 2. Sur l'**écran de connexion**, choisir son **service** puis son **nom**, et cliquer **« Se connecter »**
 3. À la **toute première connexion** uniquement : sélectionner le dossier `Impulsion Marketing` sur `V://` lorsque le navigateur le demande
 
