@@ -4,11 +4,12 @@
 
 ## Premier lancement
 
-1. Ouvrir `Impulsion-Marketing.html` dans **Edge** ou **Chrome**
-2. Cliquer **"Charger le dossier racine"** → sélectionner le dossier `Impulsion Marketing` sur `V://`
-3. Cliquer sur son **nom** dans le menu déroulant en haut à droite
+1. Ouvrir l'application dans **Edge** ou **Chrome** (raccourci `Impulsion-Marketing.vbs`, ou fichier `login.html`)
+2. Sur l'**écran de connexion**, choisir son **service** puis son **nom**, et cliquer **« Se connecter »**
+3. À la **toute première connexion** uniquement : sélectionner le dossier `Impulsion Marketing` sur `V://` lorsque le navigateur le demande
 
-Le dossier est mémorisé : les prochaines fois, il se charge automatiquement.
+Le dossier est mémorisé : les connexions suivantes le rechargent automatiquement en un clic.
+Pour changer d'utilisateur, cliquer **« Se déconnecter »** dans l'en-tête (retour à l'écran de connexion).
 
 ---
 
@@ -58,7 +59,7 @@ La campagne est créée et le workflow démarre en attente d'affectation manager
 
 ## Workflow de production
 
-Chaque campagne passe par une série d'étapes dans un ordre précis. La page **Détail** de la campagne montre l'avancement dans l'onglet **Infos campagne** (timeline verticale).
+Chaque campagne passe par une série d'étapes dans un ordre précis. La page **Détail** de la campagne montre l'avancement dans l'onglet **Infos campagne** via un **stepper** : étapes de préparation (saisie, affectation, kick-off) puis, pour chaque canal, les étapes par équipe. Code couleur : vert = fait, ambre = en cours, bleu = en validation, rouge = révision demandée, gris = à venir.
 
 ---
 
@@ -268,7 +269,7 @@ Chaque campagne dispose d'un fil de discussion accessible depuis l'onglet **Info
 ## Questions fréquentes
 
 **Je ne vois pas mes campagnes sur le tableau de bord.**
-→ Vérifier que votre nom est bien sélectionné en haut à droite. Si le problème persiste, cliquer "Reconstruire l'index".
+→ Vérifier que vous êtes connecté sous le bon nom (badge en haut à droite ; sinon « Se déconnecter » pour le rechoisir). Si le problème persiste, cliquer "Reconstruire l'index".
 
 **Je ne peux pas soumettre un canal.**
 → Vérifier que vous êtes bien la personne assignée à ce canal (votre nom doit figurer dans l'affectation faite par le Manager).
