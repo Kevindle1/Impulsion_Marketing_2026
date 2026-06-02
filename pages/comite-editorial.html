@@ -209,13 +209,13 @@
             z-index: 10;
         }
         table.gantt thead th.gantt-zone-col {
-            background: #0f2419;
-            color: rgba(255,255,255,0.9);
+            background: var(--primary-hover, #00734C);
+            color: rgba(255,255,255,0.95);
             font-size: 11px;
             font-weight: 700;
             padding: 0 14px;
             text-align: left;
-            border-color: #1a3a28;
+            border-color: rgba(255,255,255,0.14);
             letter-spacing: 0.5px;
             text-transform: uppercase;
         }
@@ -235,11 +235,11 @@
             font-weight: 700;
             text-align: center;
             padding: 8px 4px;
-            background: #0f2419;
+            background: var(--primary-hover, #00734C);
             color: rgba(255,255,255,0.95);
             letter-spacing: 0.8px;
             text-transform: uppercase;
-            border-color: #1a3a28;
+            border-color: rgba(255,255,255,0.14);
         }
 
         /* Week header */
@@ -250,9 +250,9 @@
             font-weight: 600;
             text-align: center;
             padding: 5px 2px;
-            background: #1a3a28;
-            color: rgba(255,255,255,0.75);
-            border-color: #254d37;
+            background: var(--primary, #00875A);
+            color: rgba(255,255,255,0.85);
+            border-color: rgba(255,255,255,0.14);
         }
         th.week-header.week-today {
             background: var(--green-700);
