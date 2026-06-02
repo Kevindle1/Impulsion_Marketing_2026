@@ -154,6 +154,12 @@
             min-width: 0;
             background: var(--bg, #f4f7f5);
         }
+        /* ── Mise en page de l'onglet Infos ── */
+        .info-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+        .info-main, .info-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+        .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+        .info-layout .detail-section, .info-cards .detail-section { margin-bottom: 0; }
+        @media (max-width: 1100px) { .info-layout { grid-template-columns: 1fr; } }
         /* ── Lightbox ── */
         #lightbox-overlay {
             display: none;
@@ -637,100 +643,108 @@
     // PAGE : INFOS CAMPAGNE
     // ─────────────────────────────────────────────
     function renderInfoPage(name, data) {
-        var html = '';
-
-        // Workflow timeline + manager/PO actions
+        // Workflow timeline + manager/PO actions (pleine largeur)
+        var workflowHtml = '';
         if (workflow && data.workflow) {
-            html += buildWorkflowSection(name, data);
+            workflowHtml += buildWorkflowSection(name, data);
         }
 
-        // Informations générales
-        html += '<div class="detail-section"><h3>📋 Informations générales</h3><div class="detail-grid">';
-        html += '<div class="detail-item"><span class="detail-label">Nom</span><span class="detail-value">' + security.escapeHtml(name) + '</span></div>';
-        html += '<div class="detail-item"><span class="detail-label">ID Planner</span><span class="detail-value">' + security.escapeHtml(data.id || '-') + '</span></div>';
-        html += '<div class="detail-item"><span class="detail-label">PO</span><span class="detail-value">' + security.escapeHtml(data.po || '-') + '</span></div>';
-        html += '<div class="detail-item"><span class="detail-label">Typologie</span><span class="detail-value">' + security.escapeHtml(data.typology || '-') + '</span></div>';
-        html += '<div class="detail-item"><span class="detail-label">Marché</span><span class="detail-value">' + security.escapeHtml(data.market || '-') + '</span></div>';
-        html += '<div class="detail-item"><span class="detail-label">Récurrence</span><span class="detail-value">' + security.escapeHtml(data.recurrence || '-') + '</span></div>';
-        html += '<div class="detail-item"><span class="detail-label">Date de lancement</span><span class="detail-value">' + security.escapeHtml(data.launchDate || '-') + '</span></div>';
-        html += '<div class="detail-item"><span class="detail-label">Date de saisie</span><span class="detail-value">' + security.escapeHtml(data.instantiation || '-') + '</span></div>';
-        html += '</div>';
+        // Informations générales (carte principale)
+        var infoGen = '<div class="detail-section"><h3>📋 Informations générales</h3><div class="detail-grid">';
+        infoGen += '<div class="detail-item"><span class="detail-label">Nom</span><span class="detail-value">' + security.escapeHtml(name) + '</span></div>';
+        infoGen += '<div class="detail-item"><span class="detail-label">ID Planner</span><span class="detail-value">' + security.escapeHtml(data.id || '-') + '</span></div>';
+        infoGen += '<div class="detail-item"><span class="detail-label">PO</span><span class="detail-value">' + security.escapeHtml(data.po || '-') + '</span></div>';
+        infoGen += '<div class="detail-item"><span class="detail-label">Typologie</span><span class="detail-value">' + security.escapeHtml(data.typology || '-') + '</span></div>';
+        infoGen += '<div class="detail-item"><span class="detail-label">Marché</span><span class="detail-value">' + security.escapeHtml(data.market || '-') + '</span></div>';
+        infoGen += '<div class="detail-item"><span class="detail-label">Récurrence</span><span class="detail-value">' + security.escapeHtml(data.recurrence || '-') + '</span></div>';
+        infoGen += '<div class="detail-item"><span class="detail-label">Date de lancement</span><span class="detail-value">' + security.escapeHtml(data.launchDate || '-') + '</span></div>';
+        infoGen += '<div class="detail-item"><span class="detail-label">Date de saisie</span><span class="detail-value">' + security.escapeHtml(data.instantiation || '-') + '</span></div>';
+        infoGen += '</div>';
         if (data.description) {
-            html += '<div class="detail-item" style="margin-top:16px;"><span class="detail-label">Description</span><span class="detail-value">' + security.escapeHtml(data.description) + '</span></div>';
+            infoGen += '<div class="detail-item" style="margin-top:16px;"><span class="detail-label">Description</span><span class="detail-value">' + security.escapeHtml(data.description) + '</span></div>';
         }
         if (data.campagneLiee) {
             var linkedUrl = 'details.html?name=' + encodeURIComponent(data.campagneLiee);
-            html += '<div class="detail-item" style="margin-top:8px;"><span class="detail-label">Campagne liée</span><span class="detail-value"><a href="' + linkedUrl + '" style="color:var(--primary);">' + security.escapeHtml(data.campagneLiee) + ' →</a></span></div>';
+            infoGen += '<div class="detail-item" style="margin-top:8px;"><span class="detail-label">Campagne liée</span><span class="detail-value"><a href="' + linkedUrl + '" style="color:var(--primary);">' + security.escapeHtml(data.campagneLiee) + ' →</a></span></div>';
         }
-        html += '</div>';
+        infoGen += '</div>';
 
+        // Petites cartes (segments / UB / produit / transfo) — côte à côte
+        var smallCards = '';
         if (data.segments && data.segments.length > 0) {
-            html += '<div class="detail-section"><h3>👥 Segments (' + data.segments.length + ')</h3><div class="tag-list">';
-            data.segments.forEach(function(s) { html += '<span class="tag">' + security.escapeHtml(s) + '</span>'; });
-            html += '</div></div>';
+            smallCards += '<div class="detail-section"><h3>👥 Segments (' + data.segments.length + ')</h3><div class="tag-list">';
+            data.segments.forEach(function(s) { smallCards += '<span class="tag">' + security.escapeHtml(s) + '</span>'; });
+            smallCards += '</div></div>';
         }
         if (data.ubs && data.ubs.length > 0) {
-            html += '<div class="detail-section"><h3>🎯 Univers de besoin (' + data.ubs.length + ')</h3><div class="tag-list">';
-            data.ubs.forEach(function(u) { html += '<span class="tag">' + security.escapeHtml(u) + '</span>'; });
-            html += '</div></div>';
+            smallCards += '<div class="detail-section"><h3>🎯 Univers de besoin (' + data.ubs.length + ')</h3><div class="tag-list">';
+            data.ubs.forEach(function(u) { smallCards += '<span class="tag">' + security.escapeHtml(u) + '</span>'; });
+            smallCards += '</div></div>';
         }
         if (data.targetProduct || data.productUrl || data.offerValidityDate) {
-            html += '<div class="detail-section"><h3>🛍️ Produit</h3><div class="detail-grid">';
-            if (data.targetProduct) html += '<div class="detail-item"><span class="detail-label">Produit cible</span><span class="detail-value">' + security.escapeHtml(data.targetProduct) + '</span></div>';
-            if (data.productUrl)    html += '<div class="detail-item"><span class="detail-label">URL Fiche Produit</span><span class="detail-value"><a href="' + security.escapeHtml(data.productUrl) + '" target="_blank">' + security.escapeHtml(data.productUrl) + '</a></span></div>';
-            if (data.offerValidityDate) html += '<div class="detail-item"><span class="detail-label">Date validité offre</span><span class="detail-value">' + security.escapeHtml(data.offerValidityDate) + '</span></div>';
-            html += '</div></div>';
+            smallCards += '<div class="detail-section"><h3>🛍️ Produit</h3><div class="detail-grid">';
+            if (data.targetProduct) smallCards += '<div class="detail-item"><span class="detail-label">Produit cible</span><span class="detail-value">' + security.escapeHtml(data.targetProduct) + '</span></div>';
+            if (data.productUrl)    smallCards += '<div class="detail-item"><span class="detail-label">URL Fiche Produit</span><span class="detail-value"><a href="' + security.escapeHtml(data.productUrl) + '" target="_blank">' + security.escapeHtml(data.productUrl) + '</a></span></div>';
+            if (data.offerValidityDate) smallCards += '<div class="detail-item"><span class="detail-label">Date validité offre</span><span class="detail-value">' + security.escapeHtml(data.offerValidityDate) + '</span></div>';
+            smallCards += '</div></div>';
         }
         if (data.transfo) {
-            html += '<div class="detail-section"><h3>🔄 Transformation</h3><div class="detail-grid">';
-            html += '<div class="detail-item"><span class="detail-label">Transfo</span><span class="detail-value">' + security.escapeHtml(data.transfo) + '</span></div>';
-            if (data.lotNumber) html += '<div class="detail-item"><span class="detail-label">N° Lot</span><span class="detail-value">' + security.escapeHtml(data.lotNumber) + '</span></div>';
-            html += '</div></div>';
+            smallCards += '<div class="detail-section"><h3>🔄 Transformation</h3><div class="detail-grid">';
+            smallCards += '<div class="detail-item"><span class="detail-label">Transfo</span><span class="detail-value">' + security.escapeHtml(data.transfo) + '</span></div>';
+            if (data.lotNumber) smallCards += '<div class="detail-item"><span class="detail-label">N° Lot</span><span class="detail-value">' + security.escapeHtml(data.lotNumber) + '</span></div>';
+            smallCards += '</div></div>';
         }
 
-        // Section juridique
+        // Section juridique (colonne latérale)
+        var jurHtml = '';
         if (data.juridique && data.juridique.required) {
             var jur = data.juridique;
             var jurStatus = jur.status || 'pending';
             var jurValidated = jurStatus === 'validated';
             var isPOJur = users.isCurrentUserPO(data);
-            html += '<div class="detail-section" style="border-left-color:' + (jurValidated ? 'var(--primary)' : 'var(--amber)') + ';">';
-            html += '<h3>⚖️ Validation juridique</h3>';
-            html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
-            html += '<span style="background:' + (jurValidated ? '#dcfce7' : '#fef3c7') + ';color:' + (jurValidated ? 'var(--primary-hover)' : '#d97706') + ';border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurValidated ? '✅ Validé' : '⏳ En attente') + '</span>';
-            html += '</div>';
-            if (jur.comment) html += '<div style="font-size:13px;color:var(--gray-700);background:var(--line-2);border-radius:6px;padding:8px 12px;margin-bottom:8px;">' + security.escapeHtml(jur.comment) + '</div>';
-            if (jur.validatedAt) html += '<div style="font-size:12px;color:var(--muted);">Validé le ' + security.escapeHtml(jur.validatedAt) + '</div>';
-            // PO peut valider / ré-ouvrir
+            jurHtml += '<div class="detail-section" style="border-left-color:' + (jurValidated ? 'var(--primary)' : 'var(--amber)') + ';">';
+            jurHtml += '<h3>⚖️ Validation juridique</h3>';
+            jurHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
+            jurHtml += '<span style="background:' + (jurValidated ? 'var(--green-50)' : 'var(--amber-50)') + ';color:' + (jurValidated ? 'var(--primary-hover)' : '#d97706') + ';border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurValidated ? '✅ Validé' : '⏳ En attente') + '</span>';
+            jurHtml += '</div>';
+            if (jur.comment) jurHtml += '<div style="font-size:13px;color:var(--gray-700);background:var(--line-2);border-radius:8px;padding:8px 12px;margin-bottom:8px;">' + security.escapeHtml(jur.comment) + '</div>';
+            if (jur.validatedAt) jurHtml += '<div style="font-size:12px;color:var(--muted);">Validé le ' + security.escapeHtml(jur.validatedAt) + '</div>';
             if (isPOJur) {
                 if (!jurValidated) {
-                    html += '<button id="btn-juridique-validate" style="margin-top:8px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">✅ Marquer comme validé</button>';
+                    jurHtml += '<button id="btn-juridique-validate" style="margin-top:8px;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">✅ Marquer comme validé</button>';
                 } else {
-                    html += '<button id="btn-juridique-reopen" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">↩ Ré-ouvrir</button>';
+                    jurHtml += '<button id="btn-juridique-reopen" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">↩ Ré-ouvrir</button>';
                 }
             }
-            html += '</div>';
+            jurHtml += '</div>';
         }
 
-        // Section documentaire (Item 21)
-        html += '<div class="detail-section" id="documents-section">';
-        html += '<h3>📁 Documents</h3>';
-        html += '<div id="documents-loading" style="color:var(--muted-2);font-size:13px;">Chargement...</div>';
-        html += '<div id="documents-content" style="display:none;"></div>';
-        html += '</div>';
+        // Section documentaire (colonne latérale)
+        var docsHtml = '<div class="detail-section" id="documents-section">';
+        docsHtml += '<h3>📁 Documents</h3>';
+        docsHtml += '<div id="documents-loading" style="color:var(--muted-2);font-size:13px;">Chargement...</div>';
+        docsHtml += '<div id="documents-content" style="display:none;"></div>';
+        docsHtml += '</div>';
 
-        // Section discussion
-        html += '<div class="detail-section">';
-        html += '<h3>💬 Discussion</h3>';
-        html += '<div id="discussion-loading" style="color:var(--muted-2);font-size:13px;padding:8px 0;">Chargement...</div>';
-        html += '<div id="discussion-list" class="discussion-list" style="display:none;"></div>';
-        html += '<div id="discussion-form" class="discussion-form" style="display:none;">';
-        html += '<textarea id="discussion-input" placeholder="Écrire un commentaire..."></textarea>';
-        html += '<div class="discussion-form-row"><button id="discussion-submit" class="btn-actor-submit">Publier</button></div>';
-        html += '</div>';
-        html += '<div id="discussion-no-user" style="display:none;color:var(--muted-2);font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>';
-        html += '</div>';
+        // Section discussion (pleine largeur, en bas)
+        var discHtml = '<div class="detail-section">';
+        discHtml += '<h3>💬 Discussion</h3>';
+        discHtml += '<div id="discussion-loading" style="color:var(--muted-2);font-size:13px;padding:8px 0;">Chargement...</div>';
+        discHtml += '<div id="discussion-list" class="discussion-list" style="display:none;"></div>';
+        discHtml += '<div id="discussion-form" class="discussion-form" style="display:none;">';
+        discHtml += '<textarea id="discussion-input" placeholder="Écrire un commentaire..."></textarea>';
+        discHtml += '<div class="discussion-form-row"><button id="discussion-submit" class="btn-actor-submit">Publier</button></div>';
+        discHtml += '</div>';
+        discHtml += '<div id="discussion-no-user" style="display:none;color:var(--muted-2);font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>';
+        discHtml += '</div>';
 
+        // Assemblage : workflow pleine largeur, puis grille (principal | latéral), puis discussion
+        var html = workflowHtml;
+        html += '<div class="info-layout">';
+        html += '<div class="info-main">' + infoGen + (smallCards ? '<div class="info-cards">' + smallCards + '</div>' : '') + '</div>';
+        html += '<div class="info-side">' + jurHtml + docsHtml + '</div>';
+        html += '</div>';
+        html += discHtml;
         return html;
     }
 
