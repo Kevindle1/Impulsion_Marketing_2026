@@ -13,22 +13,21 @@ Set objFSO   = CreateObject("Scripting.FileSystemObject")
 ' Dossier du script = racine de l'application (robuste, peu importe d'où on lance)
 appDir = objFSO.GetParentFolderName(WScript.ScriptFullName)
 
-' Créer (une fois) un raccourci "Impulsion Marketing" sur le Bureau, avec l'icône de l'app.
+' Créer / mettre à jour le raccourci "Impulsion Marketing" sur le Bureau, avec l'icône de l'app.
+' (Idempotent : corrige automatiquement un raccourci déjà présent — ex. icône obsolète.)
 On Error Resume Next
 Dim desktopDir, lnkPath, lnk
 desktopDir = objShell.SpecialFolders("Desktop")
 lnkPath = desktopDir & "\Impulsion Marketing.lnk"
-If Not objFSO.FileExists(lnkPath) Then
-    Set lnk = objShell.CreateShortcut(lnkPath)
-    lnk.TargetPath = "wscript.exe"
-    lnk.Arguments = """" & WScript.ScriptFullName & """"
-    lnk.WorkingDirectory = appDir
-    lnk.Description = "Impulsion Marketing — pilotage des campagnes"
-    If objFSO.FileExists(appDir & "\impulsion.ico") Then
-        lnk.IconLocation = appDir & "\impulsion.ico, 0"
-    End If
-    lnk.Save
+Set lnk = objShell.CreateShortcut(lnkPath)
+lnk.TargetPath = "wscript.exe"
+lnk.Arguments = """" & WScript.ScriptFullName & """"
+lnk.WorkingDirectory = appDir
+lnk.Description = "Impulsion Marketing — pilotage des campagnes"
+If objFSO.FileExists(appDir & "\impulsion.ico") Then
+    lnk.IconLocation = appDir & "\impulsion.ico, 0"
 End If
+lnk.Save
 On Error Goto 0
 
 ' Navigateurs candidats : Google Chrome d'abord, puis Microsoft Edge en secours.
