@@ -1,0 +1,101 @@
+{
+  "id": "Action Push Notif MaBanque : client enrolés MaBanque inactifs > 1 mois",
+  "description": "Envoi d'une notification invitant le client à se reconnecter à MaBanque 1x par trimestre si le client est inactif sur l'app depuis + d'un mois\nPiocher aléatoirement dans les 5 messages suivants (à valider) \nCa fait longtemps, [Prénom] !\nReconnectez-vous à votre app pour garder le contrôle de vos comptes et découvrir vos dernières opérations.\n👉 Accéder à mes comptes\n\n📊 Un point rapide sur vos comptes ?\nEn 30 secondes, consultez vos dernières opérations et gérez vos services en toute autonomie.\n👉 Je me connecte\n\n[Prénom], vos comptes vous attendent\nSolde, virements, plafonds… tout est accessible en quelques clics. Reconnectez-vous dès maintenant.\n👉 Voir mes comptes\n\n💡 Une action rapide à faire ?\nUn virement, un plafond à ajuster ou un message de votre conseiller vous attend.\n👉 J’y vais\n\n📩 [Prénom], on reste connecté ?\nVotre conseiller est disponible. Consultez vos infos ou prenez RDV directement depuis l’app.\n👉 Contacter mon conseiller\n\nAttention à ne pas doublonner part et pro",
+  "po": "Nicolas Martel",
+  "launchDate": "2026-07-01",
+  "instantiation": "2026-06-01",
+  "kickoffDate": "",
+  "typology": "PR",
+  "market": "Tous",
+  "recurrence": "Mensuel",
+  "domaine": "BAQ / Tous",
+  "requiredTeams": [
+    "Com",
+    "EBF",
+    "Data"
+  ],
+  "segments": [
+    "Actif",
+    "Etudiant",
+    "GP",
+    "Senior",
+    "BP",
+    "Sociétaire",
+    "Patri Tradi",
+    "Patri Dynamique",
+    "Intermédiaire Tradi",
+    "Intermédiaire Dynamique",
+    "PP Majeur",
+    "Jeunes Actif 18-25ans",
+    "Jeunes 18-30ans",
+    "Jeunes 12-17 ans",
+    "Jeunes 0-11 ans",
+    "Mineurs",
+    "Pro - PLS",
+    "Pro - Commerçants",
+    "Pro - Artisans",
+    "Pro - Micro entrepreneurs",
+    "Associations",
+    "Entreprises",
+    "Agri - Managers",
+    "Agris",
+    "Agris - JA"
+  ],
+  "ubs": [
+    "BAQ"
+  ],
+  "persona": "Utilisateurs ma banque inactif depuis + 1 mois",
+  "productUrl": "",
+  "targetProduct": "Ma Banque ",
+  "offerValidityDate": "",
+  "transfo": "Non",
+  "lotNumber": "",
+  "numChannels": "1",
+  "channels": [
+    {
+      "deliverableName": "Push Notifications MaBanque",
+      "content": "PUSH / NOTIF MA BANQUE",
+      "sendDate": "2026-07-01",
+      "comType": "Commerciale Caisse",
+      "targetingCriteria": "Clients inactifs MaBanque",
+      "emailObject": "",
+      "comTypology": "Création Caisse",
+      "urlTicTac": "",
+      "urlLccx": "",
+      "urlsComStore": [],
+      "siteWeb": null
+    }
+  ],
+  "actif": true,
+  "workflow": {
+    "assignments": {
+      "manager": "",
+      "com": "",
+      "ebf": "",
+      "data": ""
+    },
+    "steps": {
+      "po_saisie": "validated",
+      "manager_affectation": "pending",
+      "po_kickoff": "locked"
+    },
+    "channelSteps": {
+      "0": {
+        "com_maquette": "locked",
+        "po_validation_maquette": "locked",
+        "ebf_bat": "locked",
+        "po_validation_bat": "locked",
+        "data_ciblage": "locked",
+        "po_validation_ciblage": "locked",
+        "data_lancement_test": "locked",
+        "ebf_test_prod": "locked",
+        "po_validation_test_prod": "locked",
+        "data_mise_en_prod": "locked",
+        "ebf_mise_en_prod": "locked"
+      }
+    },
+    "revisionComments": {},
+    "channelRevisionComments": {}
+  },
+  "kickoffPersonNotes": {}
+}
