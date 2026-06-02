@@ -117,7 +117,7 @@ Cause la plus fréquente : **`bundle.js` obsolète** après une modification d'u
 
 **Correction :**
 1. Ouvrir un terminal dans le dossier du projet
-2. Exécuter : `npm run build` (ou double-cliquer `rebuild-bundle.bat`)
+2. Exécuter : `npm run build`
 3. Recharger l'application
 
 ### `SecurityError` ou `NotAllowedError`

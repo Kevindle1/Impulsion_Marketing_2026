@@ -69,7 +69,7 @@ Après toute modification d'un fichier `*-standalone.js`, régénérer `bundle.j
 npm run build
 ```
 
-(ou double-cliquer `rebuild-bundle.bat` sous Windows). Le script `build-bundle.mjs` (Node, sans
+Le script `build-bundle.mjs` (Node, sans
 dépendance) concatène les modules dans l'ordre ci-dessous. `bundle.js` est **généré** : ne pas l'éditer.
 Pour exécuter les tests : `npm test`.
 

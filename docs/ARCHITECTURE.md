@@ -16,7 +16,6 @@ Impulsion Marketing/         ← racine de l'app (= lecteur réseau V://)
 ├── login.html              ← écran de connexion (page d'entrée : identité + chargement du dossier)
 ├── Impulsion-Marketing.html ← tableau de bord
 ├── build-bundle.mjs         ← génération de bundle.js (npm run build)
-├── rebuild-bundle.bat       ← équivalent Windows (double-clic)
 │
 ├── pages/
 │   ├── campaign.html        ← création / édition de campagne (multi-étapes)
@@ -86,7 +85,7 @@ Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js
 > ```bash
 > npm run build
 > ```
-> (équivaut à double-cliquer `rebuild-bundle.bat` sous Windows). Le script `build-bundle.mjs`
+> Le script `build-bundle.mjs`
 > concatène les 10 modules dans l'ordre ci-dessus. `bundle.js` est un **fichier généré** :
 > ne jamais l'éditer à la main.
 

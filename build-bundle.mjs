@@ -2,7 +2,7 @@
  * build-bundle.mjs — Génération de js/bundle.js
  *
  * Concatène, dans l'ordre, les 10 modules standalone en un seul fichier chargé
- * par les pages. Remplace l'ancienne concaténation manuelle (cat / rebuild-bundle.bat)
+ * par les pages. Remplace l'ancienne concaténation manuelle (cat)
  * pour éviter toute dérive entre les sources et le bundle.
  *
  * Usage : `npm run build` (ou `node build-bundle.mjs`). Aucune dépendance externe.
