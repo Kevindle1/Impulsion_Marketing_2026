@@ -89,6 +89,28 @@ Les contrôles d'autorisation dans l'app sont de la **mise en forme UX** (affich
 
 Pour une sécurité réelle sur les actions sensibles (validation PO, affectation manager, approbation zones), le contrôle d'accès est délégué au lecteur réseau (droits NTFS).
 
+### Espace Manager (`manager-login.html`)
+
+> ⚠️ **Limite connue.** L'accès à l'espace manager est protégé par un mot de passe **codé en clair
+> dans le JavaScript de la page** (`manager-login.html`), vérifié **côté client** et mémorisé 24 h
+> dans `sessionStorage`. Ce n'est **pas** une protection de sécurité : le mot de passe est visible
+> via « Afficher la source » et le verrou est contournable via les DevTools.
+>
+> Cette barrière est volontairement **dissuasive uniquement** (éviter un accès accidentel), cohérente
+> avec le modèle « pas d'authentification réelle » décrit ci-dessus. Tant qu'il n'existe pas de
+> serveur, **aucune** protection purement client ne peut être considérée comme fiable : la vraie
+> protection des données reste les **droits du partage réseau `V://`**.
+>
+> Toute évolution voulant une authentification réelle (mot de passe par utilisateur, rôles
+> opposables) nécessite l'introduction d'un **backend**.
+
+### Données figées dans le code
+
+La liste des utilisateurs (noms, rôles, responsables de service) est **codée en dur** dans
+`js/users-standalone.js` (et donc dans `bundle.js`). Si le dépôt devient accessible au-delà de
+l'équipe, considérer le déplacement de cette liste vers un fichier de configuration **non versionné**
+chargé depuis `V://`.
+
 ---
 
 ## IndexedDB

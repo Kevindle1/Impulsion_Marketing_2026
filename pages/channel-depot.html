@@ -938,8 +938,8 @@
                             });
                     }
                 })
-                .catch(function(error) {
-                    console.log('Pas de dépôt BAT');
+                .catch(function() {
+                    // Aucun dépôt BAT existant pour ce canal — cas normal au premier passage.
                 });
 
             // Charger Test en prod
@@ -1006,8 +1006,8 @@
                             });
                     }
                 })
-                .catch(function(error) {
-                    console.log('Pas de dépôt Test en prod');
+                .catch(function() {
+                    // Aucun dépôt Test en prod existant — cas normal au premier passage.
                 });
         }
 

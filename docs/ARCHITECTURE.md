@@ -84,8 +84,11 @@ Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js
 
 > **Après toute modification d'un fichier standalone**, régénérer `bundle.js` :
 > ```bash
-> cd "c:/Users/kevin/OneDrive/Bureau/DEV/IM" && cat js/config-standalone.js js/security-standalone.js js/errors-standalone.js js/performance-standalone.js js/directoryStorage-standalone.js js/users-standalone.js js/user-selector-standalone.js js/workflow-standalone.js js/themes-standalone.js js/help-standalone.js > js/bundle.js
+> npm run build
 > ```
+> (équivaut à double-cliquer `rebuild-bundle.bat` sous Windows). Le script `build-bundle.mjs`
+> concatène les 10 modules dans l'ordre ci-dessus. `bundle.js` est un **fichier généré** :
+> ne jamais l'éditer à la main.
 
 ---
 

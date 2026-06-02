@@ -1,0 +1,25 @@
+# Dépendances / artefacts Node
+node_modules/
+dist/
+*.log
+npm-debug.log*
+
+# Secrets / configuration locale
+.env
+.env.*
+!.env.example
+
+# Fichiers de données bureautiques (lourds, non sources — vivent sur V://)
+*.xlsm
+*.xlsx
+*.xls
+
+# Système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+*.swp
+*~
+.idea/

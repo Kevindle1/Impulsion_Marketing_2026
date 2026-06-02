@@ -580,7 +580,11 @@ window.ImpulsionMarketing.workflow = (function () {
       })
       .then(function () {
         invalidateMetadataCache(campaignName);
-        return updateCampaignIndex(rootHandle, campaignName, campaignData).catch(function () {});
+        // L'index est un fichier dérivé (reconstructible) : un échec ici n'est pas bloquant
+        // car campagne.json a déjà été écrit. On le signale sans interrompre.
+        return updateCampaignIndex(rootHandle, campaignName, campaignData).catch(function (err) {
+          console.warn('Mise à jour de _index.json échouée (non bloquant) :', err);
+        });
       });
   }
 

@@ -792,7 +792,10 @@
                             c.completionStatus = status;
                             ProgressCache.set(c.folderName, status);
                         })
-                        .catch(function() {});
+                        .catch(function(err) {
+                            // Calcul du badge de progression : échec non bloquant (cosmétique).
+                            console.debug('Statut de progression indisponible pour', c.folderName, ':', err && err.message);
+                        });
                 })).then(function() {
                     updateCompletionStats();
                     updateServiceStats();

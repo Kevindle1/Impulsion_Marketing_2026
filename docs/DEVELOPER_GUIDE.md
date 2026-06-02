@@ -66,8 +66,12 @@ var users    = window.ImpulsionMarketing.users;
 Après toute modification d'un fichier `*-standalone.js`, régénérer `bundle.js` :
 
 ```bash
-cd "c:/Users/kevin/OneDrive/Bureau/DEV/IM" && cat js/config-standalone.js js/security-standalone.js js/errors-standalone.js js/performance-standalone.js js/directoryStorage-standalone.js js/users-standalone.js js/user-selector-standalone.js js/workflow-standalone.js js/themes-standalone.js js/help-standalone.js > js/bundle.js
+npm run build
 ```
+
+(ou double-cliquer `rebuild-bundle.bat` sous Windows). Le script `build-bundle.mjs` (Node, sans
+dépendance) concatène les modules dans l'ordre ci-dessous. `bundle.js` est **généré** : ne pas l'éditer.
+Pour exécuter les tests : `npm test`.
 
 Ordre de concaténation (respecter les dépendances) :
 1. `config-standalone.js`

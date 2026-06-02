@@ -326,7 +326,7 @@ window.ImpulsionMarketing.performance = (function() {
     var result = fn();
     var duration = performance.now() - start;
 
-    console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
+    if (window.IM_DEBUG) console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
 
     return result;
   }
@@ -342,11 +342,11 @@ window.ImpulsionMarketing.performance = (function() {
 
     return promise.then(function(result) {
       var duration = performance.now() - start;
-      console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
+      if (window.IM_DEBUG) console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
       return result;
     }).catch(function(error) {
       var duration = performance.now() - start;
-      console.log('[Performance] ' + label + ' (error): ' + duration.toFixed(2) + 'ms');
+      if (window.IM_DEBUG) console.log('[Performance] ' + label + ' (error): ' + duration.toFixed(2) + 'ms');
       throw error;
     });
   }

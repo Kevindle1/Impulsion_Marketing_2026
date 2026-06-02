@@ -239,8 +239,6 @@ window.ImpulsionMarketing.themes = (function() {
 
       // Retirer classe de transition
       document.body.classList.remove('theme-switching');
-
-      console.log('Applying theme:', themeName);
     }, 50); // Réduit à 50ms pour plus de réactivité
   }
 

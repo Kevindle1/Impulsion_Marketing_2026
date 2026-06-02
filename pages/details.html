@@ -1806,7 +1806,10 @@
                     el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier maquette</a>';
                 }
             })
-            .catch(function(){});
+            .catch(function(err) {
+                // Aucun aperçu disponible (fichier non encore déposé) — cas normal, pas d'alerte.
+                console.debug('Aperçu maquette indisponible :', err && err.message);
+            });
     }
 
     function loadBatImagePreview(idx, folder, filename) {
@@ -1825,7 +1828,10 @@
                     el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier BAT</a>';
                 }
             })
-            .catch(function(){});
+            .catch(function(err) {
+                // Aucun aperçu disponible (fichier non encore déposé) — cas normal, pas d'alerte.
+                console.debug('Aperçu BAT indisponible :', err && err.message);
+            });
     }
 
     function loadTestProdImagePreview(idx, folder, filename) {
@@ -1844,7 +1850,10 @@
                     el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier test prod</a>';
                 }
             })
-            .catch(function(){});
+            .catch(function(err) {
+                // Aucun aperçu disponible (fichier non encore déposé) — cas normal, pas d'alerte.
+                console.debug('Aperçu test prod indisponible :', err && err.message);
+            });
     }
 
     function renderEbfTestProdReadonly(idx, d) {
@@ -2023,7 +2032,11 @@
                     currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
                     currentCampaignData.workflow.channelDates[idx] = currentCampaignData.workflow.channelDates[idx] || {};
                     currentCampaignData.workflow.channelDates[idx].depotMaquetteDate = depot.depotMaquetteDate;
-                    workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData).catch(function(){});
+                    workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                        .catch(function(err) {
+                            console.error('Échec de la sauvegarde de la date de dépôt maquette :', err);
+                            errors.showNotification('La date de dépôt n\'a pas pu être enregistrée : ' + err.message, 'error');
+                        });
                 }
                 disableBtn(btnSaveCom, 'Enregistrement...');
                 saveDepotFile(currentCampaignName, folder, 'depotcom.json', depot)
@@ -2062,7 +2075,10 @@
                                 .then(function(d) { return d.getFileHandle(depot.pdfComSavedName, {create:true}); })
                                 .then(function(fh) { return fh.createWritable(); })
                                 .then(function(w) { return comFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
-                                .catch(function(){});
+                                .catch(function(err) {
+                                    console.error('Échec de l\'enregistrement du fichier maquette :', err);
+                                    errors.showNotification('Le fichier maquette n\'a pas pu être enregistré : ' + err.message, 'error');
+                                });
                         }
                         // v2 : avancement direct du canal
                         workflow.advanceChannelStep(currentCampaignData, idx, 'com_maquette', 'submitted');
@@ -2119,7 +2135,10 @@
                                     .then(function(d) { return d.getFileHandle(depot.pdfTestProdSavedName, {create:true}); })
                                     .then(function(fh) { return fh.createWritable(); })
                                     .then(function(w) { return testProdFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
-                                    .catch(function(){});
+                                    .catch(function(err) {
+                                        console.error('Échec de l\'enregistrement du fichier test prod :', err);
+                                        errors.showNotification('Le fichier test prod n\'a pas pu être enregistré : ' + err.message, 'error');
+                                    });
                             }
                         } else {
                             loadedDepots[idx].ebf = depot;
@@ -2130,7 +2149,10 @@
                                     .then(function(d) { return d.getFileHandle(depot.pdfBatSavedName, {create:true}); })
                                     .then(function(fh) { return fh.createWritable(); })
                                     .then(function(w) { return batFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
-                                    .catch(function(){});
+                                    .catch(function(err) {
+                                        console.error('Échec de l\'enregistrement du fichier BAT :', err);
+                                        errors.showNotification('Le fichier BAT n\'a pas pu être enregistré : ' + err.message, 'error');
+                                    });
                             }
                         }
                         // v2 : avancement direct du canal

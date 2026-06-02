@@ -526,7 +526,10 @@
                             ProgressCache.set(c.name, status);   // Mise en cache persistante
                             updateCardProgress(c.name, status);  // Mise à jour DOM si la carte est visible
                         })
-                        .catch(function() {});
+                        .catch(function(err) {
+                            // Calcul du badge de progression : échec non bloquant (cosmétique).
+                            console.debug('Statut de progression indisponible pour', c.name, ':', err && err.message);
+                        });
                 })).then(function() {
                     setTimeout(next, 0); // Cède le thread UI entre chaque lot
                 });

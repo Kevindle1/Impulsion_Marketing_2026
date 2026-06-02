@@ -210,8 +210,6 @@
 
         // Créer le bouton d'aide
         createHelpButton();
-
-        console.log('[ImpulsionMarketing.help] Système d\'aide initialisé pour:', pageKey);
     }
 
     /**

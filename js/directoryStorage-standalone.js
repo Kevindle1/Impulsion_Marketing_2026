@@ -85,7 +85,6 @@ window.ImpulsionMarketing.directoryStorage = (function() {
 
         request.onsuccess = function() {
           cachedHandle = handle;
-          console.log('✅ Dossier "' + handle.name + '" sauvegardé avec succès');
           resolve();
         };
       });
@@ -117,10 +116,8 @@ window.ImpulsionMarketing.directoryStorage = (function() {
 
           if (data && data.handle) {
             cachedHandle = data.handle;
-            console.log('✅ Dossier "' + data.name + '" chargé depuis le cache');
             resolve(data.handle);
           } else {
-            console.log('ℹ️ Aucun dossier sauvegardé trouvé');
             resolve(null);
           }
         };
@@ -259,7 +256,6 @@ window.ImpulsionMarketing.directoryStorage = (function() {
 
         request.onsuccess = function() {
           cachedHandle = null;
-          console.log('🗑️ Handle du dossier supprimé');
           resolve();
         };
       });

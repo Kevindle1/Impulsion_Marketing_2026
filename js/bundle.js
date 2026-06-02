@@ -1,4 +1,8 @@
 /**
+ * bundle.js — FICHIER GÉNÉRÉ. NE PAS ÉDITER À LA MAIN.
+ * Régénérer avec : npm run build (concatène les js/*-standalone.js).
+ */
+/**
  * Configuration Globale et Constantes (Version Standalone - Sans Modules ES6)
  * Interface Impulsion Marketing
  *
@@ -1317,7 +1321,7 @@ window.ImpulsionMarketing.performance = (function() {
     var result = fn();
     var duration = performance.now() - start;
 
-    console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
+    if (window.IM_DEBUG) console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
 
     return result;
   }
@@ -1333,11 +1337,11 @@ window.ImpulsionMarketing.performance = (function() {
 
     return promise.then(function(result) {
       var duration = performance.now() - start;
-      console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
+      if (window.IM_DEBUG) console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
       return result;
     }).catch(function(error) {
       var duration = performance.now() - start;
-      console.log('[Performance] ' + label + ' (error): ' + duration.toFixed(2) + 'ms');
+      if (window.IM_DEBUG) console.log('[Performance] ' + label + ' (error): ' + duration.toFixed(2) + 'ms');
       throw error;
     });
   }
@@ -1508,7 +1512,6 @@ window.ImpulsionMarketing.directoryStorage = (function() {
 
         request.onsuccess = function() {
           cachedHandle = handle;
-          console.log('✅ Dossier "' + handle.name + '" sauvegardé avec succès');
           resolve();
         };
       });
@@ -1540,10 +1543,8 @@ window.ImpulsionMarketing.directoryStorage = (function() {
 
           if (data && data.handle) {
             cachedHandle = data.handle;
-            console.log('✅ Dossier "' + data.name + '" chargé depuis le cache');
             resolve(data.handle);
           } else {
-            console.log('ℹ️ Aucun dossier sauvegardé trouvé');
             resolve(null);
           }
         };
@@ -1682,7 +1683,6 @@ window.ImpulsionMarketing.directoryStorage = (function() {
 
         request.onsuccess = function() {
           cachedHandle = null;
-          console.log('🗑️ Handle du dossier supprimé');
           resolve();
         };
       });
@@ -2679,7 +2679,11 @@ window.ImpulsionMarketing.workflow = (function () {
       })
       .then(function () {
         invalidateMetadataCache(campaignName);
-        return updateCampaignIndex(rootHandle, campaignName, campaignData).catch(function () {});
+        // L'index est un fichier dérivé (reconstructible) : un échec ici n'est pas bloquant
+        // car campagne.json a déjà été écrit. On le signale sans interrompre.
+        return updateCampaignIndex(rootHandle, campaignName, campaignData).catch(function (err) {
+          console.warn('Mise à jour de _index.json échouée (non bloquant) :', err);
+        });
       });
   }
 
@@ -3104,8 +3108,6 @@ window.ImpulsionMarketing.themes = (function() {
 
       // Retirer classe de transition
       document.body.classList.remove('theme-switching');
-
-      console.log('Applying theme:', themeName);
     }, 50); // Réduit à 50ms pour plus de réactivité
   }
 
@@ -3417,8 +3419,6 @@ window.ImpulsionMarketing.themes = (function() {
 
         // Créer le bouton d'aide
         createHelpButton();
-
-        console.log('[ImpulsionMarketing.help] Système d\'aide initialisé pour:', pageKey);
     }
 
     /**

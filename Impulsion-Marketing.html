@@ -109,6 +109,14 @@
             </header>
 
             <main class="content">
+                <!-- Bandeau d'incompatibilité navigateur (affiché uniquement si l'API File System Access est absente) -->
+                <div id="browser-compat-banner" role="alert" style="display:none;background:#f8d7da;border:1px solid #f5c2c7;color:#842029;padding:16px 20px;border-radius:10px;margin-bottom:20px;font-size:14px;line-height:1.5;">
+                    <strong>⚠️ Navigateur non compatible.</strong>
+                    Cette application nécessite l'API <em>File System Access</em>, disponible uniquement sur
+                    <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong> (version&nbsp;86+) sur ordinateur.
+                    Firefox, Safari et les navigateurs mobiles ne sont pas supportés. Merci d'ouvrir l'application
+                    dans Chrome ou Edge pour charger le dossier de travail.
+                </div>
                 <section class="config-section">
                     <div class="section-header" style="margin-bottom: 16px;">
                         <div>
@@ -245,10 +253,25 @@
         // Initialiser le système au chargement de la page
         window.addEventListener('load', function() {
             help.initHelp('index');
+            if (!checkBrowserCompatibility()) return; // Navigateur incompatible : on s'arrête après le bandeau
             initFolderSetup();
             initUserCard();
             initDashboardToolbar();
         });
+
+        // Vérifie la disponibilité de l'API File System Access (Chrome/Edge desktop uniquement).
+        // Affiche un bandeau clair et désactive le chargement si elle est absente.
+        function checkBrowserCompatibility() {
+            if (typeof window.showDirectoryPicker === 'function') return true;
+            var banner = document.getElementById('browser-compat-banner');
+            if (banner) banner.style.display = 'block';
+            var loadBtn = document.getElementById('load-folder-btn');
+            if (loadBtn) {
+                loadBtn.disabled = true;
+                loadBtn.title = 'Indisponible sur ce navigateur — utilisez Chrome ou Edge';
+            }
+            return false;
+        }
 
         // Initialiser la gestion du dossier
         function initFolderSetup() {
@@ -709,8 +732,11 @@
                             // Rendu immédiat depuis le cache
                             processAndRender(indexToEntries(cachedIndex), currentUser, workflowModule);
                             checkAllPublicationDates(rootHandle, cachedIndex);
-                            // Revalider silencieusement depuis V:// (met à jour le cache pour la prochaine visite)
-                            fetchIndexFromNetwork(rootHandle, workflowModule).catch(function() {});
+                            // Revalider silencieusement depuis V:// (met à jour le cache pour la prochaine visite).
+                            // Échec non bloquant : le rendu depuis le cache reste affiché.
+                            fetchIndexFromNetwork(rootHandle, workflowModule).catch(function(err) {
+                                console.debug('Revalidation de l\'index en arrière-plan échouée :', err && err.message);
+                            });
                         } else {
                             // ── Chemin 2 : lecture V:// (cache miss) ──
                             fetchIndexFromNetwork(rootHandle, workflowModule)
@@ -944,7 +970,10 @@
                         rootHandle.getFileHandle('_notifications.json', { create: true })
                             .then(function(fh) { return fh.createWritable(); })
                             .then(function(w) { return w.write(JSON.stringify(updated, null, 2)).then(function() { return w.close(); }); })
-                            .catch(function() {});
+                            .catch(function(err) {
+                                console.error('Échec de la mise à jour de _notifications.json :', err);
+                                if (errors && errors.showNotification) errors.showNotification('La notification n\'a pas pu être marquée comme lue : ' + err.message, 'error');
+                            });
                     }
                     // Naviguer vers la campagne
                     var notif = allNotifs.filter(function(n) { return n.id === id; })[0];
