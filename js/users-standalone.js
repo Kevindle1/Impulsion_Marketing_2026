@@ -53,6 +53,24 @@ window.ImpulsionMarketing.users = (function () {
     { name: 'Vincent Breque',     role: 'data', roleLabel: 'Data' },
   ];
 
+  // Copie de la liste d'origine (sert de valeurs par défaut / d'amorçage du _config.json)
+  var DEFAULT_USERS = USERS.map(function (u) { return Object.assign({}, u); });
+
+  // Remplace la liste des utilisateurs EN PLACE (la référence USERS reste valable
+  // pour tous les consommateurs). Utilisé pour surcharger depuis _config.json.
+  function applyUsers(arr) {
+    if (!Array.isArray(arr)) return;
+    var clean = arr.filter(function (u) { return u && u.name && u.role; });
+    if (!clean.length) return;
+    USERS.splice.apply(USERS, [0, USERS.length].concat(clean));
+  }
+
+  // Droit d'accès à l'espace Administration : managers, super admin, ou Kévin Dolie.
+  function canAccessAdmin() {
+    var u = getCurrentUser();
+    return !!(u && (u.isManager === true || u.isSuperAdmin === true || u.name === 'Kévin Dolie'));
+  }
+
   /**
    * Retourne l'utilisateur courant depuis localStorage
    * @returns {{ name: string, role: string, roleLabel: string } | null}
@@ -132,6 +150,9 @@ window.ImpulsionMarketing.users = (function () {
 
   return {
     USERS: USERS,
+    DEFAULT_USERS: DEFAULT_USERS,
+    applyUsers: applyUsers,
+    canAccessAdmin: canAccessAdmin,
     getCurrentUser: getCurrentUser,
     setCurrentUser: setCurrentUser,
     getUsersByRole: getUsersByRole,
