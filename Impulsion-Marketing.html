@@ -559,18 +559,48 @@
                                     checkAllPublicationDates(rootHandle, idx);
                                 })
                                 .catch(function(error) {
-                                    errors.handleError(error, 'Chargement dossier Campagnes');
-                                    document.getElementById('allmine-list').innerHTML = '<p class="error-text">Dossier "Campagnes" introuvable</p>';
-                                    document.getElementById('allmine-section').style.display = 'block';
-                                    document.getElementById('myturn-section').style.display = 'none';
+                                    console.debug('Lecture des campagnes échouée :', error && error.message);
+                                    showFolderError();
                                 });
                         }
                     });
                 })
                 .catch(function(error) {
-                    errors.handleError(error, 'Chargement des campagnes actives');
-                    document.getElementById('allmine-list').innerHTML = '<p class="error-text">Erreur lors du chargement</p>';
+                    console.debug('Chargement des campagnes échoué :', error && error.message);
+                    showFolderError();
                 });
+        }
+
+        // Affiché quand le dossier chargé ne contient pas de dossier « Campagnes »
+        // (mauvais dossier sélectionné). On propose de charger un autre dossier ;
+        // on masque le hero pour ne pas permettre de créer une campagne au mauvais endroit.
+        function showFolderError() {
+            hideCampaignSections();
+            var hero = document.querySelector('.dash-hero');
+            if (hero) hero.style.display = 'none';
+            var content = document.querySelector('.content');
+            var box = document.getElementById('folder-error-box');
+            if (!box) {
+                box = document.createElement('div');
+                box.id = 'folder-error-box';
+                box.style.cssText = 'max-width:540px;margin:48px auto;background:var(--bg-card,#fff);border:1px solid var(--line,#eaefec);border-radius:18px;padding:34px 32px;text-align:center;box-shadow:var(--shadow-md);';
+                content.appendChild(box);
+            }
+            box.innerHTML =
+                '<div style="width:60px;height:60px;border-radius:16px;background:var(--amber-50,#fdf3e2);color:var(--amber,#E8A100);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:28px;">📁</div>' +
+                '<h3 style="font-size:18px;font-weight:750;color:var(--ink,#0c1a14);margin:0 0 8px;">Dossier de travail introuvable</h3>' +
+                '<p style="color:var(--muted,#56655e);font-size:14px;line-height:1.6;margin:0 0 22px;">Le dossier chargé ne contient pas de dossier « Campagnes ». Vous avez probablement sélectionné le mauvais dossier.<br>Chargez le dossier <strong>Impulsion Marketing</strong> (celui qui contient « Campagnes »).</p>' +
+                '<button id="btn-reselect-folder" class="btn btn-primary"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Charger un autre dossier</button>';
+            box.style.display = 'block';
+            document.getElementById('btn-reselect-folder').onclick = function() {
+                directoryStorage.promptAndSaveDirectory()
+                    .then(function() { window.location.reload(); })
+                    .catch(function(err) {
+                        var msg = (err && err.message) || '';
+                        if (/annul/i.test(msg)) return;
+                        errors.showNotification('Erreur : ' + msg, 'error');
+                    });
+            };
         }
 
         function checkAllPublicationDates(rootHandle, index) {
