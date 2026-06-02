@@ -14,18 +14,29 @@ Set objFSO   = CreateObject("Scripting.FileSystemObject")
 appDir = objFSO.GetParentFolderName(WScript.ScriptFullName)
 
 ' Créer / mettre à jour le raccourci "Impulsion Marketing" sur le Bureau, avec l'icône de l'app.
-' (Idempotent : corrige automatiquement un raccourci déjà présent — ex. icône obsolète.)
+' (Idempotent : corrige automatiquement un raccourci déjà présent.)
 On Error Resume Next
-Dim desktopDir, lnkPath, lnk
+Dim desktopDir, lnkPath, lnk, localDir, localIco, srcIco
 desktopDir = objShell.SpecialFolders("Desktop")
 lnkPath = desktopDir & "\Impulsion Marketing.lnk"
+
+' Copier l'icône en LOCAL : les icônes situées sur un lecteur réseau (V://) ne
+' s'affichent pas toujours sur le Bureau. On pointe le raccourci vers la copie locale.
+srcIco  = appDir & "\impulsion.ico"
+localDir = objShell.ExpandEnvironmentStrings("%LocalAppData%") & "\Impulsion Marketing"
+localIco = localDir & "\impulsion.ico"
+If Not objFSO.FolderExists(localDir) Then objFSO.CreateFolder(localDir)
+If objFSO.FileExists(srcIco) Then objFSO.CopyFile srcIco, localIco, True
+
 Set lnk = objShell.CreateShortcut(lnkPath)
 lnk.TargetPath = "wscript.exe"
 lnk.Arguments = """" & WScript.ScriptFullName & """"
 lnk.WorkingDirectory = appDir
 lnk.Description = "Impulsion Marketing — pilotage des campagnes"
-If objFSO.FileExists(appDir & "\impulsion.ico") Then
-    lnk.IconLocation = appDir & "\impulsion.ico, 0"
+If objFSO.FileExists(localIco) Then
+    lnk.IconLocation = localIco & ", 0"
+ElseIf objFSO.FileExists(srcIco) Then
+    lnk.IconLocation = srcIco & ", 0"
 End If
 lnk.Save
 On Error Goto 0
