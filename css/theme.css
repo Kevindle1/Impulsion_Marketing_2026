@@ -1,0 +1,98 @@
+/**
+ * Système de Thèmes — Variables CSS
+ * Interface Impulsion Marketing — Design Premium
+ */
+
+:root {
+  /* Palette principale */
+  --ink: #0f172a;                        /* Texte principal — quasi-noir slate */
+  --muted: #64748b;                      /* Texte secondaire */
+  --line: #e2e8f0;                       /* Bordures neutres */
+  --primary: #16a34a;                    /* Vert CA vibrant et moderne */
+  --primary-hover: #15803d;              /* Vert CA foncé au survol */
+  --primary-light: #dcfce7;              /* Vert très clair pour accents */
+  --primary-rgb: 22, 163, 74;
+
+  /* Couleurs de fond */
+  --bg: #f8fafc;                         /* Fond principal slate très clair */
+  --bg-card: #ffffff;                    /* Fond des cartes */
+  --bg-header: #ffffff;                  /* Fond de l'en-tête */
+  --accent: #f0fdf4;                     /* Accent vert ultra-clair */
+
+  /* Effets visuels */
+  --gradient: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  --gold: #f59e0b;
+  --bg-image: none;
+
+  /* Espacements et rayons */
+  --gap: 24px;
+  --radius: 10px;                        /* Radius moderne, ni trop rond ni trop carré */
+
+  /* Système d'ombres premium */
+  --shadow-xs:  0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow:     0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-lg:  0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+
+  /* Variables gris neutres */
+  --gray-50:  #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+  --gray-light: #f8fafc;
+  --gray-medium: #e2e8f0;
+  --gray-medium-light: #e2e8f0;
+  --gray-medium-light-rgb: 226, 232, 240;
+  --gray-dark: #334155;
+  --gray-darker: #0f172a;
+  --gray-text: #64748b;
+  --gray-text-light: #94a3b8;
+  --gray-muted: #64748b;
+  --gray-muted-light: #475569;
+
+  /* Ombres spécifiques */
+  --shadow-modal:        0 25px 50px -12px rgba(0, 0, 0, 0.18);
+  --shadow-detail:       0 1px 3px 0 rgba(0, 0, 0, 0.08);
+  --shadow-detail-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  --shadow-channel:      0 1px 3px 0 rgba(0, 0, 0, 0.06);
+  --shadow-channel-hover:0 8px 24px rgba(0, 0, 0, 0.10);
+  --shadow-image:        0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-image-hover:  0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+/**
+ * Transition de thème
+ */
+.theme-switching {
+  opacity: 0.5;
+  transition: opacity 0.5s ease;
+}
+
+/**
+ * Application de l'image de fond
+ */
+body {
+  background-color: var(--bg);
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  transition: opacity 0.5s ease;
+}
+
+/**
+ * Transitions ciblées (éviter le * global pour la performance)
+ */
+a, button, .btn, .btn-primary, .btn-secondary, .nav-link, .card,
+input, textarea, select, .badge, .status-badge {
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+              color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}

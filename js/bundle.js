@@ -1,0 +1,3546 @@
+/**
+ * Configuration Globale et Constantes (Version Standalone - Sans Modules ES6)
+ * Interface Impulsion Marketing
+ *
+ * Ce fichier centralise toutes les constantes, listes de choix et configuration
+ * Version sans modules ES6 pour fonctionner avec file://
+ */
+
+// Créer le namespace global si nécessaire
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+// Configuration globale
+window.ImpulsionMarketing.config = (function() {
+  'use strict';
+
+  // ========================================
+  // Configuration Générale
+  // ========================================
+
+  const APP_NAME = 'Interface Impulsion Marketing';
+  const APP_VERSION = '2.0.0';
+  const DEFAULT_ROOT_PATH = 'V:/Impulsion Marketing/Historique des Campagnes';
+  const GABARIT_MODEL_PATH = 'Gabarit Model';
+
+  // ========================================
+  // Limites et Contraintes
+  // ========================================
+
+  const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+  const MAX_FILENAME_LENGTH = 255;
+  const MAX_DESCRIPTION_LENGTH = 10000;
+  const SCAN_TIMEOUT = 30000; // 30 secondes
+
+  // ========================================
+  // Types de Fichiers Autorisés
+  // ========================================
+
+  const ALLOWED_IMAGE_TYPES = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+  const ALLOWED_DOCUMENT_TYPES = ['pdf', 'html', 'htm'];
+  const ALLOWED_ASSET_TYPES = ['css', 'js', 'json', 'svg', 'woff', 'woff2', 'ttf', 'eot'];
+
+  // ========================================
+  // Segments
+  // ========================================
+
+  const SEGMENTS = [
+    "Jeunes Actif 18-25ans",
+    "Etudiant",
+    "Actif",
+    "GP",
+    "Senior",
+    "BP",
+    "Sociétaire",
+    "Intermédiaire Tradi",
+    "Intermédiaire Dynamique",
+    "Patri Dynamique",
+    "Patri Tradi",
+    "Jeunes 0-11 ans",
+    "Jeunes 12-17 ans",
+    "Pro - PLS",
+    "Pro - Commerçants",
+    "Pro - Artisans",
+    "Pro - Micro entrepreneurs",
+    "Associations",
+    "Entreprises",
+    "Agri - Managers",
+    "Agris",
+    "Agris - JA",
+    "PP Majeur",
+    "Jeunes 18-30ans",
+    "Mineurs"
+  ];
+
+  // ========================================
+  // Univers de Besoins (UBs)
+  // ========================================
+
+  const UNIVERS_BESOINS = [
+    "Epargne / Collecte",
+    "Crédits",
+    "Assurances",
+    "Conquête",
+    "BAQ",
+    "Immobilier",
+    "Spécialisés",
+    "Monétique"
+  ];
+
+  // ========================================
+  // Canaux de Communication
+  // ========================================
+
+  const CANAUX = [
+    "LP",
+    "MAIL",
+    "COURRIER",
+    "SMS",
+    "MDC",
+    "PUSH / NOTIF MA BANQUE",
+    "PERSO MA BANQUE",
+    "Zone de Gauche ( synthese des comptes)",
+    "Bandeau Hero",
+    "ZAC HOME PAGE",
+    "E-message",
+    "Zone de droite ( synthese des comptes)",
+    "Article",
+    "Newsletter",
+    "ZAC",
+    "Menu Burger",
+    "MAIL + E-MESSAGE"
+  ];
+
+  // ========================================
+  // Types de Communication
+  // ========================================
+
+  const TYPES_COM = [
+    "Commerciale Caisse",
+    "Commerciale Natio",
+    "Reglementaire Caisse",
+    "Reglementaire Natio",
+    "Gestion Caisse",
+    "Gestion Natio"
+  ];
+
+  // ========================================
+  // Typologies de Campagne
+  // ========================================
+
+  const TYPOLOGIES = [
+    "PR",
+    "Campagne"
+  ];
+
+  // ========================================
+  // Marchés
+  // ========================================
+
+  const MARCHES = [
+    "Particuliers",
+    "Spécialisés",
+    "Tous"
+  ];
+
+  // ========================================
+  // Récurrences
+  // ========================================
+
+  const RECURRENCES = [
+    "One shot",
+    "hebdomadaire",
+    "Mensuel",
+    "trimestriel",
+    "Annuelle"
+  ];
+
+  // ========================================
+  // Numéros de Lot
+  // ========================================
+
+  const LOTS = [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "Création"
+  ];
+
+  // ========================================
+  // Valeurs Oui/Non
+  // ========================================
+
+  const OUI_NON = [
+    "Oui",
+    "Non"
+  ];
+
+  // ========================================
+  // Ranges pour Sélections Multiples
+  // ========================================
+
+  const NUM_SEGMENTS_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const NUM_UBS_RANGE = [1, 2, 3, 4, 5, 6, 7, 8];
+  const NUM_CHANNELS_RANGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+  // ========================================
+  // Messages d'Erreur Standards
+  // ========================================
+
+  const ERROR_MESSAGES = {
+    BROWSER_NOT_SUPPORTED: "Navigateur incompatible. Veuillez utiliser Chrome ou Edge.",
+    NO_ROOT_SELECTED: "Aucun dossier racine sélectionné.",
+    PERMISSION_DENIED: "Permission refusée. Veuillez autoriser l'accès au dossier.",
+    FILE_TOO_LARGE: `Fichier trop volumineux. Taille maximale : ${MAX_FILE_SIZE / 1024 / 1024} MB`,
+    INVALID_FILENAME: "Nom de fichier invalide.",
+    CAMPAIGN_EXISTS: "Une campagne avec ce nom existe déjà.",
+    REQUIRED_FIELDS: "Veuillez remplir tous les champs obligatoires.",
+    INVALID_DATE_RANGE: "La date d'instantiation doit être antérieure à la date de lancement.",
+    INVALID_URL: "URL invalide. Format attendu : https://...",
+    NETWORK_ERROR: "Erreur réseau. Vérifiez votre connexion.",
+    FILE_NOT_FOUND: "Fichier introuvable.",
+    DIRECTORY_NOT_FOUND: "Dossier introuvable.",
+    JSON_PARSE_ERROR: "Erreur lors de la lecture du fichier JSON.",
+    UNEXPECTED_ERROR: "Une erreur inattendue s'est produite."
+  };
+
+  // ========================================
+  // Messages de Succès Standards
+  // ========================================
+
+  const SUCCESS_MESSAGES = {
+    CAMPAIGN_CREATED: "Campagne créée avec succès !",
+    CAMPAIGN_UPDATED: "Campagne mise à jour avec succès !",
+    DELIVERABLE_CREATED: "Livrable créé avec succès !",
+    DELIVERABLE_UPDATED: "Livrable mis à jour avec succès !",
+    FILES_UPLOADED: "Fichiers uploadés avec succès !",
+    COPIED_TO_CLIPBOARD: "Copié dans le presse-papiers !"
+  };
+
+  // ========================================
+  // Paramètres UI
+  // ========================================
+
+  const UI_CONFIG = {
+    LOADER_DEFAULT_TEXT: "Traitement en cours...",
+    NOTIFICATION_DURATION: 5000, // ms
+    THEME_TRANSITION_DURATION: 300, // ms
+    DEBOUNCE_SEARCH_DELAY: 300, // ms
+    MODAL_ANIMATION_DURATION: 300 // ms
+  };
+
+  // ========================================
+  // Helpers pour génération de sélecteurs HTML
+  // ========================================
+
+  /**
+   * Génère les options HTML pour un sélecteur
+   * @param {string[]} items - Liste d'items
+   * @param {string} placeholder - Texte placeholder optionnel
+   * @returns {string} HTML des options
+   */
+  function generateOptions(items, placeholder) {
+    placeholder = placeholder || 'Choisir...';
+    let html = '<option value="">' + placeholder + '</option>';
+    items.forEach(function(item) {
+      html += '<option value="' + item + '">' + item + '</option>';
+    });
+    return html;
+  }
+
+  /**
+   * Génère les options HTML pour un range numérique
+   * @param {number[]} range - Array de nombres
+   * @returns {string} HTML des options
+   */
+  function generateRangeOptions(range) {
+    let html = '';
+    range.forEach(function(num) {
+      html += '<option value="' + num + '">' + num + '</option>';
+    });
+    return html;
+  }
+
+  /**
+   * Génère les radio buttons HTML
+   * @param {string} name - Nom du groupe radio
+   * @param {Array} values - Valeurs
+   * @returns {string} HTML des radios
+   */
+  function generateRadios(name, values) {
+    let html = '';
+    values.forEach(function(value) {
+      html += '<label><input type="radio" name="' + name + '" value="' + value + '">' + value + '</label>';
+    });
+    return html;
+  }
+
+  // ========================================
+  // Validation Helpers
+  // ========================================
+
+  /**
+   * Vérifie si une valeur fait partie d'une liste autorisée
+   * @param {string} value - Valeur à vérifier
+   * @param {string[]} allowedValues - Valeurs autorisées
+   * @returns {boolean}
+   */
+  function isValidChoice(value, allowedValues) {
+    return allowedValues.indexOf(value) !== -1;
+  }
+
+  /**
+   * Vérifie si un type de fichier est autorisé
+   * @param {string} filename - Nom du fichier
+   * @param {string} category - 'image', 'document', ou 'asset'
+   * @returns {boolean}
+   */
+  function isAllowedFileType(filename, category) {
+    category = category || 'image';
+    const ext = filename.split('.').pop().toLowerCase();
+
+    switch (category) {
+      case 'image':
+        return ALLOWED_IMAGE_TYPES.indexOf(ext) !== -1;
+      case 'document':
+        return ALLOWED_DOCUMENT_TYPES.indexOf(ext) !== -1;
+      case 'asset':
+        return ALLOWED_ASSET_TYPES.indexOf(ext) !== -1;
+      default:
+        return false;
+    }
+  }
+
+  // ========================================
+  // API Publique
+  // ========================================
+
+  return {
+    // Constantes
+    APP_NAME: APP_NAME,
+    APP_VERSION: APP_VERSION,
+    DEFAULT_ROOT_PATH: DEFAULT_ROOT_PATH,
+    GABARIT_MODEL_PATH: GABARIT_MODEL_PATH,
+    MAX_FILE_SIZE: MAX_FILE_SIZE,
+    MAX_FILENAME_LENGTH: MAX_FILENAME_LENGTH,
+    MAX_DESCRIPTION_LENGTH: MAX_DESCRIPTION_LENGTH,
+    SCAN_TIMEOUT: SCAN_TIMEOUT,
+
+    // Listes
+    ALLOWED_IMAGE_TYPES: ALLOWED_IMAGE_TYPES,
+    ALLOWED_DOCUMENT_TYPES: ALLOWED_DOCUMENT_TYPES,
+    ALLOWED_ASSET_TYPES: ALLOWED_ASSET_TYPES,
+    SEGMENTS: SEGMENTS,
+    UNIVERS_BESOINS: UNIVERS_BESOINS,
+    CANAUX: CANAUX,
+    TYPES_COM: TYPES_COM,
+    TYPOLOGIES: TYPOLOGIES,
+    MARCHES: MARCHES,
+    RECURRENCES: RECURRENCES,
+    LOTS: LOTS,
+    OUI_NON: OUI_NON,
+    NUM_SEGMENTS_RANGE: NUM_SEGMENTS_RANGE,
+    NUM_UBS_RANGE: NUM_UBS_RANGE,
+    NUM_CHANNELS_RANGE: NUM_CHANNELS_RANGE,
+
+    // Messages
+    ERROR_MESSAGES: ERROR_MESSAGES,
+    SUCCESS_MESSAGES: SUCCESS_MESSAGES,
+    UI_CONFIG: UI_CONFIG,
+
+    // Fonctions
+    generateOptions: generateOptions,
+    generateRangeOptions: generateRangeOptions,
+    generateRadios: generateRadios,
+    isValidChoice: isValidChoice,
+    isAllowedFileType: isAllowedFileType
+  };
+})();
+/**
+ * Module de Sécurité (Version Standalone - Sans Modules ES6)
+ * Interface Impulsion Marketing
+ *
+ * Ce module fournit des fonctions de sécurité pour prévenir les attaques XSS,
+ * valider les URLs et sanitizer les données utilisateur.
+ */
+
+// Créer le namespace global si nécessaire
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+// Module de sécurité
+window.ImpulsionMarketing.security = (function() {
+  'use strict';
+
+  /**
+   * Échappe les caractères HTML pour prévenir les attaques XSS
+   * @param {string} text - Texte à échapper
+   * @returns {string} Texte échappé
+   */
+  function escapeHtml(text) {
+    if (text === null || text === undefined) {
+      return '';
+    }
+
+    var div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+  }
+
+  /**
+   * Valide une URL pour s'assurer qu'elle est sûre
+   * @param {string} urlString - URL à valider
+   * @param {Object} options - Options de validation
+   * @returns {boolean} true si l'URL est valide
+   */
+  function isValidUrl(urlString, options) {
+    options = options || {};
+    var allowHttp = options.allowHttp || false;
+
+    if (!urlString || typeof urlString !== 'string') {
+      return false;
+    }
+
+    try {
+      var url = new URL(urlString);
+
+      // Vérifier le protocole
+      if (url.protocol === 'https:') {
+        return true;
+      }
+
+      if (url.protocol === 'http:' && allowHttp) {
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /**
+   * Sanitize un nom de fichier pour le rendre sûr
+   * @param {string} filename - Nom de fichier à sanitizer
+   * @param {number} maxLength - Longueur maximale (défaut: 255)
+   * @returns {string} Nom de fichier sécurisé
+   */
+  function sanitizeFilename(filename, maxLength) {
+    maxLength = maxLength || 255;
+
+    if (!filename || typeof filename !== 'string') {
+      return 'unnamed';
+    }
+
+    // Supprimer les caractères invalides pour les systèmes de fichiers
+    var sanitized = filename.replace(/[<>:"|?*\\\/()\[\]{}]/g, '_');
+
+    // Supprimer les caractères de contrôle
+    sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
+
+    // Limiter la longueur
+    sanitized = sanitized.substring(0, maxLength);
+
+    // Supprimer les espaces au début/fin
+    sanitized = sanitized.trim();
+
+    // Remplacer espaces multiples par un seul
+    sanitized = sanitized.replace(/\s+/g, ' ');
+
+    // S'assurer qu'il n'est pas vide
+    return sanitized || 'unnamed';
+  }
+
+  /**
+   * Crée un élément DOM de manière sécurisée avec du texte
+   * @param {string} tagName - Nom de la balise
+   * @param {string} text - Contenu texte
+   * @param {string} className - Classes CSS optionnelles
+   * @returns {HTMLElement} Élément créé
+   */
+  function createSafeElement(tagName, text, className) {
+    var element = document.createElement(tagName);
+
+    if (text !== null && text !== undefined) {
+      element.textContent = text;
+    }
+
+    if (className) {
+      element.className = className;
+    }
+
+    return element;
+  }
+
+  /**
+   * Crée un fragment de document pour des insertions DOM optimisées et sécurisées
+   * @param {Array} items - Tableau d'items à transformer en éléments
+   * @param {Function} createElementFn - Fonction qui crée un élément pour chaque item
+   * @returns {DocumentFragment} Fragment prêt à être inséré
+   */
+  function createSafeFragment(items, createElementFn) {
+    var fragment = document.createDocumentFragment();
+
+    items.forEach(function(item, index) {
+      var element = createElementFn(item, index);
+      if (element) {
+        fragment.appendChild(element);
+      }
+    });
+
+    return fragment;
+  }
+
+  /**
+   * Valide et échappe une URL pour l'utiliser dans un attribut href
+   * @param {string} urlString - URL à valider et échapper
+   * @param {Object} options - Options de validation
+   * @returns {string|null} URL échappée ou null si invalide
+   */
+  function getSafeUrl(urlString, options) {
+    if (!isValidUrl(urlString, options)) {
+      return null;
+    }
+
+    return escapeHtml(urlString);
+  }
+
+  /**
+   * Valide un tableau d'URLs
+   * @param {Array} urls - Tableau d'URLs à valider
+   * @param {Object} options - Options de validation
+   * @returns {Object} Résultat avec urls valides et invalides
+   */
+  function validateUrls(urls, options) {
+    var result = {
+      valid: [],
+      invalid: [],
+      allValid: true
+    };
+
+    if (!Array.isArray(urls)) {
+      result.allValid = false;
+      return result;
+    }
+
+    urls.forEach(function(url) {
+      if (isValidUrl(url, options)) {
+        result.valid.push(url);
+      } else {
+        result.invalid.push(url);
+        result.allValid = false;
+      }
+    });
+
+    return result;
+  }
+
+  /**
+   * Crée un lien sécurisé (élément <a>)
+   * @param {string} href - URL de destination
+   * @param {string} text - Texte du lien
+   * @param {Object} options - Options (target, rel, className)
+   * @returns {HTMLElement|null} Élément <a> ou null si URL invalide
+   */
+  function createSafeLink(href, text, options) {
+    options = options || {};
+
+    if (!isValidUrl(href, options)) {
+      return null;
+    }
+
+    var link = document.createElement('a');
+    link.href = href;
+    link.textContent = text || href;
+
+    if (options.className) {
+      link.className = options.className;
+    }
+
+    if (options.target) {
+      link.target = options.target;
+      // Toujours ajouter rel="noopener" pour les liens externes
+      if (options.target === '_blank') {
+        link.rel = options.rel || 'noopener noreferrer';
+      }
+    }
+
+    return link;
+  }
+
+  /**
+   * Nettoie les Blob URLs pour éviter les fuites mémoire
+   */
+  var BlobUrlManager = (function() {
+    var urls = [];
+
+    return {
+      /**
+       * Crée un Blob URL et l'enregistre pour nettoyage
+       * @param {Blob} blob - Blob à convertir en URL
+       * @returns {string} Blob URL
+       */
+      create: function(blob) {
+        var url = URL.createObjectURL(blob);
+        urls.push(url);
+        return url;
+      },
+
+      /**
+       * Révoque un Blob URL spécifique
+       * @param {string} url - Blob URL à révoquer
+       */
+      revoke: function(url) {
+        var index = urls.indexOf(url);
+        if (index > -1) {
+          URL.revokeObjectURL(url);
+          urls.splice(index, 1);
+        }
+      },
+
+      /**
+       * Révoque tous les Blob URLs enregistrés
+       */
+      revokeAll: function() {
+        urls.forEach(function(url) {
+          URL.revokeObjectURL(url);
+        });
+        urls = [];
+      },
+
+      /**
+       * Obtient le nombre de Blob URLs actifs
+       * @returns {number}
+       */
+      getCount: function() {
+        return urls.length;
+      }
+    };
+  })();
+
+  // Nettoyer automatiquement les Blob URLs avant déchargement de la page
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', function() {
+      BlobUrlManager.revokeAll();
+    });
+  }
+
+  // API Publique
+  return {
+    escapeHtml: escapeHtml,
+    isValidUrl: isValidUrl,
+    getSafeUrl: getSafeUrl,
+    validateUrls: validateUrls,
+    sanitizeFilename: sanitizeFilename,
+    createSafeElement: createSafeElement,
+    createSafeFragment: createSafeFragment,
+    createSafeLink: createSafeLink,
+    BlobUrlManager: BlobUrlManager
+  };
+})();
+/**
+ * Module de Gestion d'Erreurs (Version Standalone - Sans Modules ES6)
+ * Interface Impulsion Marketing
+ *
+ * Ce module centralise la gestion des erreurs et les notifications utilisateur
+ */
+
+// Créer le namespace global si nécessaire
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+// Module de gestion d'erreurs
+window.ImpulsionMarketing.errors = (function() {
+  'use strict';
+
+  /**
+   * Types d'erreurs communes
+   */
+  var ErrorTypes = {
+    PERMISSION_DENIED: 'PERMISSION_DENIED',
+    FILE_NOT_FOUND: 'FILE_NOT_FOUND',
+    DIRECTORY_NOT_FOUND: 'DIRECTORY_NOT_FOUND',
+    INVALID_DATA: 'INVALID_DATA',
+    NETWORK_ERROR: 'NETWORK_ERROR',
+    VALIDATION_ERROR: 'VALIDATION_ERROR',
+    UNKNOWN: 'UNKNOWN'
+  };
+
+  /**
+   * Messages d'erreur localisés
+   */
+  var ErrorMessages = {
+    PERMISSION_DENIED: 'Permission refusée. Veuillez autoriser l\'accès au dossier.',
+    FILE_NOT_FOUND: 'Fichier introuvable.',
+    DIRECTORY_NOT_FOUND: 'Dossier introuvable.',
+    INVALID_DATA: 'Données invalides.',
+    NETWORK_ERROR: 'Erreur réseau. Vérifiez votre connexion.',
+    VALIDATION_ERROR: 'Erreur de validation.',
+    UNKNOWN: 'Une erreur inattendue s\'est produite.'
+  };
+
+  /**
+   * Détermine le type d'erreur à partir d'une exception
+   * @param {Error} error - Erreur à classifier
+   * @returns {string} Type d'erreur
+   */
+  function classifyError(error) {
+    if (!error) {
+      return ErrorTypes.UNKNOWN;
+    }
+
+    var message = error.message || '';
+    var name = error.name || '';
+
+    // Erreurs File System Access API
+    if (name === 'NotFoundError') {
+      return ErrorTypes.FILE_NOT_FOUND;
+    }
+
+    if (name === 'NotAllowedError' || message.includes('permission')) {
+      return ErrorTypes.PERMISSION_DENIED;
+    }
+
+    // Erreurs réseau
+    if (name === 'NetworkError' || message.includes('network')) {
+      return ErrorTypes.NETWORK_ERROR;
+    }
+
+    // Erreurs de validation
+    if (message.includes('invalid') || message.includes('validation')) {
+      return ErrorTypes.VALIDATION_ERROR;
+    }
+
+    return ErrorTypes.UNKNOWN;
+  }
+
+  /**
+   * Obtient un message d'erreur user-friendly
+   * @param {Error} error - Erreur
+   * @param {string} context - Contexte de l'erreur
+   * @returns {string} Message formaté
+   */
+  function getErrorMessage(error, context) {
+    var errorType = classifyError(error);
+    var baseMessage = ErrorMessages[errorType] || ErrorMessages.UNKNOWN;
+
+    if (context) {
+      return context + ': ' + baseMessage;
+    }
+
+    return baseMessage;
+  }
+
+  /**
+   * Logue une erreur dans la console avec contexte
+   * @param {Error} error - Erreur à loguer
+   * @param {string} context - Contexte de l'erreur
+   * @param {Object} additionalInfo - Informations supplémentaires
+   */
+  function logError(error, context, additionalInfo) {
+    var errorType = classifyError(error);
+    var timestamp = new Date().toISOString();
+
+    console.error(
+      '[' + timestamp + '] [' + errorType + '] ' + (context || 'Error'),
+      {
+        error: error,
+        message: error.message,
+        stack: error.stack,
+        context: context,
+        additionalInfo: additionalInfo
+      }
+    );
+  }
+
+  /**
+   * Gère une erreur (log + notification optionnelle)
+   * @param {Error} error - Erreur à gérer
+   * @param {string} context - Contexte de l'erreur
+   * @param {Object} options - Options (showToUser, silent)
+   */
+  function handleError(error, context, options) {
+    options = options || {};
+
+    // Toujours loguer l'erreur
+    logError(error, context, options.additionalInfo);
+
+    // Afficher à l'utilisateur si demandé
+    if (options.showToUser) {
+      var message = getErrorMessage(error, context);
+      showNotification(message, 'error');
+    }
+
+    // Callback personnalisé
+    if (options.onError && typeof options.onError === 'function') {
+      options.onError(error);
+    }
+  }
+
+  /**
+   * Affiche une notification à l'utilisateur
+   * @param {string} message - Message à afficher
+   * @param {string} type - Type: 'success', 'error', 'warning', 'info'
+   * @param {number} duration - Durée en ms (défaut: 4000)
+   */
+  function showNotification(message, type, duration) {
+    type = type || 'info';
+    duration = duration || 4000;
+
+    // Supprimer les notifications existantes du même type
+    var existing = document.querySelectorAll('.app-notification.' + type);
+    existing.forEach(function(el) {
+      el.remove();
+    });
+
+    var colors = {
+      success: '#4caf50',
+      error: '#f44336',
+      warning: '#ff9800',
+      info: '#2196f3'
+    };
+
+    var icons = {
+      success: '✅',
+      error: '❌',
+      warning: '⚠️',
+      info: 'ℹ️'
+    };
+
+    var notification = document.createElement('div');
+    notification.className = 'app-notification ' + type;
+    notification.textContent = (icons[type] || '') + ' ' + message;
+
+    notification.style.cssText =
+      'position: fixed; ' +
+      'top: 80px; ' +
+      'right: 24px; ' +
+      'padding: 16px 24px; ' +
+      'background: ' + (colors[type] || colors.info) + '; ' +
+      'color: white; ' +
+      'border-radius: 8px; ' +
+      'box-shadow: 0 4px 12px rgba(0,0,0,0.2); ' +
+      'z-index: 10000; ' +
+      'animation: slideIn 0.3s ease; ' +
+      'font-weight: 500; ' +
+      'max-width: 400px; ' +
+      'word-wrap: break-word;';
+
+    document.body.appendChild(notification);
+
+    setTimeout(function() {
+      notification.style.animation = 'slideOut 0.3s ease';
+      setTimeout(function() {
+        notification.remove();
+      }, 300);
+    }, duration);
+  }
+
+  /**
+   * Affiche un message d'erreur dans un conteneur spécifique
+   * @param {HTMLElement} container - Conteneur pour l'erreur
+   * @param {string} message - Message d'erreur
+   * @param {Object} options - Options (showHomeButton, homeUrl)
+   */
+  function showErrorInContainer(container, message, options) {
+    options = options || {};
+
+    var errorHtml = '<div style="background: #fee; border: 2px solid #fcc; color: #c00; padding: 20px; border-radius: 12px; text-align: center;">';
+    errorHtml += '<h3>Erreur</h3>';
+    errorHtml += '<p>' + (window.ImpulsionMarketing.security.escapeHtml(message) || message) + '</p>';
+
+    if (options.showHomeButton) {
+      var homeUrl = options.homeUrl || '../Impulsion-Marketing.html';
+      errorHtml += '<a href="' + homeUrl + '" class="btn primary" style="margin-top: 16px; display: inline-block;">Retour à l\'accueil</a>';
+    }
+
+    errorHtml += '</div>';
+
+    container.innerHTML = errorHtml;
+    container.style.display = 'block';
+  }
+
+  /**
+   * Enveloppe une Promise pour gérer automatiquement les erreurs
+   * @param {Promise} promise - Promise à envelopper
+   * @param {string} context - Contexte
+   * @param {Object} options - Options de gestion d'erreur
+   * @returns {Promise} Promise enveloppée
+   */
+  function wrapPromise(promise, context, options) {
+    return promise.catch(function(error) {
+      handleError(error, context, options);
+      throw error; // Re-throw pour permettre la gestion en aval
+    });
+  }
+
+  /**
+   * Crée un gestionnaire d'erreur pour un formulaire
+   * @param {HTMLFormElement} form - Formulaire
+   * @param {Object} validationRules - Règles de validation
+   * @returns {Object} Objet avec méthodes validate et showErrors
+   */
+  function createFormErrorHandler(form, validationRules) {
+    return {
+      /**
+       * Valide le formulaire selon les règles
+       * @returns {Object} Résultat de validation
+       */
+      validate: function() {
+        var errors = [];
+        var formData = new FormData(form);
+
+        Object.keys(validationRules).forEach(function(fieldName) {
+          var value = formData.get(fieldName);
+          var rules = validationRules[fieldName];
+
+          if (rules.required && (!value || value.trim() === '')) {
+            errors.push({
+              field: fieldName,
+              message: rules.requiredMessage || 'Ce champ est requis'
+            });
+          }
+
+          if (rules.validator && typeof rules.validator === 'function') {
+            var valid = rules.validator(value);
+            if (!valid) {
+              errors.push({
+                field: fieldName,
+                message: rules.validatorMessage || 'Valeur invalide'
+              });
+            }
+          }
+        });
+
+        return {
+          isValid: errors.length === 0,
+          errors: errors
+        };
+      },
+
+      /**
+       * Affiche les erreurs dans le formulaire
+       * @param {Array} errors - Tableau d'erreurs
+       */
+      showErrors: function(errors) {
+        // Supprimer les erreurs existantes
+        form.querySelectorAll('.field-error').forEach(function(el) {
+          el.remove();
+        });
+
+        // Afficher les nouvelles erreurs
+        errors.forEach(function(error) {
+          var field = form.querySelector('[name="' + error.field + '"]');
+          if (field) {
+            var errorEl = document.createElement('div');
+            errorEl.className = 'field-error';
+            errorEl.textContent = error.message;
+            errorEl.style.cssText = 'color: #c62828; font-size: 13px; margin-top: 4px;';
+
+            field.parentNode.appendChild(errorEl);
+            field.style.borderColor = '#c62828';
+          }
+        });
+      },
+
+      /**
+       * Nettoie toutes les erreurs
+       */
+      clearErrors: function() {
+        form.querySelectorAll('.field-error').forEach(function(el) {
+          el.remove();
+        });
+
+        form.querySelectorAll('input, select, textarea').forEach(function(el) {
+          el.style.borderColor = '';
+        });
+      }
+    };
+  }
+
+  // Ajouter les animations CSS si elles n'existent pas déjà
+  if (!document.getElementById('error-animations')) {
+    var style = document.createElement('style');
+    style.id = 'error-animations';
+    style.textContent =
+      '@keyframes slideIn {' +
+      '  from { transform: translateX(400px); opacity: 0; }' +
+      '  to { transform: translateX(0); opacity: 1; }' +
+      '}' +
+      '@keyframes slideOut {' +
+      '  from { transform: translateX(0); opacity: 1; }' +
+      '  to { transform: translateX(400px); opacity: 0; }' +
+      '}';
+    document.head.appendChild(style);
+  }
+
+  // API Publique
+  return {
+    ErrorTypes: ErrorTypes,
+    ErrorMessages: ErrorMessages,
+    classifyError: classifyError,
+    getErrorMessage: getErrorMessage,
+    logError: logError,
+    handleError: handleError,
+    showNotification: showNotification,
+    showErrorInContainer: showErrorInContainer,
+    wrapPromise: wrapPromise,
+    createFormErrorHandler: createFormErrorHandler
+  };
+})();
+/**
+ * Module de Performance (Version Standalone - Sans Modules ES6)
+ * Interface Impulsion Marketing
+ *
+ * Ce module fournit des utilitaires pour optimiser les performances:
+ * - Debouncing et throttling
+ * - Cache de données
+ * - Optimisations DOM
+ */
+
+// Créer le namespace global si nécessaire
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+// Module de performance
+window.ImpulsionMarketing.performance = (function() {
+  'use strict';
+
+  /**
+   * Crée une fonction debounced (retardée)
+   * Utile pour les événements qui se déclenchent fréquemment (input, scroll, resize)
+   * @param {Function} func - Fonction à debouncer
+   * @param {number} wait - Délai en millisecondes
+   * @returns {Function} Fonction debouncée
+   */
+  function debounce(func, wait) {
+    var timeout;
+
+    return function debounced() {
+      var context = this;
+      var args = arguments;
+
+      clearTimeout(timeout);
+
+      timeout = setTimeout(function() {
+        func.apply(context, args);
+      }, wait);
+    };
+  }
+
+  /**
+   * Crée une fonction throttled (limitée)
+   * Garantit qu'une fonction ne s'exécute pas plus d'une fois par intervalle
+   * @param {Function} func - Fonction à throttler
+   * @param {number} limit - Intervalle minimal en millisecondes
+   * @returns {Function} Fonction throttlée
+   */
+  function throttle(func, limit) {
+    var inThrottle;
+
+    return function throttled() {
+      var context = this;
+      var args = arguments;
+
+      if (!inThrottle) {
+        func.apply(context, args);
+        inThrottle = true;
+
+        setTimeout(function() {
+          inThrottle = false;
+        }, limit);
+      }
+    };
+  }
+
+  /**
+   * Cache simple avec expiration
+   */
+  var Cache = (function() {
+    var cache = {};
+
+    return {
+      /**
+       * Récupère une valeur du cache
+       * @param {string} key - Clé de cache
+       * @returns {*|null} Valeur cachée ou null si expirée/inexistante
+       */
+      get: function(key) {
+        var entry = cache[key];
+
+        if (!entry) {
+          return null;
+        }
+
+        // Vérifier l'expiration (5 minutes par défaut)
+        if (Date.now() - entry.timestamp > (entry.ttl || 300000)) {
+          delete cache[key];
+          return null;
+        }
+
+        return entry.data;
+      },
+
+      /**
+       * Stocke une valeur dans le cache
+       * @param {string} key - Clé de cache
+       * @param {*} data - Données à cacher
+       * @param {number} ttl - Durée de vie en millisecondes (optionnel)
+       */
+      set: function(key, data, ttl) {
+        cache[key] = {
+          data: data,
+          timestamp: Date.now(),
+          ttl: ttl
+        };
+      },
+
+      /**
+       * Supprime une entrée du cache
+       * @param {string} key - Clé à supprimer
+       */
+      remove: function(key) {
+        delete cache[key];
+      },
+
+      /**
+       * Vide tout le cache
+       */
+      clear: function() {
+        cache = {};
+      },
+
+      /**
+       * Vérifie si une clé existe dans le cache
+       * @param {string} key - Clé à vérifier
+       * @returns {boolean}
+       */
+      has: function(key) {
+        return this.get(key) !== null;
+      },
+
+      /**
+       * Obtient le nombre d'entrées en cache
+       * @returns {number}
+       */
+      size: function() {
+        return Object.keys(cache).length;
+      }
+    };
+  })();
+
+  /**
+   * Optimise l'insertion de multiples éléments dans le DOM
+   * @param {HTMLElement} container - Conteneur cible
+   * @param {Array} items - Tableau d'éléments à insérer
+   * @param {Function} createElementFn - Fonction qui crée un élément pour chaque item
+   * @param {boolean} clearFirst - Si true, vide le conteneur avant insertion
+   */
+  function batchInsert(container, items, createElementFn, clearFirst) {
+    if (clearFirst) {
+      container.innerHTML = '';
+    }
+
+    var fragment = document.createDocumentFragment();
+
+    items.forEach(function(item, index) {
+      var element = createElementFn(item, index);
+      if (element) {
+        fragment.appendChild(element);
+      }
+    });
+
+    container.appendChild(fragment);
+  }
+
+  /**
+   * Construit du HTML de manière optimisée avec un tableau
+   * Plus performant que la concaténation de chaînes
+   * @param {Array} items - Tableau d'éléments
+   * @param {Function} templateFn - Fonction qui génère le HTML pour chaque item
+   * @returns {string} HTML complet
+   */
+  function buildHtml(items, templateFn) {
+    var parts = [];
+
+    items.forEach(function(item, index) {
+      var html = templateFn(item, index);
+      if (html) {
+        parts.push(html);
+      }
+    });
+
+    return parts.join('');
+  }
+
+  /**
+   * Charge des données avec mise en cache automatique
+   * @param {string} cacheKey - Clé de cache
+   * @param {Function} loaderFn - Fonction qui charge les données (retourne une Promise)
+   * @param {number} ttl - Durée de vie du cache en ms (optionnel)
+   * @returns {Promise} Promise résolue avec les données
+   */
+  function loadWithCache(cacheKey, loaderFn, ttl) {
+    // Vérifier le cache
+    var cached = Cache.get(cacheKey);
+    if (cached !== null) {
+      return Promise.resolve(cached);
+    }
+
+    // Charger et mettre en cache
+    return loaderFn().then(function(data) {
+      Cache.set(cacheKey, data, ttl);
+      return data;
+    });
+  }
+
+  /**
+   * Exécute plusieurs Promises en parallèle avec limite de concurrence
+   * Utile pour éviter de surcharger le système avec trop de requêtes simultanées
+   * @param {Array} items - Tableau d'items à traiter
+   * @param {Function} taskFn - Fonction qui retourne une Promise pour chaque item
+   * @param {number} concurrency - Nombre max de tâches simultanées
+   * @returns {Promise<Array>} Promise résolue avec tous les résultats
+   */
+  function parallelLimit(items, taskFn, concurrency) {
+    concurrency = concurrency || 5;
+    var results = [];
+    var index = 0;
+
+    function runNext() {
+      if (index >= items.length) {
+        return Promise.resolve();
+      }
+
+      var currentIndex = index++;
+      var item = items[currentIndex];
+
+      return taskFn(item, currentIndex)
+        .then(function(result) {
+          results[currentIndex] = result;
+          return runNext();
+        })
+        .catch(function(error) {
+          results[currentIndex] = { error: error };
+          return runNext();
+        });
+    }
+
+    // Démarrer le nombre initial de workers
+    var workers = [];
+    for (var i = 0; i < Math.min(concurrency, items.length); i++) {
+      workers.push(runNext());
+    }
+
+    return Promise.all(workers).then(function() {
+      return results;
+    });
+  }
+
+  /**
+   * Amélioration de l'itération asynchrone du File System Access API
+   * Collecte toutes les entrées puis traite en parallèle
+   * @param {FileSystemDirectoryHandle} dirHandle - Handle du répertoire
+   * @param {Function} processFn - Fonction de traitement pour chaque entrée
+   * @param {number} concurrency - Nombre de traitements parallèles
+   * @returns {Promise<Array>} Résultats du traitement
+   */
+  function iterateDirectoryParallel(dirHandle, processFn, concurrency) {
+    concurrency = concurrency || 5;
+
+    // D'abord, collecter toutes les entrées
+    function collectEntries() {
+      var entries = [];
+
+      function iterate(iterator) {
+        return iterator.next().then(function(result) {
+          if (result.done) {
+            return entries;
+          }
+
+          entries.push(result.value);
+          return iterate(iterator);
+        });
+      }
+
+      return iterate(dirHandle.entries());
+    }
+
+    // Puis traiter en parallèle
+    return collectEntries().then(function(entries) {
+      return parallelLimit(
+        entries,
+        function(entry) {
+          return processFn(entry[0], entry[1]);
+        },
+        concurrency
+      );
+    });
+  }
+
+  /**
+   * Précharge une image de manière asynchrone
+   * @param {string} src - URL de l'image
+   * @returns {Promise<HTMLImageElement>} Promise résolue avec l'image chargée
+   */
+  function preloadImage(src) {
+    return new Promise(function(resolve, reject) {
+      var img = new Image();
+      img.onload = function() {
+        resolve(img);
+      };
+      img.onerror = function() {
+        reject(new Error('Failed to load image: ' + src));
+      };
+      img.src = src;
+    });
+  }
+
+  /**
+   * Précharge plusieurs images en parallèle
+   * @param {Array<string>} srcs - Tableau d'URLs d'images
+   * @param {number} concurrency - Nombre max de chargements simultanés
+   * @returns {Promise<Array>} Promise résolue avec les résultats
+   */
+  function preloadImages(srcs, concurrency) {
+    return parallelLimit(srcs, preloadImage, concurrency || 3);
+  }
+
+  /**
+   * Mesure le temps d'exécution d'une fonction
+   * @param {string} label - Label pour identifier la mesure
+   * @param {Function} fn - Fonction à mesurer
+   * @returns {*} Résultat de la fonction
+   */
+  function measure(label, fn) {
+    var start = performance.now();
+    var result = fn();
+    var duration = performance.now() - start;
+
+    console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
+
+    return result;
+  }
+
+  /**
+   * Mesure le temps d'exécution d'une Promise
+   * @param {string} label - Label pour identifier la mesure
+   * @param {Promise} promise - Promise à mesurer
+   * @returns {Promise} Promise originale
+   */
+  function measureAsync(label, promise) {
+    var start = performance.now();
+
+    return promise.then(function(result) {
+      var duration = performance.now() - start;
+      console.log('[Performance] ' + label + ': ' + duration.toFixed(2) + 'ms');
+      return result;
+    }).catch(function(error) {
+      var duration = performance.now() - start;
+      console.log('[Performance] ' + label + ' (error): ' + duration.toFixed(2) + 'ms');
+      throw error;
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // INDEXCACHE — Cache IndexedDB pour _index.json
+  // Rend le chargement du tableau de bord quasi-instantané (<5ms)
+  // après la première visite, même sur lecteur réseau (V://)
+  // ─────────────────────────────────────────────────────────
+  var IndexCache = (function () {
+    var DB = 'ImpulsionIndexCache', STORE = 'idx', TTL = 60000; // 60 secondes
+    var _db = null;
+
+    function open() {
+      if (_db) return Promise.resolve(_db);
+      return new Promise(function (resolve) {
+        try {
+          var req = indexedDB.open(DB, 1);
+          req.onupgradeneeded = function (e) {
+            e.target.result.createObjectStore(STORE, { keyPath: 'k' });
+          };
+          req.onsuccess = function (e) { _db = e.target.result; resolve(_db); };
+          req.onerror   = function ()  { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+    }
+
+    function get(key) {
+      return open().then(function (db) {
+        if (!db) return null;
+        return new Promise(function (resolve) {
+          try {
+            var req = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
+            req.onsuccess = function (e) {
+              var r = e.target.result;
+              resolve((!r || Date.now() - r.ts > TTL) ? null : r.d);
+            };
+            req.onerror = function () { resolve(null); };
+          } catch (e) { resolve(null); }
+        });
+      }).catch(function () { return null; });
+    }
+
+    function set(key, data) {
+      open().then(function (db) {
+        if (!db) return;
+        try {
+          db.transaction(STORE, 'readwrite')
+            .objectStore(STORE)
+            .put({ k: key, d: data, ts: Date.now() });
+        } catch (e) { /* silencieux */ }
+      });
+    }
+
+    function invalidate(key) {
+      open().then(function (db) {
+        if (!db) return;
+        try {
+          db.transaction(STORE, 'readwrite').objectStore(STORE).delete(key);
+        } catch (e) { /* silencieux */ }
+      });
+    }
+
+    return { get: get, set: set, invalidate: invalidate };
+  })();
+
+  // API Publique
+  return {
+    debounce: debounce,
+    throttle: throttle,
+    Cache: Cache,
+    batchInsert: batchInsert,
+    buildHtml: buildHtml,
+    loadWithCache: loadWithCache,
+    parallelLimit: parallelLimit,
+    iterateDirectoryParallel: iterateDirectoryParallel,
+    preloadImage: preloadImage,
+    preloadImages: preloadImages,
+    measure: measure,
+    measureAsync: measureAsync,
+    IndexCache: IndexCache
+  };
+})();
+/**
+ * Gestionnaire de Stockage Persistant du Dossier Racine (Version Standalone - Sans Modules ES6)
+ * Interface Impulsion Marketing
+ *
+ * Utilise IndexedDB pour stocker le FileSystemDirectoryHandle
+ * entre les sessions et les pages
+ * Version sans modules ES6 pour fonctionner avec file://
+ */
+
+// Créer le namespace global si nécessaire
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+// Gestionnaire de stockage du dossier
+window.ImpulsionMarketing.directoryStorage = (function() {
+  'use strict';
+
+  const DB_NAME = 'ImpulsionMarketingDB';
+  const DB_VERSION = 1;
+  const STORE_NAME = 'settings';
+  const HANDLE_KEY = 'rootDirectoryHandle';
+
+  // Variables privées
+  let db = null;
+  let cachedHandle = null;
+
+  /**
+   * Initialise la connexion IndexedDB
+   * @returns {Promise<IDBDatabase>}
+   */
+  function initDB() {
+    if (db) {
+      return Promise.resolve(db);
+    }
+
+    return new Promise(function(resolve, reject) {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onerror = function() {
+        reject(request.error);
+      };
+
+      request.onsuccess = function() {
+        db = request.result;
+        resolve(db);
+      };
+
+      request.onupgradeneeded = function(event) {
+        const database = event.target.result;
+
+        // Créer le store s'il n'existe pas
+        if (!database.objectStoreNames.contains(STORE_NAME)) {
+          database.createObjectStore(STORE_NAME);
+        }
+      };
+    });
+  }
+
+  /**
+   * Sauvegarde le handle du dossier racine dans IndexedDB
+   * @param {FileSystemDirectoryHandle} handle - Handle à sauvegarder
+   * @returns {Promise<void>}
+   */
+  function saveRootHandle(handle) {
+    if (!handle) {
+      return Promise.reject(new Error('Le handle du dossier ne peut pas être null'));
+    }
+
+    return initDB().then(function() {
+      return new Promise(function(resolve, reject) {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+
+        // Sauvegarder le handle et des métadonnées
+        const data = {
+          handle: handle,
+          name: handle.name,
+          savedAt: new Date().toISOString()
+        };
+
+        const request = store.put(data, HANDLE_KEY);
+
+        request.onerror = function() {
+          reject(request.error);
+        };
+
+        request.onsuccess = function() {
+          cachedHandle = handle;
+          console.log('✅ Dossier "' + handle.name + '" sauvegardé avec succès');
+          resolve();
+        };
+      });
+    });
+  }
+
+  /**
+   * Récupère le handle du dossier racine depuis IndexedDB
+   * @returns {Promise<FileSystemDirectoryHandle|null>}
+   */
+  function loadRootHandle() {
+    // Retourner le cache si disponible
+    if (cachedHandle) {
+      return Promise.resolve(cachedHandle);
+    }
+
+    return initDB().then(function() {
+      return new Promise(function(resolve, reject) {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(HANDLE_KEY);
+
+        request.onerror = function() {
+          reject(request.error);
+        };
+
+        request.onsuccess = function() {
+          const data = request.result;
+
+          if (data && data.handle) {
+            cachedHandle = data.handle;
+            console.log('✅ Dossier "' + data.name + '" chargé depuis le cache');
+            resolve(data.handle);
+          } else {
+            console.log('ℹ️ Aucun dossier sauvegardé trouvé');
+            resolve(null);
+          }
+        };
+      });
+    });
+  }
+
+  /**
+   * Vérifie les permissions du handle et les redemande si nécessaire
+   * @param {FileSystemDirectoryHandle} handle - Handle à vérifier
+   * @param {string} mode - 'read' ou 'readwrite'
+   * @returns {Promise<boolean>} true si permission accordée
+   */
+  function checkPermission(handle, mode) {
+    mode = mode || 'readwrite';
+
+    if (!handle) {
+      return Promise.resolve(false);
+    }
+
+    return handle.queryPermission({ mode: mode })
+      .then(function(permission) {
+        // Si déjà accordée
+        if (permission === 'granted') {
+          return true;
+        }
+
+        // Sinon, demander la permission
+        return handle.requestPermission({ mode: mode })
+          .then(function(newPermission) {
+            return newPermission === 'granted';
+          });
+      })
+      .catch(function(error) {
+        console.error('Erreur lors de la vérification des permissions:', error);
+        return false;
+      });
+  }
+
+  /**
+   * Vérifie si le handle est toujours valide
+   * @param {FileSystemDirectoryHandle} handle - Handle à vérifier
+   * @returns {Promise<boolean>}
+   */
+  function isHandleValid(handle) {
+    if (!handle) {
+      return Promise.resolve(false);
+    }
+
+    return handle.queryPermission({ mode: 'read' })
+      .then(function() {
+        return true;
+      })
+      .catch(function(error) {
+        console.warn('Le handle n\'est plus valide:', error);
+        return false;
+      });
+  }
+
+  /**
+   * Récupère le handle avec vérification complète
+   * @param {string} mode - 'read' ou 'readwrite'
+   * @returns {Promise<Object>}
+   */
+  function getRootHandleWithCheck(mode) {
+    mode = mode || 'readwrite';
+
+    // Charger le handle depuis IndexedDB
+    return loadRootHandle()
+      .then(function(handle) {
+        if (!handle) {
+          return {
+            handle: null,
+            status: 'no_handle',
+            message: 'Aucun dossier n\'a été sélectionné. Veuillez retourner à l\'accueil pour charger le dossier.'
+          };
+        }
+
+        // Vérifier que le handle est toujours valide
+        return isHandleValid(handle)
+          .then(function(isValid) {
+            if (!isValid) {
+              return clearRootHandle().then(function() {
+                return {
+                  handle: null,
+                  status: 'invalid_handle',
+                  message: 'Le dossier précédemment sélectionné n\'est plus accessible. Veuillez retourner à l\'accueil pour charger le dossier.'
+                };
+              });
+            }
+
+            // Vérifier les permissions
+            return checkPermission(handle, mode)
+              .then(function(hasPermission) {
+                if (!hasPermission) {
+                  return {
+                    handle: null,
+                    status: 'no_permission',
+                    message: 'Les permissions d\'accès au dossier ont été refusées. Veuillez retourner à l\'accueil pour recharger le dossier.'
+                  };
+                }
+
+                // Tout est OK
+                return {
+                  handle: handle,
+                  status: 'success',
+                  message: 'Dossier "' + handle.name + '" prêt à être utilisé'
+                };
+              });
+          });
+      })
+      .catch(function(error) {
+        console.error('Erreur lors de la récupération du handle:', error);
+        return {
+          handle: null,
+          status: 'error',
+          message: 'Erreur: ' + error.message
+        };
+      });
+  }
+
+  /**
+   * Supprime le handle sauvegardé
+   * @returns {Promise<void>}
+   */
+  function clearRootHandle() {
+    return initDB().then(function() {
+      return new Promise(function(resolve, reject) {
+        const transaction = db.transaction([STORE_NAME], 'readwrite');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.delete(HANDLE_KEY);
+
+        request.onerror = function() {
+          reject(request.error);
+        };
+
+        request.onsuccess = function() {
+          cachedHandle = null;
+          console.log('🗑️ Handle du dossier supprimé');
+          resolve();
+        };
+      });
+    });
+  }
+
+  /**
+   * Obtient les métadonnées du dossier sauvegardé
+   * @returns {Promise<Object|null>}
+   */
+  function getRootInfo() {
+    return initDB().then(function() {
+      return new Promise(function(resolve, reject) {
+        const transaction = db.transaction([STORE_NAME], 'readonly');
+        const store = transaction.objectStore(STORE_NAME);
+        const request = store.get(HANDLE_KEY);
+
+        request.onerror = function() {
+          reject(request.error);
+        };
+
+        request.onsuccess = function() {
+          const data = request.result;
+          if (data) {
+            resolve({
+              name: data.name,
+              savedAt: data.savedAt
+            });
+          } else {
+            resolve(null);
+          }
+        };
+      });
+    });
+  }
+
+  /**
+   * Demande à l'utilisateur de sélectionner un dossier et le sauvegarde
+   * @returns {Promise<FileSystemDirectoryHandle>}
+   */
+  function promptAndSaveDirectory() {
+    if (!window.showDirectoryPicker) {
+      return Promise.reject(new Error('Votre navigateur ne supporte pas l\'API File System Access. Utilisez Chrome ou Edge.'));
+    }
+
+    return window.showDirectoryPicker({
+      id: 'impulsion-marketing-root',
+      mode: 'readwrite',
+      startIn: 'desktop'
+    })
+    .then(function(handle) {
+      // Sauvegarder automatiquement
+      return saveRootHandle(handle).then(function() {
+        return handle;
+      });
+    })
+    .catch(function(error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Sélection du dossier annulée');
+      }
+      throw error;
+    });
+  }
+
+  // API Publique
+  return {
+    initDB: initDB,
+    saveRootHandle: saveRootHandle,
+    loadRootHandle: loadRootHandle,
+    checkPermission: checkPermission,
+    isHandleValid: isHandleValid,
+    getRootHandleWithCheck: getRootHandleWithCheck,
+    clearRootHandle: clearRootHandle,
+    getRootInfo: getRootInfo,
+    promptAndSaveDirectory: promptAndSaveDirectory
+  };
+})();
+/**
+ * Gestionnaire des Utilisateurs — Impulsion Marketing
+ * Liste fixe des utilisateurs avec leurs rôles + persistance localStorage
+ */
+
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+window.ImpulsionMarketing.users = (function () {
+  'use strict';
+
+  var STORAGE_KEY = 'im_current_user';
+
+  var USERS = [
+    // Super Admin — accès total à toutes les fonctionnalités
+    { name: 'Olivier', role: 'superadmin', roleLabel: 'Super Admin', isSuperAdmin: true, isManager: true },
+    // Marketing — Sébastien L est responsable Marketing (manager de son service)
+    { name: 'Sébastien Langlois', role: 'marketing', roleLabel: 'Resp. Marketing', isManager: true },
+    { name: 'Agnès grapin',       role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Caroline Legrand',   role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Charlene Garrigues', role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Georges Duchet',     role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Julie Sarramiac',    role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Nicolas Martel',     role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Nicolas Palomba',    role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Adrien Lechevalier', role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Guillaume Jaillon',  role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Cecile Devillard',   role: 'marketing', roleLabel: 'Marketing' },
+
+    // Com — Marlène est aussi responsable Com (manager de son service)
+    { name: 'Marlène Le Rue',     role: 'com', roleLabel: 'Resp. Com', isManager: true },
+    { name: 'Camille Breteche',   role: 'com', roleLabel: 'Com' },
+    { name: 'Celia Terzi',        role: 'com', roleLabel: 'Com' },
+    { name: 'Clara Tigier',       role: 'com', roleLabel: 'Com' },
+    { name: 'Clothilde Portal',   role: 'com', roleLabel: 'Com' },
+    { name: 'Cyrielle Blanc',     role: 'com', roleLabel: 'Com' },
+    { name: 'Dorian Fedrigo',     role: 'com', roleLabel: 'Com' },
+    { name: 'Julie Riviere',      role: 'com', roleLabel: 'Com' },
+    { name: 'Melissa Pontery',    role: 'com', roleLabel: 'Com' },
+    // EBF — Laurent M est aussi responsable EBF (manager de son service)
+    { name: 'Laurent Minier',     role: 'ebf', roleLabel: 'Resp. EBF', isManager: true },
+    { name: 'Benjamin Aribaud',   role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Benjamin Le',        role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Kévin Dolie',        role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Marc Favre',         role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Sébastien Rouanet',  role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Sébastien Siguenza', role: 'ebf', roleLabel: 'EBF' },
+    // Data — Dimitri est aussi responsable Data (manager de son service)
+    { name: 'Dimitri Garcia',     role: 'data', roleLabel: 'Resp. Data', isManager: true },
+    { name: 'Alain Marchois',     role: 'data', roleLabel: 'Data' },
+    { name: 'Aurélien Dubroue',   role: 'data', roleLabel: 'Data' },
+    { name: 'Ghaya Zarrouk',      role: 'data', roleLabel: 'Data' },
+    { name: 'Marie-Jo Bonadei',   role: 'data', roleLabel: 'Data' },
+    { name: 'Vincent Breque',     role: 'data', roleLabel: 'Data' },
+  ];
+
+  /**
+   * Retourne l'utilisateur courant depuis localStorage
+   * @returns {{ name: string, role: string, roleLabel: string } | null}
+   */
+  function getCurrentUser() {
+    try {
+      var stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        var parsed = JSON.parse(stored);
+        // Vérifier que l'utilisateur existe toujours dans la liste (nom + rôle pour éviter les homonymes)
+        var found = USERS.find(function (u) { return u.name === parsed.name && u.role === parsed.role; });
+        if (!found) found = USERS.find(function (u) { return u.name === parsed.name; });
+        return found || null;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  /**
+   * Définit l'utilisateur courant
+   * @param {string} name
+   */
+  function setCurrentUser(name) {
+    var user = USERS.find(function (u) { return u.name === name; });
+    if (user) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    }
+  }
+
+  /**
+   * Retourne les utilisateurs d'un rôle donné
+   * @param {string} role
+   * @returns {Array}
+   */
+  function getUsersByRole(role) {
+    return USERS.filter(function (u) { return u.role === role; });
+  }
+
+  /**
+   * Vérifie si l'utilisateur courant est le PO de la campagne
+   * @param {Object} campaignData
+   * @returns {boolean}
+   */
+  function isCurrentUserSuperAdmin() {
+    var user = getCurrentUser();
+    return !!(user && user.isSuperAdmin === true);
+  }
+
+  function isCurrentUserPO(campaignData) {
+    var user = getCurrentUser();
+    if (!user || !campaignData) return false;
+    // Le super admin peut effectuer les actions PO sur n'importe quelle campagne
+    if (user.isSuperAdmin) return true;
+    return user.name === (campaignData.po || '');
+  }
+
+  /**
+   * Vérifie si l'utilisateur courant est responsable de service (isManager: true)
+   * @returns {boolean}
+   */
+  function isCurrentUserManager() {
+    var user = getCurrentUser();
+    return !!(user && user.isManager === true);
+  }
+
+  /**
+   * Vérifie si l'utilisateur courant est manager d'un rôle précis (com/ebf/data)
+   * @param {string} role
+   * @returns {boolean}
+   */
+  function isCurrentUserTeamManager(role) {
+    var user = getCurrentUser();
+    // Super admin a les droits manager de toutes les équipes
+    if (user && user.isSuperAdmin) return true;
+    return !!(user && user.isManager === true && user.role === role);
+  }
+
+  return {
+    USERS: USERS,
+    getCurrentUser: getCurrentUser,
+    setCurrentUser: setCurrentUser,
+    getUsersByRole: getUsersByRole,
+    isCurrentUserPO: isCurrentUserPO,
+    isCurrentUserManager: isCurrentUserManager,
+    isCurrentUserTeamManager: isCurrentUserTeamManager,
+    isCurrentUserSuperAdmin: isCurrentUserSuperAdmin,
+  };
+})();
+/**
+ * Sélecteur d'utilisateur flottant — Impulsion Marketing
+ * Injecte automatiquement un sélecteur dans chaque page
+ * Dépend de users-standalone.js
+ */
+
+(function () {
+  'use strict';
+
+  function init() {
+    var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+    if (!users) {
+      console.warn('user-selector: users-standalone.js non chargé');
+      return;
+    }
+
+    injectStyles();
+    injectWidget(users);
+  }
+
+  function injectStyles() {
+    var style = document.createElement('style');
+    style.textContent = [
+      '#im-user-selector {',
+      '  position: fixed;',
+      '  bottom: 20px;',
+      '  left: 16px;',
+      '  z-index: 9999;',
+      '  font-family: inherit;',
+      '}',
+      '#im-user-pill {',
+      '  display: flex;',
+      '  align-items: center;',
+      '  gap: 8px;',
+      '  background: #308276;',
+      '  color: #fff;',
+      '  border: none;',
+      '  border-radius: 24px;',
+      '  padding: 8px 16px;',
+      '  font-size: 13px;',
+      '  font-weight: 600;',
+      '  cursor: pointer;',
+      '  box-shadow: 0 2px 8px rgba(0,0,0,0.25);',
+      '  transition: background 0.2s;',
+      '  white-space: nowrap;',
+      '}',
+      '#im-user-pill:hover { background: #245f56; }',
+      '#im-user-pill .im-chevron {',
+      '  font-size: 10px;',
+      '  transition: transform 0.2s;',
+      '}',
+      '#im-user-pill.open .im-chevron { transform: rotate(180deg); }',
+      '#im-user-dropdown {',
+      '  position: absolute;',
+      '  bottom: calc(100% + 8px);',
+      '  left: 0;',
+      '  background: #fff;',
+      '  border: 1px solid #e0e0e0;',
+      '  border-radius: 12px;',
+      '  box-shadow: 0 4px 20px rgba(0,0,0,0.15);',
+      '  min-width: 220px;',
+      '  max-height: 360px;',
+      '  overflow-y: auto;',
+      '  display: none;',
+      '  padding: 8px 0;',
+      '}',
+      '#im-user-dropdown.open { display: block; }',
+      '.im-role-group-label {',
+      '  padding: 8px 16px 4px;',
+      '  font-size: 11px;',
+      '  font-weight: 700;',
+      '  color: #888;',
+      '  text-transform: uppercase;',
+      '  letter-spacing: 0.5px;',
+      '}',
+      '.im-user-option {',
+      '  padding: 8px 16px;',
+      '  cursor: pointer;',
+      '  font-size: 13px;',
+      '  color: #333;',
+      '  display: flex;',
+      '  align-items: center;',
+      '  gap: 8px;',
+      '  transition: background 0.1s;',
+      '}',
+      '.im-user-option:hover { background: #f0faf8; }',
+      '.im-user-option.selected {',
+      '  background: #e8f5f2;',
+      '  color: #308276;',
+      '  font-weight: 600;',
+      '}',
+      '.im-no-user-warning {',
+      '  animation: im-pulse 2s infinite;',
+      '  background: #e67e22 !important;',
+      '}',
+      '@keyframes im-pulse {',
+      '  0%,100% { opacity: 1; }',
+      '  50% { opacity: 0.7; }',
+      '}'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
+
+  function getRoleIcon(role) {
+    var icons = { superadmin: '⭐', manager: '👔', com: '🎨', ebf: '🖨️', data: '📊', marketing: '📋' };
+    return icons[role] || '👤';
+  }
+
+  function getRoleOrder() {
+    return ['superadmin', 'manager', 'marketing', 'com', 'ebf', 'data'];
+  }
+
+  function injectWidget(users) {
+    var currentUser = users.getCurrentUser();
+
+    var container = document.createElement('div');
+    container.id = 'im-user-selector';
+
+    // Pill button
+    var pill = document.createElement('button');
+    pill.id = 'im-user-pill';
+    if (!currentUser) pill.classList.add('im-no-user-warning');
+
+    var pillText = currentUser
+      ? getRoleIcon(currentUser.role) + ' ' + currentUser.name + ' (' + currentUser.roleLabel + ')'
+      : '👤 Choisir un utilisateur';
+
+    pill.innerHTML = '<span>' + pillText + '</span><span class="im-chevron">▲</span>';
+
+    // Dropdown
+    var dropdown = document.createElement('div');
+    dropdown.id = 'im-user-dropdown';
+
+    // Grouper par rôle
+    var roleOrder = getRoleOrder();
+    var grouped = {};
+    users.USERS.forEach(function (u) {
+      if (!grouped[u.role]) grouped[u.role] = [];
+      grouped[u.role].push(u);
+    });
+
+    var roleLabels = {
+      superadmin: 'Super Admin',
+      manager: 'Managers',
+      marketing: 'Marketing / PO',
+      com: 'Communication',
+      ebf: 'EBF',
+      data: 'Data'
+    };
+
+    roleOrder.forEach(function (role) {
+      if (!grouped[role] || grouped[role].length === 0) return;
+
+      var label = document.createElement('div');
+      label.className = 'im-role-group-label';
+      label.textContent = roleLabels[role] || role;
+      dropdown.appendChild(label);
+
+      grouped[role].forEach(function (u) {
+        var opt = document.createElement('div');
+        opt.className = 'im-user-option';
+        if (currentUser && currentUser.name === u.name) opt.classList.add('selected');
+        opt.innerHTML = getRoleIcon(u.role) + ' ' + u.name;
+        opt.addEventListener('click', function () {
+          users.setCurrentUser(u.name);
+          location.reload();
+        });
+        dropdown.appendChild(opt);
+      });
+    });
+
+    container.appendChild(dropdown);
+    container.appendChild(pill);
+
+    pill.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var isOpen = dropdown.classList.toggle('open');
+      pill.classList.toggle('open', isOpen);
+    });
+
+    document.addEventListener('click', function () {
+      dropdown.classList.remove('open');
+      pill.classList.remove('open');
+    });
+
+    document.body.appendChild(container);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+/**
+ * Gestionnaire de Workflow Campagnes — Impulsion Marketing
+ * Gère les étapes, statuts et transitions du workflow de production
+ *
+ * v2 — Étapes par canal indépendantes (channelSteps)
+ * Chaque canal de communication progresse indépendamment.
+ * Les étapes globales (po_saisie, manager_affectation, po_kickoff) restent communes.
+ */
+
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+window.ImpulsionMarketing.workflow = (function () {
+  'use strict';
+
+  // Définition complète des étapes (pour affichage / STEPS.forEach)
+  var STEPS = [
+    { id: 'po_saisie',              label: 'Saisie projet',       actor: 'po',      icon: '📝', description: 'Le PO a créé la campagne' },
+    { id: 'manager_affectation',    label: 'Affectation',         actor: 'manager', icon: '👥', description: 'Le manager affecte les équipes' },
+    { id: 'po_kickoff',             label: 'Kick-off',            actor: 'po',      icon: '🚀', description: 'Le PO organise le kick-off avec les équipes affectées' },
+    { id: 'com_maquette',           label: 'Maquette Com',        actor: 'com',     icon: '🎨', description: 'La Com réalise la maquette' },
+    { id: 'po_validation_maquette', label: 'Validation maquette', actor: 'po',      icon: '✅', description: 'Le PO valide la maquette' },
+    { id: 'ebf_bat',                label: 'Réalisation BAT',     actor: 'ebf',     icon: '🖨️', description: "L'EBF réalise le BAT" },
+    { id: 'po_validation_bat',      label: 'Validation BAT',      actor: 'po',      icon: '✅', description: 'Le PO valide le BAT' },
+    { id: 'data_ciblage',           label: 'Ciblage Data',        actor: 'data',    icon: '🎯', description: 'La Data réalise le ciblage (parallèle possible)' },
+    { id: 'po_validation_ciblage',  label: 'Validation ciblage',  actor: 'po',      icon: '✅', description: 'Le PO valide le ciblage' },
+    { id: 'data_lancement_test',    label: 'Lancement test',      actor: 'data',    icon: '🧪', description: 'La Data lance le test en production' },
+    { id: 'ebf_test_prod',          label: 'Test en prod',        actor: 'ebf',     icon: '🔬', description: "L'EBF dépose le test en production" },
+    { id: 'po_validation_test_prod',label: 'Validation test',     actor: 'po',      icon: '✅', description: 'Le PO valide les tests en production' },
+    { id: 'data_mise_en_prod',      label: 'Mise en prod',        actor: 'data',    icon: '🚀', description: 'La Data met en production' },
+    { id: 'ebf_mise_en_prod',       label: 'Mise en prod LP',     actor: 'ebf',     icon: '🚀', description: "L'EBF met la landing page en production" }
+  ];
+
+  // IDs des étapes globales (partagées par tous les canaux)
+  var GLOBAL_STEP_IDS = ['po_saisie', 'manager_affectation', 'po_kickoff'];
+
+  // IDs des étapes par canal (chaque canal a sa propre progression)
+  var CHANNEL_STEP_IDS = [
+    'com_maquette', 'po_validation_maquette',
+    'ebf_bat', 'po_validation_bat',
+    'data_ciblage', 'po_validation_ciblage',
+    'data_lancement_test',
+    'ebf_test_prod', 'po_validation_test_prod',
+    'data_mise_en_prod',
+    'ebf_mise_en_prod'
+  ];
+
+  // Valeurs par défaut pour les étapes globales
+  var DEFAULT_GLOBAL_STEPS = {
+    po_saisie:           'validated',
+    manager_affectation: 'pending',
+    po_kickoff:          'locked'
+  };
+
+  // Valeurs par défaut pour les étapes par canal
+  var DEFAULT_CHANNEL_STEPS = {
+    com_maquette:           'locked',
+    po_validation_maquette: 'locked',
+    ebf_bat:                'locked',
+    po_validation_bat:      'locked',
+    data_ciblage:           'locked',
+    po_validation_ciblage:  'locked',
+    data_lancement_test:    'locked',
+    ebf_test_prod:          'locked',
+    po_validation_test_prod:'locked',
+    data_mise_en_prod:      'locked',
+    ebf_mise_en_prod:       'locked'
+  };
+
+  var DEFAULT_ASSIGNMENTS = { manager: '', com: '', ebf: '', data: '' };
+
+  // ─────────────────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Vérifie si une équipe est requise pour cette campagne
+   * Si requiredTeams absent → toutes équipes requises (rétrocompat)
+   */
+  function isTeamRequired(requiredTeams, team) {
+    if (!requiredTeams || !Array.isArray(requiredTeams)) return true;
+    return requiredTeams.indexOf(team) !== -1;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // MIGRATION ancien format → channelSteps
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Convertit l'ancien format (steps plats) vers channelSteps.
+   * Les étapes canal sont copiées dans tous les canaux existants.
+   * Idempotent : ne fait rien si channelSteps déjà présent.
+   */
+  function migrateToChannelSteps(campaignData) {
+    var wf = campaignData.workflow;
+    if (!wf || !wf.steps) return;
+    if (wf.channelSteps) return; // déjà migré
+
+    var numChannels = Math.max((campaignData.channels || []).length, 1);
+    wf.channelSteps = {};
+
+    for (var i = 0; i < numChannels; i++) {
+      wf.channelSteps[i] = {};
+      CHANNEL_STEP_IDS.forEach(function (id) {
+        wf.channelSteps[i][id] = (wf.steps[id] !== undefined) ? wf.steps[id] : DEFAULT_CHANNEL_STEPS[id];
+      });
+    }
+
+    // Supprimer les étapes canal du steps global
+    CHANNEL_STEP_IDS.forEach(function (id) {
+      delete wf.steps[id];
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // INITIALISATION
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Initialise les champs workflow dans une campagne (rétrocompatibilité)
+   * Si workflow absent, l'ajoute avec valeurs par défaut
+   */
+  function initWorkflow(campaignData) {
+    if (!campaignData.workflow) {
+      campaignData.workflow = {
+        assignments:              Object.assign({}, DEFAULT_ASSIGNMENTS),
+        steps:                    Object.assign({}, DEFAULT_GLOBAL_STEPS),
+        channelSteps:             {},
+        revisionComments:         {},
+        channelRevisionComments:  {}
+      };
+    } else {
+      if (!campaignData.workflow.assignments) {
+        campaignData.workflow.assignments = Object.assign({}, DEFAULT_ASSIGNMENTS);
+      }
+      if (!campaignData.workflow.steps) {
+        campaignData.workflow.steps = Object.assign({}, DEFAULT_GLOBAL_STEPS);
+      }
+      if (!campaignData.workflow.revisionComments) {
+        campaignData.workflow.revisionComments = {};
+      }
+      if (!campaignData.workflow.channelRevisionComments) {
+        campaignData.workflow.channelRevisionComments = {};
+      }
+    }
+
+    // Migration ancien format → channelSteps
+    migrateToChannelSteps(campaignData);
+
+    // Compléter les étapes globales manquantes
+    GLOBAL_STEP_IDS.forEach(function (key) {
+      if (campaignData.workflow.steps[key] === undefined) {
+        campaignData.workflow.steps[key] = DEFAULT_GLOBAL_STEPS[key];
+      }
+    });
+
+    // Rétrocompat kick-off : détecter si les équipes ont déjà commencé (via channelSteps)
+    var s = campaignData.workflow.steps;
+    var anyChannelStarted = false;
+    var cs = campaignData.workflow.channelSteps || {};
+    Object.keys(cs).forEach(function (i) {
+      if (cs[i] && (cs[i].com_maquette !== 'locked' || cs[i].data_ciblage !== 'locked' || cs[i].ebf_bat !== 'locked')) {
+        anyChannelStarted = true;
+      }
+    });
+
+    if (s.po_kickoff === 'locked' && s.manager_affectation === 'validated' && !anyChannelStarted) {
+      s.po_kickoff = 'pending';
+    }
+    if ((s.po_kickoff === 'locked' || s.po_kickoff === 'pending') && anyChannelStarted) {
+      s.po_kickoff = 'validated';
+    }
+
+    // Init channelSteps pour chaque canal (y compris nouveaux canaux ajoutés)
+    if (!campaignData.workflow.channelSteps) {
+      campaignData.workflow.channelSteps = {};
+    }
+    cs = campaignData.workflow.channelSteps;
+    var numChannels = Math.max((campaignData.channels || []).length, 1);
+
+    for (var i = 0; i < numChannels; i++) {
+      if (!cs[i]) {
+        cs[i] = Object.assign({}, DEFAULT_CHANNEL_STEPS);
+      } else {
+        // Compléter les étapes canal manquantes
+        CHANNEL_STEP_IDS.forEach(function (id) {
+          if (cs[i][id] === undefined) cs[i][id] = DEFAULT_CHANNEL_STEPS[id];
+        });
+      }
+
+      // Rétrocompat Sprint 5 — data_lancement_test
+      var csi = cs[i];
+      if (csi.data_lancement_test === 'locked' && csi.ebf_test_prod !== 'locked') {
+        csi.data_lancement_test = 'validated';
+      }
+
+      // Recalculer les déblocages pour ce canal
+      var chType = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
+      cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chType);
+    }
+
+    if (!campaignData.kickoffDate) campaignData.kickoffDate = '';
+    if (!campaignData.kickoffPersonNotes) campaignData.kickoffPersonNotes = {};
+
+    return campaignData;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // RECALCUL DES DÉBLOCAGES
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Recalcule les déverrouillages globaux
+   * (po_saisie → manager_affectation → po_kickoff)
+   */
+  function recalcGlobalUnlocks(steps) {
+    var s = steps;
+    if (s.po_saisie === 'validated' && s.manager_affectation === 'locked') {
+      s.manager_affectation = 'pending';
+    }
+    if (s.manager_affectation === 'validated' && s.po_kickoff === 'locked') {
+      s.po_kickoff = 'pending';
+    }
+    return s;
+  }
+
+  /**
+   * Recalcule les déverrouillages pour UN canal selon les requiredTeams.
+   *
+   * Matrice des flux selon les équipes requises :
+   *
+   * Com+EBF+Data : kickoff → maquette → val.maquette → BAT → val.BAT
+   *                        → ciblage → val.ciblage (parallèle)
+   *                        → lancement test → test prod → val.test → MEP
+   *
+   * Com+EBF (sans Data) : kickoff → maquette → val.maquette → BAT → val.BAT → fin
+   *
+   * Com+Data (sans EBF) : kickoff → maquette → val.maquette
+   *                              → ciblage → val.ciblage → MEP (parallèle)
+   *
+   * EBF+Data (sans Com) : kickoff → BAT → val.BAT
+   *                              → ciblage → val.ciblage
+   *                              → lancement test → test prod → val.test → MEP
+   *
+   * Com seul           : kickoff → maquette → val.maquette → fin
+   * EBF seul (sans Data): kickoff → BAT → val.BAT → fin
+   * Data seul          : kickoff → ciblage → val.ciblage → MEP
+   */
+  function recalcChannelUnlocks(cs, globalSteps, requiredTeams, channelType) {
+    var reqCom  = isTeamRequired(requiredTeams, 'Com');
+    var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
+    var reqData = isTeamRequired(requiredTeams, 'Data');
+    var isLP    = channelType === 'LP';
+
+    var kickoffDone = globalSteps && (globalSteps.po_kickoff === 'validated');
+
+    // ── Après kickoff : débloquer les premières étapes ──
+    if (kickoffDone) {
+      if (reqCom  && cs.com_maquette === 'locked') cs.com_maquette = 'pending';
+      if (reqData && cs.data_ciblage === 'locked') cs.data_ciblage = 'pending';
+      // EBF sans Com → BAT se débloque directement après kickoff
+      if (reqEbf && !reqCom && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
+    }
+
+    // ── Chaîne Com ──
+    if (reqCom && cs.com_maquette === 'submitted' && cs.po_validation_maquette === 'locked') {
+      cs.po_validation_maquette = 'pending';
+    }
+
+    // ── Chaîne EBF ──
+    // ebf_bat se débloque quand :
+    // - Com requise : après po_validation_maquette validée
+    // - Com non requise : déjà géré ci-dessus (après kickoff)
+    if (reqEbf && reqCom) {
+      var comValidated = cs.po_validation_maquette === 'validated' || cs.po_validation_maquette === 'completed';
+      if (comValidated && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
+    }
+    if (reqEbf && cs.ebf_bat === 'submitted' && cs.po_validation_bat === 'locked') {
+      cs.po_validation_bat = 'pending';
+    }
+
+    // ── Chaîne Data ──
+    if (reqData && cs.data_ciblage === 'submitted' && cs.po_validation_ciblage === 'locked') {
+      cs.po_validation_ciblage = 'pending';
+    }
+
+    // ── Canal LP : Test en prod EBF déverrouillé directement après BAT, puis MEP EBF ──
+    if (isLP && reqEbf) {
+      var batDoneLP = cs.po_validation_bat === 'validated' || cs.po_validation_bat === 'completed';
+      if (batDoneLP && cs.ebf_test_prod === 'locked') cs.ebf_test_prod = 'pending';
+      if (cs.ebf_test_prod === 'submitted' && cs.po_validation_test_prod === 'locked') {
+        cs.po_validation_test_prod = 'pending';
+      }
+      var testProdValidatedLP = cs.po_validation_test_prod === 'validated' || cs.po_validation_test_prod === 'completed';
+      if (testProdValidatedLP && cs.ebf_mise_en_prod === 'locked') cs.ebf_mise_en_prod = 'pending';
+    }
+
+    // ── Étapes communes EBF+Data (hors LP) ──
+    if (reqEbf && reqData && !isLP) {
+      var batDone     = cs.po_validation_bat     === 'validated' || cs.po_validation_bat     === 'completed';
+      var ciblageDone = cs.po_validation_ciblage === 'validated' || cs.po_validation_ciblage === 'completed';
+      if (batDone && ciblageDone && cs.data_lancement_test === 'locked') {
+        cs.data_lancement_test = 'pending';
+      }
+      var ltDone = cs.data_lancement_test === 'submitted' || cs.data_lancement_test === 'validated' || cs.data_lancement_test === 'completed';
+      if (ltDone && cs.ebf_test_prod === 'locked') {
+        cs.ebf_test_prod = 'pending';
+      }
+      if (cs.ebf_test_prod === 'submitted' && cs.po_validation_test_prod === 'locked') {
+        cs.po_validation_test_prod = 'pending';
+      }
+      var testProdValidated = cs.po_validation_test_prod === 'validated' || cs.po_validation_test_prod === 'completed';
+      if (testProdValidated && cs.data_mise_en_prod === 'locked') {
+        cs.data_mise_en_prod = 'pending';
+      }
+    }
+
+    // ── MEP : Data seul (sans EBF) → après po_validation_ciblage ──
+    if (reqData && !reqEbf) {
+      var ciblageDone2 = cs.po_validation_ciblage === 'validated' || cs.po_validation_ciblage === 'completed';
+      if (ciblageDone2 && cs.data_mise_en_prod === 'locked') {
+        cs.data_mise_en_prod = 'pending';
+      }
+    }
+
+    return cs;
+  }
+
+  /**
+   * Alias pour rétrocompatiblité (appelé depuis advanceStep global)
+   */
+  function recalcUnlocks(steps) {
+    return recalcGlobalUnlocks(steps);
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // AVANCEMENT DES ÉTAPES
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Avance une étape GLOBALE (po_kickoff, manager_affectation, po_saisie)
+   * puis recalcule les déblocages canal (ex : kickoff validé → unlock canaux)
+   */
+  function advanceStep(campaignData, stepId, newStatus) {
+    initWorkflow(campaignData);
+    campaignData.workflow.steps[stepId] = newStatus;
+    campaignData.workflow.steps = recalcGlobalUnlocks(campaignData.workflow.steps);
+
+    // Recalculer les déblocages canal après changement global
+    var cs = campaignData.workflow.channelSteps;
+    var numChannels = Math.max((campaignData.channels || []).length, 1);
+    for (var i = 0; i < numChannels; i++) {
+      if (cs[i]) {
+        var chTypeG = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
+        cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chTypeG);
+      }
+    }
+    return campaignData;
+  }
+
+  /**
+   * Avance une étape d'UN CANAL spécifique
+   * puis recalcule les déblocages de ce canal
+   */
+  function advanceChannelStep(campaignData, channelIdx, stepId, newStatus) {
+    initWorkflow(campaignData);
+    var cs = campaignData.workflow.channelSteps;
+    if (!cs[channelIdx]) cs[channelIdx] = Object.assign({}, DEFAULT_CHANNEL_STEPS);
+    cs[channelIdx][stepId] = newStatus;
+    var chTypeC = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].type;
+    cs[channelIdx] = recalcChannelUnlocks(cs[channelIdx], campaignData.workflow.steps, campaignData.requiredTeams, chTypeC);
+    return campaignData;
+  }
+
+  /**
+   * Demande une modification sur une étape canal (PO → acteur)
+   * Met à jour channelSteps[channelIdx] et stocke le commentaire
+   */
+  function requestChannelRevision(campaignData, poStepId, sourceStepId, channelIdx, comment) {
+    initWorkflow(campaignData);
+    var cs = campaignData.workflow.channelSteps;
+    if (!cs || !cs[channelIdx]) return campaignData;
+    cs[channelIdx][sourceStepId] = 'revision_requested';
+    cs[channelIdx][poStepId]     = 'locked';
+    if (!campaignData.workflow.channelRevisionComments) {
+      campaignData.workflow.channelRevisionComments = {};
+    }
+    if (!campaignData.workflow.channelRevisionComments[channelIdx]) {
+      campaignData.workflow.channelRevisionComments[channelIdx] = {};
+    }
+    campaignData.workflow.channelRevisionComments[channelIdx][sourceStepId] = comment || '';
+    return campaignData;
+  }
+
+  /**
+   * Alias rétrocompat — demande de révision globale (utilisé par requestRevision)
+   */
+  function requestRevision(campaignData, validationStepId, sourceStepId, comment) {
+    initWorkflow(campaignData);
+    campaignData.workflow.revisionComments[sourceStepId] = comment || '';
+    return campaignData;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // VALIDATION PAR CANAL (PO)
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Valide un step PO pour un canal spécifique → avance channelSteps[channelIdx]
+   */
+  function validateChannelStep(campaignData, poStepId, channelIdx) {
+    return advanceChannelStep(campaignData, channelIdx, poStepId, 'validated');
+  }
+
+  /**
+   * Initialise channelValidations (conservé pour rétrocompat, non utilisé en v2)
+   */
+  function initChannelValidations(campaignData, numChannels) {
+    initWorkflow(campaignData);
+    if (!campaignData.workflow.channelValidations) {
+      campaignData.workflow.channelValidations = {};
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // ÉTAT DE LA CAMPAGNE
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Vérifie si UN canal est terminé selon les requiredTeams
+   */
+  function isChannelCompleted(channelSteps, requiredTeams, channelType) {
+    var reqCom  = isTeamRequired(requiredTeams, 'Com');
+    var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
+    var reqData = isTeamRequired(requiredTeams, 'Data');
+    var isLP    = channelType === 'LP';
+
+    if (isLP && reqEbf) {
+      return channelSteps.ebf_mise_en_prod === 'completed';
+    }
+    if (reqData) {
+      return channelSteps.data_mise_en_prod === 'completed';
+    }
+    if (reqEbf) {
+      return channelSteps.po_validation_bat === 'validated' || channelSteps.po_validation_bat === 'completed';
+    }
+    if (reqCom) {
+      return channelSteps.po_validation_maquette === 'validated' || channelSteps.po_validation_maquette === 'completed';
+    }
+    return true;
+  }
+
+  /**
+   * Vérifie si la campagne est terminée (tous les canaux terminés)
+   */
+  function isCompleted(campaignData) {
+    if (!campaignData.workflow) return false;
+    var cs = campaignData.workflow.channelSteps;
+    if (!cs) return false;
+    var numChannels = Math.max((campaignData.channels || []).length, 1);
+    for (var i = 0; i < numChannels; i++) {
+      var chTypeI = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
+      if (!cs[i] || !isChannelCompleted(cs[i], campaignData.requiredTeams, chTypeI)) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Retourne le libellé de l'étape courante (pour badges dashboard)
+   * Retourne l'étape la moins avancée parmi tous les canaux
+   */
+  function getCurrentStepLabel(campaignData) {
+    if (!campaignData.workflow) return 'En attente d\'affectation';
+    if (isCompleted(campaignData)) return 'Terminée';
+
+    var globalSteps = campaignData.workflow.steps;
+    if (!globalSteps) return 'En attente d\'affectation';
+
+    // Étapes globales en priorité
+    if (globalSteps.manager_affectation === 'pending') return 'Affectation';
+    if (globalSteps.po_kickoff === 'pending')          return 'Kick-off';
+    if (globalSteps.po_kickoff !== 'validated')        return 'En attente d\'affectation';
+
+    // Chercher la première étape active parmi tous les canaux (la moins avancée)
+    var cs = campaignData.workflow.channelSteps || {};
+    var numChannels = Math.max((campaignData.channels || []).length, 1);
+
+    for (var si = 3; si < STEPS.length; si++) { // index 0,1,2 = étapes globales
+      var stepId = STEPS[si].id;
+      for (var ci = 0; ci < numChannels; ci++) {
+        if (!cs[ci]) continue;
+        var status = cs[ci][stepId];
+        if (status === 'pending' || status === 'submitted' || status === 'revision_requested') {
+          if (status === 'submitted')          return 'En validation : ' + STEPS[si].label;
+          if (status === 'revision_requested') return 'Révision : ' + STEPS[si].label;
+          return STEPS[si].label;
+        }
+      }
+    }
+    return 'En cours';
+  }
+
+  /**
+   * Retourne la liste des étapes disponibles pour un utilisateur sur une campagne
+   * Agrège toutes les étapes actives de tous les canaux
+   */
+  function getAvailableActions(currentUser, campaignData) {
+    if (!currentUser || !campaignData) return [];
+    initWorkflow(campaignData);
+
+    var actions = [];
+    var globalSteps = campaignData.workflow.steps;
+    var assignments = campaignData.workflow.assignments || {};
+
+    // Étapes globales
+    STEPS.slice(0, 3).forEach(function (step) {
+      var status = globalSteps[step.id] || 'locked';
+      if (status !== 'pending' && status !== 'revision_requested') return;
+      var actorMatch = false;
+      if (step.actor === 'po') {
+        actorMatch = currentUser.name === campaignData.po;
+      } else if (step.actor === 'manager') {
+        actorMatch = currentUser.isManager === true;
+      }
+      if (actorMatch) actions.push({ step: step, status: status });
+    });
+
+    // Étapes canal — agrégées (une seule occurrence par stepId)
+    var cs = campaignData.workflow.channelSteps || {};
+    var numChannels = Math.max((campaignData.channels || []).length, 1);
+    var seenSteps = {};
+
+    STEPS.slice(3).forEach(function (step) {
+      if (seenSteps[step.id]) return;
+      for (var ci = 0; ci < numChannels; ci++) {
+        if (!cs[ci]) continue;
+        var status = cs[ci][step.id] || 'locked';
+        if (status !== 'pending' && status !== 'revision_requested') continue;
+        var actorMatch = false;
+        if (step.actor === 'po') {
+          actorMatch = currentUser.name === campaignData.po;
+        } else {
+          var assigned = assignments[step.actor];
+          var assignedArr = Array.isArray(assigned) ? assigned : (assigned ? [assigned] : []);
+          actorMatch = assignedArr.indexOf(currentUser.name) !== -1;
+        }
+        if (actorMatch) {
+          seenSteps[step.id] = true;
+          actions.push({ step: step, status: status });
+          break;
+        }
+      }
+    });
+
+    return actions;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // SAUVEGARDE
+  // ─────────────────────────────────────────────────────────
+
+  /**
+   * Sauvegarde campagne.json avec le workflow mis à jour
+   */
+  function saveCampaignWorkflow(rootHandle, campaignName, campaignData) {
+    return rootHandle.getDirectoryHandle('Campagnes')
+      .then(function (campagnesDir) {
+        return campagnesDir.getDirectoryHandle(campaignName);
+      })
+      .then(function (campaignDir) {
+        return campaignDir.getFileHandle('campagne.json', { create: false });
+      })
+      .then(function (fileHandle) {
+        return fileHandle.createWritable();
+      })
+      .then(function (writable) {
+        var json = JSON.stringify(campaignData, null, 2);
+        return writable.write(json).then(function () {
+          return writable.close();
+        });
+      })
+      .then(function () {
+        invalidateMetadataCache(campaignName);
+        return updateCampaignIndex(rootHandle, campaignName, campaignData).catch(function () {});
+      });
+  }
+
+  /**
+   * Invalide l'entrée d'une campagne dans l'IndexedDB 'ImpulsionMetaCache'
+   */
+  function invalidateMetadataCache(campaignName) {
+    try {
+      var req = indexedDB.open('ImpulsionMetaCache', 1);
+      req.onsuccess = function (e) {
+        try {
+          var tx = e.target.result.transaction('meta', 'readwrite');
+          tx.objectStore('meta').delete(campaignName);
+        } catch (err) { /* silencieux */ }
+      };
+    } catch (e) { /* silencieux */ }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // INDEX DE CAMPAGNES (_index.json dans Campagnes/)
+  // ─────────────────────────────────────────────────────────
+
+  var VOLUME_ALERT_SEUIL = 100000;
+
+  /**
+   * Construit un objet steps synthétique pour la rétrocompatibilité de l'index
+   * (global steps + premier canal pour le dashboard)
+   */
+  function getEffectiveStepsForIndex(campaignData) {
+    var globalSteps = campaignData.workflow.steps || {};
+    var cs = campaignData.workflow.channelSteps || {};
+    var firstCs = cs[0] || DEFAULT_CHANNEL_STEPS;
+    return Object.assign({}, DEFAULT_CHANNEL_STEPS, firstCs, globalSteps);
+  }
+
+  function extractIndexEntry(campaignData) {
+    initWorkflow(campaignData);
+    var volumeAlert = false;
+    if (campaignData.channels && campaignData.channels.length > 0) {
+      for (var i = 0; i < campaignData.channels.length; i++) {
+        if ((campaignData.channels[i].volumeCible || 0) > VOLUME_ALERT_SEUIL) {
+          volumeAlert = true;
+          break;
+        }
+      }
+    }
+    var chs = (campaignData.channels || []).map(function (c) {
+      return {
+        deliverableName: c.deliverableName,
+        content: c.content,
+        siteWebDateFin: (c.siteWeb && c.siteWeb.dateFin) ? c.siteWeb.dateFin : null,
+        ebfWebmaster: (c.siteWeb && c.siteWeb.webmaster) ? c.siteWeb.webmaster : null
+      };
+    });
+    return {
+      id:          campaignData.id || '',
+      po:          campaignData.po || '',
+      desc:        campaignData.description || '',
+      launch:      campaignData.launchDate || '',
+      mkt:         campaignData.market || '',
+      typ:         campaignData.typology || '',
+      chs:         chs,
+      mod:         Date.now(),
+      asn:         Object.assign({}, campaignData.workflow.assignments),
+      steps:       getEffectiveStepsForIndex(campaignData),
+      done:        isCompleted(campaignData),
+      actif:       campaignData.actif !== false,
+      volumeAlert: volumeAlert,
+      requiredTeams: campaignData.requiredTeams || null
+    };
+  }
+
+  function readIndexFromDir(campaignsDir) {
+    return campaignsDir.getFileHandle('_index.json', { create: false })
+      .then(function (fh) { return fh.getFile(); })
+      .then(function (f)  { return f.text(); })
+      .then(function (text) {
+        var idx = JSON.parse(text);
+        if (!idx.campaigns) idx.campaigns = {};
+        return idx;
+      })
+      .catch(function () { return { v: 1, campaigns: {} }; });
+  }
+
+  function writeIndexToDir(campaignsDir, index) {
+    return campaignsDir.getFileHandle('_index.json', { create: true })
+      .then(function (fh) { return fh.createWritable(); })
+      .then(function (writable) {
+        return writable.write(JSON.stringify(index)).then(function () {
+          return writable.close();
+        });
+      });
+  }
+
+  function updateCampaignIndex(rootHandle, campaignName, campaignData) {
+    var entry = extractIndexEntry(campaignData);
+    return rootHandle.getDirectoryHandle('Campagnes')
+      .then(function (dir) {
+        return readIndexFromDir(dir).then(function (index) {
+          index.campaigns[campaignName] = entry;
+          return writeIndexToDir(dir, index).then(function () {
+            var ic = window.ImpulsionMarketing &&
+                     window.ImpulsionMarketing.performance &&
+                     window.ImpulsionMarketing.performance.IndexCache;
+            if (ic) ic.set(rootHandle.name, index);
+          });
+        });
+      });
+  }
+
+  function updateCampaignIndexFromDir(campaignsDir, campaignName, campaignData) {
+    var entry = extractIndexEntry(campaignData);
+    return readIndexFromDir(campaignsDir).then(function (index) {
+      index.campaigns[campaignName] = entry;
+      return writeIndexToDir(campaignsDir, index);
+    });
+  }
+
+  function buildFullIndex(rootHandle) {
+    return rootHandle.getDirectoryHandle('Campagnes')
+      .then(function (campaignsDir) {
+        function collectDirs(iterator, dirs) {
+          return iterator.next().then(function (res) {
+            if (res.done) return dirs;
+            var name   = res.value[0];
+            var handle = res.value[1];
+            if (handle.kind === 'directory') dirs.push({ name: name, handle: handle });
+            return collectDirs(iterator, dirs);
+          });
+        }
+        return collectDirs(campaignsDir.entries(), [])
+          .then(function (dirs) {
+            return Promise.all(dirs.map(function (d) {
+              return d.handle.getFileHandle('campagne.json')
+                .then(function (fh) { return fh.getFile(); })
+                .then(function (f) {
+                  return f.text().then(function (text) {
+                    try { return { name: d.name, data: JSON.parse(text) }; }
+                    catch (e) { return null; }
+                  });
+                })
+                .catch(function () { return null; });
+            }));
+          })
+          .then(function (results) {
+            var index = { v: 1, campaigns: {} };
+            results.filter(Boolean).forEach(function (c) {
+              initWorkflow(c.data);
+              index.campaigns[c.name] = extractIndexEntry(c.data);
+            });
+            return writeIndexToDir(campaignsDir, index).then(function () { return index; });
+          });
+      });
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // EXPORTS
+  // ─────────────────────────────────────────────────────────
+
+  return {
+    STEPS:                    STEPS,
+    CHANNEL_STEP_IDS:         CHANNEL_STEP_IDS,
+    GLOBAL_STEP_IDS:          GLOBAL_STEP_IDS,
+    isTeamRequired:           isTeamRequired,
+    isChannelCompleted:       isChannelCompleted,
+    initWorkflow:             initWorkflow,
+    advanceStep:              advanceStep,
+    advanceChannelStep:       advanceChannelStep,
+    requestRevision:          requestRevision,
+    requestChannelRevision:   requestChannelRevision,
+    initChannelValidations:   initChannelValidations,
+    validateChannelStep:      validateChannelStep,
+    recalcUnlocks:            recalcUnlocks,
+    recalcChannelUnlocks:     recalcChannelUnlocks,
+    isCompleted:              isCompleted,
+    getCurrentStepLabel:      getCurrentStepLabel,
+    saveCampaignWorkflow:     saveCampaignWorkflow,
+    getAvailableActions:      getAvailableActions,
+    updateCampaignIndex:      updateCampaignIndex,
+    updateCampaignIndexFromDir: updateCampaignIndexFromDir,
+    buildFullIndex:           buildFullIndex
+  };
+})();
+/**
+ * Système de Gestion des Thèmes (Version Standalone - Sans Modules ES6)
+ * Interface Impulsion Marketing
+ *
+ * Ce module gère les 13 thèmes visuels de l'application.
+ * Version sans modules ES6 pour fonctionner avec file://
+ */
+
+// Créer le namespace global si nécessaire
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+// Système de thèmes
+window.ImpulsionMarketing.themes = (function() {
+  'use strict';
+
+  // Définition des 13 thèmes avec leurs variables CSS
+  const themes = {
+    default: {
+      '--ink': '#245f56',
+      '--muted': '#308276',
+      '--line': '#e0f2f1',
+      '--primary': '#308276',
+      '--primary-hover': '#245f56',
+      '--bg': '#ffffff',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#ffffff',
+      '--accent': '#e6f7f5',
+      '--gradient': 'linear-gradient(135deg, #308276 0%, #245f56 100%)',
+      '--gold': '#d4af37',
+      '--bg-image': 'none'
+    },
+
+    christmas: {
+      '--ink': '#004d00',
+      '--muted': '#006600',
+      '--line': '#ccffcc',
+      '--primary': '#008000',
+      '--primary-hover': '#004d00',
+      '--bg': '#fff8f0',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#e6f2e6',
+      '--accent': '#ccffcc',
+      '--gradient': 'linear-gradient(135deg, #008000 0%, #00cc00 100%)',
+      '--gold': '#d4af37',
+      '--bg-image': 'url(https://cdn.photoroom.com/v2/image-cache?path=gs://background-7ef44.appspot.com/backgrounds_v3/christmas/35_-_christmas.jpg)'
+    },
+
+    halloween: {
+      '--ink': '#4b2e00',
+      '--muted': '#7a4b00',
+      '--line': '#f0e6cc',
+      '--primary': '#ff6600',
+      '--primary-hover': '#cc5200',
+      '--bg': '#fff8f0',
+      '--bg-card': '#fff3e6',
+      '--bg-header': '#ffe6cc',
+      '--accent': '#ffcc99',
+      '--gradient': 'linear-gradient(135deg, #ff6600 0%, #ff9933 100%)',
+      '--gold': '#d4af37',
+      '--bg-image': 'url(https://i.etsystatic.com/16491596/r/il/475efe/5284946173/il_fullxfull.5284946173_4tjg.jpg)'
+    },
+
+    summer: {
+      '--ink': '#1e3a8a',
+      '--muted': '#3b82f6',
+      '--line': '#dbeafe',
+      '--primary': '#3b82f6',
+      '--primary-hover': '#2563eb',
+      '--bg': '#f0f9ff',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#e0f2fe',
+      '--accent': '#dbeafe',
+      '--gradient': 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+      '--gold': '#fbbf24',
+      '--bg-image': 'url(https://e.ca-toulouse31.fr/images/image2025/été/palmier.jpeg)'
+    },
+
+    winter: {
+      '--ink': '#1e293b',
+      '--muted': '#475569',
+      '--line': '#e2e8f0',
+      '--primary': '#64748b',
+      '--primary-hover': '#475569',
+      '--bg': '#f8fafc',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#f1f5f9',
+      '--accent': '#e2e8f0',
+      '--gradient': 'linear-gradient(135deg, #1e293b 0%, #64748b 100%)',
+      '--gold': '#f1f5f9',
+      '--bg-image': 'url(https://e.ca-toulouse31.fr/images/image2025/hiver/Neige_arbre.jpeg)'
+    },
+
+    dark: {
+      '--ink': '#f1f5f9',
+      '--muted': '#94a3b8',
+      '--line': '#475569',
+      '--primary': '#60a5fa',
+      '--primary-hover': '#3b82f6',
+      '--bg': '#0f172a',
+      '--bg-card': '#1e293b',
+      '--bg-header': '#1e293b',
+      '--accent': '#334155',
+      '--gradient': 'linear-gradient(135deg, #0f172a 0%, #60a5fa 100%)',
+      '--gold': '#fbbf24',
+      '--bg-image': 'none'
+    },
+
+    retro: {
+      '--ink': '#7c3aed',
+      '--muted': '#a855f7',
+      '--line': '#e9d5ff',
+      '--primary': '#a855f7',
+      '--primary-hover': '#9333ea',
+      '--bg': '#faf5ff',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#f3e8ff',
+      '--accent': '#e9d5ff',
+      '--gradient': 'linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)',
+      '--gold': '#f59e0b',
+      '--bg-image': 'none'
+    },
+
+    minimalist: {
+      '--ink': '#374151',
+      '--muted': '#6b7280',
+      '--line': '#d1d5db',
+      '--primary': '#6b7280',
+      '--primary-hover': '#4b5563',
+      '--bg': '#f9fafb',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#f3f4f6',
+      '--accent': '#d1d5db',
+      '--gradient': 'linear-gradient(135deg, #374151 0%, #6b7280 100%)',
+      '--gold': '#9ca3af',
+      '--bg-image': 'none'
+    },
+
+    ocean: {
+      '--ink': '#0c4a6e',
+      '--muted': '#0369a1',
+      '--line': '#bae6fd',
+      '--primary': '#0369a1',
+      '--primary-hover': '#0284c7',
+      '--bg': '#f0f9ff',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#e0f2fe',
+      '--accent': '#bae6fd',
+      '--gradient': 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 100%)',
+      '--gold': '#0ea5e9',
+      '--bg-image': 'url(https://e.ca-toulouse31.fr/images/image2025/autres/ocean.jpeg)'
+    },
+
+    forest: {
+      '--ink': '#14532d',
+      '--muted': '#166534',
+      '--line': '#bbf7d0',
+      '--primary': '#166534',
+      '--primary-hover': '#15803d',
+      '--bg': '#f0fdf4',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#dcfce7',
+      '--accent': '#bbf7d0',
+      '--gradient': 'linear-gradient(135deg, #14532d 0%, #166534 100%)',
+      '--gold': '#22c55e',
+      '--bg-image': 'url(https://e.ca-toulouse31.fr/images/image2025/autres/foret.jpeg)'
+    },
+
+    sunset: {
+      '--ink': '#7c2d12',
+      '--muted': '#dc2626',
+      '--line': '#fecaca',
+      '--primary': '#dc2626',
+      '--primary-hover': '#b91c1c',
+      '--bg': '#fef2f2',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#fee2e2',
+      '--accent': '#fecaca',
+      '--gradient': 'linear-gradient(135deg, #7c2d12 0%, #dc2626 100%)',
+      '--gold': '#f97316',
+      '--bg-image': 'url(https://e.ca-toulouse31.fr/images/image2025/autres/sunset.jpeg)'
+    },
+
+    neon: {
+      '--ink': '#ec4899',
+      '--muted': '#f97316',
+      '--line': '#fce7f3',
+      '--primary': '#ec4899',
+      '--primary-hover': '#db2777',
+      '--bg': '#fdf2f8',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#fce7f3',
+      '--accent': '#fce7f3',
+      '--gradient': 'linear-gradient(135deg, #ec4899 0%, #f97316 100%)',
+      '--gold': '#eab308',
+      '--bg-image': 'url(https://e.ca-toulouse31.fr/images/image2025/autres/neon.jpeg)'
+    },
+
+    vintage: {
+      '--ink': '#92400e',
+      '--muted': '#d97706',
+      '--line': '#fed7aa',
+      '--primary': '#d97706',
+      '--primary-hover': '#b45309',
+      '--bg': '#fffbeb',
+      '--bg-card': '#ffffff',
+      '--bg-header': '#fef3c7',
+      '--accent': '#fed7aa',
+      '--gradient': 'linear-gradient(135deg, #92400e 0%, #d97706 100%)',
+      '--gold': '#f59e0b',
+      '--bg-image': 'url(https://e.ca-toulouse31.fr/images/image2025/autres/AdobeStock_381973776.jpeg)'
+    }
+  };
+
+  /**
+   * Applique un thème en mettant à jour les variables CSS du document
+   * @param {string} themeName - Nom du thème à appliquer
+   */
+  function applyTheme(themeName) {
+    // Ajouter classe de transition
+    document.body.classList.add('theme-switching');
+
+    // Appliquer le thème après un court délai pour l'effet de transition
+    setTimeout(function() {
+      const theme = themes[themeName] || themes.default;
+
+      // Appliquer toutes les variables CSS
+      for (var varName in theme) {
+        if (theme.hasOwnProperty(varName)) {
+          document.documentElement.style.setProperty(varName, theme[varName]);
+        }
+      }
+
+      // Sauvegarder le choix dans localStorage
+      try {
+        localStorage.setItem('selectedTheme', themeName);
+      } catch (e) {
+        console.warn('Cannot save theme to localStorage:', e);
+      }
+
+      // Retirer classe de transition
+      document.body.classList.remove('theme-switching');
+
+      console.log('Applying theme:', themeName);
+    }, 50); // Réduit à 50ms pour plus de réactivité
+  }
+
+  /**
+   * Récupère le thème actuellement appliqué
+   * @returns {string} Nom du thème actuel
+   */
+  function getCurrentTheme() {
+    try {
+      return localStorage.getItem('selectedTheme') || 'default';
+    } catch (e) {
+      return 'default';
+    }
+  }
+
+  /**
+   * Initialise le sélecteur de thème sur la page
+   * Charge le thème sauvegardé et configure l'événement de changement
+   */
+  function initThemeSelector() {
+    const themeSelect = document.getElementById('theme-select');
+
+    if (!themeSelect) {
+      console.warn('Theme selector not found on page');
+      return;
+    }
+
+    // Charger et appliquer le thème sauvegardé
+    const savedTheme = getCurrentTheme();
+    themeSelect.value = savedTheme;
+    applyTheme(savedTheme);
+
+    // Écouter les changements de thème
+    themeSelect.addEventListener('change', function(e) {
+      applyTheme(e.target.value);
+    });
+  }
+
+  /**
+   * Précharge les images de fond des thèmes populaires
+   * Améliore l'expérience utilisateur lors du changement de thème
+   * Charge uniquement les thèmes les plus utilisés pour économiser la bande passante
+   */
+  function preloadThemeImages() {
+    // Liste des thèmes populaires à précharger
+    var popularThemes = ['default', 'dark', 'christmas', 'summer', 'winter'];
+
+    // Ajouter le thème actuel s'il n'est pas dans la liste
+    var currentTheme = getCurrentTheme();
+    if (popularThemes.indexOf(currentTheme) === -1) {
+      popularThemes.push(currentTheme);
+    }
+
+    popularThemes.forEach(function(themeName) {
+      if (themes[themeName]) {
+        var theme = themes[themeName];
+        var bgImage = theme['--bg-image'];
+
+        if (bgImage && bgImage !== 'none') {
+          // Extraire l'URL de la chaîne CSS url(...)
+          var match = bgImage.match(/url\((.*?)\)/);
+
+          if (match && match[1]) {
+            var img = new Image();
+            img.src = match[1];
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Obtient la liste de tous les noms de thèmes disponibles
+   * @returns {string[]} Array des noms de thèmes
+   */
+  function getAvailableThemes() {
+    return Object.keys(themes);
+  }
+
+  /**
+   * Obtient un thème par son nom
+   * @param {string} themeName - Nom du thème
+   * @returns {Object|null} Objet thème ou null si non trouvé
+   */
+  function getTheme(themeName) {
+    return themes[themeName] || null;
+  }
+
+  // API Publique
+  return {
+    themes: themes,
+    applyTheme: applyTheme,
+    getCurrentTheme: getCurrentTheme,
+    initThemeSelector: initThemeSelector,
+    preloadThemeImages: preloadThemeImages,
+    getAvailableThemes: getAvailableThemes,
+    getTheme: getTheme
+  };
+})();
+/**
+ * Module d'Aide Contextuel - Interface Impulsion Marketing
+ *
+ * Gère l'affichage des modals d'instructions pour chaque page de l'application.
+ *
+ * @namespace window.ImpulsionMarketing.help
+ */
+
+(function() {
+    'use strict';
+
+    // Initialiser le namespace
+    if (typeof window.ImpulsionMarketing === 'undefined') {
+        window.ImpulsionMarketing = {};
+    }
+
+    /**
+     * Instructions pour chaque page de l'application
+     */
+    var pageInstructions = {
+        'index': {
+            title: 'Bienvenue',
+            icon: '🏠',
+            content: [
+                {
+                    subtitle: 'Première utilisation',
+                    text: 'Cliquez sur "Charger le dossier racine" et sélectionnez le dossier contenant vos campagnes marketing. L\'application gardera cet accès en mémoire.'
+                },
+                {
+                    subtitle: 'Navigation',
+                    text: 'Utilisez les boutons pour accéder aux différentes fonctionnalités : créer une campagne, visualiser les campagnes existantes, ou déposer des livrables.'
+                },
+                {
+                    subtitle: 'Personnalisation',
+                    text: 'Changez le thème de l\'application avec le sélecteur en haut à droite (13 thèmes disponibles).'
+                }
+            ]
+        },
+        'saisie-campagne': {
+            title: 'Créer une Campagne',
+            icon: '✍️',
+            content: [
+                {
+                    subtitle: 'Informations générales',
+                    text: 'Remplissez tous les champs obligatoires : nom de la campagne, dates, segment, UB, type de communication, etc.'
+                },
+                {
+                    subtitle: 'Canaux',
+                    text: 'Sélectionnez un ou plusieurs canaux de communication. Chaque canal créera un dossier de livrable associé.'
+                },
+                {
+                    subtitle: 'Sauvegarde',
+                    text: 'Cliquez sur "Créer la Campagne" pour sauvegarder. Un dossier sera créé avec la structure complète (campagne.json + dossiers livrables).'
+                }
+            ]
+        },
+        'visualization': {
+            title: 'Visualiser les Campagnes',
+            icon: '📊',
+            content: [
+                {
+                    subtitle: 'Recherche',
+                    text: 'Utilisez la barre de recherche pour trouver une campagne par son nom ou ses mots-clés.'
+                },
+                {
+                    subtitle: 'Filtres',
+                    text: 'Filtrez les campagnes par UB, Canal ou Type de communication. Combinez plusieurs filtres pour affiner votre recherche.'
+                },
+                {
+                    subtitle: 'Tri',
+                    text: 'Triez les résultats par date (plus récent/ancien) ou par nom (A-Z/Z-A).'
+                },
+                {
+                    subtitle: 'Accès aux détails',
+                    text: 'Cliquez sur une carte de campagne pour voir tous ses détails et ses livrables.'
+                }
+            ]
+        },
+        'details': {
+            title: 'Détails de la Campagne',
+            icon: '📋',
+            content: [
+                {
+                    subtitle: 'Informations complètes',
+                    text: 'Consultez toutes les informations de la campagne : dates, segments, UB, type, canaux, etc.'
+                },
+                {
+                    subtitle: 'Livrables',
+                    text: 'La liste des canaux affiche l\'état de chaque livrable (vide, en cours, ou complet). Cliquez sur un canal pour voir ses dépôts.'
+                },
+                {
+                    subtitle: 'Navigation',
+                    text: 'Utilisez les boutons pour accéder directement au dépôt d\'un livrable ou retourner à la liste des campagnes.'
+                }
+            ]
+        },
+        'channel-depot': {
+            title: 'Consultation d\'un Dépôt',
+            icon: '📁',
+            content: [
+                {
+                    subtitle: 'Onglets Com/EBF/Data',
+                    text: 'Utilisez les onglets pour naviguer entre les différents types de dépôts du livrable.'
+                },
+                {
+                    subtitle: 'Informations affichées',
+                    text: 'Consultez toutes les informations déposées : fichiers PDF, URLs Figma, images, CTAs, codes projets, etc.'
+                },
+                {
+                    subtitle: 'PDF',
+                    text: 'Cliquez sur l\'aperçu du PDF pour l\'ouvrir en plein écran dans une modal.'
+                },
+                {
+                    subtitle: 'Compléter un dépôt',
+                    text: 'Si le dépôt est vide ou incomplet, utilisez les boutons de navigation pour accéder aux pages de dépôt correspondantes.'
+                }
+            ]
+        },
+        'com': {
+            title: 'Dépôt Com',
+            icon: '💬',
+            content: [
+                {
+                    subtitle: 'Fichiers requis',
+                    text: 'PDF (obligatoire) : Le fichier du livrable de communication.'
+                },
+                {
+                    subtitle: 'Informations additionnelles',
+                    text: 'URL Figma (optionnelle), URLs d\'images (optionnelles), validation juridique (Oui/Non).'
+                },
+                {
+                    subtitle: 'Sauvegarde',
+                    text: 'Cliquez sur "Déposer le Livrable Com". Le fichier PDF sera copié dans le dossier du canal et un fichier depot_com.json sera créé.'
+                }
+            ]
+        },
+        'ebf': {
+            title: 'Dépôt EBF',
+            icon: '🏦',
+            content: [
+                {
+                    subtitle: 'Initialisation',
+                    text: 'Remplissez les informations d\'initialisation : nom webmaster, code com, référence Paracom, CTAs.'
+                },
+                {
+                    subtitle: 'BAT',
+                    text: 'Déposez le fichier PDF du BAT (Bon À Tirer) une fois disponible.'
+                },
+                {
+                    subtitle: 'Test en prod',
+                    text: 'Déposez le fichier PDF du test en production une fois réalisé.'
+                },
+                {
+                    subtitle: 'Étapes',
+                    text: 'Suivez les 3 étapes dans l\'ordre : Initialisation, puis BAT, puis Test en prod. Chaque étape sauvegarde un fichier JSON distinct.'
+                }
+            ]
+        },
+        'data': {
+            title: 'Dépôt Data',
+            icon: '📊',
+            content: [
+                {
+                    subtitle: 'Codes et informations',
+                    text: 'Renseignez le code projet, le code action, le nom du responsable CRM et le chemin de la requête.'
+                },
+                {
+                    subtitle: 'Sauvegarde',
+                    text: 'Cliquez sur "Déposer le Livrable Data". Le fichier PDF sera copié et un fichier depot_data.json sera créé.'
+                }
+            ]
+        },
+        'pilotage': {
+            title: 'Pilotage des Campagnes',
+            icon: '🎯',
+            content: [
+                {
+                    subtitle: 'Vue d\'ensemble',
+                    text: 'Consultez les statistiques globales : nombre total de campagnes, campagnes actives, terminées et le taux de complétion moyen.'
+                },
+                {
+                    subtitle: 'Répartitions',
+                    text: 'Analysez la distribution de vos campagnes par marché (Particuliers/Spécialisés), par typologie (PR/Campagne) et par canal de communication.'
+                },
+                {
+                    subtitle: 'Campagnes récentes',
+                    text: 'Visualisez les 10 dernières campagnes créées avec leur progression et leurs informations clés.'
+                },
+                {
+                    subtitle: 'Indicateurs',
+                    text: 'Le taux de complétion indique le pourcentage moyen des livrables déposés (Com, EBF, Data) pour l\'ensemble des campagnes.'
+                }
+            ]
+        }
+    };
+
+    /**
+     * Initialise le système d'aide pour la page courante
+     * @param {string} pageKey - Clé de la page (ex: 'index', 'saisie-campagne', etc.)
+     */
+    function initHelp(pageKey) {
+        var instructions = pageInstructions[pageKey];
+        if (!instructions) {
+            console.warn('[ImpulsionMarketing.help] Aucune instruction trouvée pour la page:', pageKey);
+            return;
+        }
+
+        // Créer la modal d'aide si elle n'existe pas
+        createHelpModal(instructions);
+
+        // Créer le bouton d'aide
+        createHelpButton();
+
+        console.log('[ImpulsionMarketing.help] Système d\'aide initialisé pour:', pageKey);
+    }
+
+    /**
+     * Crée la modal d'aide
+     * @param {object} instructions - Instructions de la page
+     */
+    function createHelpModal(instructions) {
+        // Vérifier si la modal existe déjà
+        if (document.getElementById('help-modal')) {
+            return;
+        }
+
+        var modal = document.createElement('div');
+        modal.id = 'help-modal';
+        modal.className = 'help-modal';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-labelledby', 'help-modal-title');
+        modal.setAttribute('aria-hidden', 'true');
+
+        var security = window.ImpulsionMarketing.security;
+        var html = '';
+
+        html += '<div class="help-modal-overlay"></div>';
+        html += '<div class="help-modal-content">';
+        html += '  <div class="help-modal-header">';
+        html += '    <h2 id="help-modal-title">' + instructions.icon + ' ' + security.escapeHtml(instructions.title) + '</h2>';
+        html += '    <button class="help-modal-close" aria-label="Fermer">&times;</button>';
+        html += '  </div>';
+        html += '  <div class="help-modal-body">';
+
+        instructions.content.forEach(function(section) {
+            html += '    <div class="help-section">';
+            html += '      <h3>' + security.escapeHtml(section.subtitle) + '</h3>';
+            html += '      <p>' + security.escapeHtml(section.text) + '</p>';
+            html += '    </div>';
+        });
+
+        html += '  </div>';
+        html += '</div>';
+
+        modal.innerHTML = html;
+        document.body.appendChild(modal);
+
+        // Event listeners
+        var closeBtn = modal.querySelector('.help-modal-close');
+        var overlay = modal.querySelector('.help-modal-overlay');
+
+        closeBtn.addEventListener('click', closeHelpModal);
+        overlay.addEventListener('click', closeHelpModal);
+
+        // ESC pour fermer
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.classList.contains('active')) {
+                closeHelpModal();
+            }
+        });
+    }
+
+    /**
+     * Crée le bouton d'aide
+     */
+    function createHelpButton() {
+        // Vérifier si le bouton existe déjà
+        if (document.getElementById('help-button')) {
+            return;
+        }
+
+        var button = document.createElement('button');
+        button.id = 'help-button';
+        button.className = 'help-button';
+        button.setAttribute('aria-label', 'Ouvrir l\'aide');
+        button.setAttribute('title', 'Instructions de la page');
+        button.innerHTML = '?';
+
+        button.addEventListener('click', openHelpModal);
+
+        document.body.appendChild(button);
+    }
+
+    /**
+     * Ouvre la modal d'aide
+     */
+    function openHelpModal() {
+        var modal = document.getElementById('help-modal');
+        if (modal) {
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            // Focus sur le bouton de fermeture
+            var closeBtn = modal.querySelector('.help-modal-close');
+            if (closeBtn) {
+                closeBtn.focus();
+            }
+        }
+    }
+
+    /**
+     * Ferme la modal d'aide
+     */
+    function closeHelpModal() {
+        var modal = document.getElementById('help-modal');
+        if (modal) {
+            modal.classList.add('closing');
+            modal.setAttribute('aria-hidden', 'true');
+
+            setTimeout(function() {
+                modal.classList.remove('active');
+                modal.classList.remove('closing');
+            }, 300);
+
+            // Redonner le focus au bouton d'aide
+            var helpBtn = document.getElementById('help-button');
+            if (helpBtn) {
+                helpBtn.focus();
+            }
+        }
+    }
+
+    // Exposer l'API publique
+    window.ImpulsionMarketing.help = {
+        initHelp: initHelp,
+        openHelpModal: openHelpModal,
+        closeHelpModal: closeHelpModal
+    };
+
+})();

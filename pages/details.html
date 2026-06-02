@@ -1,0 +1,2736 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails de la campagne</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <style>
+        /* ── Infos campagne : sections & grilles ── */
+        .detail-section {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #16a34a;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .detail-section h3 {
+            margin: 0 0 12px 0;
+            color: #64748b;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .detail-item { display: flex; flex-direction: column; gap: 3px; }
+        .detail-label { font-weight: 700; color: #94a3b8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.7px; }
+        .detail-value { color: #0f172a; font-size: 0.875rem; padding: 5px 10px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .tag { display: inline-block; padding: 3px 10px; background: #dcfce7; color: #15803d; border-radius: 20px; font-size: 0.68rem; font-weight: 700; border: 1px solid #bbf7d0; }
+        .channel-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+        .channel-card h4 { margin: 0 0 10px 0; color: #0f172a; font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.2px; }
+        .error-message { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 16px; border-radius: 8px; text-align: center; margin: 32px 0; font-size: 0.875rem; }
+        .loading-container { text-align: center; padding: 48px 20px; }
+        .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #16a34a; border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .back-button { display: inline-flex; align-items: center; gap: 6px; }
+
+        /* ── Actor sections ── */
+        .actor-section { background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #cbd5e1; border-radius: 10px; padding: 20px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+        .actor-section--com { border-left-color: #3b82f6; }
+        .actor-section--ebf { border-left-color: #f97316; }
+        .actor-section--data { border-left-color: #16a34a; }
+        .actor-section--mep { border-left-color: #8b5cf6; }
+        .actor-section--revision { border-left-color: #f97316; }
+        .actor-section--revision h3 { color: #c2410c; }
+        .badge-revision { display: inline-block; background: #fff7ed; color: #c2410c; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 8px; text-transform: none; letter-spacing: 0; border: 1px solid #fed7aa; }
+        .revision-alert { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #c2410c; }
+
+        /* ── Actor section header ── */
+        .actor-section h3 {
+            margin: 0 0 14px 0;
+            color: #475569;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── Actor form ── */
+        .actor-form { margin-bottom: 4px; }
+        .form-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+        .form-row label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; }
+        .form-control { padding: 8px 11px; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 13.5px; font-family: inherit; color: #0f172a; background: #fff; width: 100%; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
+        .form-control:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+        .form-control:disabled, .form-control[readonly] { background: #f8fafc; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; }
+        .radio-group { display: flex; gap: 20px; padding: 6px 0; }
+        .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13.5px; text-transform: none; letter-spacing: 0; color: #0f172a; cursor: pointer; }
+        .btn-actor-save { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; color: #374151; transition: all 0.15s; margin-top: 4px; }
+        .btn-actor-save:hover { background: #f0fdf4; border-color: #16a34a; color: #15803d; }
+        .btn-actor-save:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-actor-submit { background: #16a34a; color: #fff; border: none; border-radius: 7px; padding: 9px 22px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .btn-actor-submit:hover { background: #15803d; box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
+        .btn-actor-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
+        .btn-actor-submit--mep { background: #7c3aed; }
+        .btn-actor-submit--mep:hover { background: #6d28d9; box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
+        .actor-submit-row { margin-top: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .actor-submit-note { font-size: 12px; color: #94a3b8; }
+
+        /* ── Read-only depot view ── */
+        .depot-readonly { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+        .depot-readonly-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .depot-readonly-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+        .depot-readonly-item { font-size: 12px; color: #374151; }
+        .depot-readonly-item strong { display: block; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .depot-status-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .depot-status-badge--submitted { background: #dbeafe; color: #1d4ed8; }
+        .depot-status-badge--saved { background: #f1f5f9; color: #64748b; }
+
+        /* ── Onglets de navigation horizontaux ── */
+        .details-shell {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-height: 0;
+        }
+        .details-sidenav {
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 0;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 36px;
+            overflow-x: auto;
+            flex-shrink: 0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+        }
+        .details-sidenav-label { display: none; }
+        .details-nav-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 14px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #94a3b8;
+            cursor: pointer;
+            border: none;
+            background: none;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.15s, border-color 0.15s;
+            border-radius: 0;
+            letter-spacing: -0.1px;
+        }
+        .details-nav-item:hover { color: #0f172a; }
+        .details-nav-item.active {
+            color: #16a34a;
+            font-weight: 600;
+            border-bottom-color: #16a34a;
+        }
+        .details-nav-separator { display: none; }
+        .details-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 36px;
+            min-width: 0;
+            background: #f8fafc;
+        }
+        /* ── Lightbox ── */
+        #lightbox-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.88);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+        }
+        #lightbox-overlay.open { display: flex; }
+        #lightbox-overlay img {
+            max-width: 92vw;
+            max-height: 92vh;
+            border-radius: 8px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+            cursor: default;
+        }
+        #lightbox-close {
+            position: fixed;
+            top: 18px;
+            right: 24px;
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.8;
+            background: none;
+            border: none;
+            padding: 0;
+        }
+        #lightbox-close:hover { opacity: 1; }
+
+        /* ── Discussion ── */
+        .discussion-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+        .discussion-msg { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; }
+        .discussion-msg-header { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+        .discussion-msg-avatar { width: 28px; height: 28px; border-radius: 50%; background: #16a34a; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0; }
+        .discussion-msg-author { font-size: 13px; font-weight: 600; color: #0f172a; }
+        .discussion-msg-date { font-size: 11px; color: #94a3b8; margin-left: auto; white-space: nowrap; }
+        .discussion-msg-text { font-size: 13.5px; color: #374151; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+        .discussion-msg-footer { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+        .discussion-like-btn { background: none; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 11px; font-size: 12px; cursor: pointer; color: #64748b; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; font-family: inherit; }
+        .discussion-like-btn:hover { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
+        .discussion-like-btn.liked { background: #f0fdf4; border-color: #16a34a; color: #16a34a; font-weight: 700; }
+        .discussion-form { margin-top: 4px; }
+        .discussion-form textarea { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 13.5px; color: #0f172a; resize: vertical; min-height: 80px; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
+        .discussion-form textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+        .discussion-form-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+    </style>
+</head>
+<body>
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../Impulsion-Marketing.html" class="brand">
+                <div class="brand-icon" style="font-size:14px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">IM</div>
+                <div class="brand-text"><h1>Impulsion</h1><span>Marketing</span></div>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <span class="nav-section-title">Principal</span>
+                <a href="../Impulsion-Marketing.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                        <span>Tableau de bord</span>
+                    </a>
+                <a href="campaign.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>Créer une campagne</span>
+                </a>
+                <a href="pilotage.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Pilotage</span>
+                </a>
+                <a href="visualization.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-4 4"/></svg>
+                    <span>Campagnes</span>
+                </a>
+                <a href="comite-editorial.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Comité Éditorial</span>
+                </a>
+                <a href="guide.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    <span>Guide utilisateur</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <span class="nav-section-title">Externe</span>
+                <a href="https://e.ca-toulouse31.fr/images/index.php" class="nav-link" target="_blank" rel="noopener">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    <span>Galerie</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <div class="main-container">
+        <header class="top-header">
+            <div class="header-left">
+                <h2 class="page-title">Détails de la campagne</h2>
+                <p class="page-subtitle" id="campaign-subtitle">Informations détaillées</p>
+            </div>
+            <div class="header-right">
+                <a href="visualization.html" class="btn secondary back-button">← Retour à la liste</a>
+                <button id="editButton" class="btn primary back-button" style="display:none;" onclick="editCampaign()">✏️ Modifier</button>
+                <button id="duplicateButton" class="btn secondary back-button" style="display:none;" onclick="duplicateCampaign()">📋 Dupliquer</button>
+                <button id="toggleActifButton" class="btn secondary back-button" style="display:none;" onclick="toggleCampaignActif()"></button>
+                <button id="deleteCampaignButton" class="btn secondary back-button" style="display:none;color:#dc2626;" onclick="deleteCampaign()">🗑️ Supprimer</button>
+            </div>
+        </header>
+
+        <div class="details-shell">
+            <nav class="details-sidenav" id="details-sidenav"></nav>
+            <main class="details-panel" id="details-panel">
+                <div id="loading" class="loading-container"><div class="spinner"></div><p>Chargement des détails...</p></div>
+                <div id="error" style="display:none;"></div>
+            </main>
+        </div>
+    </div>
+</div>
+
+<script src="../js/bundle.js"></script>
+
+<script>
+    var directoryStorage = window.ImpulsionMarketing.directoryStorage;
+    var security         = window.ImpulsionMarketing.security;
+    var errors           = window.ImpulsionMarketing.errors;
+    var help             = window.ImpulsionMarketing.help;
+    var users            = window.ImpulsionMarketing.users;
+    var workflow         = window.ImpulsionMarketing.workflow;
+
+    var currentCampaignName = null;
+    var currentRootHandle   = null;
+    var currentCampaignData = null;
+
+    // Navigation secondaire
+    var currentPage        = 'info';
+    var loadedDepots       = {};
+    var submittedInSession = { com: new Set(), ebf: new Set(), data: new Set(), dataTest: new Set() };
+
+    window.addEventListener('load', function() {
+        help.initHelp('details');
+        loadCampaignDetails();
+    });
+
+    /**
+     * Rafraîchissement en place après une action workflow.
+     * Évite un location.reload() complet (pas de rechargement des scripts depuis V://).
+     * Les données en mémoire sont déjà à jour (advanceStep / requestRevision modifie currentCampaignData).
+     */
+    function refreshCurrentPage() {
+        loadedDepots = {};  // vider le cache dépôts pour forcer un rechargement depuis V://
+        buildSideNav(currentCampaignName, currentCampaignData);
+        navigateTo(currentPage);
+        if (errors && errors.showNotification) {
+            errors.showNotification('Action enregistrée ✓', 'success', 2000);
+        }
+    }
+
+    function getUrlParameter(name) {
+        return new URLSearchParams(window.location.search).get(name);
+    }
+    function editCampaign() {
+        if (currentCampaignName) window.location.href = 'campaign.html?edit=' + encodeURIComponent(currentCampaignName);
+    }
+    function duplicateCampaign() {
+        if (currentCampaignName) window.location.href = 'campaign.html?duplicate=' + encodeURIComponent(currentCampaignName);
+    }
+    function pushNotifDebrancher(campagneName, campaignData) {
+        if (!currentRootHandle) return;
+        var assignments = (campaignData.workflow && campaignData.workflow.assignments) || {};
+
+        function resolveAssignees(role) {
+            var list = assignments[role] || [];
+            if (typeof list === 'string') list = list ? [list] : [];
+            if (!list.length) {
+                list = users.USERS.filter(function(u) { return u.role === role && u.isManager; }).map(function(u) { return u.name; });
+            }
+            return list;
+        }
+
+        var destinataires = resolveAssignees('data').concat(resolveAssignees('ebf'));
+        // Dédoublonnage
+        var seen = {};
+        destinataires = destinataires.filter(function(d) { return seen[d] ? false : (seen[d] = true); });
+        if (!destinataires.length) return;
+
+        currentRootHandle.getFileHandle('_notifications.json', { create: true })
+            .then(function(fh) {
+                return fh.getFile().then(function(f) { return f.text(); })
+                    .then(function(txt) { return { fh: fh, notifs: JSON.parse(txt) }; })
+                    .catch(function() { return { fh: fh, notifs: [] }; });
+            })
+            .then(function(res) {
+                var now = new Date().toISOString();
+                destinataires.forEach(function(dest) {
+                    res.notifs.push({
+                        id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                        type: 'campagne_inactive',
+                        destinataire: dest,
+                        campagneId: campagneName,
+                        campagneTitre: campagneName,
+                        dateCreation: now,
+                        lu: false
+                    });
+                });
+                return res.fh.createWritable().then(function(w) {
+                    return w.write(JSON.stringify(res.notifs, null, 2)).then(function() { return w.close(); });
+                });
+            })
+            .catch(function(e) { console.warn('Notif débrancher failed:', e); });
+    }
+
+    function toggleCampaignActif() {
+        if (!currentCampaignName || !currentCampaignData) return;
+        var isActif = currentCampaignData.actif !== false;
+        var nouvelEtat = !isActif;
+        var label = nouvelEtat ? 'réactiver' : 'rendre inactif';
+        if (!confirm('Voulez-vous ' + label + ' cette campagne ?')) return;
+        currentCampaignData.actif = nouvelEtat;
+        if (!nouvelEtat) pushNotifDebrancher(currentCampaignName, currentCampaignData);
+        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+            .then(function() {
+                var toggleActifBtn = document.getElementById('toggleActifButton');
+                if (toggleActifBtn) {
+                    toggleActifBtn.textContent = nouvelEtat ? '⏸️ Rendre inactif' : '▶️ Réactiver';
+                    toggleActifBtn.style.color = nouvelEtat ? '#dc2626' : '#16a34a';
+                }
+                var msg = nouvelEtat ? 'Campagne réactivée.' : 'Campagne rendue inactive.';
+                errors.showNotification(msg, 'success', 2000);
+            })
+            .catch(function(err) {
+                errors.showNotification('Erreur : ' + err.message, 'error');
+            });
+    }
+    // ─────────────────────────────────────────────
+    // SUPPRESSION CAMPAGNE (Item 14)
+    // ─────────────────────────────────────────────
+    function deleteCampaign() {
+        if (!currentCampaignName || !currentRootHandle) return;
+        if (!confirm('Supprimer définitivement la campagne "' + currentCampaignName + '" ?\n\nCette action est irréversible.')) return;
+        currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(campDir) {
+                // Supprimer le dossier de la campagne (récursif)
+                return campDir.removeEntry(currentCampaignName, { recursive: true })
+                    .then(function() { return campDir; });
+            })
+            .then(function(campDir) {
+                // Retirer la campagne de _index.json
+                return campDir.getFileHandle('_index.json', { create: false })
+                    .then(function(fh) { return fh.getFile(); })
+                    .then(function(f) { return f.text(); })
+                    .then(function(text) {
+                        var idx = JSON.parse(text);
+                        if (idx.campaigns) delete idx.campaigns[currentCampaignName];
+                        return campDir.getFileHandle('_index.json', { create: true })
+                            .then(function(fh) { return fh.createWritable(); })
+                            .then(function(w) { return w.write(JSON.stringify(idx, null, 2)).then(function() { return w.close(); }); });
+                    });
+            })
+            .then(function() {
+                // Invalider le cache IndexedDB
+                try {
+                    var ic = window.ImpulsionMarketing.performance.IndexCache;
+                    if (ic && currentRootHandle) ic.set(currentRootHandle.name, null);
+                } catch(e) {}
+                errors.showNotification('Campagne supprimée.', 'success', 1500);
+                setTimeout(function() { window.location.href = '../Impulsion-Marketing.html'; }, 1600);
+            })
+            .catch(function(err) {
+                errors.showNotification('Erreur lors de la suppression : ' + err.message, 'error');
+            });
+    }
+
+    // ─────────────────────────────────────────────
+    // SUPPRESSION D'UN CANAL (Item 13)
+    // ─────────────────────────────────────────────
+    function deleteChannel(idx) {
+        if (!currentCampaignName || !currentCampaignData) return;
+        var ch = (currentCampaignData.channels || [])[idx];
+        var label = ch ? (ch.deliverableName || ('Canal ' + (idx + 1))) : ('Canal ' + (idx + 1));
+        if (!confirm('Supprimer le canal "' + label + '" de cette campagne ?')) return;
+        currentCampaignData.channels.splice(idx, 1);
+        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+            .then(function() {
+                errors.showNotification('Canal supprimé.', 'success', 2000);
+                buildSideNav(currentCampaignName, currentCampaignData);
+                navigateTo('info');
+            })
+            .catch(function(err) {
+                // Annuler le splice si la sauvegarde échoue
+                currentCampaignData.channels.splice(idx, 0, ch);
+                errors.showNotification('Erreur : ' + err.message, 'error');
+            });
+    }
+
+    function showError(message) {
+        document.getElementById('loading').style.display = 'none';
+        var el = document.getElementById('error');
+        el.style.display = 'block';
+        errors.showErrorInContainer(el, message, { showHomeButton: false });
+        el.innerHTML += '<a href="visualization.html" class="btn primary" style="margin-top:16px;display:inline-block;">Retour à la liste</a>';
+    }
+
+    // ─────────────────────────────────────────────
+    // LOAD
+    // ─────────────────────────────────────────────
+    function checkPublicationEndDates(campaignName, data) {
+        if (!currentRootHandle || !data.channels) return;
+        var today = new Date(); today.setHours(0,0,0,0);
+        var toNotify = [];
+        data.channels.forEach(function(ch, idx) {
+            if (!ch.siteWeb || !ch.siteWeb.dateFin) return;
+            var fin = new Date(ch.siteWeb.dateFin); fin.setHours(0,0,0,0);
+            if (fin > today) return;
+            // Destinataire : webmaster EBF affecté ou manager EBF
+            var assignments = (data.workflow && data.workflow.assignments) || {};
+            var ebfAssignees = assignments.ebf || [];
+            if (typeof ebfAssignees === 'string') ebfAssignees = ebfAssignees ? [ebfAssignees] : [];
+            if (!ebfAssignees.length) {
+                ebfAssignees = users.USERS.filter(function(u) { return u.role === 'ebf' && u.isManager; }).map(function(u) { return u.name; });
+            }
+            toNotify.push({ idx: idx, dateFin: ch.siteWeb.dateFin, dest: ebfAssignees, canal: ch.deliverableName || ('Canal ' + (idx + 1)) });
+        });
+        if (!toNotify.length) return;
+        // Lire _notifications.json pour antidoublonnage
+        currentRootHandle.getFileHandle('_notifications.json', { create: true })
+            .then(function(fh) {
+                return fh.getFile().then(function(f) { return f.text(); })
+                    .then(function(txt) { return { fh: fh, notifs: JSON.parse(txt) }; })
+                    .catch(function() { return { fh: fh, notifs: [] }; });
+            })
+            .then(function(res) {
+                var notifs = res.notifs;
+                var added = false;
+                var now = new Date().toISOString();
+                toNotify.forEach(function(item) {
+                    item.dest.forEach(function(dest) {
+                        var alreadySent = notifs.some(function(n) {
+                            return n.type === 'publication_fin' && n.campagneId === campaignName && n.canalIdx === item.idx && n.destinataire === dest;
+                        });
+                        if (alreadySent) return;
+                        notifs.push({
+                            id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                            type: 'publication_fin',
+                            destinataire: dest,
+                            campagneId: campaignName,
+                            campagneTitre: campaignName,
+                            canalIdx: item.idx,
+                            zone: item.canal,
+                            dateFin: item.dateFin,
+                            dateCreation: now,
+                            lu: false
+                        });
+                        added = true;
+                    });
+                });
+                if (!added) return;
+                return res.fh.createWritable().then(function(w) {
+                    return w.write(JSON.stringify(notifs, null, 2)).then(function() { return w.close(); });
+                });
+            })
+            .catch(function(e) { console.warn('checkPublicationEndDates failed:', e); });
+    }
+
+    function loadCampaignDetails() {
+        var campaignName = getUrlParameter('name');
+        if (!campaignName) { showError('Aucune campagne spécifiée'); return; }
+
+        directoryStorage.getRootHandleWithCheck()
+            .then(function(result) {
+                if (result.status !== 'success') {
+                    showError(result.message + '<br><a href="../Impulsion-Marketing.html" class="btn primary" style="margin-top:16px;">Charger le dossier</a>');
+                    return;
+                }
+                currentRootHandle = result.handle;
+                return result.handle.getDirectoryHandle('Campagnes')
+                    .then(function(d) { return d.getDirectoryHandle(campaignName); })
+                    .then(function(d) { return d.getFileHandle('campagne.json'); })
+                    .then(function(fh) { return fh.getFile(); })
+                    .then(function(f) { return f.text(); })
+                    .then(function(text) {
+                        var data = JSON.parse(text);
+                        if (workflow) workflow.initWorkflow(data);
+                        currentCampaignData = data;
+                        initDetailsUI(campaignName, data);
+                        checkPublicationEndDates(campaignName, data);
+                    });
+            })
+            .catch(function(err) {
+                showError('Impossible de charger la campagne : ' + err.message);
+            });
+    }
+
+    // ─────────────────────────────────────────────
+    // INITIALISATION UI
+    // ─────────────────────────────────────────────
+    function initDetailsUI(name, data) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('campaign-subtitle').textContent = name;
+        currentCampaignName = name;
+        var editBtn        = document.getElementById('editButton');
+        var dupBtn         = document.getElementById('duplicateButton');
+        var toggleActifBtn = document.getElementById('toggleActifButton');
+        if (editBtn) editBtn.style.display = 'inline-flex';
+        if (dupBtn)  dupBtn.style.display  = 'inline-flex';
+        if (toggleActifBtn) {
+            toggleActifBtn.style.display = 'inline-flex';
+            var isActif = data.actif !== false;
+            toggleActifBtn.textContent = isActif ? '⏸️ Rendre inactif' : '▶️ Réactiver';
+            toggleActifBtn.style.color = isActif ? '#dc2626' : '#16a34a';
+        }
+        var deleteBtn = document.getElementById('deleteCampaignButton');
+        if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+        buildSideNav(name, data);
+        navigateTo('info');
+    }
+
+    // ─────────────────────────────────────────────
+    // NAVIGATION SECONDAIRE
+    // ─────────────────────────────────────────────
+    function buildSideNav(name, data) {
+        var nav = document.getElementById('details-sidenav');
+        var channels = data.channels || [];
+        var h = '<span class="details-sidenav-label">Navigation</span>';
+        h += '<button class="details-nav-item" id="nav-item-info" data-page="info">📋 Infos campagne</button>';
+        if (channels.length > 0) {
+            h += '<div class="details-nav-separator"></div>';
+            h += '<span class="details-sidenav-label">Canaux</span>';
+            channels.forEach(function(ch, idx) {
+                var label = ch.deliverableName || ('Canal ' + (idx + 1));
+                h += '<button class="details-nav-item" id="nav-item-' + idx + '" data-page="' + idx + '" title="' + security.escapeHtml(label) + '">📡 ' + security.escapeHtml(label) + '</button>';
+            });
+        }
+        nav.innerHTML = h;
+        nav.querySelectorAll('.details-nav-item').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var p = btn.getAttribute('data-page');
+                navigateTo(p === 'info' ? 'info' : parseInt(p, 10));
+            });
+        });
+    }
+
+    function navigateTo(pageKey) {
+        currentPage = pageKey;
+        document.querySelectorAll('.details-nav-item').forEach(function(b) { b.classList.remove('active'); });
+        var navId = (pageKey === 'info') ? 'nav-item-info' : ('nav-item-' + pageKey);
+        var navBtn = document.getElementById(navId);
+        if (navBtn) navBtn.classList.add('active');
+
+        var panel = document.getElementById('details-panel');
+        if (pageKey === 'info') {
+            panel.innerHTML = renderInfoPage(currentCampaignName, currentCampaignData);
+            setupGlobalEvents(currentCampaignName, currentCampaignData);
+        } else {
+            var idx = pageKey;
+            panel.innerHTML = renderChannelPage(idx, currentCampaignData);
+            setupChannelPageEvents(idx);
+            loadDepotForChannel(currentCampaignName, idx, currentCampaignData.channels[idx]);
+        }
+        panel.scrollTop = 0;
+    }
+
+    // ─────────────────────────────────────────────
+    // PAGE : INFOS CAMPAGNE
+    // ─────────────────────────────────────────────
+    function renderInfoPage(name, data) {
+        var html = '';
+
+        // Workflow timeline + manager/PO actions
+        if (workflow && data.workflow) {
+            html += buildWorkflowSection(name, data);
+        }
+
+        // Informations générales
+        html += '<div class="detail-section"><h3>📋 Informations générales</h3><div class="detail-grid">';
+        html += '<div class="detail-item"><span class="detail-label">Nom</span><span class="detail-value">' + security.escapeHtml(name) + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">ID Planner</span><span class="detail-value">' + security.escapeHtml(data.id || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">PO</span><span class="detail-value">' + security.escapeHtml(data.po || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Typologie</span><span class="detail-value">' + security.escapeHtml(data.typology || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Marché</span><span class="detail-value">' + security.escapeHtml(data.market || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Récurrence</span><span class="detail-value">' + security.escapeHtml(data.recurrence || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Date de lancement</span><span class="detail-value">' + security.escapeHtml(data.launchDate || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Date de saisie</span><span class="detail-value">' + security.escapeHtml(data.instantiation || '-') + '</span></div>';
+        html += '</div>';
+        if (data.description) {
+            html += '<div class="detail-item" style="margin-top:16px;"><span class="detail-label">Description</span><span class="detail-value">' + security.escapeHtml(data.description) + '</span></div>';
+        }
+        if (data.campagneLiee) {
+            var linkedUrl = 'details.html?name=' + encodeURIComponent(data.campagneLiee);
+            html += '<div class="detail-item" style="margin-top:8px;"><span class="detail-label">Campagne liée</span><span class="detail-value"><a href="' + linkedUrl + '" style="color:#16a34a;">' + security.escapeHtml(data.campagneLiee) + ' →</a></span></div>';
+        }
+        html += '</div>';
+
+        if (data.segments && data.segments.length > 0) {
+            html += '<div class="detail-section"><h3>👥 Segments (' + data.segments.length + ')</h3><div class="tag-list">';
+            data.segments.forEach(function(s) { html += '<span class="tag">' + security.escapeHtml(s) + '</span>'; });
+            html += '</div></div>';
+        }
+        if (data.ubs && data.ubs.length > 0) {
+            html += '<div class="detail-section"><h3>🎯 Univers de besoin (' + data.ubs.length + ')</h3><div class="tag-list">';
+            data.ubs.forEach(function(u) { html += '<span class="tag">' + security.escapeHtml(u) + '</span>'; });
+            html += '</div></div>';
+        }
+        if (data.targetProduct || data.productUrl || data.offerValidityDate) {
+            html += '<div class="detail-section"><h3>🛍️ Produit</h3><div class="detail-grid">';
+            if (data.targetProduct) html += '<div class="detail-item"><span class="detail-label">Produit cible</span><span class="detail-value">' + security.escapeHtml(data.targetProduct) + '</span></div>';
+            if (data.productUrl)    html += '<div class="detail-item"><span class="detail-label">URL Fiche Produit</span><span class="detail-value"><a href="' + security.escapeHtml(data.productUrl) + '" target="_blank">' + security.escapeHtml(data.productUrl) + '</a></span></div>';
+            if (data.offerValidityDate) html += '<div class="detail-item"><span class="detail-label">Date validité offre</span><span class="detail-value">' + security.escapeHtml(data.offerValidityDate) + '</span></div>';
+            html += '</div></div>';
+        }
+        if (data.transfo) {
+            html += '<div class="detail-section"><h3>🔄 Transformation</h3><div class="detail-grid">';
+            html += '<div class="detail-item"><span class="detail-label">Transfo</span><span class="detail-value">' + security.escapeHtml(data.transfo) + '</span></div>';
+            if (data.lotNumber) html += '<div class="detail-item"><span class="detail-label">N° Lot</span><span class="detail-value">' + security.escapeHtml(data.lotNumber) + '</span></div>';
+            html += '</div></div>';
+        }
+
+        // Section juridique
+        if (data.juridique && data.juridique.required) {
+            var jur = data.juridique;
+            var jurStatus = jur.status || 'pending';
+            var jurValidated = jurStatus === 'validated';
+            var isPOJur = users.isCurrentUserPO(data);
+            html += '<div class="detail-section" style="border-left-color:' + (jurValidated ? '#16a34a' : '#f59e0b') + ';">';
+            html += '<h3>⚖️ Validation juridique</h3>';
+            html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
+            html += '<span style="background:' + (jurValidated ? '#dcfce7' : '#fef3c7') + ';color:' + (jurValidated ? '#15803d' : '#d97706') + ';border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurValidated ? '✅ Validé' : '⏳ En attente') + '</span>';
+            html += '</div>';
+            if (jur.comment) html += '<div style="font-size:13px;color:#374151;background:#f8fafc;border-radius:6px;padding:8px 12px;margin-bottom:8px;">' + security.escapeHtml(jur.comment) + '</div>';
+            if (jur.validatedAt) html += '<div style="font-size:12px;color:#64748b;">Validé le ' + security.escapeHtml(jur.validatedAt) + '</div>';
+            // PO peut valider / ré-ouvrir
+            if (isPOJur) {
+                if (!jurValidated) {
+                    html += '<button id="btn-juridique-validate" style="margin-top:8px;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">✅ Marquer comme validé</button>';
+                } else {
+                    html += '<button id="btn-juridique-reopen" style="margin-top:8px;background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">↩ Ré-ouvrir</button>';
+                }
+            }
+            html += '</div>';
+        }
+
+        // Section documentaire (Item 21)
+        html += '<div class="detail-section" id="documents-section">';
+        html += '<h3>📁 Documents</h3>';
+        html += '<div id="documents-loading" style="color:#94a3b8;font-size:13px;">Chargement...</div>';
+        html += '<div id="documents-content" style="display:none;"></div>';
+        html += '</div>';
+
+        // Section discussion
+        html += '<div class="detail-section">';
+        html += '<h3>💬 Discussion</h3>';
+        html += '<div id="discussion-loading" style="color:#94a3b8;font-size:13px;padding:8px 0;">Chargement...</div>';
+        html += '<div id="discussion-list" class="discussion-list" style="display:none;"></div>';
+        html += '<div id="discussion-form" class="discussion-form" style="display:none;">';
+        html += '<textarea id="discussion-input" placeholder="Écrire un commentaire..."></textarea>';
+        html += '<div class="discussion-form-row"><button id="discussion-submit" class="btn-actor-submit">Publier</button></div>';
+        html += '</div>';
+        html += '<div id="discussion-no-user" style="display:none;color:#94a3b8;font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>';
+        html += '</div>';
+
+        return html;
+    }
+
+    // ─────────────────────────────────────────────
+    // HELPERS : assignations multi-membres (item 20)
+    // assignments[role] peut être une string (legacy) ou un tableau de noms
+    // ─────────────────────────────────────────────
+    function getAssignees(assignments, role) {
+        var val = (assignments || {})[role];
+        if (!val) return [];
+        return Array.isArray(val) ? val : [val];
+    }
+    function assigneesDisplay(assignments, role) {
+        var arr = getAssignees(assignments, role);
+        return arr.length ? arr.map(function(n){ return security.escapeHtml(n); }).join(', ') : '';
+    }
+
+    // Vérifie si une équipe est requise (délègue au module workflow)
+    function isTeamRequired(data, team) {
+        return workflow.isTeamRequired(data.requiredTeams, team);
+    }
+
+    // ─────────────────────────────────────────────
+    // PAGE : CANAL
+    // ─────────────────────────────────────────────
+    function renderChannelPage(idx, data) {
+        var ch = (data.channels || [])[idx];
+        if (!ch) return '<p class="error-message">Canal introuvable.</p>';
+
+        // Étapes de CE canal (v2 : channelSteps par canal)
+        var cs          = (data.workflow && data.workflow.channelSteps && data.workflow.channelSteps[idx]) || {};
+        var assignments = data.workflow ? data.workflow.assignments : {};
+        var currentUser = users && users.getCurrentUser();
+        var html = '';
+
+        var isPO = currentUser && currentUser.name === data.po;
+
+        // En-tête canal
+        html += '<div class="detail-section">';
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">';
+        html += '<h3 style="margin:0;">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (idx + 1))) + '</h3>';
+        if (isPO) {
+            html += '<button onclick="deleteChannel(' + idx + ')" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">🗑️ Supprimer ce canal</button>';
+        }
+        html += '</div>';
+        html += '<div class="detail-grid">';
+        html += '<div class="detail-item"><span class="detail-label">Canal contenu</span><span class="detail-value">' + security.escapeHtml(ch.content || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Date de réception client</span><span class="detail-value">' + security.escapeHtml(ch.sendDate || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Type de Com</span><span class="detail-value">' + security.escapeHtml(ch.comType || '-') + '</span></div>';
+        html += '<div class="detail-item"><span class="detail-label">Critère ciblage</span><span class="detail-value">' + security.escapeHtml(ch.targetingCriteria || '-') + '</span></div>';
+        if (ch.emailObject) html += '<div class="detail-item"><span class="detail-label">Objet de l\'email</span><span class="detail-value">' + security.escapeHtml(ch.emailObject) + '</span></div>';
+        if (ch.volumeCible) html += '<div class="detail-item"><span class="detail-label">Volume cible</span><span class="detail-value">' + ch.volumeCible.toLocaleString('fr-FR') + (ch.volumeCible > 100000 ? ' ⚠️' : '') + '</span></div>';
+        if (ch.comTypology) html += '<div class="detail-item"><span class="detail-label">Typologie Com</span><span class="detail-value">' + security.escapeHtml(ch.comTypology) + '</span></div>';
+        if (ch.urlTicTac)   html += '<div class="detail-item"><span class="detail-label">URL TicTac</span><span class="detail-value"><a href="' + security.escapeHtml(ch.urlTicTac) + '" target="_blank">Ouvrir</a></span></div>';
+        if (ch.urlLccx)     html += '<div class="detail-item"><span class="detail-label">Lien LCCX</span><span class="detail-value"><a href="' + security.escapeHtml(ch.urlLccx) + '" target="_blank">Ouvrir</a></span></div>';
+        var comStoreUrls = (ch.urlsComStore && ch.urlsComStore.length) ? ch.urlsComStore : (ch.urlComStore ? [ch.urlComStore] : []);
+        if (comStoreUrls.length > 0) {
+            html += '<div class="detail-item"><span class="detail-label">URL ComStore</span><span class="detail-value">';
+            comStoreUrls.forEach(function(u, ui) {
+                html += '<a href="' + security.escapeHtml(u) + '" target="_blank" style="display:block;">Ouvrir' + (comStoreUrls.length > 1 ? ' ' + (ui + 1) : '') + '</a>';
+            });
+            html += '</span></div>';
+        }
+        html += '</div></div>';
+
+        var _isSuperAdmin  = currentUser && currentUser.isSuperAdmin;
+        var isAssignedCom  = _isSuperAdmin || (currentUser && getAssignees(assignments, 'com').indexOf(currentUser.name)  !== -1);
+        var isAssignedEbf  = _isSuperAdmin || (currentUser && getAssignees(assignments, 'ebf').indexOf(currentUser.name)  !== -1);
+        var isAssignedData = _isSuperAdmin || (currentUser && getAssignees(assignments, 'data').indexOf(currentUser.name) !== -1);
+
+        var reqCom  = isTeamRequired(data, 'Com');
+        var reqEbf  = isTeamRequired(data, 'EBF');
+        var reqData = isTeamRequired(data, 'Data');
+        var isLP    = ch.type === 'LP';
+
+        // Zone 1 : Maquette Com — visible seulement si Com requis
+        if (reqCom) {
+            var comActive = cs.com_maquette === 'pending' || cs.com_maquette === 'revision_requested';
+            html += buildComChannelSection(data, ch, idx, cs, isAssignedCom && comActive);
+        }
+
+        // Zone 2 : BAT EBF — visible seulement si EBF requis
+        if (reqEbf) {
+            var ebfBatActive = cs.ebf_bat === 'pending' || cs.ebf_bat === 'revision_requested';
+            html += buildEbfBatChannelSection(data, ch, idx, cs, isAssignedEbf && ebfBatActive);
+        }
+
+        // Zone 3 : Ciblage Data — non visible pour canal LP
+        if (reqData && !isLP) {
+            var dataActive = cs.data_ciblage === 'pending' || cs.data_ciblage === 'revision_requested';
+            html += buildDataChannelSection(data, ch, idx, cs, 'data_ciblage', 'Ciblage Data', isAssignedData && dataActive);
+        }
+
+        // Zone 4 : Lancement test — non visible pour canal LP
+        if (reqData && reqEbf && !isLP && cs.data_lancement_test !== 'locked') {
+            var ltActive = cs.data_lancement_test === 'pending' || cs.data_lancement_test === 'revision_requested';
+            html += buildDataLancementTestSection(data, ch, idx, cs, isAssignedData && ltActive);
+        }
+
+        // Zone 5 : Test en prod EBF — visible si EBF+Data requis, OU si canal LP+EBF
+        if (reqEbf && (reqData || isLP)) {
+            var ebfTpActive = cs.ebf_test_prod === 'pending' || cs.ebf_test_prod === 'revision_requested';
+            html += buildEbfTestProdChannelSection(data, ch, idx, cs, isAssignedEbf && ebfTpActive);
+        }
+
+        // Zone 6 : MEP Data — non visible pour canal LP
+        if (reqData && !isLP && cs.data_mise_en_prod !== 'locked') {
+            var mepActive = cs.data_mise_en_prod === 'pending';
+            html += buildDataMepSection(data, ch, idx, cs, isAssignedData && mepActive);
+        }
+
+        // Zone 6 LP : MEP EBF — uniquement pour canal LP
+        if (isLP && reqEbf && cs.ebf_mise_en_prod !== 'locked') {
+            var ebfMepActive = cs.ebf_mise_en_prod === 'pending';
+            html += buildEbfMepSection(data, ch, idx, cs, isAssignedEbf && ebfMepActive);
+        }
+
+        return html;
+    }
+
+    // ─────────────────────────────────────────────
+    // BUILDERS PAR CANAL (sans accordéon)
+    // ─────────────────────────────────────────────
+    function buildComChannelSection(data, ch, idx, cs, editable) {
+        var steps           = cs; // alias
+        var isRevision      = cs.com_maquette === 'revision_requested';
+        var _crc            = data.workflow.channelRevisionComments;
+        var revisionComment = _crc && _crc[idx] && _crc[idx].com_maquette;
+        var comUsers        = users.getUsersByRole('com');
+        var stepStatus      = cs.com_maquette;
+
+        var h = '<div class="actor-section actor-section--com' + (isRevision ? ' actor-section--revision' : '') + '" id="com-work-section">';
+        h += '<h3>🎨 Maquette Com';
+        if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_maquette === 'validated' || steps.po_validation_maquette === 'completed')) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        h += '</h3>';
+        if (stepStatus === 'locked') {
+            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
+            h += '</div>'; return h;
+        }
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (users && users.isCurrentUserTeamManager('com')) {
+            h += buildReassignBlock('com', users.getUsersByRole('com'), getAssignees(data.workflow.assignments, 'com'));
+        } else if (!editable) {
+            var _comDisp = assigneesDisplay(data.workflow.assignments, 'com');
+            if (_comDisp) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Responsable(s) Com : <strong>' + _comDisp + '</strong></p>';
+        }
+
+        h += '<div id="com-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
+        h += '<div id="com-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
+        h += '<div id="com-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+
+        if (editable) {
+            h += '<div class="actor-form">';
+            h += '<div class="form-row"><label>Date de dépôt maquette</label><input type="date" id="com-depot-date-' + idx + '" class="form-control"></div>';
+            h += '<div class="form-row"><label>URL Figma</label><input type="url" id="com-figma-' + idx + '" class="form-control" placeholder="https://figma.com/..."></div>';
+            h += '<div class="form-row"><label>Nombre d\'images</label><input type="number" id="com-numimages-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
+            h += '<div id="com-img-urls-' + idx + '"></div>';
+            h += '<div class="form-row"><label>Validation juridique</label><div class="radio-group"><label><input type="radio" name="com-juri-' + idx + '" value="Oui"> Oui</label><label><input type="radio" name="com-juri-' + idx + '" value="Non"> Non</label></div></div>';
+            h += '<div class="form-row"><label>Fichier (PDF ou image)</label><input type="file" id="com-pdf-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-save btn-save-com" data-ch="' + idx + '">💾 Enregistrer</button>';
+            h += '<button type="button" class="btn-actor-submit btn-submit-canal-com" data-ch="' + idx + '">📤 Soumettre ce canal</button>';
+            h += '</div>';
+        }
+        // Bloc validation PO par canal (v2 : channelSteps — plus besoin de channelValidations)
+        var isPO = users && users.isCurrentUserPO(data);
+        if (isPO && cs.po_validation_maquette === 'pending') {
+            h += buildPoValidationBlock('po_validation_maquette', 'com_maquette', true, true, idx, null);
+        }
+        // Dates de dépôt / validation (readonly)
+        var chDates = data.workflow.channelDates && data.workflow.channelDates[idx];
+        if (chDates && (chDates.depotMaquetteDate || chDates.validationMaquetteDate)) {
+            h += '<div class="depot-readonly-grid" style="margin-top:8px;">';
+            if (chDates.depotMaquetteDate) h += '<div class="depot-readonly-item"><strong>Date dépôt maquette</strong>' + security.escapeHtml(chDates.depotMaquetteDate) + '</div>';
+            if (chDates.validationMaquetteDate) h += '<div class="depot-readonly-item"><strong>Date validation maquette</strong>' + security.escapeHtml(chDates.validationMaquetteDate) + '</div>';
+            h += '</div>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function buildEbfBatChannelSection(data, ch, idx, cs, editable) {
+        var steps           = cs; // alias
+        var isRevision      = cs.ebf_bat === 'revision_requested';
+        var _crc            = data.workflow.channelRevisionComments;
+        var revisionComment = _crc && _crc[idx] && _crc[idx].ebf_bat;
+        var ebfUsers        = users.getUsersByRole('ebf');
+        var stepStatus      = cs.ebf_bat;
+
+        var h = '<div class="actor-section actor-section--ebf' + (isRevision ? ' actor-section--revision' : '') + '" id="ebf-work-section">';
+        h += '<h3>🖨️ Réalisation BAT';
+        if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_bat === 'validated' || steps.po_validation_bat === 'completed')) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        h += '</h3>';
+        if (stepStatus === 'locked') {
+            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation de la maquette Com.</p>';
+            h += '</div>'; return h;
+        }
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (users && users.isCurrentUserTeamManager('ebf')) {
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
+        } else if (!editable) {
+            var _ebfDisp = assigneesDisplay(data.workflow.assignments, 'ebf');
+            if (_ebfDisp) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp + '</strong></p>';
+        }
+
+        h += '<div id="ebf-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
+        h += '<div id="bat-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
+        h += '<div id="ebf-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+
+        if (editable) {
+            h += '<div class="actor-form">';
+            h += '<p style="font-size:12px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:10px;">Initialisation</p>';
+            h += '<div class="form-row"><label>Webmaster / Resp. EBF</label><select id="ebf-webmaster-' + idx + '" class="form-control"><option value="">-- Choisir --</option>';
+            ebfUsers.forEach(function(u) { h += '<option value="' + security.escapeHtml(u.name) + '">' + security.escapeHtml(u.name) + '</option>'; });
+            h += '</select></div>';
+            h += '<div class="form-row"><label>Code Com</label><input type="text" id="ebf-codecom-' + idx + '" class="form-control"></div>';
+            h += '<div class="form-row"><label>Ref Paracom <small style="font-weight:normal">(max 32 car.)</small></label><input type="text" id="ebf-refpara-' + idx + '" maxlength="32" class="form-control"></div>';
+            h += '<div class="form-row"><label>Nombre de CTA</label><input type="number" id="ebf-numcta-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
+            h += '<div id="ebf-cta-urls-' + idx + '"></div>';
+            h += '<p style="font-size:12px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
+            h += '<div class="form-row"><label>Fichier BAT (PDF ou image)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '">📤 Déposer et soumettre</button>';
+            h += '</div>';
+        }
+        // Bloc validation PO par canal (v2 : channelSteps)
+        var isPO = users && users.isCurrentUserPO(data);
+        if (isPO && cs.po_validation_bat === 'pending') {
+            h += buildPoValidationBlock('po_validation_bat', 'ebf_bat', true, true, idx, null);
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function buildEbfTestProdChannelSection(data, ch, idx, cs, editable) {
+        var steps           = cs; // alias
+        var isRevision      = cs.ebf_test_prod === 'revision_requested';
+        var _crc            = data.workflow.channelRevisionComments;
+        var revisionComment = _crc && _crc[idx] && _crc[idx].ebf_test_prod;
+        var stepStatus      = cs.ebf_test_prod;
+
+        var h = '<div class="actor-section actor-section--ebf' + (isRevision ? ' actor-section--revision' : '') + '" id="ebf-testprod-section">';
+        h += '<h3>🔬 Test en production';
+        if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_test_prod === 'validated' || steps.po_validation_test_prod === 'completed')) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        h += '</h3>';
+        if (stepStatus === 'locked') {
+            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du BAT et du ciblage.</p>';
+            h += '</div>'; return h;
+        }
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (users && users.isCurrentUserTeamManager('ebf')) {
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
+        } else if (!editable) {
+            var _ebfDisp2 = assigneesDisplay(data.workflow.assignments, 'ebf');
+            if (_ebfDisp2) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp2 + '</strong></p>';
+        }
+
+        h += '<div id="ebf-testprod-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
+        h += '<div id="testprod-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
+        h += '<div id="ebf-testprod-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+
+        if (editable) {
+            h += '<div class="actor-form">';
+            h += '<div class="form-row"><label>Fichier test en production (image ou PDF)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">📤 Déposer et soumettre</button>';
+            h += '</div>';
+        }
+        // Bloc validation PO (v2 : channelSteps)
+        var isPO = users && users.isCurrentUserPO(data);
+        if (isPO && cs.po_validation_test_prod === 'pending') {
+            h += buildPoValidationBlock('po_validation_test_prod', 'ebf_test_prod', true, false, idx, null);
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function buildDataChannelSection(data, ch, idx, cs, dataStepId, stepLabel, editable) {
+        var isCiblage      = dataStepId === 'data_ciblage';
+        var isMep          = dataStepId === 'data_mise_en_prod';
+        var isRevision     = dataStepId && (cs[dataStepId] === 'revision_requested');
+        var _crc           = data.workflow.channelRevisionComments;
+        var revisionComment = isRevision && _crc && _crc[idx] && _crc[idx][dataStepId];
+        var dataUsers      = users.getUsersByRole('data');
+        var icon           = isMep ? '🚀' : '🎯';
+        var stepStatus     = dataStepId ? cs[dataStepId] : '';
+        var dataPoStep      = isCiblage ? 'po_validation_ciblage' : null;
+        var dataPoValidated = dataPoStep && (cs[dataPoStep] === 'validated' || cs[dataPoStep] === 'completed');
+
+        var h = '<div class="actor-section actor-section--data' + (isRevision ? ' actor-section--revision' : '') + '" id="data-work-section">';
+        h += '<h3>' + icon + ' ' + (stepLabel || 'Workflow Data');
+        if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
+        else if (isMep && stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
+        else if (stepStatus === 'submitted' && dataPoValidated) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ ' + (isMep ? 'Terminé' : 'Validé') + '</span>';
+        h += '</h3>';
+        if (stepStatus === 'locked') {
+            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
+            h += '</div>'; return h;
+        }
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (users && users.isCurrentUserTeamManager('data')) {
+            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'));
+        } else if (!editable) {
+            var _datDisp = assigneesDisplay(data.workflow.assignments, 'data');
+            if (_datDisp) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Data assigné(s) : <strong>' + _datDisp + '</strong></p>';
+        }
+
+        h += '<div id="data-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
+        h += '<div id="data-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+
+        if (editable) {
+            h += '<div class="actor-form">';
+            if (isCiblage) {
+                h += '<div class="form-row"><label>Volume cible <small style="font-weight:normal;color:#6c757d;">(nb de destinataires — alerte si &gt; 100 000)</small></label><input type="number" id="data-volume-' + idx + '" class="form-control" min="0" placeholder="Ex : 50000" value="' + (ch.volumeCible || '') + '"></div>';
+                h += '<div class="form-row"><label>Code Projet</label><input type="text" id="data-codeproj-' + idx + '" class="form-control"></div>';
+                h += '<div class="form-row"><label>Code Action</label><input type="text" id="data-codeaction-' + idx + '" class="form-control"></div>';
+                h += '<div class="form-row"><label>Code MK</label><input type="text" id="data-codemk-' + idx + '" class="form-control"></div>';
+                h += '<div class="form-row"><label>Chemin de la Requête</label><input type="text" id="data-chemin-' + idx + '" class="form-control"></div>';
+            } else if (isMep) {
+                h += '<p style="font-size:14px;color:#495057;margin-bottom:8px;">Confirmez la mise en production de ce canal.</p>';
+            }
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            var submitLabel = isMep ? '🚀 Confirmer MEP de ce canal' : '📤 Déposer et soumettre';
+            var submitClass = isMep ? 'btn-actor-submit btn-actor-submit--mep' : 'btn-actor-submit';
+            h += '<button type="button" class="' + submitClass + ' btn-submit-canal-data" data-ch="' + idx + '" data-step="' + (dataStepId || '') + '">' + submitLabel + '</button>';
+            h += '</div>';
+        }
+        // Bloc validation PO ciblage (v2 : channelSteps)
+        var isPO = users && users.isCurrentUserPO(data);
+        if (isPO && isCiblage && cs.po_validation_ciblage === 'pending') {
+            h += buildPoValidationBlock('po_validation_ciblage', 'data_ciblage', true, false, idx, null);
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function buildDataMepSection(data, ch, idx, cs, editable) {
+        var stepStatus = cs.data_mise_en_prod;
+        var h = '<div class="actor-section actor-section--mep" id="data-mep-section">';
+        h += '<h3>🚀 Mise en production';
+        if (stepStatus === 'pending')   h += ' <span style="font-size:11px;background:#fff9c4;color:#f57f17;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ En attente</span>';
+        if (stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
+        h += '</h3>';
+        if (!editable && data.workflow.assignments.data) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Data assigné : <strong>' + security.escapeHtml(data.workflow.assignments.data) + '</strong></p>';
+
+        h += '<div id="data-mep-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
+        h += '<div id="data-mep-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
+
+        if (editable) {
+            h += '<div class="actor-form">';
+            h += '<div class="form-row"><label>Date de mise en production effective</label><input type="date" id="data-mepdate-' + idx + '" class="form-control"></div>';
+            h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="data-mepcomment-' + idx + '" class="form-control" placeholder="Ex : routage déclenché à 9h00"></div>';
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';
+            h += '</div>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function buildEbfMepSection(data, ch, idx, cs, editable) {
+        var stepStatus = cs.ebf_mise_en_prod;
+        var h = '<div class="actor-section actor-section--mep" id="ebf-mep-section-' + idx + '">';
+        h += '<h3>🚀 Mise en production LP';
+        if (stepStatus === 'pending')   h += ' <span style="font-size:11px;background:#fff9c4;color:#f57f17;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ En attente</span>';
+        if (stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
+        h += '</h3>';
+        if (stepStatus === 'locked') {
+            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
+            h += '</div>'; return h;
+        }
+        if (users && users.isCurrentUserTeamManager('ebf')) {
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
+        } else if (!editable) {
+            var _ebfDispMep = assigneesDisplay(data.workflow.assignments, 'ebf');
+            if (_ebfDispMep) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDispMep + '</strong></p>';
+        }
+        h += '<div id="ebf-mep-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
+        h += '<div id="ebf-mep-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
+        if (editable) {
+            h += '<div class="actor-form">';
+            h += '<div class="form-row"><label>Date de mise en production effective</label><input type="date" id="ebf-mepdate-' + idx + '" class="form-control"></div>';
+            h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="ebf-mepcomment-' + idx + '" class="form-control" placeholder="Ex : LP mise en ligne à 9h00"></div>';
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-ebf-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';
+            h += '</div>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    function buildDataLancementTestSection(data, ch, idx, cs, editable) {
+        var stepStatus      = cs.data_lancement_test;
+        var isRevision      = stepStatus === 'revision_requested';
+        var _crc            = data.workflow.channelRevisionComments;
+        var revisionComment = isRevision && _crc && _crc[idx] && _crc[idx].data_lancement_test;
+
+        var h = '<div class="actor-section actor-section--data' + (isRevision ? ' actor-section--revision' : '') + '" id="data-testlaunch-section">';
+        h += '<h3>🧪 Lancement test en prod';
+        if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de MEP</span>';
+        else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Lancé</span>';
+        h += '</h3>';
+        if (stepStatus === 'locked') {
+            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
+            h += '</div>'; return h;
+        }
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (users && users.isCurrentUserTeamManager('data')) {
+            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'));
+        } else if (!editable) {
+            var _datDispLt = assigneesDisplay(data.workflow.assignments, 'data');
+            if (_datDispLt) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Data assigné(s) : <strong>' + _datDispLt + '</strong></p>';
+        }
+
+        h += '<div id="data-testlaunch-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
+        h += '<div id="data-testlaunch-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+
+        if (editable) {
+            h += '<div class="actor-form">';
+            h += '<div class="form-row"><label>Cible du test <small style="font-weight:normal;">(ex : 50 clients segment X)</small></label><input type="text" id="data-cibletest-' + idx + '" class="form-control" placeholder="Décrivez la cible du test..."></div>';
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-submit btn-submit-canal-datatest" data-ch="' + idx + '" data-step="data_lancement_test">🧪 Confirmer le lancement test</button>';
+            h += '</div>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    // ── Bloc réaffectation pour les managers de service (items 16 & 17) ──
+    // role             : 'com' | 'ebf' | 'data'
+    // teamUsers        : liste des utilisateurs de ce rôle
+    // currentAssignees : tableau de noms (peut être vide ou string legacy)
+    function buildReassignBlock(role, teamUsers, currentAssignees) {
+        var labels = { com: 'Com assigné(e)s', ebf: 'EBF assigné(s)', data: 'Data assigné(s)' };
+        var label = labels[role] || (role + ' assigné(s)');
+        var cur = Array.isArray(currentAssignees) ? currentAssignees : (currentAssignees ? [currentAssignees] : []);
+        var h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">';
+        if (cur.length) {
+            h += '<span style="font-size:13px;color:#6c757d;">' + label + ' : <strong>' + cur.map(security.escapeHtml).join(', ') + '</strong></span>';
+        } else {
+            h += '<span style="font-size:13px;color:#adb5bd;font-style:italic;">' + label + ' : non assigné</span>';
+        }
+        h += '<button class="btn-team-reassign" data-role="' + role + '" style="background:none;border:1px solid #adb5bd;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Modifier</button>';
+        h += '</div>';
+        h += '<div id="reassign-form-' + role + '" style="display:none;background:#f5f5f5;border-radius:6px;padding:10px 12px;margin-bottom:12px;">';
+        h += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
+        teamUsers.forEach(function(u) {
+            var checked = cur.indexOf(u.name) !== -1 ? ' checked' : '';
+            h += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">';
+            h += '<input type="checkbox" class="reassign-cb-' + role + '" value="' + security.escapeHtml(u.name) + '"' + checked + '> ';
+            h += security.escapeHtml(u.name) + '</label>';
+        });
+        h += '</div>';
+        h += '<button class="btn-team-reassign-save" data-role="' + role + '" style="background:#308276;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
+        h += '</div>';
+        return h;
+    }
+
+    // channelIdx : index du canal (pour validation par canal)
+    // channelVal : état de validation de ce canal ('validated'|'revision_requested'|null)
+    function buildPoValidationBlock(poStepId, sourceStepId, canRevise, needsImage, channelIdx, channelVal) {
+        // Si ce canal est déjà validé → afficher un badge vert
+        if (channelVal === 'validated') {
+            return '<div style="background:#e8f5e9;border:1px solid #2e7d32;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:600;color:#2e7d32;">✅ Ce canal a été validé</div>';
+        }
+        var chAttr = (channelIdx !== undefined) ? (' data-ch="' + channelIdx + '"') : '';
+        var uid = poStepId + (channelIdx !== undefined ? ('-' + channelIdx) : '');
+        var h = '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:12px 14px;margin-top:12px;">';
+        h += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
+        h += '<span style="font-size:13px;font-weight:600;color:#1565c0;">📤 En attente de votre validation</span>';
+        if (needsImage) {
+            h += '</div>';
+            h += '<div style="margin-top:10px;margin-bottom:8px;">';
+            h += '<label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">Capture d\'écran de validation (optionnelle)</label>';
+            h += '<input type="file" id="po-ch-img-' + uid + '" class="form-control" accept="image/*">';
+            h += '<div id="po-ch-img-preview-' + uid + '" style="margin-top:8px;"></div>';
+            h += '</div>';
+            h += '<div style="display:flex;gap:8px;">';
+        } else {
+            h += '<div style="display:flex;gap:8px;">';
+        }
+        h += '<button class="btn-po-validate-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:#2e7d32;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">✅ Valider ce canal</button>';
+        if (canRevise) {
+            h += '<button class="btn-po-ask-revision-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:#e65100;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer;">🔄 Demander modification</button>';
+        }
+        h += '</div></div>';
+        if (canRevise) {
+            h += '<div id="revision-form-ch-' + uid + '" style="display:none;margin-top:10px;">';
+            h += '<textarea id="revision-comment-ch-' + uid + '" rows="3" placeholder="Décrivez la modification demandée..." style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #e65100;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>';
+            h += '<button class="btn-po-send-revision-ch" data-step="' + poStepId + '"' + chAttr + ' data-source="' + sourceStepId + '" style="margin-top:8px;background:#e65100;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">📤 Envoyer la demande</button>';
+            h += '</div>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    // ─────────────────────────────────────────────
+    // WORKFLOW SECTION (timeline + manager + PO)
+    // ─────────────────────────────────────────────
+    function buildWorkflowSection(name, data) {
+        var currentUser = users && users.getCurrentUser();
+        var steps = data.workflow.steps;
+        var assignments = data.workflow.assignments;
+        var isCompleted = workflow.isCompleted(data);
+
+        var statusColors = {
+            locked:             { bg: '#e0e0e0', color: '#9e9e9e', icon: '🔒' },
+            pending:            { bg: '#fff9c4', color: '#f57f17', icon: '⏳' },
+            submitted:          { bg: '#e3f2fd', color: '#1565c0', icon: '📤' },
+            validated:          { bg: '#e8f5e9', color: '#2e7d32', icon: '✅' },
+            completed:          { bg: '#c8e6c9', color: '#1b5e20', icon: '🏁' },
+            revision_requested: { bg: '#fff3e0', color: '#e65100', icon: '🔄' }
+        };
+
+        var globalSteps = data.workflow.steps || {};
+        var channelSteps = data.workflow.channelSteps || {};
+        var channels = data.channels || [];
+        var numCh = channels.length;
+
+        var html = '<div class="detail-section" id="workflow-section">';
+        html += '<h3>🔄 Workflow</h3>';
+
+        // ── Étapes globales ──
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">';
+        workflow.STEPS.slice(0, 3).forEach(function(step) {
+            var status = globalSteps[step.id] || 'locked';
+            if (isCompleted) status = 'completed';
+            var sc = statusColors[status] || statusColors.locked;
+            html += '<div style="background:' + sc.bg + ';color:' + sc.color + ';border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap;" title="' + step.description + '">' + sc.icon + ' ' + step.label + '</div>';
+        });
+        html += '</div>';
+
+        // ── Étapes par canal (v2) ──
+        var reqCom  = isTeamRequired(data, 'Com');
+        var reqEbf  = isTeamRequired(data, 'EBF');
+        var reqData = isTeamRequired(data, 'Data');
+        var channelStepDefs = workflow.STEPS.slice(3).filter(function(step) {
+            if (step.id === 'com_maquette' || step.id === 'po_validation_maquette') return reqCom;
+            if (step.id === 'ebf_bat' || step.id === 'po_validation_bat') return reqEbf;
+            if (step.id === 'data_ciblage' || step.id === 'po_validation_ciblage') return reqData;
+            if (step.id === 'data_lancement_test' || step.id === 'ebf_test_prod' || step.id === 'po_validation_test_prod') return reqEbf && reqData;
+            if (step.id === 'data_mise_en_prod') return reqData;
+            return true;
+        });
+
+        if (numCh > 0 && channelStepDefs.length > 0) {
+            html += '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;">';
+            html += '<thead><tr><th style="text-align:left;padding:4px 8px;background:#f8fafc;border:1px solid #e2e8f0;font-weight:700;color:#64748b;">Canal</th>';
+            channelStepDefs.forEach(function(step) {
+                html += '<th style="padding:4px 6px;background:#f8fafc;border:1px solid #e2e8f0;font-weight:700;color:#64748b;text-align:center;" title="' + step.description + '">' + step.icon + '</th>';
+            });
+            html += '</tr></thead><tbody>';
+            channels.forEach(function(ch, ci) {
+                var cs = channelSteps[ci] || {};
+                var chCompleted = isCompleted || workflow.isChannelCompleted(cs, data.requiredTeams, ch.type);
+                html += '<tr>';
+                html += '<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600;color:#0f172a;">' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</td>';
+                channelStepDefs.forEach(function(step) {
+                    var status = chCompleted ? 'completed' : (cs[step.id] || 'locked');
+                    var sc = statusColors[status] || statusColors.locked;
+                    html += '<td style="padding:4px 6px;border:1px solid #e2e8f0;text-align:center;background:' + sc.bg + ';color:' + sc.color + ';" title="' + step.label + ' : ' + status + '">' + sc.icon + '</td>';
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        if (isCompleted) {
+            html += '<div style="background:#c8e6c9;color:#1b5e20;border-radius:8px;padding:12px 16px;font-weight:700;margin-bottom:12px;">🏁 Campagne terminée !</div>';
+            html += '</div>';
+            return html;
+        }
+
+        var hasAssignments = getAssignees(assignments, 'com').length || getAssignees(assignments, 'ebf').length || getAssignees(assignments, 'data').length;
+        if (hasAssignments) {
+            html += '<div style="background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
+            html += '<strong>Équipes affectées :</strong> ';
+            var parts = [];
+            if (assignments.manager)                parts.push('Manager : ' + security.escapeHtml(assignments.manager));
+            if (assigneesDisplay(assignments,'com')) parts.push('Com : ' + assigneesDisplay(assignments,'com'));
+            if (assigneesDisplay(assignments,'ebf')) parts.push('EBF : ' + assigneesDisplay(assignments,'ebf'));
+            if (assigneesDisplay(assignments,'data'))parts.push('Data : ' + assigneesDisplay(assignments,'data'));
+            html += parts.join(' &nbsp;|&nbsp; ');
+            html += '</div>';
+        }
+
+        if (!currentUser) {
+            html += '<p style="color:#888;font-size:13px;">Sélectionnez un utilisateur pour voir vos actions disponibles.</p>';
+            html += '</div>';
+            return html;
+        }
+
+        // Manager : affectation
+        if (users.isCurrentUserManager() && steps.manager_affectation === 'pending') {
+            // isGeneralManager = marketing manager (Sébastien L) → voit les 3 dropdowns
+            // Les managers de service (com/ebf/data) ne voient que leur propre dropdown (item 15)
+            var isGeneralManager = (currentUser.role === 'marketing' && currentUser.isManager === true) || (currentUser.isSuperAdmin === true);
+            // Filtrer les équipes selon les services requis par la campagne
+            var _requiredTeams = data.requiredTeams || [];
+            var _needsCom  = _requiredTeams.length === 0 || _requiredTeams.indexOf('Com')  !== -1;
+            var _needsEbf  = _requiredTeams.length === 0 || _requiredTeams.indexOf('EBF')  !== -1;
+            var _needsData = _requiredTeams.length === 0 || _requiredTeams.indexOf('Data') !== -1;
+            html += '<div style="background:#fff9c4;border:1px solid #f57f17;border-radius:8px;padding:14px;margin-bottom:12px;" id="assignment-form-container">';
+            html += '<h4 style="margin:0 0 12px;color:#e65100;">👥 Affecter les équipes</h4>';
+            if (!isGeneralManager) {
+                var _comArr = getAssignees(assignments, 'com');
+                var _ebfArr = getAssignees(assignments, 'ebf');
+                var _datArr = getAssignees(assignments, 'data');
+                html += '<div style="background:#fffde7;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;">';
+                html += '<strong>État des affectations :</strong><br>';
+                if (_needsCom)  html += (_comArr.length ? '✅' : '⏳') + ' Com : '  + (_comArr.length ? _comArr.map(security.escapeHtml).join(', ') : 'non assigné') + ' &nbsp;|&nbsp; ';
+                if (_needsEbf)  html += (_ebfArr.length ? '✅' : '⏳') + ' EBF : '  + (_ebfArr.length ? _ebfArr.map(security.escapeHtml).join(', ') : 'non assigné') + ' &nbsp;|&nbsp; ';
+                if (_needsData) html += (_datArr.length ? '✅' : '⏳') + ' Data : ' + (_datArr.length ? _datArr.map(security.escapeHtml).join(', ') : 'non assigné');
+                html += '</div>';
+            }
+            // Helper local : génère un groupe de checkboxes pour une équipe
+            function buildTeamCheckboxes(role, label, teamUsers, currentAssignments) {
+                var cur = getAssignees(currentAssignments, role);
+                var h = '<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">' + label + '</label>';
+                h += '<div style="max-height:130px;overflow-y:auto;border:1px solid #ccc;border-radius:6px;padding:6px;background:#fff;">';
+                teamUsers.forEach(function(u) {
+                    var checked = cur.indexOf(u.name) !== -1 ? ' checked' : '';
+                    h += '<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;cursor:pointer;">';
+                    h += '<input type="checkbox" class="assign-cb-' + role + '" value="' + security.escapeHtml(u.name) + '"' + checked + '> ';
+                    h += security.escapeHtml(u.name) + '</label>';
+                });
+                h += '</div></div>';
+                return h;
+            }
+            var _showCom  = (isGeneralManager || currentUser.role === 'com')  && _needsCom;
+            var _showEbf  = (isGeneralManager || currentUser.role === 'ebf')  && _needsEbf;
+            var _showData = (isGeneralManager || currentUser.role === 'data') && _needsData;
+            var _colCount = (_showCom ? 1 : 0) + (_showEbf ? 1 : 0) + (_showData ? 1 : 0);
+            html += '<div style="display:grid;grid-template-columns:repeat(' + (_colCount || 1) + ',1fr);gap:10px;">';
+            if (_showCom)  html += buildTeamCheckboxes('com', 'Communication', users.getUsersByRole('com'), assignments);
+            if (_showEbf)  html += buildTeamCheckboxes('ebf', 'EBF', users.getUsersByRole('ebf'), assignments);
+            if (_showData) html += buildTeamCheckboxes('data', 'Data', users.getUsersByRole('data'), assignments);
+            html += '</div>';
+            var _reqTeamsAttr = [_needsCom?'com':'', _needsEbf?'ebf':'', _needsData?'data':''].filter(function(x){return x;}).join(',');
+            var btnLabel = isGeneralManager ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation';
+            html += '<button id="btn-validate-assignment" data-general="' + isGeneralManager + '" data-role="' + security.escapeHtml(currentUser.role) + '" data-required-teams="' + _reqTeamsAttr + '" style="margin-top:12px;background:#308276;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">' + btnLabel + '</button>';
+            if (!isGeneralManager) {
+                html += '<span style="margin-left:10px;font-size:12px;color:#888;">L\'étape sera validée quand tous les services requis seront renseignés.</span>';
+            }
+            html += '</div>';
+        }
+
+        // PO : Kick-off (après affectation, avant le démarrage des équipes)
+        var isPOKickoff = users.isCurrentUserPO(data);
+
+        // Résumé kick-off (visible par tous quand validé)
+        if (steps.po_kickoff === 'validated' && data.kickoffDate) {
+            html += '<div style="background:#e8f5e9;border:1px solid #2e7d32;border-radius:8px;padding:14px;margin-bottom:12px;">';
+            html += '<h4 style="margin:0 0 10px;color:#1b5e20;">🚀 Kick-off réalisé le ' + security.escapeHtml(data.kickoffDate) + '</h4>';
+            var kfNotes = data.kickoffPersonNotes || {};
+            var kfNoteKeys = Object.keys(kfNotes);
+            if (kfNoteKeys.length > 0) {
+                html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">';
+                kfNoteKeys.forEach(function(person) {
+                    if (kfNotes[person]) {
+                        html += '<div style="background:#fff;border:1px solid #a5d6a7;border-radius:6px;padding:8px 10px;">';
+                        html += '<div style="font-size:11px;font-weight:700;color:#2e7d32;margin-bottom:4px;">' + security.escapeHtml(person) + '</div>';
+                        html += '<div style="font-size:12px;color:#374151;white-space:pre-wrap;">' + security.escapeHtml(kfNotes[person]) + '</div>';
+                        html += '</div>';
+                    }
+                });
+                html += '</div>';
+            }
+            html += '</div>';
+        }
+
+        // Note personnelle kick-off (participants non-PO)
+        if (!isPOKickoff && steps.po_kickoff === 'pending' && currentUser) {
+            var _kfAllAssignees = getAssignees(assignments, 'com').concat(getAssignees(assignments, 'ebf')).concat(getAssignees(assignments, 'data'));
+            if (_kfAllAssignees.indexOf(currentUser.name) !== -1) {
+                var _kfMyNote = (data.kickoffPersonNotes || {})[currentUser.name] || '';
+                html += '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:14px;margin-bottom:12px;" id="kickoff-personal-container">';
+                html += '<h4 style="margin:0 0 10px;color:#1565c0;">🚀 Kick-off — ma note</h4>';
+                html += '<div style="font-size:12px;color:#64748b;margin-bottom:10px;">Saisissez vos notes pour le kick-off. Le PO organisera la réunion.</div>';
+                html += '<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:8px 10px;">';
+                html += '<div style="font-size:11px;font-weight:700;color:#1565c0;margin-bottom:4px;">' + security.escapeHtml(currentUser.name) + '</div>';
+                html += '<textarea id="kickoff-my-note" class="form-control" rows="3" style="resize:vertical;font-size:13px;" placeholder="Vos notes, idées, questions pour le kick-off...">' + security.escapeHtml(_kfMyNote) + '</textarea>';
+                html += '</div>';
+                html += '<button id="btn-save-kickoff-note" style="margin-top:12px;background:#1565c0;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">💾 Sauvegarder ma note</button>';
+                html += '</div>';
+            }
+        }
+
+        // Formulaire kick-off (pending, PO uniquement)
+        if (isPOKickoff && steps.po_kickoff === 'pending') {
+            var teamsSubject = encodeURIComponent('Kick-off \u2014 ' + (name || ''));
+            var teamsUrl = 'https://teams.microsoft.com/l/meeting/new?subject=' + teamsSubject + '&tenantId=fb3baf17-c313-474c-8d5d-577a3ec97a32';
+            var kfParticipants = [];
+            if (data.po) kfParticipants.push({ role: 'PO', name: data.po });
+            getAssignees(assignments, 'com').forEach(function(n) { kfParticipants.push({ role: 'Com', name: n }); });
+            getAssignees(assignments, 'ebf').forEach(function(n) { kfParticipants.push({ role: 'EBF', name: n }); });
+            getAssignees(assignments, 'data').forEach(function(n) { kfParticipants.push({ role: 'Data', name: n }); });
+            var kfExistingNotes = data.kickoffPersonNotes || {};
+
+            html += '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:14px;margin-bottom:12px;" id="kickoff-form-container">';
+            html += '<h4 style="margin:0 0 12px;color:#1565c0;">🚀 Organiser le Kick-off</h4>';
+            html += '<div style="margin-bottom:14px;">';
+            html += '<a href="' + teamsUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:#5558af;color:#fff;border-radius:6px;padding:8px 16px;font-weight:600;font-size:13px;text-decoration:none;">📅 Planifier sur Teams</a>';
+            html += '<span style="margin-left:10px;font-size:12px;color:#64748b;">Ouvre l\'agenda Teams avec le nom de la campagne pré-rempli</span>';
+            html += '</div>';
+            html += '<div class="form-row"><label style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;">Date du kick-off</label>';
+            html += '<input type="date" id="kickoff-date-input" class="form-control" value="' + security.escapeHtml(data.kickoffDate || '') + '"></div>';
+            if (kfParticipants.length > 0) {
+                html += '<div class="form-row" style="margin-top:12px;">';
+                html += '<label style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px;">Notes par personne <small style="font-weight:normal;text-transform:none;">(optionnel)</small></label>';
+                html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">';
+                kfParticipants.forEach(function(p) {
+                    html += '<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:8px 10px;">';
+                    html += '<div style="font-size:11px;font-weight:700;color:#1565c0;margin-bottom:4px;">' + security.escapeHtml(p.role) + ' \u2014 ' + security.escapeHtml(p.name) + '</div>';
+                    html += '<textarea class="kickoff-person-note form-control" data-person="' + security.escapeHtml(p.name) + '" rows="2" style="resize:vertical;font-size:12px;" placeholder="Notes pour ' + security.escapeHtml(p.name) + '...">' + security.escapeHtml(kfExistingNotes[p.name] || '') + '</textarea>';
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '</div>';
+            }
+            html += '<button id="btn-validate-kickoff" style="margin-top:14px;background:#1565c0;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">✅ Kick-off réalisé</button>';
+            html += '</div>';
+        }
+
+        // ── Bannières d'alerte : PO (validation) + acteurs (action à réaliser) ──
+        var alertChannels = data.channels || [];
+        var userName = currentUser ? currentUser.name : null;
+
+        function renderAlertBanner(label, isRevision, style) {
+            var h = '<div style="background:' + style.bg + ';border:1px solid ' + style.border + ';border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
+            h += '<span style="font-size:13px;font-weight:600;color:' + style.color + ';">' + style.icon + ' ' + label + '</span>';
+            h += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+            alertChannels.forEach(function(ch, idx) {
+                h += '<button class="btn-goto-channel" data-idx="' + idx + '" style="background:' + style.btnBg + ';color:#fff;border:none;border-radius:6px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:12px;">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (idx + 1))) + ' →</button>';
+            });
+            h += '</div></div>';
+            return h;
+        }
+
+        var poStyle    = { bg:'#fff8e1', border:'#f9a825', color:'#e65100', icon:'⚠️', btnBg:'#f9a825' };
+        var actStyle   = { bg:'#e3f2fd', border:'#1565c0', color:'#1565c0', icon:'⚡', btnBg:'#1565c0' };
+        var revStyle   = { bg:'#fff3e0', border:'#e65100', color:'#e65100', icon:'🔄', btnBg:'#e65100' };
+
+        // PO : validations en attente
+        var isPO = users.isCurrentUserPO(data);
+        if (isPO) {
+            if (steps.po_kickoff === 'pending')
+                html += '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:12px 14px;margin-bottom:8px;font-size:13px;font-weight:600;color:#1565c0;">🚀 Kick-off à organiser avec les équipes affectées</div>';
+            [
+                { id: 'po_validation_maquette',  label: 'Validation requise : <strong>Maquette Com</strong>' },
+                { id: 'po_validation_bat',       label: 'Validation requise : <strong>Réalisation BAT</strong>' },
+                { id: 'po_validation_ciblage',   label: 'Validation requise : <strong>Ciblage Data</strong>' },
+                { id: 'po_validation_test_prod', label: 'Validation requise : <strong>Test en production</strong>' }
+            ].forEach(function(vs) {
+                if (steps[vs.id] === 'pending') html += renderAlertBanner(vs.label, false, poStyle);
+            });
+        }
+
+        // COM : dépôt maquette
+        if (userName && getAssignees(assignments, 'com').indexOf(userName) !== -1) {
+            if (steps.com_maquette === 'pending')
+                html += renderAlertBanner('Action requise : <strong>Déposer la maquette Com</strong>', false, actStyle);
+            else if (steps.com_maquette === 'revision_requested')
+                html += renderAlertBanner('Modification demandée : <strong>Maquette Com</strong>', true, revStyle);
+        }
+
+        // EBF : BAT + Test en prod
+        if (userName && getAssignees(assignments, 'ebf').indexOf(userName) !== -1) {
+            if (steps.ebf_bat === 'pending')
+                html += renderAlertBanner('Action requise : <strong>Déposer le BAT</strong>', false, actStyle);
+            else if (steps.ebf_bat === 'revision_requested')
+                html += renderAlertBanner('Modification demandée : <strong>Réalisation BAT</strong>', true, revStyle);
+            if (steps.ebf_test_prod === 'pending')
+                html += renderAlertBanner('Action requise : <strong>Déposer le test en production</strong>', false, actStyle);
+            else if (steps.ebf_test_prod === 'revision_requested')
+                html += renderAlertBanner('Modification demandée : <strong>Test en production</strong>', true, revStyle);
+        }
+
+        // DATA : ciblage + lancement test + MEP
+        if (userName && getAssignees(assignments, 'data').indexOf(userName) !== -1) {
+            if (steps.data_ciblage === 'pending')
+                html += renderAlertBanner('Action requise : <strong>Déposer le ciblage Data</strong>', false, actStyle);
+            else if (steps.data_ciblage === 'revision_requested')
+                html += renderAlertBanner('Modification demandée : <strong>Ciblage Data</strong>', true, revStyle);
+            if (steps.data_lancement_test === 'pending')
+                html += renderAlertBanner('Action requise : <strong>Lancer le test en production</strong>', false, actStyle);
+            if (steps.data_mise_en_prod === 'pending')
+                html += renderAlertBanner('Action requise : <strong>Confirmer la mise en production</strong>', false, actStyle);
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    // ─────────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────────
+    function sanitizeName(name) {
+        return (name || '').replace(/[^a-zA-Z0-9\u00C0-\u017E \-_]/g, '_').trim();
+    }
+    function setVal(id, val) {
+        var el = document.getElementById(id);
+        if (el && val !== undefined && val !== null) el.value = val;
+    }
+    function getChannelFolder(idx) {
+        var ch = (currentCampaignData.channels || [])[idx];
+        return sanitizeName(ch ? ch.deliverableName : ('canal_' + idx));
+    }
+
+    function updateChannelStatusUI(prefix, idx, status) {
+        var el = document.getElementById(prefix + '-status-' + idx);
+        if (!el) return;
+        if (status === 'submitted') {
+            el.textContent = '📤 Soumis';
+            el.className = 'ch-save-status ch-save-status--submitted';
+        } else if (status === 'saved') {
+            el.textContent = '✅ Enregistré';
+            el.className = 'ch-save-status ch-save-status--saved';
+        } else {
+            el.textContent = '⏳ Non enregistré';
+            el.className = 'ch-save-status';
+        }
+    }
+
+    function updateComImageUrls(idx, num, vals) {
+        var c = document.getElementById('com-img-urls-' + idx);
+        if (!c) return;
+        var h = '';
+        for (var i = 0; i < (num || 0); i++) {
+            h += '<div class="form-row"><label>URL Image ' + (i+1) + '</label><input type="url" id="com-img-' + idx + '-' + i + '" class="form-control" value="' + security.escapeHtml((vals && vals[i]) || '') + '" placeholder="https://..."></div>';
+        }
+        c.innerHTML = h;
+    }
+
+    function updateEbfCtaUrls(idx, num, vals) {
+        var c = document.getElementById('ebf-cta-urls-' + idx);
+        if (!c) return;
+        var h = '';
+        for (var i = 0; i < (num || 0); i++) {
+            h += '<div class="form-row"><label>URL CTA ' + (i+1) + '</label><input type="url" id="ebf-cta-' + idx + '-' + i + '" class="form-control" value="' + security.escapeHtml((vals && vals[i]) || '') + '" placeholder="https://..."></div>';
+        }
+        c.innerHTML = h;
+    }
+
+    function saveDepotFile(campaignName, channelFolder, fileName, depotData) {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(d) { return d.getDirectoryHandle(channelFolder, { create: true }); })
+            .then(function(chDir) { return chDir.getFileHandle(fileName, { create: true }); })
+            .then(function(fh) { return fh.createWritable(); })
+            .then(function(w) { return w.write(JSON.stringify(depotData, null, 2)).then(function() { return w.close(); }); });
+    }
+
+    function readDepotFile(campaignName, channelFolder, fileName) {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(d) { return d.getDirectoryHandle(channelFolder); })
+            .then(function(chDir) { return chDir.getFileHandle(fileName); })
+            .then(function(fh) { return fh.getFile(); })
+            .then(function(f) { return f.text(); })
+            .then(function(t) { return JSON.parse(t); });
+    }
+
+    // v2 : chaque canal avance indépendamment — plus de submittedSet global
+    function tryAdvanceWorkflow(stepId, submittedSet, beforeAdvanceFn) {
+        // Conservé pour rétrocompat mais ne devrait plus être appelé pour les étapes canal
+        var s = currentCampaignData.workflow.steps;
+        if (!s[stepId]) return; // étape globale absente → étape canal, géré autrement
+        if (s[stepId] !== 'pending' && s[stepId] !== 'revision_requested') return;
+        var totalCh = (currentCampaignData.channels || []).length;
+        if (submittedSet.size >= totalCh) {
+            if (beforeAdvanceFn) beforeAdvanceFn();
+            workflow.advanceStep(currentCampaignData, stepId, 'submitted');
+            workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                .then(function() { refreshCurrentPage(); });
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // COLLECT DEPOT DATA
+    // ─────────────────────────────────────────────
+    function collectComDepot(idx) {
+        var ch  = (currentCampaignData.channels || [])[idx];
+        var num = parseInt((document.getElementById('com-numimages-' + idx) || {}).value) || 0;
+        var imgUrls = [];
+        for (var i = 0; i < num; i++) {
+            var el = document.getElementById('com-img-' + idx + '-' + i);
+            imgUrls.push(el ? el.value : '');
+        }
+        var juriEl = document.querySelector('input[name="com-juri-' + idx + '"]:checked');
+        var pdfEl  = document.getElementById('com-pdf-' + idx);
+        return {
+            campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
+            figmaUrl: (document.getElementById('com-figma-' + idx) || {}).value || '',
+            numImages: num, imageUrls: imgUrls,
+            juridique: juriEl ? juriEl.value : '',
+            pdfFileName: pdfEl && pdfEl.files[0] ? pdfEl.files[0].name : '',
+            depotMaquetteDate: (document.getElementById('com-depot-date-' + idx) || {}).value || '',
+            depositDate: new Date().toISOString()
+        };
+    }
+
+    function collectEbfDepot(idx) {
+        var ch     = (currentCampaignData.channels || [])[idx];
+        var numCta = parseInt((document.getElementById('ebf-numcta-' + idx) || {}).value) || 0;
+        var ctaUrls = [];
+        for (var i = 0; i < numCta; i++) {
+            var el = document.getElementById('ebf-cta-' + idx + '-' + i);
+            ctaUrls.push(el ? el.value : '');
+        }
+        var pdfBatEl = document.getElementById('ebf-pdf-bat-' + idx);
+        return {
+            campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
+            webmaster: (document.getElementById('ebf-webmaster-' + idx) || {}).value || '',
+            codeCom: (document.getElementById('ebf-codecom-' + idx) || {}).value || '',
+            refParacom: (document.getElementById('ebf-refpara-' + idx) || {}).value || '',
+            numCta: numCta, ctaUrls: ctaUrls,
+            pdfBatFileName: pdfBatEl && pdfBatEl.files[0] ? pdfBatEl.files[0].name : '',
+            depositDate: new Date().toISOString()
+        };
+    }
+
+    function collectEbfTestProdDepot(idx) {
+        var ch    = (currentCampaignData.channels || [])[idx];
+        var pdfEl = document.getElementById('ebf-pdf-testprod-' + idx);
+        return {
+            campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
+            step: 'ebf_test_prod',
+            pdfTestProdFileName: pdfEl && pdfEl.files[0] ? pdfEl.files[0].name : '',
+            depositDate: new Date().toISOString()
+        };
+    }
+
+    function collectDataLancementTestDepot(idx) {
+        var ch = (currentCampaignData.channels || [])[idx];
+        return {
+            campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
+            step: 'data_lancement_test',
+            cibleTest: (document.getElementById('data-cibletest-' + idx) || {}).value || '',
+            depositDate: new Date().toISOString()
+        };
+    }
+
+    function collectDataMepDepot(idx) {
+        var ch = (currentCampaignData.channels || [])[idx];
+        return {
+            campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
+            step: 'data_mise_en_prod',
+            mepDate:    (document.getElementById('data-mepdate-'    + idx) || {}).value || '',
+            mepComment: (document.getElementById('data-mepcomment-' + idx) || {}).value || '',
+            depositDate: new Date().toISOString()
+        };
+    }
+
+    function collectDataDepot(idx, stepId) {
+        var ch = (currentCampaignData.channels || [])[idx];
+        return {
+            campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
+            step: stepId,
+            codeProjet: (document.getElementById('data-codeproj-' + idx) || {}).value || '',
+            codeAction: (document.getElementById('data-codeaction-' + idx) || {}).value || '',
+            codeMK: (document.getElementById('data-codemk-' + idx) || {}).value || '',
+            cheminRequete: (document.getElementById('data-chemin-' + idx) || {}).value || '',
+            depositDate: new Date().toISOString()
+        };
+    }
+
+    // ─────────────────────────────────────────────
+    // FILL FORMS + READONLY (inchangé)
+    // ─────────────────────────────────────────────
+    function fillComForm(idx, d) {
+        setVal('com-depot-date-' + idx, d.depotMaquetteDate || '');
+        setVal('com-figma-' + idx, d.figmaUrl);
+        setVal('com-numimages-' + idx, d.numImages || 0);
+        updateComImageUrls(idx, d.numImages || 0, d.imageUrls);
+        if (d.juridique) {
+            var r = document.querySelector('input[name="com-juri-' + idx + '"][value="' + d.juridique + '"]');
+            if (r) r.checked = true;
+        }
+    }
+    function fillEbfForm(idx, d) {
+        setVal('ebf-webmaster-' + idx, d.webmaster);
+        setVal('ebf-codecom-' + idx, d.codeCom);
+        setVal('ebf-refpara-' + idx, d.refParacom);
+        setVal('ebf-numcta-' + idx, d.numCta || 0);
+        updateEbfCtaUrls(idx, d.numCta || 0, d.ctaUrls);
+    }
+    function fillDataForm(idx, d) {
+        setVal('data-codeproj-' + idx, d.codeProjet);
+        setVal('data-codeaction-' + idx, d.codeAction);
+        setVal('data-codemk-' + idx, d.codeMK);
+        setVal('data-chemin-' + idx, d.cheminRequete);
+        setVal('data-testreceivers-' + idx, d.testReceivers);
+    }
+
+    function renderComReadonly(idx, d) {
+        var el = document.getElementById('com-readonly-' + idx);
+        if (!el || !d) return;
+        var h = '<div class="depot-readonly-grid">';
+        if (d.depotMaquetteDate) h += '<div class="depot-readonly-item"><strong>Date dépôt maquette</strong>' + security.escapeHtml(d.depotMaquetteDate) + '</div>';
+        if (d.figmaUrl) h += '<div class="depot-readonly-item"><strong>Figma</strong><a href="' + security.escapeHtml(d.figmaUrl) + '" target="_blank">Ouvrir</a></div>';
+        if (d.juridique) h += '<div class="depot-readonly-item"><strong>Juridique</strong>' + security.escapeHtml(d.juridique) + '</div>';
+        if (d.numImages) h += '<div class="depot-readonly-item"><strong>Images</strong>' + d.numImages + '</div>';
+        if (d.pdfFileName) h += '<div class="depot-readonly-item"><strong>Fichier</strong>' + security.escapeHtml(d.pdfFileName) + '</div>';
+        h += '</div>';
+        el.innerHTML = h;
+        el.style.display = 'block';
+        var emptyEl = document.getElementById('com-empty-' + idx);
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+    function renderEbfReadonly(idx, d) {
+        var el = document.getElementById('ebf-readonly-' + idx);
+        if (!el || !d) return;
+        var h = '<div class="depot-readonly-grid">';
+        if (d.webmaster) h += '<div class="depot-readonly-item"><strong>Webmaster</strong>' + security.escapeHtml(d.webmaster) + '</div>';
+        if (d.codeCom) h += '<div class="depot-readonly-item"><strong>Code Com</strong>' + security.escapeHtml(d.codeCom) + '</div>';
+        if (d.refParacom) h += '<div class="depot-readonly-item"><strong>Ref Paracom</strong>' + security.escapeHtml(d.refParacom) + '</div>';
+        if (d.numCta) h += '<div class="depot-readonly-item"><strong>CTA</strong>' + d.numCta + '</div>';
+        if (d.pdfBatFileName) h += '<div class="depot-readonly-item"><strong>Fichier BAT</strong>' + security.escapeHtml(d.pdfBatFileName) + '</div>';
+        h += '</div>';
+        el.innerHTML = h;
+        el.style.display = 'block';
+        var emptyEl = document.getElementById('ebf-empty-' + idx);
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+    // ── Lightbox ──
+    (function() {
+        var overlay = document.createElement('div');
+        overlay.id = 'lightbox-overlay';
+        overlay.innerHTML = '<button id="lightbox-close">✕</button><img id="lightbox-img" src="" alt="">';
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', function(e) {
+            if (e.target !== document.getElementById('lightbox-img')) closeLightbox();
+        });
+        document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+        document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+    })();
+
+    function openLightbox(url) {
+        document.getElementById('lightbox-img').src = url;
+        document.getElementById('lightbox-overlay').classList.add('open');
+    }
+    function closeLightbox() {
+        document.getElementById('lightbox-overlay').classList.remove('open');
+    }
+
+    function loadComFilePreview(idx, folder, filename) {
+        currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+            .then(function(d) { return d.getDirectoryHandle(folder); })
+            .then(function(d) { return d.getFileHandle(filename); })
+            .then(function(fh) { return fh.getFile(); })
+            .then(function(file) {
+                var url = URL.createObjectURL(file);
+                var el  = document.getElementById('com-image-preview-' + idx);
+                if (!el) return;
+                if (file.type.startsWith('image/')) {
+                    el.innerHTML = '<img src="' + url + '" alt="Aperçu maquette" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+                } else {
+                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier maquette</a>';
+                }
+            })
+            .catch(function(){});
+    }
+
+    function loadBatImagePreview(idx, folder, filename) {
+        currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+            .then(function(d) { return d.getDirectoryHandle(folder); })
+            .then(function(d) { return d.getFileHandle(filename); })
+            .then(function(fh) { return fh.getFile(); })
+            .then(function(file) {
+                var url = URL.createObjectURL(file);
+                var el  = document.getElementById('bat-image-preview-' + idx);
+                if (!el) return;
+                if (file.type.startsWith('image/')) {
+                    el.innerHTML = '<img src="' + url + '" alt="Aperçu BAT" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+                } else {
+                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier BAT</a>';
+                }
+            })
+            .catch(function(){});
+    }
+
+    function loadTestProdImagePreview(idx, folder, filename) {
+        currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+            .then(function(d) { return d.getDirectoryHandle(folder); })
+            .then(function(d) { return d.getFileHandle(filename); })
+            .then(function(fh) { return fh.getFile(); })
+            .then(function(file) {
+                var url = URL.createObjectURL(file);
+                var el  = document.getElementById('testprod-image-preview-' + idx);
+                if (!el) return;
+                if (file.type.startsWith('image/')) {
+                    el.innerHTML = '<img src="' + url + '" alt="Aperçu test prod" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+                } else {
+                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier test prod</a>';
+                }
+            })
+            .catch(function(){});
+    }
+
+    function renderEbfTestProdReadonly(idx, d) {
+        var el = document.getElementById('ebf-testprod-readonly-' + idx);
+        if (!el || !d) return;
+        var h = '<div class="depot-readonly-grid">';
+        if (d.pdfTestProdFileName) h += '<div class="depot-readonly-item"><strong>Fichier</strong>' + security.escapeHtml(d.pdfTestProdFileName) + '</div>';
+        h += '</div>';
+        el.innerHTML = h;
+        el.style.display = 'block';
+        var emptyEl = document.getElementById('ebf-testprod-empty-' + idx);
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+    function renderDataReadonly(idx, d) {
+        var el = document.getElementById('data-readonly-' + idx);
+        if (!el || !d) return;
+        var h = '<div class="depot-readonly-grid">';
+        if (d.codeProjet) h += '<div class="depot-readonly-item"><strong>Code Projet</strong>' + security.escapeHtml(d.codeProjet) + '</div>';
+        if (d.codeAction) h += '<div class="depot-readonly-item"><strong>Code Action</strong>' + security.escapeHtml(d.codeAction) + '</div>';
+        if (d.codeMK) h += '<div class="depot-readonly-item"><strong>Code MK</strong>' + security.escapeHtml(d.codeMK) + '</div>';
+        if (d.cheminRequete) h += '<div class="depot-readonly-item"><strong>Chemin requête</strong>' + security.escapeHtml(d.cheminRequete) + '</div>';
+        h += '</div>';
+        el.innerHTML = h;
+        el.style.display = 'block';
+        var emptyEl = document.getElementById('data-empty-' + idx);
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+
+    function renderDataLancementTestReadonly(idx, d) {
+        var el = document.getElementById('data-testlaunch-readonly-' + idx);
+        if (!el || !d) return;
+        var h = '<div class="depot-readonly-grid">';
+        if (d.cibleTest) h += '<div class="depot-readonly-item"><strong>Cible test</strong>' + security.escapeHtml(d.cibleTest) + '</div>';
+        h += '</div>';
+        el.innerHTML = h;
+        el.style.display = 'block';
+        var emptyEl = document.getElementById('data-testlaunch-empty-' + idx);
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+
+    function renderDataMepReadonly(idx, d) {
+        var el = document.getElementById('data-mep-readonly-' + idx);
+        if (!el || !d) return;
+        var h = '<div class="depot-readonly-grid">';
+        if (d.mepDate)    h += '<div class="depot-readonly-item"><strong>Date MEP</strong>' + security.escapeHtml(d.mepDate) + '</div>';
+        if (d.mepComment) h += '<div class="depot-readonly-item"><strong>Commentaire</strong>' + security.escapeHtml(d.mepComment) + '</div>';
+        h += '</div>';
+        el.innerHTML = h;
+        el.style.display = 'block';
+        var emptyEl = document.getElementById('data-mep-empty-' + idx);
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+
+    // ─────────────────────────────────────────────
+    // CHARGEMENT DÉPÔTS PAR CANAL
+    // ─────────────────────────────────────────────
+    function loadDepotForChannel(campaignName, idx, ch) {
+        if (!currentRootHandle || !ch) return;
+        var folder = sanitizeName(ch.deliverableName || ('canal_' + idx));
+
+        if (loadedDepots[idx]) {
+            var cache = loadedDepots[idx];
+            if (cache.com)     { fillComForm(idx, cache.com); renderComReadonly(idx, cache.com); if (cache.com.pdfComSavedName) loadComFilePreview(idx, folder, cache.com.pdfComSavedName); }
+            else { var ce = document.getElementById('com-empty-' + idx);  if (ce) ce.style.display = 'block'; }
+            if (cache.ebf)     { fillEbfForm(idx, cache.ebf); renderEbfReadonly(idx, cache.ebf); if (cache.ebf.pdfBatSavedName) loadBatImagePreview(idx, folder, cache.ebf.pdfBatSavedName); }
+            else { var ee = document.getElementById('ebf-empty-' + idx);  if (ee) ee.style.display = 'block'; }
+            if (cache.data)    { fillDataForm(idx, cache.data); renderDataReadonly(idx, cache.data); }
+            else { var de = document.getElementById('data-empty-' + idx); if (de) de.style.display = 'block'; }
+            if (cache.datamep) { renderDataMepReadonly(idx, cache.datamep); }
+            else { var dme = document.getElementById('data-mep-empty-' + idx); if (dme) dme.style.display = 'block'; }
+            if (cache.ebftest) { renderEbfTestProdReadonly(idx, cache.ebftest); if (cache.ebftest.pdfTestProdSavedName) loadTestProdImagePreview(idx, folder, cache.ebftest.pdfTestProdSavedName); }
+            else { var ete = document.getElementById('ebf-testprod-empty-' + idx); if (ete) ete.style.display = 'block'; }
+            if (cache.datatest) { renderDataLancementTestReadonly(idx, cache.datatest); }
+            else { var dte = document.getElementById('data-testlaunch-empty-' + idx); if (dte) dte.style.display = 'block'; }
+            return;
+        }
+
+        loadedDepots[idx] = {};
+
+        readDepotFile(campaignName, folder, 'depotcom.json')
+            .then(function(d) {
+                loadedDepots[idx].com = d;
+                fillComForm(idx, d);
+                renderComReadonly(idx, d);
+                if (d.pdfComSavedName) loadComFilePreview(idx, folder, d.pdfComSavedName);
+            })
+            .catch(function() {
+                var el = document.getElementById('com-empty-' + idx);
+                if (el) el.style.display = 'block';
+            });
+
+        readDepotFile(campaignName, folder, 'depotebf.json')
+            .then(function(d) {
+                loadedDepots[idx].ebf = d;
+                fillEbfForm(idx, d);
+                renderEbfReadonly(idx, d);
+                if (d.pdfBatSavedName) loadBatImagePreview(idx, folder, d.pdfBatSavedName);
+            })
+            .catch(function() {
+                var el = document.getElementById('ebf-empty-' + idx);
+                if (el) el.style.display = 'block';
+            });
+
+        readDepotFile(campaignName, folder, 'depotdata.json')
+            .then(function(d) {
+                loadedDepots[idx].data = d;
+                fillDataForm(idx, d);
+                renderDataReadonly(idx, d);
+            })
+            .catch(function() {
+                var el = document.getElementById('data-empty-' + idx);
+                if (el) el.style.display = 'block';
+            });
+
+        readDepotFile(campaignName, folder, 'depotebf_test.json')
+            .then(function(d) {
+                loadedDepots[idx].ebftest = d;
+                renderEbfTestProdReadonly(idx, d);
+                if (d.pdfTestProdSavedName) loadTestProdImagePreview(idx, folder, d.pdfTestProdSavedName);
+            })
+            .catch(function() {
+                var el = document.getElementById('ebf-testprod-empty-' + idx);
+                if (el) el.style.display = 'block';
+            });
+
+        readDepotFile(campaignName, folder, 'depotdata_mep.json')
+            .then(function(d) {
+                loadedDepots[idx].datamep = d;
+                renderDataMepReadonly(idx, d);
+            })
+            .catch(function() {
+                var el = document.getElementById('data-mep-empty-' + idx);
+                if (el) el.style.display = 'block';
+            });
+
+        readDepotFile(campaignName, folder, 'depotdata_test.json')
+            .then(function(d) {
+                loadedDepots[idx].datatest = d;
+                renderDataLancementTestReadonly(idx, d);
+            })
+            .catch(function() {
+                var el = document.getElementById('data-testlaunch-empty-' + idx);
+                if (el) el.style.display = 'block';
+            });
+    }
+
+    // ─────────────────────────────────────────────
+    // EVENTS : PAGE CANAL (par canal)
+    // ─────────────────────────────────────────────
+    function setupChannelPageEvents(idx) {
+        // COM : numImages → dynamic URL inputs
+        var numImgInput = document.getElementById('com-numimages-' + idx);
+        if (numImgInput) {
+            numImgInput.addEventListener('input', function() {
+                updateComImageUrls(idx, parseInt(numImgInput.value) || 0, []);
+            });
+        }
+
+        // EBF : numCta → dynamic CTA inputs
+        var numCtaInput = document.getElementById('ebf-numcta-' + idx);
+        if (numCtaInput) {
+            numCtaInput.addEventListener('input', function() {
+                updateEbfCtaUrls(idx, parseInt(numCtaInput.value) || 0, []);
+            });
+        }
+
+        // ── Save COM ──
+        var btnSaveCom = document.querySelector('.btn-save-com[data-ch="' + idx + '"]');
+        if (btnSaveCom) {
+            btnSaveCom.addEventListener('click', function() {
+                var folder = getChannelFolder(idx);
+                var depot  = collectComDepot(idx);
+                depot.status = 'pending';
+                // Persister la date de dépôt maquette dans campagne.json
+                if (depot.depotMaquetteDate) {
+                    currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
+                    currentCampaignData.workflow.channelDates[idx] = currentCampaignData.workflow.channelDates[idx] || {};
+                    currentCampaignData.workflow.channelDates[idx].depotMaquetteDate = depot.depotMaquetteDate;
+                    workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData).catch(function(){});
+                }
+                disableBtn(btnSaveCom, 'Enregistrement...');
+                saveDepotFile(currentCampaignName, folder, 'depotcom.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].com = depot;
+                        enableBtn(btnSaveCom, '💾 Enregistrer');
+                        errors.showNotification('Canal enregistré !', 'success', 2000);
+                    })
+                    .catch(function(err) { enableBtn(btnSaveCom, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
+        // ── Submit COM ──
+        var btnSubmitCom = document.querySelector('.btn-submit-canal-com[data-ch="' + idx + '"]');
+        if (btnSubmitCom) {
+            btnSubmitCom.addEventListener('click', function() {
+                var folder = getChannelFolder(idx);
+                var depot  = collectComDepot(idx);
+                depot.status = 'submitted';
+                var comFileEl = document.getElementById('com-pdf-' + idx);
+                var comFileToSave = comFileEl && comFileEl.files[0];
+                if (comFileToSave) {
+                    var comExt = comFileToSave.name.split('.').pop().toLowerCase();
+                    depot.pdfComSavedName = 'maquette_canal_' + idx + '.' + comExt;
+                }
+                disableBtn(btnSubmitCom, 'Envoi...');
+                saveDepotFile(currentCampaignName, folder, 'depotcom.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].com = depot;
+                        if (comFileToSave && depot.pdfComSavedName) {
+                            currentRootHandle.getDirectoryHandle('Campagnes')
+                                .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+                                .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
+                                .then(function(d) { return d.getFileHandle(depot.pdfComSavedName, {create:true}); })
+                                .then(function(fh) { return fh.createWritable(); })
+                                .then(function(w) { return comFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
+                                .catch(function(){});
+                        }
+                        // v2 : avancement direct du canal
+                        workflow.advanceChannelStep(currentCampaignData, idx, 'com_maquette', 'submitted');
+                        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                            .then(function() { refreshCurrentPage(); });
+                        enableBtn(btnSubmitCom, '📤 Soumettre ce canal');
+                        errors.showNotification('Canal soumis !', 'success', 2000);
+                    })
+                    .catch(function(err) { enableBtn(btnSubmitCom, '📤 Soumettre ce canal'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
+        // ── Submit EBF (BAT ou Test Prod) ──
+        document.querySelectorAll('.btn-submit-canal-ebf[data-ch="' + idx + '"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var stepId      = btn.getAttribute('data-step') || 'ebf_bat';
+                var isTestProd  = stepId === 'ebf_test_prod';
+                var folder      = getChannelFolder(idx);
+                var depotFile   = isTestProd ? 'depotebf_test.json' : 'depotebf.json';
+                var btnLabel    = '📤 Soumettre ce canal';
+                var depot;
+                var batFileToSave = null;
+                var testProdFileToSave = null;
+                if (isTestProd) {
+                    depot = collectEbfTestProdDepot(idx);
+                    depot.status = 'submitted';
+                    var pdfTpEl = document.getElementById('ebf-pdf-testprod-' + idx);
+                    testProdFileToSave = pdfTpEl && pdfTpEl.files[0];
+                    if (testProdFileToSave) {
+                        var tpExt = testProdFileToSave.name.split('.').pop().toLowerCase();
+                        depot.pdfTestProdSavedName = 'testprod_canal_' + idx + '.' + tpExt;
+                    }
+                } else {
+                    depot = collectEbfDepot(idx);
+                    depot.status = 'submitted';
+                    var pdfBatEl = document.getElementById('ebf-pdf-bat-' + idx);
+                    batFileToSave = pdfBatEl && pdfBatEl.files[0];
+                    if (batFileToSave) {
+                        var ext = batFileToSave.name.split('.').pop().toLowerCase();
+                        depot.pdfBatSavedName = 'bat_canal_' + idx + '.' + ext;
+                    }
+                }
+                disableBtn(btn, 'Envoi...');
+                saveDepotFile(currentCampaignName, folder, depotFile, depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        if (isTestProd) {
+                            loadedDepots[idx].ebftest = depot;
+                            renderEbfTestProdReadonly(idx, depot);
+                            if (testProdFileToSave && depot.pdfTestProdSavedName) {
+                                currentRootHandle.getDirectoryHandle('Campagnes')
+                                    .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+                                    .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
+                                    .then(function(d) { return d.getFileHandle(depot.pdfTestProdSavedName, {create:true}); })
+                                    .then(function(fh) { return fh.createWritable(); })
+                                    .then(function(w) { return testProdFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
+                                    .catch(function(){});
+                            }
+                        } else {
+                            loadedDepots[idx].ebf = depot;
+                            if (batFileToSave && depot.pdfBatSavedName) {
+                                currentRootHandle.getDirectoryHandle('Campagnes')
+                                    .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+                                    .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
+                                    .then(function(d) { return d.getFileHandle(depot.pdfBatSavedName, {create:true}); })
+                                    .then(function(fh) { return fh.createWritable(); })
+                                    .then(function(w) { return batFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
+                                    .catch(function(){});
+                            }
+                        }
+                        // v2 : avancement direct du canal
+                        workflow.advanceChannelStep(currentCampaignData, idx, stepId, 'submitted');
+                        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                            .then(function() { refreshCurrentPage(); });
+                        enableBtn(btn, btnLabel);
+                        errors.showNotification('Canal soumis !', 'success', 2000);
+                    })
+                    .catch(function(err) { enableBtn(btn, btnLabel); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        });
+
+        // ── Manager : réaffectation équipe (items 16 & 17) ──
+        document.querySelectorAll('.btn-team-reassign').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var role = btn.getAttribute('data-role');
+                var formEl = document.getElementById('reassign-form-' + role);
+                if (formEl) formEl.style.display = formEl.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+        document.querySelectorAll('.btn-team-reassign-save').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var role = btn.getAttribute('data-role');
+                var newAssignees = Array.from(document.querySelectorAll('.reassign-cb-' + role + ':checked')).map(function(cb){ return cb.value; });
+                if (!newAssignees.length) { alert('Veuillez choisir au moins un membre de l\'équipe.'); return; }
+                disableBtn(btn, 'Enregistrement...');
+                currentCampaignData.workflow.assignments[role] = newAssignees;
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btn, '💾 Enregistrer'); alert('Erreur : ' + err.message); });
+            });
+        });
+
+        // ── PO : aperçu capture de validation à la sélection ──
+        document.querySelectorAll('[id^="po-ch-img-"]').forEach(function(input) {
+            if (input.tagName !== 'INPUT') return;
+            input.addEventListener('change', function() {
+                var uid = input.id.replace('po-ch-img-', '');
+                var previewEl = document.getElementById('po-ch-img-preview-' + uid);
+                if (!previewEl || !input.files || !input.files[0]) return;
+                var file = input.files[0];
+                var url = URL.createObjectURL(file);
+                previewEl.innerHTML = '<img src="' + url + '" alt="Aperçu capture" onclick="openLightbox(this.src)" style="max-width:100%;max-height:200px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+            });
+        });
+
+        // ── PO : validation sur page canal ──
+        document.querySelectorAll('.btn-po-validate-ch').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var stepId     = btn.getAttribute('data-step');
+                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                var uid        = stepId + '-' + channelIdx;
+                var imgInput   = document.getElementById('po-ch-img-' + uid);
+                var imgFile    = imgInput && imgInput.files && imgInput.files[0];
+                disableBtn(btn, 'Validation...');
+                workflow.validateChannelStep(currentCampaignData, stepId, channelIdx);
+                if (stepId === 'po_validation_maquette') {
+                    currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
+                    currentCampaignData.workflow.channelDates[channelIdx] = currentCampaignData.workflow.channelDates[channelIdx] || {};
+                    currentCampaignData.workflow.channelDates[channelIdx].validationMaquetteDate = new Date().toLocaleDateString('fr-FR');
+                }
+                var saveScreenshot = imgFile ? (function() {
+                    var ext  = imgFile.name.split('.').pop();
+                    var fname = stepId + '_' + channelIdx + '.' + ext;
+                    var folder = getChannelFolder(channelIdx);
+                    return currentRootHandle.getDirectoryHandle('Campagnes')
+                        .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+                        .then(function(d) { return d.getDirectoryHandle(folder, { create: true }); })
+                        .then(function(d) { return d.getFileHandle(fname, { create: true }); })
+                        .then(function(fh) { return fh.createWritable(); })
+                        .then(function(w) { return w.write(imgFile).then(function() { return w.close(); }); })
+                        .catch(function(e) { console.warn('Screenshot save failed', e); });
+                })() : Promise.resolve();
+                saveScreenshot.then(function() {
+                    return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData);
+                })
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btn, '✅ Valider ce canal'); alert('Erreur : ' + err.message); });
+            });
+        });
+        document.querySelectorAll('.btn-po-ask-revision-ch').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var stepId     = btn.getAttribute('data-step');
+                var channelIdx = btn.getAttribute('data-ch');
+                var uid = stepId + (channelIdx !== null ? ('-' + channelIdx) : '');
+                var formEl = document.getElementById('revision-form-ch-' + uid);
+                if (formEl) formEl.style.display = formEl.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+        document.querySelectorAll('.btn-po-send-revision-ch').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var stepId     = btn.getAttribute('data-step');
+                var sourceId   = btn.getAttribute('data-source');
+                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                var uid = stepId + '-' + channelIdx;
+                var commentEl = document.getElementById('revision-comment-ch-' + uid);
+                var comment = commentEl ? commentEl.value.trim() : '';
+                if (!comment) { alert('Veuillez décrire la modification demandée.'); return; }
+                disableBtn(btn, 'Envoi...');
+                workflow.requestChannelRevision(currentCampaignData, stepId, sourceId, channelIdx, comment);
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btn, '📤 Envoyer la demande'); alert('Erreur : ' + err.message); });
+            });
+        });
+
+        // ── Submit DATA ──
+        var btnSubmitData = document.querySelector('.btn-submit-canal-data[data-ch="' + idx + '"]');
+        if (btnSubmitData) {
+            btnSubmitData.addEventListener('click', function() {
+                var stepId = btnSubmitData.getAttribute('data-step');
+                var isMep  = stepId === 'data_mise_en_prod';
+                var folder = getChannelFolder(idx);
+                var depot  = collectDataDepot(idx, stepId);
+                depot.status = isMep ? 'completed' : 'submitted';
+                var btnLabel = isMep ? '🚀 Confirmer MEP de ce canal' : '📤 Soumettre ce canal';
+                // Sauvegarder le volumeCible saisi par Data dans campagne.json
+                if (!isMep) {
+                    var volInput = document.getElementById('data-volume-' + idx);
+                    if (volInput && currentCampaignData.channels && currentCampaignData.channels[idx] !== undefined) {
+                        currentCampaignData.channels[idx].volumeCible = parseInt(volInput.value) || 0;
+                    }
+                }
+                disableBtn(btnSubmitData, 'Envoi...');
+                saveDepotFile(currentCampaignName, folder, 'depotdata.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].data = depot;
+                        // v2 : avancement direct du canal (submitted ou completed)
+                        var newStatus = isMep ? 'completed' : 'submitted';
+                        workflow.advanceChannelStep(currentCampaignData, idx, stepId, newStatus);
+                        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                            .then(function() { refreshCurrentPage(); });
+                        enableBtn(btnSubmitData, btnLabel);
+                        errors.showNotification('Canal soumis !', 'success', 2000);
+                    })
+                    .catch(function(err) { enableBtn(btnSubmitData, btnLabel); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
+        // ── Submit Data Lancement Test ──
+        var btnDataTest = document.querySelector('.btn-submit-canal-datatest[data-ch="' + idx + '"]');
+        if (btnDataTest) {
+            btnDataTest.addEventListener('click', function() {
+                var folder = getChannelFolder(idx);
+                var depot  = collectDataLancementTestDepot(idx);
+                depot.status = 'submitted';
+                disableBtn(btnDataTest, 'Envoi...');
+                saveDepotFile(currentCampaignName, folder, 'depotdata_test.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].datatest = depot;
+                        renderDataLancementTestReadonly(idx, depot);
+                        // v2 : avancement direct du canal
+                        workflow.advanceChannelStep(currentCampaignData, idx, 'data_lancement_test', 'submitted');
+                        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                            .then(function() { refreshCurrentPage(); });
+                        enableBtn(btnDataTest, '🧪 Confirmer le lancement test');
+                        errors.showNotification('Lancement test confirmé !', 'success', 2000);
+                    })
+                    .catch(function(err) { enableBtn(btnDataTest, '🧪 Confirmer le lancement test'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
+        // ── Submit MEP Data ──
+        var btnMep = document.querySelector('.btn-submit-mep[data-ch="' + idx + '"]');
+        if (btnMep) {
+            btnMep.addEventListener('click', function() {
+                var folder = getChannelFolder(idx);
+                var depot  = collectDataMepDepot(idx);
+                disableBtn(btnMep, 'Envoi...');
+                saveDepotFile(currentCampaignName, folder, 'depotdata_mep.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].datamep = depot;
+                        workflow.advanceChannelStep(currentCampaignData, idx, 'data_mise_en_prod', 'completed');
+                        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                            .then(function() { refreshCurrentPage(); });
+                        enableBtn(btnMep, '🚀 Confirmer la mise en production');
+                        errors.showNotification('MEP confirmée !', 'success', 2000);
+                    })
+                    .catch(function(err) { enableBtn(btnMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
+        // ── Submit MEP EBF (LP) ──
+        var btnEbfMep = document.querySelector('.btn-submit-ebf-mep[data-ch="' + idx + '"]');
+        if (btnEbfMep) {
+            btnEbfMep.addEventListener('click', function() {
+                var folder  = getChannelFolder(idx);
+                var dateVal = (document.getElementById('ebf-mepdate-' + idx) || {}).value || '';
+                var comment = (document.getElementById('ebf-mepcomment-' + idx) || {}).value || '';
+                var depot   = { date: dateVal, comment: comment, status: 'completed', savedAt: new Date().toISOString() };
+                disableBtn(btnEbfMep, 'Envoi...');
+                saveDepotFile(currentCampaignName, folder, 'depotebf_mep.json', depot)
+                    .then(function() {
+                        workflow.advanceChannelStep(currentCampaignData, idx, 'ebf_mise_en_prod', 'completed');
+                        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                            .then(function() { refreshCurrentPage(); });
+                        enableBtn(btnEbfMep, '🚀 Confirmer la mise en production');
+                        errors.showNotification('MEP LP confirmée !', 'success', 2000);
+                    })
+                    .catch(function(err) { enableBtn(btnEbfMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    // EVENTS : PAGE INFO (global)
+    // ─────────────────────────────────────────────
+    function setupGlobalEvents(name, data) {
+        // ── Manager : affectation ──
+        var btnAssign = document.getElementById('btn-validate-assignment');
+        if (btnAssign) {
+            btnAssign.addEventListener('click', function() {
+                var isGeneral = btnAssign.getAttribute('data-general') === 'true';
+                var userRole  = btnAssign.getAttribute('data-role');
+                function collectChecked(cls) {
+                    return Array.from(document.querySelectorAll('.' + cls + ':checked')).map(function(cb){ return cb.value; });
+                }
+                var reqTeamsStr = btnAssign.getAttribute('data-required-teams') || 'com,ebf,data';
+                var reqTeamsArr = reqTeamsStr.split(',').filter(function(x) { return x; });
+                if (isGeneral) {
+                    var com = collectChecked('assign-cb-com');
+                    var ebf = collectChecked('assign-cb-ebf');
+                    var dat = collectChecked('assign-cb-data');
+                    var missing = false;
+                    if (reqTeamsArr.indexOf('com')  !== -1 && !com.length) missing = true;
+                    if (reqTeamsArr.indexOf('ebf')  !== -1 && !ebf.length) missing = true;
+                    if (reqTeamsArr.indexOf('data') !== -1 && !dat.length) missing = true;
+                    if (missing) { alert('Veuillez sélectionner au moins une personne pour chaque équipe requise.'); return; }
+                    if (com.length) currentCampaignData.workflow.assignments.com  = com;
+                    if (ebf.length) currentCampaignData.workflow.assignments.ebf  = ebf;
+                    if (dat.length) currentCampaignData.workflow.assignments.data = dat;
+                    currentCampaignData.workflow.assignments.manager = (users.getCurrentUser() || {}).name || '';
+                    workflow.advanceStep(currentCampaignData, 'manager_affectation', 'validated');
+                } else {
+                    var vals = collectChecked('assign-cb-' + userRole);
+                    if (!vals.length) { alert('Veuillez sélectionner au moins une personne.'); return; }
+                    currentCampaignData.workflow.assignments[userRole] = vals;
+                    var a = currentCampaignData.workflow.assignments;
+                    var allAssigned = true;
+                    if (reqTeamsArr.indexOf('com')  !== -1 && (!a.com  || !a.com.length))  allAssigned = false;
+                    if (reqTeamsArr.indexOf('ebf')  !== -1 && (!a.ebf  || !a.ebf.length))  allAssigned = false;
+                    if (reqTeamsArr.indexOf('data') !== -1 && (!a.data || !a.data.length)) allAssigned = false;
+                    if (allAssigned) workflow.advanceStep(currentCampaignData, 'manager_affectation', 'validated');
+                }
+                disableBtn(btnAssign, 'Enregistrement...');
+                workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) {
+                        enableBtn(btnAssign, (btnAssign.getAttribute('data-general') === 'true') ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation');
+                        alert('Erreur : ' + err.message);
+                    });
+            });
+        }
+
+        // ── PO : valider le kick-off ──
+        var btnKickoff = document.getElementById('btn-validate-kickoff');
+        if (btnKickoff) {
+            btnKickoff.addEventListener('click', function() {
+                var dateEl = document.getElementById('kickoff-date-input');
+                var kickoffDate = dateEl ? dateEl.value : '';
+                if (!kickoffDate) { alert('Veuillez saisir la date du kick-off.'); return; }
+                currentCampaignData.kickoffDate = kickoffDate;
+                // Notes par personne
+                var personNotes = {};
+                var noteEls = document.querySelectorAll('.kickoff-person-note');
+                for (var i = 0; i < noteEls.length; i++) {
+                    var person = noteEls[i].getAttribute('data-person');
+                    if (person && noteEls[i].value.trim()) {
+                        personNotes[person] = noteEls[i].value.trim();
+                    }
+                }
+                currentCampaignData.kickoffPersonNotes = personNotes;
+                disableBtn(btnKickoff, 'Enregistrement...');
+                workflow.advanceStep(currentCampaignData, 'po_kickoff', 'validated');
+                workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) {
+                        enableBtn(btnKickoff, '✅ Kick-off réalisé');
+                        alert('Erreur : ' + err.message);
+                    });
+            });
+        }
+
+        // ── Participant : sauvegarder sa note kick-off ──
+        var btnSaveNote = document.getElementById('btn-save-kickoff-note');
+        if (btnSaveNote) {
+            btnSaveNote.addEventListener('click', function() {
+                var noteEl = document.getElementById('kickoff-my-note');
+                if (!noteEl) return;
+                var noteVal = noteEl.value.trim();
+                if (!currentCampaignData.kickoffPersonNotes) currentCampaignData.kickoffPersonNotes = {};
+                currentCampaignData.kickoffPersonNotes[currentUser.name] = noteVal;
+                disableBtn(btnSaveNote, 'Enregistrement...');
+                workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
+                    .then(function() {
+                        enableBtn(btnSaveNote, '💾 Sauvegarder ma note');
+                        errors.showToast('Note sauvegardée', 'success');
+                    })
+                    .catch(function(err) {
+                        enableBtn(btnSaveNote, '💾 Sauvegarder ma note');
+                        alert('Erreur : ' + err.message);
+                    });
+            });
+        }
+
+        // ── PO : lien vers canal à valider ──
+        document.querySelectorAll('.btn-goto-channel').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                navigateTo(parseInt(btn.getAttribute('data-idx'), 10));
+            });
+        });
+
+        // ── PO : validation juridique ──
+        var btnJurVal = document.getElementById('btn-juridique-validate');
+        if (btnJurVal) {
+            btnJurVal.addEventListener('click', function() {
+                if (!currentCampaignData.juridique) return;
+                currentCampaignData.juridique.status = 'validated';
+                currentCampaignData.juridique.validatedAt = new Date().toLocaleDateString('fr-FR');
+                disableBtn(btnJurVal, 'Enregistrement...');
+                workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btnJurVal, '✅ Marquer comme validé'); alert('Erreur : ' + err.message); });
+            });
+        }
+        var btnJurReopen = document.getElementById('btn-juridique-reopen');
+        if (btnJurReopen) {
+            btnJurReopen.addEventListener('click', function() {
+                if (!currentCampaignData.juridique) return;
+                currentCampaignData.juridique.status = 'pending';
+                delete currentCampaignData.juridique.validatedAt;
+                disableBtn(btnJurReopen, 'Enregistrement...');
+                workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btnJurReopen, '↩ Ré-ouvrir'); alert('Erreur : ' + err.message); });
+            });
+        }
+
+        // Charger la discussion + les documents
+        loadDiscussion(name);
+        loadDocuments(name);
+    }
+
+    // ── Documents (Item 21) ─────────────────────────────────
+    function loadDocuments(campaignName) {
+        var loadingEl = document.getElementById('documents-loading');
+        var contentEl = document.getElementById('documents-content');
+        if (!loadingEl || !contentEl) return;
+        currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(campDir) {
+                return campDir.getDirectoryHandle('documents', { create: false })
+                    .then(function(docsDir) { return readDocTree(docsDir); })
+                    .catch(function() { return null; })
+                    .then(function(tree) { renderDocuments(campDir, tree, campaignName); });
+            })
+            .catch(function() { renderDocuments(null, null, campaignName); });
+    }
+
+    function readDocTree(docsDir) {
+        var result = { folders: [], files: [] };
+        var promises = [];
+        return new Promise(function(resolve) {
+            var entries = [];
+            function next(it) {
+                it.next().then(function(r) {
+                    if (r.done) {
+                        Promise.all(promises).then(function() { resolve(result); });
+                        return;
+                    }
+                    var entry = r.value;
+                    if (entry.kind === 'file') {
+                        result.files.push(entry.name);
+                    } else if (entry.kind === 'directory') {
+                        var folder = { name: entry.name, files: [] };
+                        result.folders.push(folder);
+                        promises.push(new Promise(function(res) {
+                            var subFiles = [];
+                            function nextSub(sit) {
+                                sit.next().then(function(sr) {
+                                    if (sr.done) { folder.files = subFiles; res(); return; }
+                                    if (sr.value.kind === 'file') subFiles.push(sr.value.name);
+                                    nextSub(sit);
+                                }).catch(function() { folder.files = subFiles; res(); });
+                            }
+                            entry.values().then(nextSub);
+                        }));
+                    }
+                    next(it);
+                }).catch(function() { resolve(result); });
+            }
+            docsDir.values().then(next);
+        });
+    }
+
+    function renderDocuments(campDir, tree, campaignName) {
+        var loadingEl = document.getElementById('documents-loading');
+        var contentEl = document.getElementById('documents-content');
+        if (!loadingEl || !contentEl) return;
+        loadingEl.style.display = 'none';
+        contentEl.style.display = 'block';
+
+        var html = '';
+        var isEmpty = !tree || (tree.folders.length === 0 && tree.files.length === 0);
+
+        if (isEmpty) {
+            html += '<p style="color:#94a3b8;font-size:13px;margin:0 0 12px;">Aucun document pour l\'instant.</p>';
+        } else {
+            // Fichiers à la racine de documents/
+            if (tree.files.length > 0) {
+                html += '<div style="margin-bottom:10px;">';
+                tree.files.forEach(function(f) {
+                    html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;">📄 ' + security.escapeHtml(f) + '</div>';
+                });
+                html += '</div>';
+            }
+            // Sous-dossiers
+            tree.folders.forEach(function(folder) {
+                html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
+                html += '<div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">📂 ' + security.escapeHtml(folder.name) + ' <span style="font-weight:400;color:#94a3b8;font-size:12px;">(' + folder.files.length + ' fichier' + (folder.files.length !== 1 ? 's' : '') + ')</span></div>';
+                if (folder.files.length > 0) {
+                    folder.files.forEach(function(f) {
+                        html += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0 2px 16px;font-size:12px;color:#374151;">📄 ' + security.escapeHtml(f) + '</div>';
+                    });
+                }
+                // Bouton upload dans ce dossier
+                html += '<label style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">📎 Ajouter un fichier<input type="file" style="display:none;" data-folder="' + security.escapeHtml(folder.name) + '" class="doc-file-input" multiple></label>';
+                html += '</div>';
+            });
+        }
+
+        // Actions globales
+        html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">';
+        html += '<button id="btn-new-doc-folder" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📁 Nouveau dossier</button>';
+        if (!isEmpty || (tree && tree.folders.length > 0)) {
+            html += '<label style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📎 Ajouter à la racine<input type="file" id="doc-root-file-input" style="display:none;" multiple></label>';
+        }
+        html += '</div>';
+        contentEl.innerHTML = html;
+
+        // Event : nouveau dossier
+        var btnNewFolder = document.getElementById('btn-new-doc-folder');
+        if (btnNewFolder && campDir) {
+            btnNewFolder.addEventListener('click', function() {
+                var folderName = prompt('Nom du dossier :');
+                if (!folderName || !folderName.trim()) return;
+                var safe = folderName.trim().replace(/[<>:"|?*\\/]/g, '_');
+                campDir.getDirectoryHandle('documents', { create: true })
+                    .then(function(docsDir) { return docsDir.getDirectoryHandle(safe, { create: true }); })
+                    .then(function() { loadDocuments(campaignName); })
+                    .catch(function(e) { alert('Erreur : ' + e.message); });
+            });
+        }
+
+        // Event : upload fichiers dans un sous-dossier
+        contentEl.querySelectorAll('.doc-file-input').forEach(function(input) {
+            input.addEventListener('change', function() {
+                var subFolder = input.getAttribute('data-folder');
+                uploadFiles(campDir, campaignName, Array.from(input.files), subFolder);
+                input.value = '';
+            });
+        });
+
+        // Event : upload à la racine
+        var rootInput = document.getElementById('doc-root-file-input');
+        if (rootInput && campDir) {
+            rootInput.addEventListener('change', function() {
+                uploadFiles(campDir, campaignName, Array.from(rootInput.files), null);
+                rootInput.value = '';
+            });
+        }
+    }
+
+    function uploadFiles(campDir, campaignName, files, subFolderName) {
+        if (!files || files.length === 0) return;
+        campDir.getDirectoryHandle('documents', { create: true })
+            .then(function(docsDir) {
+                var targetDir = subFolderName
+                    ? docsDir.getDirectoryHandle(subFolderName, { create: true })
+                    : Promise.resolve(docsDir);
+                return targetDir.then(function(dir) {
+                    return Promise.all(files.map(function(file) {
+                        return dir.getFileHandle(file.name, { create: true })
+                            .then(function(fh) { return fh.createWritable(); })
+                            .then(function(w) { return w.write(file).then(function() { return w.close(); }); });
+                    }));
+                });
+            })
+            .then(function() { loadDocuments(campaignName); })
+            .catch(function(e) { alert('Erreur upload : ' + e.message); });
+    }
+
+    // ── Discussion ──────────────────────────────────────────
+    function loadDiscussion(campaignName) {
+        currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(d) { return d.getFileHandle('discussion.json'); })
+            .then(function(fh) { return fh.getFile(); })
+            .then(function(f) { return f.text(); })
+            .then(function(t) { renderDiscussionMessages(JSON.parse(t).messages || []); })
+            .catch(function() { renderDiscussionMessages([]); });
+    }
+
+    function saveDiscussion(campaignName, messages) {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(d) { return d.getFileHandle('discussion.json', { create: true }); })
+            .then(function(fh) { return fh.createWritable(); })
+            .then(function(w) {
+                return w.write(JSON.stringify({ messages: messages }, null, 2)).then(function() { return w.close(); });
+            });
+    }
+
+    function renderDiscussionMessages(messages) {
+        var loading = document.getElementById('discussion-loading');
+        var list    = document.getElementById('discussion-list');
+        var form    = document.getElementById('discussion-form');
+        var noUser  = document.getElementById('discussion-no-user');
+        if (!list) return;
+
+        var currentUser = users.getCurrentUser();
+
+        if (loading) loading.style.display = 'none';
+
+        // Rendu des messages
+        if (messages.length === 0) {
+            list.innerHTML = '<p style="color:#94a3b8;font-size:13px;margin:0;">Aucun message pour l\'instant. Soyez le premier à commenter !</p>';
+        } else {
+            list.innerHTML = messages.map(function(msg, idx) {
+                var parts    = (msg.author || '?').trim().split(/\s+/);
+                var initials = parts.map(function(p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
+                var dt       = new Date(msg.date);
+                var dateStr  = dt.toLocaleDateString('fr-FR') + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                var likes    = msg.likes || [];
+                var hasLiked = currentUser && likes.indexOf(currentUser.name) >= 0;
+                var avatarColors = ['#16a34a','#3b82f6','#f97316','#8b5cf6','#ec4899','#0891b2'];
+                var colorIdx = (msg.author || '').split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0) % avatarColors.length;
+                return '<div class="discussion-msg">'
+                    + '<div class="discussion-msg-header">'
+                    + '<div class="discussion-msg-avatar" style="background:' + avatarColors[colorIdx] + '">' + security.escapeHtml(initials) + '</div>'
+                    + '<span class="discussion-msg-author">' + security.escapeHtml(msg.author || 'Anonyme') + '</span>'
+                    + '<span class="discussion-msg-date">' + security.escapeHtml(dateStr) + '</span>'
+                    + '</div>'
+                    + '<div class="discussion-msg-text">' + security.escapeHtml(msg.text) + '</div>'
+                    + '<div class="discussion-msg-footer">'
+                    + '<button class="discussion-like-btn' + (hasLiked ? ' liked' : '') + '" data-idx="' + idx + '">👍 ' + likes.length + '</button>'
+                    + '</div>'
+                    + '</div>';
+            }).join('');
+        }
+        list.style.display = 'flex';
+
+        if (currentUser) {
+            if (form)   form.style.display = 'block';
+            if (noUser) noUser.style.display = 'none';
+
+            // Bouton publier
+            var submitBtn = document.getElementById('discussion-submit');
+            var input     = document.getElementById('discussion-input');
+            if (submitBtn && input) {
+                submitBtn.onclick = function() {
+                    var text = input.value.trim();
+                    if (!text) return;
+                    var msg = { id: Date.now(), author: currentUser.name, date: new Date().toISOString(), text: text, likes: [] };
+                    messages.push(msg);
+                    submitBtn.disabled = true;
+                    saveDiscussion(currentCampaignName, messages).then(function() {
+                        input.value = '';
+                        renderDiscussionMessages(messages);
+                    });
+                };
+            }
+
+            // Boutons like
+            list.querySelectorAll('.discussion-like-btn').forEach(function(btn) {
+                btn.onclick = function() {
+                    var idx  = parseInt(btn.getAttribute('data-idx'), 10);
+                    var msg  = messages[idx];
+                    if (!msg) return;
+                    var likes = msg.likes || [];
+                    var pos   = likes.indexOf(currentUser.name);
+                    if (pos >= 0) { likes.splice(pos, 1); } else { likes.push(currentUser.name); }
+                    msg.likes = likes;
+                    saveDiscussion(currentCampaignName, messages).then(function() {
+                        renderDiscussionMessages(messages);
+                    });
+                };
+            });
+        } else {
+            if (form)   form.style.display = 'none';
+            if (noUser) noUser.style.display = 'block';
+        }
+    }
+
+    function disableBtn(btn, label) { btn.disabled = true; btn.textContent = label; }
+    function enableBtn(btn, label)  { btn.disabled = false; btn.textContent = label; }
+</script>
+</body>
+</html>

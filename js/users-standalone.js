@@ -1,0 +1,143 @@
+/**
+ * Gestionnaire des Utilisateurs — Impulsion Marketing
+ * Liste fixe des utilisateurs avec leurs rôles + persistance localStorage
+ */
+
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+window.ImpulsionMarketing.users = (function () {
+  'use strict';
+
+  var STORAGE_KEY = 'im_current_user';
+
+  var USERS = [
+    // Super Admin — accès total à toutes les fonctionnalités
+    { name: 'Olivier', role: 'superadmin', roleLabel: 'Super Admin', isSuperAdmin: true, isManager: true },
+    // Marketing — Sébastien L est responsable Marketing (manager de son service)
+    { name: 'Sébastien Langlois', role: 'marketing', roleLabel: 'Resp. Marketing', isManager: true },
+    { name: 'Agnès grapin',       role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Caroline Legrand',   role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Charlene Garrigues', role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Georges Duchet',     role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Julie Sarramiac',    role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Nicolas Martel',     role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Nicolas Palomba',    role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Adrien Lechevalier', role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Guillaume Jaillon',  role: 'marketing', roleLabel: 'Marketing' },
+    { name: 'Cecile Devillard',   role: 'marketing', roleLabel: 'Marketing' },
+
+    // Com — Marlène est aussi responsable Com (manager de son service)
+    { name: 'Marlène Le Rue',     role: 'com', roleLabel: 'Resp. Com', isManager: true },
+    { name: 'Camille Breteche',   role: 'com', roleLabel: 'Com' },
+    { name: 'Celia Terzi',        role: 'com', roleLabel: 'Com' },
+    { name: 'Clara Tigier',       role: 'com', roleLabel: 'Com' },
+    { name: 'Clothilde Portal',   role: 'com', roleLabel: 'Com' },
+    { name: 'Cyrielle Blanc',     role: 'com', roleLabel: 'Com' },
+    { name: 'Dorian Fedrigo',     role: 'com', roleLabel: 'Com' },
+    { name: 'Julie Riviere',      role: 'com', roleLabel: 'Com' },
+    { name: 'Melissa Pontery',    role: 'com', roleLabel: 'Com' },
+    // EBF — Laurent M est aussi responsable EBF (manager de son service)
+    { name: 'Laurent Minier',     role: 'ebf', roleLabel: 'Resp. EBF', isManager: true },
+    { name: 'Benjamin Aribaud',   role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Benjamin Le',        role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Kévin Dolie',        role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Marc Favre',         role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Sébastien Rouanet',  role: 'ebf', roleLabel: 'EBF' },
+    { name: 'Sébastien Siguenza', role: 'ebf', roleLabel: 'EBF' },
+    // Data — Dimitri est aussi responsable Data (manager de son service)
+    { name: 'Dimitri Garcia',     role: 'data', roleLabel: 'Resp. Data', isManager: true },
+    { name: 'Alain Marchois',     role: 'data', roleLabel: 'Data' },
+    { name: 'Aurélien Dubroue',   role: 'data', roleLabel: 'Data' },
+    { name: 'Ghaya Zarrouk',      role: 'data', roleLabel: 'Data' },
+    { name: 'Marie-Jo Bonadei',   role: 'data', roleLabel: 'Data' },
+    { name: 'Vincent Breque',     role: 'data', roleLabel: 'Data' },
+  ];
+
+  /**
+   * Retourne l'utilisateur courant depuis localStorage
+   * @returns {{ name: string, role: string, roleLabel: string } | null}
+   */
+  function getCurrentUser() {
+    try {
+      var stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        var parsed = JSON.parse(stored);
+        // Vérifier que l'utilisateur existe toujours dans la liste (nom + rôle pour éviter les homonymes)
+        var found = USERS.find(function (u) { return u.name === parsed.name && u.role === parsed.role; });
+        if (!found) found = USERS.find(function (u) { return u.name === parsed.name; });
+        return found || null;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  /**
+   * Définit l'utilisateur courant
+   * @param {string} name
+   */
+  function setCurrentUser(name) {
+    var user = USERS.find(function (u) { return u.name === name; });
+    if (user) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    }
+  }
+
+  /**
+   * Retourne les utilisateurs d'un rôle donné
+   * @param {string} role
+   * @returns {Array}
+   */
+  function getUsersByRole(role) {
+    return USERS.filter(function (u) { return u.role === role; });
+  }
+
+  /**
+   * Vérifie si l'utilisateur courant est le PO de la campagne
+   * @param {Object} campaignData
+   * @returns {boolean}
+   */
+  function isCurrentUserSuperAdmin() {
+    var user = getCurrentUser();
+    return !!(user && user.isSuperAdmin === true);
+  }
+
+  function isCurrentUserPO(campaignData) {
+    var user = getCurrentUser();
+    if (!user || !campaignData) return false;
+    // Le super admin peut effectuer les actions PO sur n'importe quelle campagne
+    if (user.isSuperAdmin) return true;
+    return user.name === (campaignData.po || '');
+  }
+
+  /**
+   * Vérifie si l'utilisateur courant est responsable de service (isManager: true)
+   * @returns {boolean}
+   */
+  function isCurrentUserManager() {
+    var user = getCurrentUser();
+    return !!(user && user.isManager === true);
+  }
+
+  /**
+   * Vérifie si l'utilisateur courant est manager d'un rôle précis (com/ebf/data)
+   * @param {string} role
+   * @returns {boolean}
+   */
+  function isCurrentUserTeamManager(role) {
+    var user = getCurrentUser();
+    // Super admin a les droits manager de toutes les équipes
+    if (user && user.isSuperAdmin) return true;
+    return !!(user && user.isManager === true && user.role === role);
+  }
+
+  return {
+    USERS: USERS,
+    getCurrentUser: getCurrentUser,
+    setCurrentUser: setCurrentUser,
+    getUsersByRole: getUsersByRole,
+    isCurrentUserPO: isCurrentUserPO,
+    isCurrentUserManager: isCurrentUserManager,
+    isCurrentUserTeamManager: isCurrentUserTeamManager,
+    isCurrentUserSuperAdmin: isCurrentUserSuperAdmin,
+  };
+})();

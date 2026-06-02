@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Manager - Connexion</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <style>
+        .login-container {
+            min-height: calc(100vh - 120px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .login-card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 48px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+            max-width: 450px;
+            width: 100%;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1f36;
+            margin-bottom: 8px;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            font-size: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #212529;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #308276;
+            box-shadow: 0 0 0 3px rgba(48, 130, 118, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #308276 0%, #245f56 100%);
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(48, 130, 118, 0.25);
+        }
+
+        .btn-login:hover {
+            box-shadow: 0 6px 20px rgba(48, 130, 118, 0.35);
+            transform: translateY(-2px);
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c2c7;
+            color: #842029;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .lock-icon {
+            display: inline-block;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar will be injected by init-sidebar.js -->
+
+        <div class="main-container">
+            <header class="top-header">
+                <div class="header-left">
+                    <h2 class="page-title">Espace Manager</h2>
+                    <p class="page-subtitle">Accès réservé aux managers</p>
+                </div>
+            </header>
+
+            <main class="content">
+                <div class="login-container">
+                    <div class="login-card">
+                        <div class="login-header">
+                            <div class="login-icon">🔐</div>
+                            <h1 class="login-title">Connexion Manager</h1>
+                            <p class="login-subtitle">Veuillez entrer le mot de passe</p>
+                        </div>
+
+                        <div id="error-message" class="error-message">
+                            <span class="lock-icon">⚠️</span>
+                            <span id="error-text">Mot de passe incorrect</span>
+                        </div>
+
+                        <form id="login-form">
+                            <div class="form-group">
+                                <label for="password" class="form-label">Mot de passe</label>
+                                <input
+                                    type="password"
+                                    id="password"
+                                    class="form-input"
+                                    placeholder="Entrez le mot de passe manager"
+                                    autocomplete="current-password"
+                                    required
+                                />
+                            </div>
+
+                            <button type="submit" class="btn-login">
+                                Se connecter
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="../js/init-sidebar.js"></script>
+    <script>
+        (function() {
+            'use strict';
+
+            var MANAGER_PASSWORD = 'ManagerImpulsion';
+            var form = document.getElementById('login-form');
+            var passwordInput = document.getElementById('password');
+            var errorMessage = document.getElementById('error-message');
+
+            // Vérifier si déjà authentifié
+            checkAuth();
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                var password = passwordInput.value;
+
+                if (password === MANAGER_PASSWORD) {
+                    // Sauvegarder l'authentification dans sessionStorage
+                    sessionStorage.setItem('managerAuth', 'true');
+                    sessionStorage.setItem('managerAuthTime', Date.now().toString());
+
+                    // Rediriger vers la page pilotage manager
+                    window.location.href = 'manager-pilotage.html';
+                } else {
+                    // Afficher l'erreur
+                    errorMessage.classList.add('show');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+
+                    // Faire vibrer le champ
+                    passwordInput.style.animation = 'shake 0.5s';
+                    setTimeout(function() {
+                        passwordInput.style.animation = '';
+                    }, 500);
+                }
+            });
+
+            // Cacher l'erreur quand on commence à taper
+            passwordInput.addEventListener('input', function() {
+                errorMessage.classList.remove('show');
+            });
+
+            function checkAuth() {
+                var isAuth = sessionStorage.getItem('managerAuth');
+                var authTime = sessionStorage.getItem('managerAuthTime');
+
+                if (isAuth === 'true' && authTime) {
+                    // Vérifier que l'auth a moins de 24h
+                    var now = Date.now();
+                    var elapsed = now - parseInt(authTime);
+                    var TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+                    if (elapsed < TWENTY_FOUR_HOURS) {
+                        // Rediriger directement vers pilotage manager
+                        window.location.href = 'manager-pilotage.html';
+                    }
+                }
+            }
+        })();
+    </script>
+
+    <style>
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+    </style>
+</body>
+</html>
