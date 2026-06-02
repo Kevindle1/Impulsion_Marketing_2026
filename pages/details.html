@@ -160,6 +160,33 @@
         .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
         .info-layout .detail-section, .info-cards .detail-section { margin-bottom: 0; }
         @media (max-width: 1100px) { .info-layout { grid-template-columns: 1fr; } }
+
+        /* ── Stepper du workflow ── */
+        .wf-block { margin-bottom: 8px; }
+        .wf-block + .wf-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-2, #f0f4f1); }
+        .wf-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+        .wf-head .wf-title { font-size: 13px; font-weight: 750; color: var(--ink, #0c1a14); display: flex; align-items: center; gap: 8px; }
+        .wf-badge { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); white-space: nowrap; }
+        .wf-badge.done { background: var(--green-50); color: var(--green-700); }
+        .wf-badge.wait { background: var(--amber-50); color: #9a6b00; }
+        .wf-badge.val  { background: var(--blue-50); color: #1d4ed8; }
+        .wf-badge.rev  { background: var(--red-50); color: var(--red); }
+        .wf-stepper { display: flex; align-items: flex-start; overflow-x: auto; padding: 2px 0 4px; }
+        .wf-step { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; min-width: 78px; position: relative; }
+        .wf-step::before { content: ""; position: absolute; top: 16px; left: -50%; width: 100%; height: 2px; background: var(--line, #eaefec); z-index: 0; }
+        .wf-step:first-child::before { display: none; }
+        .wf-step.done::before, .wf-step.submitted::before, .wf-step.current::before, .wf-step.revision::before { background: var(--primary, #00875A); }
+        .wf-node { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; z-index: 1; border: 2px solid var(--line, #eaefec); background: #fff; color: var(--muted-2, #8b988f); }
+        .wf-step.done .wf-node { background: var(--primary, #00875A); border-color: var(--primary, #00875A); color: #fff; }
+        .wf-step.current .wf-node { border-color: var(--amber, #E8A100); color: var(--amber, #E8A100); box-shadow: 0 0 0 4px var(--amber-50, #fdf3e2); }
+        .wf-step.submitted .wf-node { border-color: var(--blue, #2563EB); color: var(--blue, #2563EB); box-shadow: 0 0 0 4px var(--blue-50, #e8f0fe); }
+        .wf-step.revision .wf-node { border-color: var(--red, #E2001A); color: var(--red, #E2001A); box-shadow: 0 0 0 4px var(--red-50, #fdeaec); }
+        .wf-label { font-size: 10.5px; font-weight: 600; color: var(--muted-2, #8b988f); margin-top: 8px; text-align: center; line-height: 1.25; max-width: 86px; }
+        .wf-step.done .wf-label, .wf-step.current .wf-label, .wf-step.submitted .wf-label, .wf-step.revision .wf-label { color: var(--ink, #0c1a14); }
+        .wf-step.current .wf-label { font-weight: 700; }
+        .wf-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 11px; color: var(--muted, #56655e); }
+        .wf-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .wf-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
         /* ── Lightbox ── */
         #lightbox-overlay {
             display: none;
@@ -738,13 +765,14 @@
         discHtml += '<div id="discussion-no-user" style="display:none;color:var(--muted-2);font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>';
         discHtml += '</div>';
 
-        // Assemblage : workflow pleine largeur, puis grille (principal | latéral), puis discussion
+        // Assemblage : workflow pleine largeur, puis 2 colonnes franches
+        // Gauche : infos générales + segments + UB + produit (empilés)
+        // Droite : documents + discussion (en long)
         var html = workflowHtml;
         html += '<div class="info-layout">';
-        html += '<div class="info-main">' + infoGen + (smallCards ? '<div class="info-cards">' + smallCards + '</div>' : '') + '</div>';
-        html += '<div class="info-side">' + jurHtml + docsHtml + '</div>';
+        html += '<div class="info-main">' + infoGen + smallCards + '</div>';
+        html += '<div class="info-side">' + jurHtml + docsHtml + discHtml + '</div>';
         html += '</div>';
-        html += discHtml;
         return html;
     }
 
@@ -1286,14 +1314,29 @@
         var html = '<div class="detail-section" id="workflow-section">';
         html += '<h3>🔄 Workflow</h3>';
 
-        // ── Étapes globales ──
-        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;">';
-        workflow.STEPS.slice(0, 3).forEach(function(step) {
-            var status = globalSteps[step.id] || 'locked';
-            if (isCompleted) status = 'completed';
-            var sc = statusColors[status] || statusColors.locked;
-            html += '<div style="background:' + sc.bg + ';color:' + sc.color + ';border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap;" title="' + step.description + '">' + sc.icon + ' ' + step.label + '</div>';
-        });
+        // ── Helpers stepper ──
+        function wfStateClass(s) {
+            if (s === 'validated' || s === 'completed') return 'done';
+            if (s === 'submitted') return 'submitted';
+            if (s === 'revision_requested') return 'revision';
+            if (s === 'pending') return 'current';
+            return 'locked';
+        }
+        function wfStepper(stepDefs, getStatus) {
+            var h = '<div class="wf-stepper">';
+            stepDefs.forEach(function(step, i) {
+                var st = getStatus(step, i);
+                var cls = wfStateClass(st);
+                var content = (cls === 'done') ? '✓' : String(i + 1);
+                h += '<div class="wf-step ' + cls + '"><div class="wf-node" title="' + security.escapeHtml(step.label) + '">' + content + '</div><div class="wf-label">' + security.escapeHtml(step.label) + '</div></div>';
+            });
+            h += '</div>';
+            return h;
+        }
+
+        // ── Étapes globales (stepper) ──
+        html += '<div class="wf-block"><div class="wf-head"><span class="wf-title">🚀 Préparation</span></div>';
+        html += wfStepper(workflow.STEPS.slice(0, 3), function(step) { var s = globalSteps[step.id] || 'locked'; if (isCompleted) s = 'completed'; return s; });
         html += '</div>';
 
         // ── Étapes par canal (v2) ──
@@ -1310,26 +1353,28 @@
         });
 
         if (numCh > 0 && channelStepDefs.length > 0) {
-            html += '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;">';
-            html += '<thead><tr><th style="text-align:left;padding:4px 8px;background:var(--line-2);border:1px solid var(--line);font-weight:700;color:var(--muted);">Canal</th>';
-            channelStepDefs.forEach(function(step) {
-                html += '<th style="padding:4px 6px;background:var(--line-2);border:1px solid var(--line);font-weight:700;color:var(--muted);text-align:center;" title="' + step.description + '">' + step.icon + '</th>';
-            });
-            html += '</tr></thead><tbody>';
             channels.forEach(function(ch, ci) {
                 var cs = channelSteps[ci] || {};
                 var chCompleted = isCompleted || workflow.isChannelCompleted(cs, data.requiredTeams, ch.type);
-                html += '<tr>';
-                html += '<td style="padding:4px 8px;border:1px solid var(--line);font-weight:600;color:#0f172a;">' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</td>';
-                channelStepDefs.forEach(function(step) {
-                    var status = chCompleted ? 'completed' : (cs[step.id] || 'locked');
-                    var sc = statusColors[status] || statusColors.locked;
-                    html += '<td style="padding:4px 6px;border:1px solid var(--line);text-align:center;background:' + sc.bg + ';color:' + sc.color + ';" title="' + step.label + ' : ' + status + '">' + sc.icon + '</td>';
-                });
-                html += '</tr>';
+                // Badge d'état courant du canal
+                var badge = 'En cours', badgeCls = '';
+                if (chCompleted) { badge = '🏁 Terminé'; badgeCls = 'done'; }
+                else {
+                    for (var i = 0; i < channelStepDefs.length; i++) {
+                        var st = cs[channelStepDefs[i].id];
+                        if (st === 'pending')            { badge = channelStepDefs[i].label; badgeCls = 'wait'; break; }
+                        if (st === 'submitted')          { badge = 'En validation : ' + channelStepDefs[i].label; badgeCls = 'val'; break; }
+                        if (st === 'revision_requested') { badge = 'Révision : ' + channelStepDefs[i].label; badgeCls = 'rev'; break; }
+                    }
+                }
+                html += '<div class="wf-block"><div class="wf-head"><span class="wf-title">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</span><span class="wf-badge ' + badgeCls + '">' + security.escapeHtml(badge) + '</span></div>';
+                html += wfStepper(channelStepDefs, function(step) { return chCompleted ? 'completed' : (cs[step.id] || 'locked'); });
+                html += '</div>';
             });
-            html += '</tbody></table>';
         }
+
+        // Légende
+        html += '<div class="wf-legend"><span><i style="background:var(--primary)"></i> Fait</span><span><i style="background:var(--amber)"></i> En cours</span><span><i style="background:var(--blue)"></i> En validation</span><span><i style="background:var(--red)"></i> Révision</span><span><i style="background:#fff;border:1px solid var(--muted-2)"></i> À venir</span></div>';
 
         if (isCompleted) {
             html += '<div style="background:#c8e6c9;color:var(--green-700);border-radius:8px;padding:12px 16px;font-weight:700;margin-bottom:12px;">🏁 Campagne terminée !</div>';
