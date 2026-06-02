@@ -364,7 +364,12 @@
         // =====================================================================
         window.addEventListener('load', function() {
             help.initHelp('visualization');
-            initPage();
+            // Attendre que la config (éventuellement surchargée par l'admin) soit appliquée
+            // pour que les filtres reflètent les listes éditées.
+            var adminReady = (window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig && window.ImpulsionMarketing.adminConfig.ready)
+                ? window.ImpulsionMarketing.adminConfig.ready
+                : Promise.resolve();
+            adminReady.then(initPage);
         });
 
         function initPage() {

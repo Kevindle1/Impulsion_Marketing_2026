@@ -75,6 +75,43 @@ window.ImpulsionMarketing.config = (function() {
     "Mineurs"
   ];
 
+  // Segments organisés par groupe (Particuliers / Pro / Agri) avec libellé d'affichage.
+  // Source de vérité pour le formulaire de création ; SEGMENTS (à plat) en est dérivé
+  // et reste utilisé par les filtres. Éditable via l'espace Administration.
+  const SEGMENTS_GROUPS = [
+    { group: "Particuliers", items: [
+      { value: "Actif", label: "Actif" },
+      { value: "Etudiant", label: "Etudiant" },
+      { value: "GP", label: "GP" },
+      { value: "Senior", label: "Senior" },
+      { value: "BP", label: "BP" },
+      { value: "Sociétaire", label: "Sociétaire" },
+      { value: "Patri Tradi", label: "Patri Tradi" },
+      { value: "Patri Dynamique", label: "Patri Dynamique" },
+      { value: "Intermédiaire Tradi", label: "Interméd. Tradi" },
+      { value: "Intermédiaire Dynamique", label: "Interméd. Dynamique" },
+      { value: "PP Majeur", label: "PP Majeur" },
+      { value: "Jeunes Actif 18-25ans", label: "Jeunes 18-25 ans" },
+      { value: "Jeunes 18-30ans", label: "Jeunes 18-30 ans" },
+      { value: "Jeunes 12-17 ans", label: "Jeunes 12-17 ans" },
+      { value: "Jeunes 0-11 ans", label: "Jeunes 0-11 ans" },
+      { value: "Mineurs", label: "Mineurs" }
+    ] },
+    { group: "Pro", items: [
+      { value: "Pro - PLS", label: "Pro - PLS" },
+      { value: "Pro - Commerçants", label: "Pro - Commerçants" },
+      { value: "Pro - Artisans", label: "Pro - Artisans" },
+      { value: "Pro - Micro entrepreneurs", label: "Pro - Micro-entrepreneurs" },
+      { value: "Associations", label: "Associations" },
+      { value: "Entreprises", label: "Entreprises" }
+    ] },
+    { group: "Agri", items: [
+      { value: "Agri - Managers", label: "Agri - Managers" },
+      { value: "Agris", label: "Agris" },
+      { value: "Agris - JA", label: "Agris - JA" }
+    ] }
+  ];
+
   // ========================================
   // Univers de Besoins (UBs)
   // ========================================
@@ -338,6 +375,7 @@ window.ImpulsionMarketing.config = (function() {
     ALLOWED_DOCUMENT_TYPES: ALLOWED_DOCUMENT_TYPES,
     ALLOWED_ASSET_TYPES: ALLOWED_ASSET_TYPES,
     SEGMENTS: SEGMENTS,
+    SEGMENTS_GROUPS: SEGMENTS_GROUPS,
     UNIVERS_BESOINS: UNIVERS_BESOINS,
     CANAUX: CANAUX,
     TYPES_COM: TYPES_COM,
@@ -3111,6 +3149,37 @@ window.ImpulsionMarketing.adminConfig = (function () {
   var IM = window.ImpulsionMarketing;
   var CONFIG_FILE = '_config.json';
 
+  // Correspondance clé _config.json → liste à plat dans IM.config (éditables via l'admin).
+  var LIST_MAP = {
+    canaux: 'CANAUX',
+    universBesoins: 'UNIVERS_BESOINS',
+    typesCom: 'TYPES_COM',
+    typologies: 'TYPOLOGIES',
+    marches: 'MARCHES',
+    recurrences: 'RECURRENCES',
+    lots: 'LOTS'
+  };
+
+  // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).
+  function spliceInPlace(target, source) {
+    if (!Array.isArray(target) || !Array.isArray(source)) return;
+    target.splice.apply(target, [0, target.length].concat(source));
+  }
+
+  // Reconstruit la liste à plat SEGMENTS depuis la structure groupée.
+  function flattenSegments(groups) {
+    var out = [];
+    (groups || []).forEach(function (g) {
+      (g && g.items || []).forEach(function (it) { if (it && it.value) out.push(it.value); });
+    });
+    return out;
+  }
+
+  // Promesse résolue lorsque la config a été chargée et appliquée (les pages
+  // attendent ce signal avant de construire leurs menus depuis IM.config).
+  var _readyResolve;
+  var ready = new Promise(function (res) { _readyResolve = res; });
+
   function rootHandle() {
     return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
       if (res.status !== 'success') throw new Error('Dossier de travail non chargé.');
@@ -3151,7 +3220,15 @@ window.ImpulsionMarketing.adminConfig = (function () {
           // Fichier absent → on l'amorce avec les valeurs par défaut.
           var seed = {};
           if (IM.users && Array.isArray(IM.users.DEFAULT_USERS)) seed.users = IM.users.DEFAULT_USERS;
-          if (IM.config && Array.isArray(IM.config.CANAUX)) seed.canaux = IM.config.CANAUX.slice();
+          if (IM.config) {
+            Object.keys(LIST_MAP).forEach(function (k) {
+              var arr = IM.config[LIST_MAP[k]];
+              if (Array.isArray(arr)) seed[k] = arr.slice();
+            });
+            if (Array.isArray(IM.config.SEGMENTS_GROUPS)) {
+              seed.segmentsGroups = JSON.parse(JSON.stringify(IM.config.SEGMENTS_GROUPS));
+            }
+          }
           return save(seed).then(function () { return seed; }).catch(function () { return {}; });
         });
     }).catch(function () { return {}; });
@@ -3163,8 +3240,17 @@ window.ImpulsionMarketing.adminConfig = (function () {
     if (Array.isArray(cfg.users) && cfg.users.length && IM.users && IM.users.applyUsers) {
       IM.users.applyUsers(cfg.users);
     }
-    if (Array.isArray(cfg.canaux) && cfg.canaux.length && IM.config && Array.isArray(IM.config.CANAUX)) {
-      IM.config.CANAUX.splice.apply(IM.config.CANAUX, [0, IM.config.CANAUX.length].concat(cfg.canaux));
+    if (!IM.config) return;
+    // Listes à plat
+    Object.keys(LIST_MAP).forEach(function (k) {
+      if (Array.isArray(cfg[k]) && cfg[k].length && Array.isArray(IM.config[LIST_MAP[k]])) {
+        spliceInPlace(IM.config[LIST_MAP[k]], cfg[k]);
+      }
+    });
+    // Segments groupés → met à jour la structure ET la liste à plat dérivée
+    if (Array.isArray(cfg.segmentsGroups) && cfg.segmentsGroups.length && Array.isArray(IM.config.SEGMENTS_GROUPS)) {
+      spliceInPlace(IM.config.SEGMENTS_GROUPS, cfg.segmentsGroups);
+      if (Array.isArray(IM.config.SEGMENTS)) spliceInPlace(IM.config.SEGMENTS, flattenSegments(cfg.segmentsGroups));
     }
   }
 
@@ -3185,13 +3271,13 @@ window.ImpulsionMarketing.adminConfig = (function () {
   }
 
   function init() {
-    // Pas de menu (écran de connexion) → ne rien faire.
-    if (!document.querySelector('.sidebar-nav')) return;
+    // Pas de menu (écran de connexion) → rien à appliquer, on débloque quand même.
+    if (!document.querySelector('.sidebar-nav')) { _readyResolve(); return; }
     // ensureSeed lit le fichier (ou le crée s'il manque) puis on applique la config.
     ensureSeed()
       .then(function (cfg) { applyConfig(cfg); })
       .catch(function () {})
-      .then(function () { injectAdminLink(); });
+      .then(function () { injectAdminLink(); _readyResolve(); });
   }
 
   if (document.readyState === 'loading') {
@@ -3200,5 +3286,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     init();
   }
 
-  return { load: load, save: save, applyConfig: applyConfig, ensureSeed: ensureSeed };
+  return {
+    load: load, save: save, applyConfig: applyConfig, ensureSeed: ensureSeed,
+    ready: ready, LIST_MAP: LIST_MAP, flattenSegments: flattenSegments
+  };
 })();

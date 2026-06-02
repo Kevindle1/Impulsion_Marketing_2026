@@ -73,13 +73,17 @@
         </header>
         <main class="content">
             <div class="admin-tabs">
-                <button class="admin-tab active" data-tab="people">👥 Équipes &amp; personnes</button>
-                <button class="admin-tab" data-tab="canaux">📦 Types de livrables</button>
+                <button class="admin-tab active" data-tab="overview">📊 Vue d'ensemble</button>
+                <button class="admin-tab" data-tab="people">👥 Équipes &amp; personnes</button>
+                <button class="admin-tab" data-tab="lists">📋 Listes de choix</button>
+                <button class="admin-tab" data-tab="segments">🎯 Segments</button>
                 <button class="admin-tab" data-tab="incidents">🐞 Signalements</button>
             </div>
 
-            <section class="admin-section active" id="tab-people"><div id="people-container"></div></section>
-            <section class="admin-section" id="tab-canaux"><div id="canaux-container"></div></section>
+            <section class="admin-section active" id="tab-overview"><div id="overview-container"></div></section>
+            <section class="admin-section" id="tab-people"><div id="people-container"></div></section>
+            <section class="admin-section" id="tab-lists"><div id="lists-container"></div></section>
+            <section class="admin-section" id="tab-segments"><div id="segments-container"></div></section>
             <section class="admin-section" id="tab-incidents"><div id="incidents-container"></div></section>
         </main>
     </div>
@@ -113,9 +117,22 @@
             return (isManager && role !== 'superadmin') ? ('Resp. ' + base) : base;
         }
 
-        var people = [];   // copie éditable des personnes
-        var canaux = [];   // copie éditable des types de livrables
+        var people = [];          // copie éditable des personnes
+        var lists = {};           // { canaux:[], universBesoins:[], … } copies éditables
+        var segmentsGroups = [];  // copie éditable des segments groupés
         var incidents = [];
+
+        // Listes de choix simples éditables (clé _config.json → libellé + clé IM.config)
+        var LISTS_META = [
+            { key: 'canaux',         label: 'Types de livrables / canaux', ph: 'Ex : Mail, SMS, Site web…' },
+            { key: 'universBesoins', label: 'Univers de besoin',           ph: 'Ex : Épargne, Crédits…' },
+            { key: 'typesCom',       label: 'Types de communication',      ph: 'Ex : Commerciale Caisse…' },
+            { key: 'typologies',     label: 'Typologies',                  ph: 'Ex : PR, Campagne' },
+            { key: 'marches',        label: 'Marchés',                     ph: 'Ex : Particuliers…' },
+            { key: 'recurrences',    label: 'Récurrences',                 ph: 'Ex : Mensuel, One shot…' },
+            { key: 'lots',           label: 'Numéros de lot',              ph: 'Ex : 1, 2, Création' }
+        ];
+        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS' };
 
         // ── Onglets ──
         document.querySelectorAll('.admin-tab').forEach(function (btn) {
@@ -188,33 +205,170 @@
             saveConfig({ users: clean }, 'Équipes enregistrées.').then(function () { users.applyUsers(clean); });
         }
 
-        // ── TYPES DE LIVRABLES (canaux) ──
-        function renderCanaux() {
+        // ── LISTES DE CHOIX SIMPLES ──
+        function renderLists() {
             var html = '<div class="admin-card" style="background:var(--amber-50,#fff8e6);border-color:#f0d98a;">'
                 + '<div style="font-size:13px;color:#7a5b00;line-height:1.55;">'
-                + '<strong>⚠️ À savoir :</strong> cette liste sert de choix proposés à la <strong>création d\'une nouvelle campagne</strong>. '
-                + 'Modifier ou supprimer un type <strong>ne change pas</strong> les campagnes déjà créées (elles gardent le nom enregistré dans leur fiche). '
-                + 'On peut donc ajouter de nouveaux types sans risque ; évitez en revanche de renommer/supprimer un type déjà utilisé.'
+                + '<strong>⚠️ À savoir :</strong> ces listes alimentent les choix du <strong>formulaire de création</strong> et les filtres. '
+                + 'Modifier ou supprimer une valeur <strong>ne change pas</strong> les campagnes déjà créées (elles gardent la valeur enregistrée). '
+                + 'On peut ajouter de nouvelles valeurs sans risque ; évitez de renommer/supprimer une valeur déjà utilisée.'
                 + '</div></div>';
-            html += '<div class="admin-card"><h3>Types de livrables / canaux (' + canaux.length + ')</h3>';
-            if (!canaux.length) html += '<div class="empty-hint">Aucun type.</div>';
-            canaux.forEach(function (c, i) {
-                html += '<div class="canal-row"><span class="person-name">' + esc(c) + '</span><button class="icon-del" data-delc="' + i + '">🗑</button></div>';
-            });
-            html += '<div class="add-row"><input class="admin-input" id="add-canal" placeholder="Ex : Mail, SMS, Push, Site web…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="add-canal-btn">+ Ajouter</button></div>';
-            html += '</div><div class="save-bar"><button class="btn btn-primary" id="save-canaux">💾 Enregistrer les types</button></div>';
-            document.getElementById('canaux-container').innerHTML = html;
-            document.querySelectorAll('[data-delc]').forEach(function (b) { b.addEventListener('click', function () { canaux.splice(+b.getAttribute('data-delc'), 1); renderCanaux(); }); });
-            document.getElementById('add-canal-btn').addEventListener('click', function () {
-                var v = document.getElementById('add-canal').value.trim();
-                if (!v) return;
-                if (canaux.indexOf(v) === -1) canaux.push(v);
-                renderCanaux();
-            });
-            document.getElementById('save-canaux').addEventListener('click', function () {
-                saveConfig({ canaux: canaux.slice() }, 'Types de livrables enregistrés.').then(function () {
-                    if (config && Array.isArray(config.CANAUX)) config.CANAUX.splice.apply(config.CANAUX, [0, config.CANAUX.length].concat(canaux));
+            LISTS_META.forEach(function (meta) {
+                var arr = lists[meta.key] || (lists[meta.key] = []);
+                html += '<div class="admin-card"><h3>' + esc(meta.label) + ' (' + arr.length + ')</h3>';
+                if (!arr.length) html += '<div class="empty-hint">Aucune valeur.</div>';
+                arr.forEach(function (v, i) {
+                    html += '<div class="canal-row"><span class="person-name">' + esc(v) + '</span>'
+                        + '<button class="icon-del" data-list="' + meta.key + '" data-deli="' + i + '">🗑</button></div>';
                 });
+                html += '<div class="add-row"><input class="admin-input" data-addinput="' + meta.key + '" placeholder="' + esc(meta.ph) + '" style="flex:1;min-width:200px;">'
+                    + '<button class="btn btn-primary" data-addbtn="' + meta.key + '">+ Ajouter</button></div></div>';
+            });
+            html += '<div class="save-bar"><button class="btn btn-primary" id="save-lists">💾 Enregistrer les listes</button></div>';
+            var cont = document.getElementById('lists-container');
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-deli]').forEach(function (b) {
+                b.addEventListener('click', function () { lists[b.getAttribute('data-list')].splice(+b.getAttribute('data-deli'), 1); renderLists(); });
+            });
+            cont.querySelectorAll('[data-addbtn]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var k = b.getAttribute('data-addbtn');
+                    var inp = cont.querySelector('[data-addinput="' + k + '"]');
+                    var v = (inp.value || '').trim();
+                    if (!v) return;
+                    if (lists[k].indexOf(v) === -1) lists[k].push(v);
+                    renderLists();
+                });
+            });
+            document.getElementById('save-lists').addEventListener('click', saveLists);
+        }
+        function saveLists() {
+            var patch = {};
+            LISTS_META.forEach(function (meta) { patch[meta.key] = (lists[meta.key] || []).slice(); });
+            saveConfig(patch, 'Listes enregistrées.').then(function () {
+                LISTS_META.forEach(function (meta) {
+                    var target = config && config[CFG_KEY[meta.key]];
+                    if (Array.isArray(target)) target.splice.apply(target, [0, target.length].concat(lists[meta.key] || []));
+                });
+            });
+        }
+
+        // ── SEGMENTS GROUPÉS ──
+        function renderSegments() {
+            var html = '<div class="admin-card" style="background:var(--amber-50,#fff8e6);border-color:#f0d98a;">'
+                + '<div style="font-size:13px;color:#7a5b00;line-height:1.55;">'
+                + 'Les segments sont organisés par groupe (Particuliers / Pro / Agri). La <strong>valeur</strong> est enregistrée dans les campagnes ; '
+                + 'le <strong>libellé</strong> est ce qui s\'affiche dans le formulaire. Même précaution : ne renommez pas une valeur déjà utilisée.'
+                + '</div></div>';
+            segmentsGroups.forEach(function (g, gi) {
+                var items = g.items || (g.items = []);
+                html += '<div class="admin-card"><h3 style="display:flex;align-items:center;gap:10px;justify-content:space-between;">'
+                    + '<input class="admin-input" data-grpname="' + gi + '" value="' + esc(g.group || '') + '" style="font-size:13px;font-weight:750;text-transform:uppercase;letter-spacing:.6px;min-width:160px;">'
+                    + '<button class="icon-del" data-delgrp="' + gi + '">🗑 Groupe</button></h3>';
+                if (!items.length) html += '<div class="empty-hint">Aucun segment.</div>';
+                items.forEach(function (it, ii) {
+                    html += '<div class="person-row">'
+                        + '<input class="admin-input" data-segval="' + gi + '_' + ii + '" value="' + esc(it.value || '') + '" placeholder="Valeur (enregistrée)" style="flex:1;min-width:120px;">'
+                        + '<input class="admin-input" data-seglab="' + gi + '_' + ii + '" value="' + esc(it.label || '') + '" placeholder="Libellé (affiché)" style="flex:1;min-width:120px;">'
+                        + '<button class="icon-del" data-delseg="' + gi + '_' + ii + '">🗑</button></div>';
+                });
+                html += '<div class="add-row"><input class="admin-input" data-newval="' + gi + '" placeholder="Valeur" style="flex:1;min-width:120px;">'
+                    + '<input class="admin-input" data-newlab="' + gi + '" placeholder="Libellé (optionnel)" style="flex:1;min-width:120px;">'
+                    + '<button class="btn btn-primary" data-addseg="' + gi + '">+ Ajouter</button></div></div>';
+            });
+            html += '<div class="admin-card"><div class="add-row" style="border:none;padding:0;margin:0;">'
+                + '<input class="admin-input" id="new-group-name" placeholder="Nom d\'un nouveau groupe" style="flex:1;min-width:180px;">'
+                + '<button class="btn btn-secondary" id="add-group-btn">+ Ajouter un groupe</button></div></div>';
+            html += '<div class="save-bar"><button class="btn btn-primary" id="save-segments">💾 Enregistrer les segments</button></div>';
+            var cont = document.getElementById('segments-container');
+            cont.innerHTML = html;
+            // Édition en direct des champs (sans re-render, pour ne pas perdre le focus)
+            cont.querySelectorAll('[data-grpname]').forEach(function (inp) { inp.addEventListener('input', function () { segmentsGroups[+inp.getAttribute('data-grpname')].group = inp.value; }); });
+            cont.querySelectorAll('[data-segval]').forEach(function (inp) { var p = inp.getAttribute('data-segval').split('_'); inp.addEventListener('input', function () { segmentsGroups[+p[0]].items[+p[1]].value = inp.value; }); });
+            cont.querySelectorAll('[data-seglab]').forEach(function (inp) { var p = inp.getAttribute('data-seglab').split('_'); inp.addEventListener('input', function () { segmentsGroups[+p[0]].items[+p[1]].label = inp.value; }); });
+            cont.querySelectorAll('[data-delseg]').forEach(function (b) { b.addEventListener('click', function () { var p = b.getAttribute('data-delseg').split('_'); segmentsGroups[+p[0]].items.splice(+p[1], 1); renderSegments(); }); });
+            cont.querySelectorAll('[data-delgrp]').forEach(function (b) { b.addEventListener('click', function () { segmentsGroups.splice(+b.getAttribute('data-delgrp'), 1); renderSegments(); }); });
+            cont.querySelectorAll('[data-addseg]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var gi = +b.getAttribute('data-addseg');
+                    var val = (cont.querySelector('[data-newval="' + gi + '"]').value || '').trim();
+                    var lab = (cont.querySelector('[data-newlab="' + gi + '"]').value || '').trim();
+                    if (!val) { notify('Indiquez une valeur.', 'error'); return; }
+                    segmentsGroups[gi].items.push({ value: val, label: lab || val });
+                    renderSegments();
+                });
+            });
+            document.getElementById('add-group-btn').addEventListener('click', function () {
+                var n = (document.getElementById('new-group-name').value || '').trim();
+                if (!n) return;
+                segmentsGroups.push({ group: n, items: [] });
+                renderSegments();
+            });
+            document.getElementById('save-segments').addEventListener('click', saveSegments);
+        }
+        function saveSegments() {
+            var clean = segmentsGroups.map(function (g) {
+                return { group: g.group || '', items: (g.items || []).filter(function (it) { return it && it.value; }).map(function (it) { return { value: it.value, label: it.label || it.value }; }) };
+            });
+            saveConfig({ segmentsGroups: clean }, 'Segments enregistrés.').then(function () {
+                if (config && Array.isArray(config.SEGMENTS_GROUPS)) config.SEGMENTS_GROUPS.splice.apply(config.SEGMENTS_GROUPS, [0, config.SEGMENTS_GROUPS.length].concat(clean));
+                if (config && Array.isArray(config.SEGMENTS) && adminConfig.flattenSegments) {
+                    var flat = adminConfig.flattenSegments(clean);
+                    config.SEGMENTS.splice.apply(config.SEGMENTS, [0, config.SEGMENTS.length].concat(flat));
+                }
+            });
+        }
+
+        // ── VUE D'ENSEMBLE ──
+        function renderOverview() {
+            var cont = document.getElementById('overview-container');
+            cont.innerHTML = '<div class="admin-card"><div class="empty-hint">Lecture des campagnes…</div></div>';
+            IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') throw new Error('Dossier non chargé.');
+                return res.handle.getDirectoryHandle('Campagnes').then(function (d) {
+                    return d.getFileHandle('_index.json').then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
+                        .then(function (t) { try { return JSON.parse(t) || {}; } catch (e) { return {}; } });
+                });
+            }).then(function (idx) {
+                var camps = (idx && idx.campaigns) ? Object.keys(idx.campaigns).map(function (k) { return idx.campaigns[k]; }) : [];
+                var actives = camps.filter(function (c) { return c.actif !== false; });
+                var done = actives.filter(function (c) { return c.done === true; }).length;
+                var byTyp = {}, byMkt = {}, byTeam = { Com: 0, EBF: 0, Data: 0, Marketing: 0 };
+                actives.forEach(function (c) {
+                    if (c.typ) byTyp[c.typ] = (byTyp[c.typ] || 0) + 1;
+                    if (c.mkt) byMkt[c.mkt] = (byMkt[c.mkt] || 0) + 1;
+                    (c.requiredTeams || []).forEach(function (t) { byTeam[t] = (byTeam[t] || 0) + 1; });
+                });
+                var openInc = incidents.filter(function (i) { return i.statut !== 'traité'; }).length;
+                function statCard(label, value, accent) {
+                    return '<div style="flex:1;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow-xs);">'
+                        + '<div style="font-size:28px;font-weight:800;color:' + (accent || 'var(--primary)') + ';">' + value + '</div>'
+                        + '<div style="font-size:12.5px;color:var(--muted);font-weight:650;margin-top:2px;">' + esc(label) + '</div></div>';
+                }
+                function breakdown(title, obj) {
+                    var keys = Object.keys(obj).filter(function (k) { return obj[k]; });
+                    var rows = keys.length ? keys.map(function (k) {
+                        return '<div class="canal-row"><span class="person-name">' + esc(k) + '</span><span class="pill-mgr">' + obj[k] + '</span></div>';
+                    }).join('') : '<div class="empty-hint">Aucune donnée.</div>';
+                    return '<div class="admin-card"><h3>' + esc(title) + '</h3>' + rows + '</div>';
+                }
+                var html = '<div class="admin-card"><h3>Campagnes actives</h3>'
+                    + '<div style="display:flex;gap:12px;flex-wrap:wrap;">'
+                    + statCard('Campagnes actives', actives.length)
+                    + statCard('Terminées', done, 'var(--green-600)')
+                    + statCard('En cours', actives.length - done, 'var(--amber,#b8860b)')
+                    + statCard('Signalements ouverts', openInc, openInc ? 'var(--red)' : 'var(--muted)')
+                    + '</div></div>';
+                html += breakdown('Par typologie', byTyp);
+                html += breakdown('Par marché', byMkt);
+                html += breakdown('Par équipe sollicitée', byTeam);
+                html += '<div class="save-bar"><button class="btn btn-secondary" id="refresh-overview">↻ Rafraîchir</button></div>';
+                cont.innerHTML = html;
+                document.getElementById('refresh-overview').addEventListener('click', renderOverview);
+            }).catch(function (e) {
+                cont.innerHTML = '<div class="admin-card"><div class="empty-hint">Impossible de lire l\'index des campagnes (' + esc(e && e.message) + ').<br>Ouvrez d\'abord le dossier de travail depuis le tableau de bord.</div>'
+                    + '<div class="save-bar"><button class="btn btn-secondary" id="refresh-overview">↻ Réessayer</button></div></div>';
+                var b = document.getElementById('refresh-overview'); if (b) b.addEventListener('click', renderOverview);
             });
         }
 
@@ -265,12 +419,23 @@
 
         // ── Init : charger config + incidents puis rendre ──
         function clone(a) { return a.map(function (x) { return Object.assign({}, x); }); }
-        adminConfig.load().then(function (cfg) {
-            adminConfig.applyConfig(cfg);
+        function loadStateFromConfig() {
             people = clone(users.USERS);
-            canaux = (config && Array.isArray(config.CANAUX)) ? config.CANAUX.slice() : [];
-            renderPeople();
-            renderCanaux();
+            lists = {};
+            LISTS_META.forEach(function (meta) {
+                var arr = config && config[CFG_KEY[meta.key]];
+                lists[meta.key] = Array.isArray(arr) ? arr.slice() : [];
+            });
+            segmentsGroups = (config && Array.isArray(config.SEGMENTS_GROUPS))
+                ? JSON.parse(JSON.stringify(config.SEGMENTS_GROUPS)) : [];
+        }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); }
+
+        // On attend le signal "ready" de admin-standalone (config déjà appliquée / amorcée).
+        var ready = (adminConfig && adminConfig.ready) ? adminConfig.ready : Promise.resolve();
+        ready.then(function () {
+            loadStateFromConfig();
+            renderAll();
             // incidents
             return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
                 if (res.status !== 'success') return [];
@@ -282,9 +447,10 @@
         }).then(function (inc) {
             incidents = Array.isArray(inc) ? inc : [];
             renderIncidents();
+            renderOverview();
         }).catch(function () {
-            people = clone(users.USERS); canaux = (config && config.CANAUX) ? config.CANAUX.slice() : [];
-            renderPeople(); renderCanaux(); renderIncidents();
+            loadStateFromConfig();
+            renderAll(); renderIncidents(); renderOverview();
         });
     })();
 </script>

@@ -71,6 +71,43 @@ window.ImpulsionMarketing.config = (function() {
     "Mineurs"
   ];
 
+  // Segments organisés par groupe (Particuliers / Pro / Agri) avec libellé d'affichage.
+  // Source de vérité pour le formulaire de création ; SEGMENTS (à plat) en est dérivé
+  // et reste utilisé par les filtres. Éditable via l'espace Administration.
+  const SEGMENTS_GROUPS = [
+    { group: "Particuliers", items: [
+      { value: "Actif", label: "Actif" },
+      { value: "Etudiant", label: "Etudiant" },
+      { value: "GP", label: "GP" },
+      { value: "Senior", label: "Senior" },
+      { value: "BP", label: "BP" },
+      { value: "Sociétaire", label: "Sociétaire" },
+      { value: "Patri Tradi", label: "Patri Tradi" },
+      { value: "Patri Dynamique", label: "Patri Dynamique" },
+      { value: "Intermédiaire Tradi", label: "Interméd. Tradi" },
+      { value: "Intermédiaire Dynamique", label: "Interméd. Dynamique" },
+      { value: "PP Majeur", label: "PP Majeur" },
+      { value: "Jeunes Actif 18-25ans", label: "Jeunes 18-25 ans" },
+      { value: "Jeunes 18-30ans", label: "Jeunes 18-30 ans" },
+      { value: "Jeunes 12-17 ans", label: "Jeunes 12-17 ans" },
+      { value: "Jeunes 0-11 ans", label: "Jeunes 0-11 ans" },
+      { value: "Mineurs", label: "Mineurs" }
+    ] },
+    { group: "Pro", items: [
+      { value: "Pro - PLS", label: "Pro - PLS" },
+      { value: "Pro - Commerçants", label: "Pro - Commerçants" },
+      { value: "Pro - Artisans", label: "Pro - Artisans" },
+      { value: "Pro - Micro entrepreneurs", label: "Pro - Micro-entrepreneurs" },
+      { value: "Associations", label: "Associations" },
+      { value: "Entreprises", label: "Entreprises" }
+    ] },
+    { group: "Agri", items: [
+      { value: "Agri - Managers", label: "Agri - Managers" },
+      { value: "Agris", label: "Agris" },
+      { value: "Agris - JA", label: "Agris - JA" }
+    ] }
+  ];
+
   // ========================================
   // Univers de Besoins (UBs)
   // ========================================
@@ -334,6 +371,7 @@ window.ImpulsionMarketing.config = (function() {
     ALLOWED_DOCUMENT_TYPES: ALLOWED_DOCUMENT_TYPES,
     ALLOWED_ASSET_TYPES: ALLOWED_ASSET_TYPES,
     SEGMENTS: SEGMENTS,
+    SEGMENTS_GROUPS: SEGMENTS_GROUPS,
     UNIVERS_BESOINS: UNIVERS_BESOINS,
     CANAUX: CANAUX,
     TYPES_COM: TYPES_COM,
