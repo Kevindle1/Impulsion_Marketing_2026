@@ -26,8 +26,8 @@
 
           body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #212529;
-            background: #f8f9fa;
+            color: var(--ink);
+            background: var(--line-2);
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
@@ -40,9 +40,9 @@
             margin: 0 0 16px 0;
             font-size: 1rem;
             font-weight: 600;
-            color: #212529;
+            color: var(--ink);
             padding-bottom: 8px;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid var(--line);
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-size: 0.875rem;
@@ -51,7 +51,7 @@
           h3 {
             font-size: 1rem;
             font-weight: 600;
-            color: #212529;
+            color: var(--ink);
             margin: 0 0 8px 0;
           }
 
@@ -64,7 +64,7 @@
           }
 
           .hint {
-            color: #6c757d;
+            color: var(--muted);
             font-size: 0.875rem;
             font-weight: 500;
           }
@@ -73,7 +73,7 @@
           .btn {
             border: none;
             background: transparent;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             border-radius: 3px;
             padding: 8px 16px;
             cursor: pointer;
@@ -81,52 +81,52 @@
             font-weight: 600;
             font-size: 0.875rem;
             font-family: inherit;
-            color: #495057;
+            color: var(--gray-700);
           }
 
           .btn:hover {
-            background: #f8f9fa;
-            border-color: #adb5bd;
+            background: var(--line-2);
+            border-color: var(--muted-2);
           }
 
           .btn.primary {
-            background: #0d6efd;
+            background: var(--primary);
             color: #fff;
-            border-color: #0d6efd;
+            border-color: var(--primary);
             padding: 8px 16px;
           }
 
           .btn.primary:hover {
-            background: #0b5ed7;
-            border-color: #0b5ed7;
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
           }
 
           .btn.secondary {
-            background: #6c757d;
+            background: var(--muted);
             color: #fff;
-            border-color: #6c757d;
+            border-color: var(--muted);
           }
 
           .btn.secondary:hover {
-            background: #5c636a;
-            border-color: #5c636a;
+            background: var(--muted);
+            border-color: var(--muted);
           }
 
           .btn.success {
-            background: #198754;
+            background: var(--primary);
             color: #fff;
-            border-color: #198754;
+            border-color: var(--primary);
           }
 
           .btn.success:hover {
-            background: #157347;
-            border-color: #157347;
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
           }
 
           /* Panel */
           .panel {
             background: #ffffff;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             border-radius: 3px;
             padding: 24px;
             margin-top: 24px;
@@ -141,7 +141,7 @@
             display: block;
             margin-bottom: 6px;
             font-weight: 600;
-            color: #495057;
+            color: var(--gray-700);
             font-size: 0.875rem;
           }
 
@@ -150,21 +150,21 @@
           .form-group select {
             width: 100%;
             padding: 8px 12px;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             border-radius: 3px;
             font-size: 0.875rem;
             transition: border-color 0.15s;
             box-sizing: border-box;
             font-family: inherit;
             background: #ffffff;
-            color: #212529;
+            color: var(--ink);
           }
 
           .form-group input:focus,
           .form-group textarea:focus,
           .form-group select:focus {
             outline: none;
-            border-color: #0d6efd;
+            border-color: var(--primary);
             box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
           }
 
@@ -188,7 +188,7 @@
             cursor: pointer;
             font-size: 0.875rem;
             font-weight: 500;
-            color: #495057;
+            color: var(--gray-700);
           }
 
           .radio-group input[type="radio"] {
@@ -212,7 +212,7 @@
             cursor: pointer;
             font-size: 0.875rem;
             font-weight: 500;
-            color: #495057;
+            color: var(--gray-700);
           }
 
           .checkbox-group input[type="checkbox"] {
@@ -229,8 +229,8 @@
 
           .dynamic-fields > .form-group {
             background: #ffffff;
-            border: 1px solid #dee2e6;
-            border-left: 3px solid #0d6efd;
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--primary);
             border-radius: 3px;
             padding: 20px;
             margin-bottom: 16px;
@@ -249,13 +249,13 @@
           .conditional-field {
             margin-top: 16px;
             padding: 16px;
-            background: #f8f9fa;
+            background: var(--line-2);
             border-radius: 3px;
-            border: 1px dashed #0d6efd;
+            border: 1px dashed var(--primary);
           }
 
           .conditional-field label {
-            color: #0d6efd;
+            color: var(--primary);
             font-weight: 600;
           }
 
@@ -263,9 +263,9 @@
           .dynamic-fields h4 {
             margin: -20px -20px 16px -20px;
             padding: 12px 20px;
-            background: #f8f9fa;
-            border-bottom: 1px solid #dee2e6;
-            color: #212529;
+            background: var(--line-2);
+            border-bottom: 1px solid var(--line);
+            color: var(--ink);
             font-size: 0.875rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -279,14 +279,14 @@
             padding: 32px 20px;
             background: #ffffff;
             border-radius: 3px;
-            border: 1px solid #dee2e6;
+            border: 1px solid var(--line);
             margin: 20px auto;
             max-width: 300px;
           }
 
           .spinner {
-            border: 3px solid #e9ecef;
-            border-top: 3px solid #0d6efd;
+            border: 3px solid var(--line);
+            border-top: 3px solid var(--primary);
             border-radius: 50%;
             width: 60px;
             height: 60px;
@@ -297,7 +297,7 @@
           .loader-text {
             font-size: 0.875rem;
             font-weight: 500;
-            color: #6c757d;
+            color: var(--muted);
           }
 
           @keyframes spin {
@@ -321,7 +321,7 @@
             left: 0;
             right: 0;
             height: 2px;
-            background: #dee2e6;
+            background: var(--line);
             z-index: 0;
           }
 
@@ -332,7 +332,7 @@
 
           .progress-bar-wrapper {
             height: 12px;
-            background: #e9ecef;
+            background: var(--line);
             border-radius: 10px;
             overflow: hidden;
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
@@ -341,7 +341,7 @@
 
           .progress-bar-fill {
             height: 100%;
-            background: linear-gradient(90deg, #308276 0%, #245f56 100%);
+            background: linear-gradient(90deg, var(--primary) 0%, #245f56 100%);
             transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             box-shadow: 0 1px 3px rgba(48, 130, 118, 0.3);
             border-radius: 10px;
@@ -352,7 +352,7 @@
             justify-content: space-between;
             align-items: center;
             font-size: 0.75rem;
-            color: #6c757d;
+            color: var(--muted);
             font-weight: 600;
           }
 
@@ -370,13 +370,13 @@
             height: 40px;
             border-radius: 50%;
             background: #ffffff;
-            border: 2px solid #dee2e6;
+            border: 2px solid var(--line);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.875rem;
             font-weight: 600;
-            color: #6c757d;
+            color: var(--muted);
             transition: all 0.2s;
             margin-bottom: 8px;
           }
@@ -384,30 +384,30 @@
           .step-label {
             font-size: 0.75rem;
             font-weight: 600;
-            color: #6c757d;
+            color: var(--muted);
             text-align: center;
             transition: color 0.2s;
             max-width: 100px;
           }
 
           .step.active .step-circle {
-            background: #0d6efd;
+            background: var(--primary);
             color: #ffffff;
-            border-color: #0d6efd;
+            border-color: var(--primary);
           }
 
           .step.active .step-label {
-            color: #0d6efd;
+            color: var(--primary);
           }
 
           .step.completed .step-circle {
-            background: #198754;
+            background: var(--primary);
             color: #ffffff;
-            border-color: #198754;
+            border-color: var(--primary);
           }
 
           .step.completed .step-label {
-            color: #198754;
+            color: var(--primary);
           }
 
           /* Form steps */
@@ -423,12 +423,12 @@
             margin: 0 0 8px 0;
             font-size: 1.125rem;
             font-weight: 600;
-            color: #212529;
+            color: var(--ink);
           }
 
           .step-description {
             margin: 0 0 20px 0;
-            color: #6c757d;
+            color: var(--muted);
             font-size: 0.875rem;
           }
 
@@ -439,7 +439,7 @@
             gap: 12px;
             margin-top: 24px;
             padding-top: 20px;
-            border-top: 1px solid #dee2e6;
+            border-top: 1px solid var(--line);
           }
 
           .step-navigation .btn {
@@ -448,40 +448,40 @@
 
           .btn-prev {
             background: #ffffff;
-            color: #6c757d;
-            border: 1px solid #dee2e6;
+            color: var(--muted);
+            border: 1px solid var(--line);
           }
 
           .btn-prev:hover {
-            background: #f8f9fa;
-            border-color: #adb5bd;
+            background: var(--line-2);
+            border-color: var(--muted-2);
           }
 
           .btn-next,
           .btn-submit {
-            background: #0d6efd;
+            background: var(--primary);
             color: #ffffff;
-            border: 1px solid #0d6efd;
+            border: 1px solid var(--primary);
           }
 
           .btn-next:hover,
           .btn-submit:hover {
-            background: #0b5ed7;
-            border-color: #0b5ed7;
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
           }
 
           /* Récapitulatif */
           .summary-section {
-            background: #f8f9fa;
+            background: var(--line-2);
             border-radius: 3px;
             padding: 16px;
             margin-bottom: 16px;
-            border-left: 3px solid #0d6efd;
+            border-left: 3px solid var(--primary);
           }
 
           .summary-section h4 {
             margin: 0 0 12px 0;
-            color: #212529;
+            color: var(--ink);
             font-size: 0.9375rem;
             font-weight: 600;
           }
@@ -489,7 +489,7 @@
           .summary-item {
             display: flex;
             padding: 8px 0;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid var(--line);
             font-size: 0.875rem;
           }
 
@@ -499,12 +499,12 @@
 
           .summary-label {
             font-weight: 600;
-            color: #495057;
+            color: var(--gray-700);
             min-width: 180px;
           }
 
           .summary-value {
-            color: #212529;
+            color: var(--ink);
             flex: 1;
           }
 
@@ -1001,7 +1001,7 @@
                                     <span>Data</span>
                                 </label>
                             </div>
-                            <small id="teamRestrictionNote" style="color: #6c757d; display: block; margin-top: 8px;">
+                            <small id="teamRestrictionNote" style="color: var(--muted); display: block; margin-top: 8px;">
                                 Sélectionnez les équipes qui devront intervenir sur cette campagne. Le service du PO est exclu automatiquement.
                             </small>
                         </div>
@@ -1030,11 +1030,11 @@
                         <p class="step-description">Définissez les segments et univers de besoin</p>
 
                         <div class="form-group">
-                            <label>Segments <small style="font-weight:400;color:#64748b;">(cocher tout ce qui s'applique)</small></label>
-                            <div style="margin-top:8px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+                            <label>Segments <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
+                            <div style="margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden;">
 
-                                <div style="background:#f1f5f9;padding:6px 14px;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0;">Particuliers</div>
-                                <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid #e2e8f0;">
+                                <div style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);">Particuliers</div>
+                                <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid var(--line);">
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Actif"> Actif</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Etudiant"> Etudiant</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="GP"> GP</label>
@@ -1053,8 +1053,8 @@
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Mineurs"> Mineurs</label>
                                 </div>
 
-                                <div style="background:#f1f5f9;padding:6px 14px;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0;">Pro</div>
-                                <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid #e2e8f0;">
+                                <div style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);">Pro</div>
+                                <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid var(--line);">
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - PLS"> Pro - PLS</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - Commerçants"> Pro - Commerçants</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - Artisans"> Pro - Artisans</label>
@@ -1063,7 +1063,7 @@
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Entreprises"> Entreprises</label>
                                 </div>
 
-                                <div style="background:#f1f5f9;padding:6px 14px;font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #e2e8f0;">Agri</div>
+                                <div style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);">Agri</div>
                                 <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;">
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Agri - Managers"> Agri - Managers</label>
                                     <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Agris"> Agris</label>
@@ -1074,8 +1074,8 @@
                         </div>
 
                         <div class="form-group" style="margin-top:16px;">
-                            <label>Univers de besoin <small style="font-weight:400;color:#64748b;">(cocher tout ce qui s'applique)</small></label>
-                            <div style="margin-top:8px;border:1px solid #e2e8f0;border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;">
+                            <label>Univers de besoin <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
+                            <div style="margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;">
                                 <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Epargne / Collecte"> Epargne / Collecte</label>
                                 <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Crédits"> Crédits</label>
                                 <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Assurances"> Assurances</label>
@@ -1251,7 +1251,7 @@
                         if (result.status !== 'success') {
                             noteRoot("❌ " + result.message);
                             var statusPanel = $("#folder-status-panel");
-                            statusPanel.innerHTML = '<p class="hint" style="color: #c62828;">' + result.message + '</p>' +
+                            statusPanel.innerHTML = '<p class="hint" style="color: var(--red);">' + result.message + '</p>' +
                                 '<a href="../login.html" class="btn primary">Se reconnecter pour recharger le dossier</a>';
                             return;
                         }
@@ -1709,7 +1709,7 @@
                             allValid = false;
                         }
                     } else if (!field.value.trim()) {
-                        field.style.borderColor = '#dc2626';
+                        field.style.borderColor = 'var(--red)';
                         allValid = false;
                     } else {
                         field.style.borderColor = '';
@@ -1819,7 +1819,7 @@
                 var row = document.createElement('div');
                 row.className = 'url-comstore-row';
                 row.style.cssText = 'display:flex;gap:6px;margin-bottom:4px;';
-                row.innerHTML = '<input type="url" class="urlComStore-input-' + chanIdx + ' url-comstore-input" placeholder="https://..." style="flex:1;"><button type="button" class="btn-remove-comstore" onclick="removeComStoreRow(this)" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;" title="Supprimer">−</button>';
+                row.innerHTML = '<input type="url" class="urlComStore-input-' + chanIdx + ' url-comstore-input" placeholder="https://..." style="flex:1;"><button type="button" class="btn-remove-comstore" onclick="removeComStoreRow(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;" title="Supprimer">−</button>';
                 list.appendChild(row);
             };
             window.removeComStoreRow = function(btn) {
@@ -1849,7 +1849,7 @@
                     .catch(function(error) {
                         var status = document.getElementById('copySummaryStatus');
                         status.textContent = '❌ Erreur lors de la copie';
-                        status.style.color = '#dc2626';
+                        status.style.color = 'var(--red)';
                         console.error('Erreur de copie:', error);
                     });
             };
@@ -1990,7 +1990,7 @@
                                 <label><input type="radio" name="comTypology${i}" value="Reprise Natio"> Reprise Natio</label>
                             </div>
                         </div>
-                        <div class="conditional-field" id="siteWebFields${i}" style="display:none;background:#f0fdf4;border:1px solid #86efac;border-radius:6px;padding:10px 12px;margin-top:4px;">
+                        <div class="conditional-field" id="siteWebFields${i}" style="display:none;background:var(--green-50);border:1px solid var(--green-100);border-radius:6px;padding:10px 12px;margin-top:4px;">
                             <div style="font-weight:600;font-size:12px;color:#15803d;margin-bottom:4px;">🌐 Paramètres zone site web</div>
                             <div style="font-size:11px;color:#166534;margin-bottom:8px;">⚠️ Les créneaux site web sont du <strong>lundi au lundi</strong> — les dates seront automatiquement ajustées.</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -2032,10 +2032,10 @@
                             <div id="urlComStoreList${i}">
                                 <div class="url-comstore-row" style="display:flex;gap:6px;margin-bottom:4px;">
                                     <input type="url" class="urlComStore-input-${i} url-comstore-input" placeholder="https://..." style="flex:1;">
-                                    <button type="button" class="btn-remove-comstore" onclick="removeComStoreRow(this)" style="background:#ef4444;color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;" title="Supprimer">−</button>
+                                    <button type="button" class="btn-remove-comstore" onclick="removeComStoreRow(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;" title="Supprimer">−</button>
                                 </div>
                             </div>
-                            <button type="button" onclick="addComStoreRow(${i})" style="margin-top:4px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;">+ Ajouter une URL</button>
+                            <button type="button" onclick="addComStoreRow(${i})" style="margin-top:4px;background:var(--blue-50);color:#0369a1;border:1px solid var(--blue);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;">+ Ajouter une URL</button>
                         </div>
                     `;
                     container.appendChild(div);
