@@ -23,16 +23,16 @@
             icon: '🏠',
             content: [
                 {
-                    subtitle: 'Première utilisation',
-                    text: 'Cliquez sur "Charger le dossier racine" et sélectionnez le dossier contenant vos campagnes marketing. L\'application gardera cet accès en mémoire.'
+                    subtitle: 'Connexion',
+                    text: 'À l\'ouverture, choisissez votre service et votre nom, puis cliquez sur "Se connecter" : le dossier de travail est chargé automatiquement (sélection du dossier demandée uniquement à la toute première utilisation).'
                 },
                 {
                     subtitle: 'Navigation',
-                    text: 'Utilisez les boutons pour accéder aux différentes fonctionnalités : créer une campagne, visualiser les campagnes existantes, ou déposer des livrables.'
+                    text: 'Utilisez le menu latéral pour accéder aux différentes fonctionnalités : créer une campagne, visualiser les campagnes, le pilotage ou le comité éditorial.'
                 },
                 {
-                    subtitle: 'Personnalisation',
-                    text: 'Changez le thème de l\'application avec le sélecteur en haut à droite (13 thèmes disponibles).'
+                    subtitle: 'Changer d\'utilisateur',
+                    text: 'Pour changer d\'identité, utilisez le bouton "Se déconnecter" dans l\'en-tête : vous reviendrez à l\'écran de connexion.'
                 }
             ]
         },
@@ -91,82 +91,6 @@
                 {
                     subtitle: 'Navigation',
                     text: 'Utilisez les boutons pour accéder directement au dépôt d\'un livrable ou retourner à la liste des campagnes.'
-                }
-            ]
-        },
-        'channel-depot': {
-            title: 'Consultation d\'un Dépôt',
-            icon: '📁',
-            content: [
-                {
-                    subtitle: 'Onglets Com/EBF/Data',
-                    text: 'Utilisez les onglets pour naviguer entre les différents types de dépôts du livrable.'
-                },
-                {
-                    subtitle: 'Informations affichées',
-                    text: 'Consultez toutes les informations déposées : fichiers PDF, URLs Figma, images, CTAs, codes projets, etc.'
-                },
-                {
-                    subtitle: 'PDF',
-                    text: 'Cliquez sur l\'aperçu du PDF pour l\'ouvrir en plein écran dans une modal.'
-                },
-                {
-                    subtitle: 'Compléter un dépôt',
-                    text: 'Si le dépôt est vide ou incomplet, utilisez les boutons de navigation pour accéder aux pages de dépôt correspondantes.'
-                }
-            ]
-        },
-        'com': {
-            title: 'Dépôt Com',
-            icon: '💬',
-            content: [
-                {
-                    subtitle: 'Fichiers requis',
-                    text: 'PDF (obligatoire) : Le fichier du livrable de communication.'
-                },
-                {
-                    subtitle: 'Informations additionnelles',
-                    text: 'URL Figma (optionnelle), URLs d\'images (optionnelles), validation juridique (Oui/Non).'
-                },
-                {
-                    subtitle: 'Sauvegarde',
-                    text: 'Cliquez sur "Déposer le Livrable Com". Le fichier PDF sera copié dans le dossier du canal et un fichier depot_com.json sera créé.'
-                }
-            ]
-        },
-        'ebf': {
-            title: 'Dépôt EBF',
-            icon: '🏦',
-            content: [
-                {
-                    subtitle: 'Initialisation',
-                    text: 'Remplissez les informations d\'initialisation : nom webmaster, code com, référence Paracom, CTAs.'
-                },
-                {
-                    subtitle: 'BAT',
-                    text: 'Déposez le fichier PDF du BAT (Bon À Tirer) une fois disponible.'
-                },
-                {
-                    subtitle: 'Test en prod',
-                    text: 'Déposez le fichier PDF du test en production une fois réalisé.'
-                },
-                {
-                    subtitle: 'Étapes',
-                    text: 'Suivez les 3 étapes dans l\'ordre : Initialisation, puis BAT, puis Test en prod. Chaque étape sauvegarde un fichier JSON distinct.'
-                }
-            ]
-        },
-        'data': {
-            title: 'Dépôt Data',
-            icon: '📊',
-            content: [
-                {
-                    subtitle: 'Codes et informations',
-                    text: 'Renseignez le code projet, le code action, le nom du responsable CRM et le chemin de la requête.'
-                },
-                {
-                    subtitle: 'Sauvegarde',
-                    text: 'Cliquez sur "Déposer le Livrable Data". Le fichier PDF sera copié et un fichier depot_data.json sera créé.'
                 }
             ]
         },

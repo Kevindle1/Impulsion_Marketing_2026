@@ -286,6 +286,13 @@
 </div>
 
 <script src="../js/bundle.js"></script>
+<script>
+    // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+    (function () {
+        var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+        if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+    })();
+</script>
 
 <script>
     var directoryStorage = window.ImpulsionMarketing.directoryStorage;
@@ -536,7 +543,7 @@
         directoryStorage.getRootHandleWithCheck()
             .then(function(result) {
                 if (result.status !== 'success') {
-                    showError(result.message + '<br><a href="../Impulsion-Marketing.html" class="btn primary" style="margin-top:16px;">Charger le dossier</a>');
+                    showError(result.message + '<br><a href="../login.html" class="btn primary" style="margin-top:16px;">Se reconnecter</a>');
                     return;
                 }
                 currentRootHandle = result.handle;

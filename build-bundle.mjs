@@ -23,7 +23,6 @@ const MODULES = [
   'performance-standalone.js',
   'directoryStorage-standalone.js',
   'users-standalone.js',
-  'user-selector-standalone.js',
   'workflow-standalone.js',
   'themes-standalone.js',
   'help-standalone.js',

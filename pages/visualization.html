@@ -158,6 +158,14 @@
     <script src="../js/bundle.js"></script>
 
     <script>
+        // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+        (function () {
+            var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+        })();
+    </script>
+
+    <script>
         // Utiliser les objets globaux
         var directoryStorage = window.ImpulsionMarketing.directoryStorage;
         var config = window.ImpulsionMarketing.config;
@@ -781,7 +789,7 @@
             var grid = document.getElementById('campaigns-grid');
             errors.showErrorInContainer(grid, message, {
                 showHomeButton: true,
-                homeUrl: '../Impulsion-Marketing.html'
+                homeUrl: '../login.html'
             });
         }
     </script>

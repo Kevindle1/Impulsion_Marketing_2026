@@ -83,26 +83,18 @@ L'upload de fichiers dans l'espace documentaire (`details.html`) passe par `<inp
 
 ## Authentification et autorisation
 
-Il n'y a **pas d'authentification dans l'app**. L'identité de l'utilisateur est sélectionnée manuellement via le composant `user-selector`. Cette approche est intentionnelle dans le contexte d'entreprise (réseau interne, accès V:// contrôlé par le SI).
+Il n'y a **pas d'authentification dans l'app**. L'identité est sélectionnée sur l'écran de connexion (`login.html`) au démarrage, puis figée pour la session (stockée dans `localStorage`). Cette approche est intentionnelle dans le contexte d'entreprise (réseau interne, accès V:// contrôlé par le SI). Le changement d'identité se fait via « Se déconnecter » (retour au login).
 
 Les contrôles d'autorisation dans l'app sont de la **mise en forme UX** (afficher ou masquer des boutons selon le rôle) — ils ne constituent pas une protection de sécurité au sens strict.
 
 Pour une sécurité réelle sur les actions sensibles (validation PO, affectation manager, approbation zones), le contrôle d'accès est délégué au lecteur réseau (droits NTFS).
 
-### Espace Manager (`manager-login.html`)
-
-> ⚠️ **Limite connue.** L'accès à l'espace manager est protégé par un mot de passe **codé en clair
-> dans le JavaScript de la page** (`manager-login.html`), vérifié **côté client** et mémorisé 24 h
-> dans `sessionStorage`. Ce n'est **pas** une protection de sécurité : le mot de passe est visible
-> via « Afficher la source » et le verrou est contournable via les DevTools.
->
-> Cette barrière est volontairement **dissuasive uniquement** (éviter un accès accidentel), cohérente
-> avec le modèle « pas d'authentification réelle » décrit ci-dessus. Tant qu'il n'existe pas de
-> serveur, **aucune** protection purement client ne peut être considérée comme fiable : la vraie
-> protection des données reste les **droits du partage réseau `V://`**.
->
-> Toute évolution voulant une authentification réelle (mot de passe par utilisateur, rôles
-> opposables) nécessite l'introduction d'un **backend**.
+> ℹ️ **Espace Manager supprimé.** L'ancien espace manager (`manager-login.html` / `manager-pilotage.html`),
+> protégé par un mot de passe **codé en clair côté client**, a été **supprimé** : ce point de sécurité
+> n'existe plus. Le pilotage manager reste accessible via `pages/pilotage.html`. Tant qu'il n'existe pas
+> de serveur, **aucune** protection purement client ne peut être considérée comme fiable : la vraie
+> protection des données reste les **droits du partage réseau `V://`**. Toute authentification réelle
+> (mot de passe par utilisateur, rôles opposables) nécessiterait l'introduction d'un **backend**.
 
 ### Données figées dans le code
 

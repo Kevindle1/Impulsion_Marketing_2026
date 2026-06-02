@@ -710,6 +710,13 @@
 
     <script src="../js/bundle.js"></script>
     <script>
+        // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+        (function () {
+            var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+        })();
+    </script>
+    <script>
     // ── Constants ──────────────────────────────────────────────────────────────
     var WEB_ZONES = [
         "Zone de Gauche ( synthese des comptes)",

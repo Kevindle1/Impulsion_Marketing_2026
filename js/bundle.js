@@ -1904,200 +1904,6 @@ window.ImpulsionMarketing.users = (function () {
   };
 })();
 /**
- * Sélecteur d'utilisateur flottant — Impulsion Marketing
- * Injecte automatiquement un sélecteur dans chaque page
- * Dépend de users-standalone.js
- */
-
-(function () {
-  'use strict';
-
-  function init() {
-    var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
-    if (!users) {
-      console.warn('user-selector: users-standalone.js non chargé');
-      return;
-    }
-
-    injectStyles();
-    injectWidget(users);
-  }
-
-  function injectStyles() {
-    var style = document.createElement('style');
-    style.textContent = [
-      '#im-user-selector {',
-      '  position: fixed;',
-      '  bottom: 20px;',
-      '  left: 16px;',
-      '  z-index: 9999;',
-      '  font-family: inherit;',
-      '}',
-      '#im-user-pill {',
-      '  display: flex;',
-      '  align-items: center;',
-      '  gap: 8px;',
-      '  background: #308276;',
-      '  color: #fff;',
-      '  border: none;',
-      '  border-radius: 24px;',
-      '  padding: 8px 16px;',
-      '  font-size: 13px;',
-      '  font-weight: 600;',
-      '  cursor: pointer;',
-      '  box-shadow: 0 2px 8px rgba(0,0,0,0.25);',
-      '  transition: background 0.2s;',
-      '  white-space: nowrap;',
-      '}',
-      '#im-user-pill:hover { background: #245f56; }',
-      '#im-user-pill .im-chevron {',
-      '  font-size: 10px;',
-      '  transition: transform 0.2s;',
-      '}',
-      '#im-user-pill.open .im-chevron { transform: rotate(180deg); }',
-      '#im-user-dropdown {',
-      '  position: absolute;',
-      '  bottom: calc(100% + 8px);',
-      '  left: 0;',
-      '  background: #fff;',
-      '  border: 1px solid #e0e0e0;',
-      '  border-radius: 12px;',
-      '  box-shadow: 0 4px 20px rgba(0,0,0,0.15);',
-      '  min-width: 220px;',
-      '  max-height: 360px;',
-      '  overflow-y: auto;',
-      '  display: none;',
-      '  padding: 8px 0;',
-      '}',
-      '#im-user-dropdown.open { display: block; }',
-      '.im-role-group-label {',
-      '  padding: 8px 16px 4px;',
-      '  font-size: 11px;',
-      '  font-weight: 700;',
-      '  color: #888;',
-      '  text-transform: uppercase;',
-      '  letter-spacing: 0.5px;',
-      '}',
-      '.im-user-option {',
-      '  padding: 8px 16px;',
-      '  cursor: pointer;',
-      '  font-size: 13px;',
-      '  color: #333;',
-      '  display: flex;',
-      '  align-items: center;',
-      '  gap: 8px;',
-      '  transition: background 0.1s;',
-      '}',
-      '.im-user-option:hover { background: #f0faf8; }',
-      '.im-user-option.selected {',
-      '  background: #e8f5f2;',
-      '  color: #308276;',
-      '  font-weight: 600;',
-      '}',
-      '.im-no-user-warning {',
-      '  animation: im-pulse 2s infinite;',
-      '  background: #e67e22 !important;',
-      '}',
-      '@keyframes im-pulse {',
-      '  0%,100% { opacity: 1; }',
-      '  50% { opacity: 0.7; }',
-      '}'
-    ].join('\n');
-    document.head.appendChild(style);
-  }
-
-  function getRoleIcon(role) {
-    var icons = { superadmin: '⭐', manager: '👔', com: '🎨', ebf: '🖨️', data: '📊', marketing: '📋' };
-    return icons[role] || '👤';
-  }
-
-  function getRoleOrder() {
-    return ['superadmin', 'manager', 'marketing', 'com', 'ebf', 'data'];
-  }
-
-  function injectWidget(users) {
-    var currentUser = users.getCurrentUser();
-
-    var container = document.createElement('div');
-    container.id = 'im-user-selector';
-
-    // Pill button
-    var pill = document.createElement('button');
-    pill.id = 'im-user-pill';
-    if (!currentUser) pill.classList.add('im-no-user-warning');
-
-    var pillText = currentUser
-      ? getRoleIcon(currentUser.role) + ' ' + currentUser.name + ' (' + currentUser.roleLabel + ')'
-      : '👤 Choisir un utilisateur';
-
-    pill.innerHTML = '<span>' + pillText + '</span><span class="im-chevron">▲</span>';
-
-    // Dropdown
-    var dropdown = document.createElement('div');
-    dropdown.id = 'im-user-dropdown';
-
-    // Grouper par rôle
-    var roleOrder = getRoleOrder();
-    var grouped = {};
-    users.USERS.forEach(function (u) {
-      if (!grouped[u.role]) grouped[u.role] = [];
-      grouped[u.role].push(u);
-    });
-
-    var roleLabels = {
-      superadmin: 'Super Admin',
-      manager: 'Managers',
-      marketing: 'Marketing / PO',
-      com: 'Communication',
-      ebf: 'EBF',
-      data: 'Data'
-    };
-
-    roleOrder.forEach(function (role) {
-      if (!grouped[role] || grouped[role].length === 0) return;
-
-      var label = document.createElement('div');
-      label.className = 'im-role-group-label';
-      label.textContent = roleLabels[role] || role;
-      dropdown.appendChild(label);
-
-      grouped[role].forEach(function (u) {
-        var opt = document.createElement('div');
-        opt.className = 'im-user-option';
-        if (currentUser && currentUser.name === u.name) opt.classList.add('selected');
-        opt.innerHTML = getRoleIcon(u.role) + ' ' + u.name;
-        opt.addEventListener('click', function () {
-          users.setCurrentUser(u.name);
-          location.reload();
-        });
-        dropdown.appendChild(opt);
-      });
-    });
-
-    container.appendChild(dropdown);
-    container.appendChild(pill);
-
-    pill.addEventListener('click', function (e) {
-      e.stopPropagation();
-      var isOpen = dropdown.classList.toggle('open');
-      pill.classList.toggle('open', isOpen);
-    });
-
-    document.addEventListener('click', function () {
-      dropdown.classList.remove('open');
-      pill.classList.remove('open');
-    });
-
-    document.body.appendChild(container);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
-/**
  * Gestionnaire de Workflow Campagnes — Impulsion Marketing
  * Gère les étapes, statuts et transitions du workflow de production
  *
@@ -3232,16 +3038,16 @@ window.ImpulsionMarketing.themes = (function() {
             icon: '🏠',
             content: [
                 {
-                    subtitle: 'Première utilisation',
-                    text: 'Cliquez sur "Charger le dossier racine" et sélectionnez le dossier contenant vos campagnes marketing. L\'application gardera cet accès en mémoire.'
+                    subtitle: 'Connexion',
+                    text: 'À l\'ouverture, choisissez votre service et votre nom, puis cliquez sur "Se connecter" : le dossier de travail est chargé automatiquement (sélection du dossier demandée uniquement à la toute première utilisation).'
                 },
                 {
                     subtitle: 'Navigation',
-                    text: 'Utilisez les boutons pour accéder aux différentes fonctionnalités : créer une campagne, visualiser les campagnes existantes, ou déposer des livrables.'
+                    text: 'Utilisez le menu latéral pour accéder aux différentes fonctionnalités : créer une campagne, visualiser les campagnes, le pilotage ou le comité éditorial.'
                 },
                 {
-                    subtitle: 'Personnalisation',
-                    text: 'Changez le thème de l\'application avec le sélecteur en haut à droite (13 thèmes disponibles).'
+                    subtitle: 'Changer d\'utilisateur',
+                    text: 'Pour changer d\'identité, utilisez le bouton "Se déconnecter" dans l\'en-tête : vous reviendrez à l\'écran de connexion.'
                 }
             ]
         },
@@ -3300,82 +3106,6 @@ window.ImpulsionMarketing.themes = (function() {
                 {
                     subtitle: 'Navigation',
                     text: 'Utilisez les boutons pour accéder directement au dépôt d\'un livrable ou retourner à la liste des campagnes.'
-                }
-            ]
-        },
-        'channel-depot': {
-            title: 'Consultation d\'un Dépôt',
-            icon: '📁',
-            content: [
-                {
-                    subtitle: 'Onglets Com/EBF/Data',
-                    text: 'Utilisez les onglets pour naviguer entre les différents types de dépôts du livrable.'
-                },
-                {
-                    subtitle: 'Informations affichées',
-                    text: 'Consultez toutes les informations déposées : fichiers PDF, URLs Figma, images, CTAs, codes projets, etc.'
-                },
-                {
-                    subtitle: 'PDF',
-                    text: 'Cliquez sur l\'aperçu du PDF pour l\'ouvrir en plein écran dans une modal.'
-                },
-                {
-                    subtitle: 'Compléter un dépôt',
-                    text: 'Si le dépôt est vide ou incomplet, utilisez les boutons de navigation pour accéder aux pages de dépôt correspondantes.'
-                }
-            ]
-        },
-        'com': {
-            title: 'Dépôt Com',
-            icon: '💬',
-            content: [
-                {
-                    subtitle: 'Fichiers requis',
-                    text: 'PDF (obligatoire) : Le fichier du livrable de communication.'
-                },
-                {
-                    subtitle: 'Informations additionnelles',
-                    text: 'URL Figma (optionnelle), URLs d\'images (optionnelles), validation juridique (Oui/Non).'
-                },
-                {
-                    subtitle: 'Sauvegarde',
-                    text: 'Cliquez sur "Déposer le Livrable Com". Le fichier PDF sera copié dans le dossier du canal et un fichier depot_com.json sera créé.'
-                }
-            ]
-        },
-        'ebf': {
-            title: 'Dépôt EBF',
-            icon: '🏦',
-            content: [
-                {
-                    subtitle: 'Initialisation',
-                    text: 'Remplissez les informations d\'initialisation : nom webmaster, code com, référence Paracom, CTAs.'
-                },
-                {
-                    subtitle: 'BAT',
-                    text: 'Déposez le fichier PDF du BAT (Bon À Tirer) une fois disponible.'
-                },
-                {
-                    subtitle: 'Test en prod',
-                    text: 'Déposez le fichier PDF du test en production une fois réalisé.'
-                },
-                {
-                    subtitle: 'Étapes',
-                    text: 'Suivez les 3 étapes dans l\'ordre : Initialisation, puis BAT, puis Test en prod. Chaque étape sauvegarde un fichier JSON distinct.'
-                }
-            ]
-        },
-        'data': {
-            title: 'Dépôt Data',
-            icon: '📊',
-            content: [
-                {
-                    subtitle: 'Codes et informations',
-                    text: 'Renseignez le code projet, le code action, le nom du responsable CRM et le chemin de la requête.'
-                },
-                {
-                    subtitle: 'Sauvegarde',
-                    text: 'Cliquez sur "Déposer le Livrable Data". Le fichier PDF sera copié et un fichier depot_data.json sera créé.'
                 }
             ]
         },

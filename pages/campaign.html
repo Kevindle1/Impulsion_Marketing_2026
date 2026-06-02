@@ -1202,6 +1202,14 @@
         <script src="../js/bundle.js"></script>
 
         <script>
+            // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+            (function () {
+                var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+                if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+            })();
+        </script>
+
+        <script>
             // Fonction utilitaire pour sélectionner un élément DOM
             const $ = (s) => document.querySelector(s);
 
@@ -1244,7 +1252,7 @@
                             noteRoot("❌ " + result.message);
                             var statusPanel = $("#folder-status-panel");
                             statusPanel.innerHTML = '<p class="hint" style="color: #c62828;">' + result.message + '</p>' +
-                                '<a href="../Impulsion-Marketing.html" class="btn primary">Retourner à l\'accueil pour charger le dossier</a>';
+                                '<a href="../login.html" class="btn primary">Se reconnecter pour recharger le dossier</a>';
                             return;
                         }
 

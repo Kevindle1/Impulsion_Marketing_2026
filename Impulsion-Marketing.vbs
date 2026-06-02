@@ -16,6 +16,6 @@ Else
     WScript.Quit
 End If
 
-' Lancer l'application en mode app (sans barre d'adresse)
-htmlPath = "file:///" & Replace(strPath, "\", "/") & "/Impulsion-Marketing.html"
+' Lancer l'application en mode app (sans barre d'adresse) — écran de connexion
+htmlPath = "file:///" & Replace(strPath, "\", "/") & "/login.html"
 objShell.Run """" & browser & """ --app=""" & htmlPath & """ --window-size=1400,900", 1, False

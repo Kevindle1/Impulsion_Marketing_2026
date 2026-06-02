@@ -13,8 +13,10 @@ Pas de Node.js, pas de build step, pas de bundler automatique. Le déploiement c
 ```
 Impulsion Marketing/         ← racine de l'app (= lecteur réseau V://)
 │
-├── Impulsion-Marketing.html ← tableau de bord (page d'entrée)
-├── rebuild-bundle.bat       ← script de maintenance bundle.js
+├── login.html              ← écran de connexion (page d'entrée : identité + chargement du dossier)
+├── Impulsion-Marketing.html ← tableau de bord
+├── build-bundle.mjs         ← génération de bundle.js (npm run build)
+├── rebuild-bundle.bat       ← équivalent Windows (double-clic)
 │
 ├── pages/
 │   ├── campaign.html        ← création / édition de campagne (multi-étapes)
@@ -37,7 +39,6 @@ Impulsion Marketing/         ← racine de l'app (= lecteur réseau V://)
 │   ├── performance-standalone.js    ← MetadataCache, IndexCache (IndexedDB)
 │   ├── directoryStorage-standalone.js ← handle FS, IndexedDB
 │   ├── users-standalone.js          ← utilisateur courant, rôles
-│   ├── user-selector-standalone.js  ← composant sélecteur utilisateur
 │   ├── workflow-standalone.js       ← machine à états, index, sauvegarde
 │   ├── themes-standalone.js         ← gestion thèmes visuels
 │   └── help-standalone.js           ← aide contextuelle
@@ -67,7 +68,7 @@ Impulsion Marketing/         ← racine de l'app (= lecteur réseau V://)
 
 ## Modules JS (bundle.js)
 
-Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js` est la concaténation ordonnée des **10 fichiers standalone** (dans cet ordre exact) :
+Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js` est la concaténation ordonnée des **9 fichiers standalone** (dans cet ordre exact) :
 
 | Ordre | Module | Namespace | Rôle |
 |-------|--------|-----------|------|
@@ -77,10 +78,9 @@ Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js
 | 4 | `performance-standalone.js` | `performance` | `MetadataCache` (campagne.json), `IndexCache` (_index.json) |
 | 5 | `directoryStorage-standalone.js` | `directoryStorage` | Handle racine FS, persistance IndexedDB |
 | 6 | `users-standalone.js` | `users` | Utilisateur courant, `isManager`, `isCurrentUserTeamManager` |
-| 7 | `user-selector-standalone.js` | `userSelector` | Composant de sélection d'utilisateur (header) |
-| 8 | `workflow-standalone.js` | `workflow` | Machine à états, `STEPS`, `advanceStep`, `extractIndexEntry` |
-| 9 | `themes-standalone.js` | `themes` | Gestion des thèmes visuels |
-| 10 | `help-standalone.js` | `help` | Système d'aide contextuelle |
+| 7 | `workflow-standalone.js` | `workflow` | Machine à états, `STEPS`, `advanceStep`, `extractIndexEntry` |
+| 8 | `themes-standalone.js` | `themes` | Gestion des thèmes visuels |
+| 9 | `help-standalone.js` | `help` | Système d'aide contextuelle |
 
 > **Après toute modification d'un fichier standalone**, régénérer `bundle.js` :
 > ```bash

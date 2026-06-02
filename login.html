@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Impulsion Marketing — Connexion</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23006A4E'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'%3EIM%3C/text%3E%3C/svg%3E">
+
+    <!-- Styles CSS externes -->
+    <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg, #f8fafc);
+            padding: 24px;
+        }
+        .login-card {
+            background: var(--bg-card, #fff);
+            border: 1px solid var(--line, #e2e8f0);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg, 0 12px 40px rgba(0,0,0,0.12));
+            width: 100%;
+            max-width: 440px;
+            padding: 40px 36px;
+        }
+        .login-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .login-brand .brand-mark {
+            width: 44px; height: 44px;
+            border-radius: 10px;
+            background: var(--gradient, linear-gradient(135deg, #16a34a 0%, #15803d 100%));
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 18px; letter-spacing: -1px;
+        }
+        .login-brand .brand-name { font-size: 18px; font-weight: 700; color: var(--ink, #0f172a); }
+        .login-brand .brand-name span { display: block; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted, #64748b); font-weight: 600; }
+        .login-title { text-align: center; font-size: 15px; color: var(--muted, #64748b); margin: 0 0 28px; }
+        .login-field { margin-bottom: 18px; }
+        .login-field label { display: block; font-size: 13px; font-weight: 600; color: var(--ink, #0f172a); margin-bottom: 6px; }
+        .login-field select {
+            width: 100%; padding: 12px 14px; font-size: 15px; font-family: inherit;
+            border: 1px solid var(--line, #e2e8f0); border-radius: 10px; background: #fff; color: var(--ink, #0f172a);
+        }
+        .login-field select:disabled { background: #f1f5f9; color: #94a3b8; }
+        .login-field select:focus { outline: none; border-color: var(--primary, #16a34a); box-shadow: 0 0 0 3px rgba(22,163,74,0.12); }
+        .btn-connect {
+            width: 100%; margin-top: 8px; padding: 14px; font-size: 16px; font-weight: 600;
+            border: none; border-radius: 10px; cursor: pointer; color: #fff;
+            background: var(--gradient, linear-gradient(135deg, #16a34a 0%, #15803d 100%));
+            transition: filter .2s ease, transform .1s ease;
+        }
+        .btn-connect:hover:not(:disabled) { filter: brightness(1.05); }
+        .btn-connect:active:not(:disabled) { transform: translateY(1px); }
+        .btn-connect:disabled { opacity: .6; cursor: not-allowed; }
+        .login-hint { margin-top: 16px; font-size: 12px; color: var(--muted, #64748b); text-align: center; line-height: 1.5; }
+        .login-error {
+            display: none; margin-bottom: 18px; padding: 12px 14px; border-radius: 10px;
+            background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 14px; line-height: 1.4;
+        }
+        .login-error.show { display: block; }
+        #compat-banner {
+            display: none; margin-bottom: 18px; padding: 14px 16px; border-radius: 10px;
+            background: #f8d7da; border: 1px solid #f5c2c7; color: #842029; font-size: 13px; line-height: 1.5;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="login-card" role="main">
+        <div class="login-brand">
+            <div class="brand-mark">IM</div>
+            <div class="brand-name">Impulsion<span>Marketing</span></div>
+        </div>
+        <p class="login-title">Connexion à l'espace de pilotage des campagnes</p>
+
+        <div id="compat-banner" role="alert">
+            <strong>⚠️ Navigateur non compatible.</strong>
+            Cette application nécessite <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>
+            (version 86+) sur ordinateur. Firefox, Safari et les navigateurs mobiles ne sont pas supportés.
+        </div>
+
+        <div id="login-error" class="login-error" role="alert"></div>
+
+        <div class="login-field">
+            <label for="login-team">Service</label>
+            <select id="login-team">
+                <option value="">Sélectionnez votre service…</option>
+                <option value="superadmin">Super Admin</option>
+                <option value="marketing">Marketing</option>
+                <option value="com">Com</option>
+                <option value="ebf">EBF</option>
+                <option value="data">Data</option>
+            </select>
+        </div>
+
+        <div class="login-field">
+            <label for="login-name">Nom</label>
+            <select id="login-name" disabled>
+                <option value="">Sélectionnez d'abord un service…</option>
+            </select>
+        </div>
+
+        <button id="btn-connect" class="btn-connect" disabled>Se connecter</button>
+
+        <p class="login-hint">
+            Le dossier de travail est rechargé automatiquement.<br>
+            La sélection du dossier ne vous sera demandée qu'à la première connexion.
+        </p>
+    </main>
+
+    <!-- Modules applicatifs -->
+    <script src="js/bundle.js"></script>
+    <script>
+        (function () {
+            'use strict';
+            var IM = window.ImpulsionMarketing;
+            var users = IM.users;
+            var directoryStorage = IM.directoryStorage;
+
+            var teamSelect = document.getElementById('login-team');
+            var nameSelect = document.getElementById('login-name');
+            var btnConnect = document.getElementById('btn-connect');
+            var errorBox = document.getElementById('login-error');
+
+            function showError(msg) {
+                errorBox.innerHTML = msg;
+                errorBox.classList.add('show');
+            }
+            function clearError() {
+                errorBox.classList.remove('show');
+            }
+
+            // Vérifier la compatibilité du navigateur (File System Access API)
+            if (typeof window.showDirectoryPicker !== 'function') {
+                document.getElementById('compat-banner').style.display = 'block';
+                teamSelect.disabled = true;
+                btnConnect.disabled = true;
+                return;
+            }
+
+            // Remplir le sélecteur de noms selon le service choisi
+            function populateNames(role) {
+                nameSelect.innerHTML = '';
+                if (!role) {
+                    nameSelect.innerHTML = '<option value="">Sélectionnez d\'abord un service…</option>';
+                    nameSelect.disabled = true;
+                    updateButtonState();
+                    return;
+                }
+                var list = users.getUsersByRole(role);
+                var opt = document.createElement('option');
+                opt.value = '';
+                opt.textContent = 'Sélectionnez votre nom…';
+                nameSelect.appendChild(opt);
+                list.forEach(function (u) {
+                    var o = document.createElement('option');
+                    o.value = u.name;
+                    o.textContent = u.name;
+                    nameSelect.appendChild(o);
+                });
+                nameSelect.disabled = false;
+                updateButtonState();
+            }
+
+            function updateButtonState() {
+                btnConnect.disabled = !nameSelect.value;
+            }
+
+            // Pré-remplir si un utilisateur est déjà connu (retour sur l'app)
+            var current = users.getCurrentUser();
+            if (current) {
+                teamSelect.value = current.role;
+                populateNames(current.role);
+                nameSelect.value = current.name;
+                updateButtonState();
+            }
+
+            teamSelect.addEventListener('change', function () {
+                clearError();
+                populateNames(teamSelect.value);
+            });
+            nameSelect.addEventListener('change', function () {
+                clearError();
+                updateButtonState();
+            });
+
+            // Connexion : enregistre l'identité puis (re)charge le dossier de travail
+            btnConnect.addEventListener('click', function () {
+                var name = nameSelect.value;
+                if (!name) { showError('Veuillez sélectionner votre nom.'); return; }
+                clearError();
+                users.setCurrentUser(name);
+
+                btnConnect.disabled = true;
+                btnConnect.textContent = 'Connexion…';
+
+                connectFolder()
+                    .then(function () {
+                        window.location.href = 'Impulsion-Marketing.html';
+                    })
+                    .catch(function (err) {
+                        btnConnect.disabled = false;
+                        btnConnect.textContent = 'Se connecter';
+                        var msg = (err && err.message) ? err.message : 'Erreur inconnue';
+                        if (/annul/i.test(msg)) {
+                            showError('Sélection du dossier annulée. Cliquez à nouveau sur « Se connecter » et choisissez le dossier racine.');
+                        } else {
+                            showError('Impossible de charger le dossier : ' + msg);
+                        }
+                    });
+            });
+
+            // Recharge le handle mémorisé (avec redemande de permission) ;
+            // n'ouvre le sélecteur de dossier que si nécessaire (1re fois / dossier déplacé).
+            function connectFolder() {
+                return directoryStorage.getRootInfo().then(function (info) {
+                    if (info) {
+                        return directoryStorage.getRootHandleWithCheck().then(function (result) {
+                            if (result.status === 'success') return true;
+                            // permission refusée définitivement ou handle invalide → re-sélection
+                            return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
+                        });
+                    }
+                    // Aucun dossier mémorisé : première utilisation
+                    return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

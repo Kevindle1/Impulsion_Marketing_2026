@@ -497,6 +497,13 @@
 
     <script src="../js/bundle.js"></script>
     <script>
+        // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+        (function () {
+            var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+        })();
+    </script>
+    <script>
     (function() {
         'use strict';
 
@@ -669,7 +676,7 @@
             try {
                 var result = await window.ImpulsionMarketing.directoryStorage.getRootHandleWithCheck();
                 if (result.status !== 'success') {
-                    showError('Veuillez d\'abord charger le dossier racine depuis la page d\'accueil.');
+                    showError('Session expirée. Reconnectez-vous pour recharger le dossier.');
                     return;
                 }
                 state.root = result.handle;
@@ -1247,7 +1254,7 @@
         function showError(message) {
             $('#loadingContainer').innerHTML =
                 '<div class="no-data">' + escH(message) +
-                '<br><br><button class="btn primary" onclick="window.location.href=\'../Impulsion-Marketing.html\'">← Retour à l\'accueil</button>' +
+                '<br><br><button class="btn primary" onclick="window.location.href=\'../login.html\'">← Se reconnecter</button>' +
                 '</div>';
         }
 

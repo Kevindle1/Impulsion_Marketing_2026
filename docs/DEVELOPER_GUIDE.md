@@ -80,10 +80,9 @@ Ordre de concaténation (respecter les dépendances) :
 4. `performance-standalone.js`
 5. `directoryStorage-standalone.js`
 6. `users-standalone.js`
-7. `user-selector-standalone.js`
-8. `workflow-standalone.js`
-9. `themes-standalone.js`
-10. `help-standalone.js`
+7. `workflow-standalone.js`
+8. `themes-standalone.js`
+9. `help-standalone.js`
 
 > **Ne jamais éditer `bundle.js` directement** — les modifications seraient écrasées à la prochaine régénération.
 

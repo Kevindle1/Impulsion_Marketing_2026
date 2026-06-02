@@ -9,11 +9,12 @@ Il centralise la création des campagnes, le suivi du workflow de production (CO
 ## Lancer l'application
 
 1. Ouvrir **Microsoft Edge** ou **Google Chrome**
-2. Ouvrir le fichier `Impulsion-Marketing.html` (double-clic ou glisser dans le navigateur)
-3. Au premier lancement : cliquer **"Charger le dossier racine"** et sélectionner le dossier `Impulsion Marketing` sur `V://`
-4. Sélectionner son nom dans le menu en haut à droite
+2. Lancer `Impulsion-Marketing.vbs` (ou ouvrir `login.html` dans le navigateur)
+3. Sur l'écran de connexion : choisir son **service** puis son **nom**, et cliquer **« Se connecter »**
+4. Au tout premier lancement uniquement : sélectionner le dossier `Impulsion Marketing` sur `V://` lorsque le navigateur le demande
 
-> Le dossier est mémorisé automatiquement — les lancements suivants ne demandent plus de sélection.
+> Le dossier est mémorisé automatiquement — les connexions suivantes le rechargent en un clic.
+> Pour changer d'utilisateur, cliquer sur **« Se déconnecter »** dans l'en-tête (retour à l'écran de connexion).
 
 ---
 

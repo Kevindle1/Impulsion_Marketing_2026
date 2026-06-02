@@ -105,84 +105,18 @@
                             <div id="notif-list" style="padding:8px 0;"></div>
                         </div>
                     </div>
+                    <!-- Badge utilisateur (lecture seule) + déconnexion -->
+                    <div id="header-user" style="display:flex;align-items:center;gap:8px;padding:5px 8px 5px 5px;border:1px solid #e2e8f0;border-radius:999px;">
+                        <span id="header-user-avatar" style="width:28px;height:28px;border-radius:50%;background:#16a34a;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;">?</span>
+                        <span id="header-user-name" style="font-size:13px;font-weight:600;color:#0f172a;">—</span>
+                    </div>
+                    <button id="btn-logout" title="Se déconnecter" aria-label="Se déconnecter" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;color:#64748b;display:flex;align-items:center;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                    </button>
                 </div>
             </header>
 
             <main class="content">
-                <!-- Bandeau d'incompatibilité navigateur (affiché uniquement si l'API File System Access est absente) -->
-                <div id="browser-compat-banner" role="alert" style="display:none;background:#f8d7da;border:1px solid #f5c2c7;color:#842029;padding:16px 20px;border-radius:10px;margin-bottom:20px;font-size:14px;line-height:1.5;">
-                    <strong>⚠️ Navigateur non compatible.</strong>
-                    Cette application nécessite l'API <em>File System Access</em>, disponible uniquement sur
-                    <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong> (version&nbsp;86+) sur ordinateur.
-                    Firefox, Safari et les navigateurs mobiles ne sont pas supportés. Merci d'ouvrir l'application
-                    dans Chrome ou Edge pour charger le dossier de travail.
-                </div>
-                <section class="config-section">
-                    <div class="section-header" style="margin-bottom: 16px;">
-                        <div>
-                            <h2 class="section-title">Configuration</h2>
-                            <p class="section-subtitle">Dossier de travail et identification</p>
-                        </div>
-                    </div>
-                <div class="top-cards-row">
-                <!-- Folder Configuration Card -->
-                <div class="card folder-card">
-                    <div class="card-header">
-                        <div class="card-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                <path d="M10 4H4C2.89543 4 2 4.89543 2 6V18C2 19.1046 2.89543 20 4 20H20C21.1046 20 22 19.1046 22 18V8C22 6.89543 21.1046 6 20 6H12L10 4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </div>
-                        <div class="card-title-group">
-                            <h3 id="folder-title">Dossier de travail</h3>
-                            <p id="folder-message">Chargez une seule fois le dossier racine pour toutes les pages.</p>
-                        </div>
-                    </div>
-                    <div class="card-actions">
-                        <button id="load-folder-btn" class="btn btn-primary">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="7 10 12 15 17 10"/>
-                                <line x1="12" y1="15" x2="12" y2="3"/>
-                            </svg>
-                            <span>Charger le dossier</span>
-                        </button>
-                        <button id="change-folder-btn" class="btn btn-secondary" style="display: none;">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="1 4 1 10 7 10"/>
-                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-                            </svg>
-                            <span>Changer</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- User Identity Card -->
-                <div class="card user-identity-card">
-                    <div class="card-header">
-                        <div class="user-avatar" id="user-avatar">?</div>
-                        <div class="card-title-group">
-                            <h3 id="user-display-name">Non identifié</h3>
-                            <p id="user-display-role">Sélectionnez votre profil ci-dessous</p>
-                        </div>
-                    </div>
-                    <div class="user-select-row">
-                        <select id="dash-user-team">
-                            <option value="">Équipe...</option>
-                            <option value="superadmin">Super Admin</option>
-                            <option value="marketing">Marketing</option>
-                            <option value="com">Com</option>
-                            <option value="ebf">EBF</option>
-                            <option value="data">Data</option>
-                        </select>
-                        <select id="dash-user-name" disabled>
-                            <option value="">Personne...</option>
-                        </select>
-                    </div>
-                </div>
-                </div><!-- /.top-cards-row -->
-                </section><!-- /.config-section -->
-
                 <!-- Barre de recherche + reconstruire index -->
                 <div class="dashboard-toolbar" id="dashboard-toolbar" style="display:none;">
                     <div class="search-wrap">
@@ -250,200 +184,65 @@
         var _searchTimer     = null;
         var ALLMINE_PAGE_SIZE = 20;
 
+        var users = window.ImpulsionMarketing.users;
+
         // Initialiser le système au chargement de la page
         window.addEventListener('load', function() {
             help.initHelp('index');
-            if (!checkBrowserCompatibility()) return; // Navigateur incompatible : on s'arrête après le bandeau
-            initFolderSetup();
-            initUserCard();
-            initDashboardToolbar();
-        });
 
-        // Vérifie la disponibilité de l'API File System Access (Chrome/Edge desktop uniquement).
-        // Affiche un bandeau clair et désactive le chargement si elle est absente.
-        function checkBrowserCompatibility() {
-            if (typeof window.showDirectoryPicker === 'function') return true;
-            var banner = document.getElementById('browser-compat-banner');
-            if (banner) banner.style.display = 'block';
-            var loadBtn = document.getElementById('load-folder-btn');
-            if (loadBtn) {
-                loadBtn.disabled = true;
-                loadBtn.title = 'Indisponible sur ce navigateur — utilisez Chrome ou Edge';
+            // ── Garde de session : identité obligatoire (choisie sur login.html) ──
+            if (!users.getCurrentUser()) {
+                window.location.replace('login.html');
+                return;
             }
-            return false;
-        }
 
-        // Initialiser la gestion du dossier
-        function initFolderSetup() {
-            var loadBtn = document.getElementById('load-folder-btn');
-            var changeBtn = document.getElementById('change-folder-btn');
-            var title = document.getElementById('folder-title');
-            var message = document.getElementById('folder-message');
+            initHeaderUser();
+            initDashboardToolbar();
 
-            // Vérifier si un dossier est déjà chargé
-            directoryStorage.getRootInfo()
-                .then(function(info) {
-                    if (info) {
-                        return directoryStorage.getRootHandleWithCheck()
-                            .then(function(result) {
-                                if (result.status === 'success') {
-                                    updateFolderStatus(true, info.name);
-                                } else {
-                                    updateFolderStatus(false, null, result.message);
-                                }
-                            });
+            // ── Chargement du dossier mémorisé (connecté au login) ──
+            directoryStorage.getRootHandleWithCheck()
+                .then(function(result) {
+                    if (result.status === 'success') {
+                        loadMyCampaigns();
                     } else {
-                        updateFolderStatus(false);
+                        // Dossier indisponible (permission/handle) → retour au login
+                        window.location.replace('login.html');
                     }
                 })
-                .catch(function(error) {
-                    errors.handleError(error, 'Vérification du dossier');
-                    updateFolderStatus(false);
+                .catch(function() {
+                    window.location.replace('login.html');
                 });
+        });
 
-            // Gestionnaire du bouton de chargement
-            loadBtn.addEventListener('click', function() {
-                loadBtn.disabled = true;
-                var btnText = loadBtn.querySelector('span');
-                btnText.textContent = 'Chargement...';
-
-                directoryStorage.promptAndSaveDirectory()
-                    .then(function(handle) {
-                        updateFolderStatus(true, handle.name);
-                        errors.showNotification('Dossier chargé avec succès !', 'success');
-                    })
-                    .catch(function(error) {
-                        errors.handleError(error, 'Chargement du dossier');
-
-                        if (error.message.includes('annulée')) {
-                            errors.showNotification('Sélection du dossier annulée', 'info');
-                        } else {
-                            errors.showNotification(error.message, 'error');
-                        }
-
-                        loadBtn.disabled = false;
-                        btnText.textContent = 'Charger le dossier racine';
-                    });
-            });
-
-            // Gestionnaire du bouton de changement
-            changeBtn.addEventListener('click', function() {
-                if (confirm('Voulez-vous changer de dossier racine ? Les autres pages devront être rechargées.')) {
-                    changeBtn.disabled = true;
-                    var btnText = changeBtn.querySelector('span');
-                    btnText.textContent = 'Chargement...';
-
-                    directoryStorage.promptAndSaveDirectory()
-                        .then(function(handle) {
-                            updateFolderStatus(true, handle.name);
-                            errors.showNotification('Nouveau dossier chargé avec succès !', 'success');
-                        })
-                        .catch(function(error) {
-                            errors.handleError(error, 'Changement de dossier');
-                            errors.showNotification(error.message, 'error');
-
-                            changeBtn.disabled = false;
-                            btnText.textContent = 'Changer de dossier';
-                        });
-                }
-            });
-
-            // Met à jour l'interface selon l'état du dossier
-            function updateFolderStatus(isLoaded, folderName, errorMessage) {
-                if (isLoaded && folderName) {
-                    title.textContent = 'Dossier connecté : ' + folderName;
-                    message.textContent = 'Toutes les pages peuvent maintenant accéder à ce dossier.';
-                    message.style.color = '';
-                    loadBtn.style.display = 'none';
-                    changeBtn.style.display = 'inline-flex';
-
-                    // Charger les campagnes actives
-                    loadMyCampaigns();
-                } else {
-                    title.textContent = 'Configuration du dossier de travail';
-                    message.textContent = errorMessage || 'Chargez une seule fois le dossier racine pour toutes les pages.';
-                    message.style.color = errorMessage ? '#dc3545' : '';
-                    loadBtn.style.display = 'inline-flex';
-                    changeBtn.style.display = 'none';
-                    loadBtn.disabled = false;
-                    var btnText = loadBtn.querySelector('span');
-                    btnText.textContent = 'Charger le dossier racine';
-
-                    // Cacher les sections campagnes
-                    hideCampaignSections();
-                }
-            }
-        }
-
-        // Initialise la carte d'identité utilisateur
-        function initUserCard() {
-            var usersModule = window.ImpulsionMarketing.users;
-            var teamSelect = document.getElementById('dash-user-team');
-            var nameSelect = document.getElementById('dash-user-name');
-
+        // Affiche le badge utilisateur (lecture seule) et gère la déconnexion
+        function initHeaderUser() {
             var roleColors = {
-                marketing: '#006b3c',
-                com:       '#0d6efd',
-                ebf:       '#fd7e14',
-                data:      '#6f42c1'
+                superadmin: '#0f766e',
+                marketing:  '#16a34a',
+                com:        '#0d6efd',
+                ebf:        '#fd7e14',
+                data:       '#6f42c1'
             };
-
-            function refreshUserDisplay() {
-                var currentUser = usersModule.getCurrentUser();
-                var avatar = document.getElementById('user-avatar');
-                var displayName = document.getElementById('user-display-name');
-                var displayRole = document.getElementById('user-display-role');
-
-                if (currentUser) {
-                    var parts = currentUser.name.trim().split(/\s+/);
-                    var initials = parts.map(function(p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
-                    avatar.textContent = initials;
-                    avatar.style.background = roleColors[currentUser.role] || '#6c757d';
-                    displayName.textContent = currentUser.name;
-                    displayRole.textContent = currentUser.roleLabel + (currentUser.isManager ? ' ★' : '');
-                    // Pré-sélectionner l'équipe et la personne
-                    teamSelect.value = currentUser.role;
-                    populateDashNames(currentUser.role);
-                    nameSelect.value = currentUser.name;
-                } else {
-                    avatar.textContent = '?';
-                    avatar.style.background = '#adb5bd';
-                    displayName.textContent = 'Non identifié';
-                    displayRole.textContent = 'Sélectionnez votre profil ci-dessous';
-                }
+            var currentUser = users.getCurrentUser();
+            var avatar = document.getElementById('header-user-avatar');
+            var nameEl = document.getElementById('header-user-name');
+            if (currentUser && avatar && nameEl) {
+                var parts = currentUser.name.trim().split(/\s+/);
+                var initials = parts.map(function(p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
+                avatar.textContent = initials;
+                avatar.style.background = roleColors[currentUser.role] || '#64748b';
+                nameEl.textContent = currentUser.name + ' · ' + currentUser.roleLabel;
+                document.getElementById('header-user').title = currentUser.name + ' (' + currentUser.roleLabel + ')';
             }
 
-            function populateDashNames(role) {
-                nameSelect.innerHTML = '<option value="">Choisir...</option>';
-                if (!role) { nameSelect.disabled = true; return; }
-                usersModule.USERS.filter(function(u) { return u.role === role; })
-                    .forEach(function(u) {
-                        var opt = document.createElement('option');
-                        opt.value = u.name;
-                        opt.textContent = u.name + (u.isManager ? ' ★' : '');
-                        nameSelect.appendChild(opt);
-                    });
-                nameSelect.disabled = false;
+            var logoutBtn = document.getElementById('btn-logout');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', function() {
+                    // Oublie l'identité courante puis retourne à l'écran de connexion
+                    try { localStorage.removeItem('im_current_user'); } catch (e) {}
+                    window.location.href = 'login.html';
+                });
             }
-
-            teamSelect.addEventListener('change', function() {
-                populateDashNames(teamSelect.value);
-            });
-
-            nameSelect.addEventListener('change', function() {
-                if (nameSelect.value) {
-                    usersModule.setCurrentUser(nameSelect.value);
-                    refreshUserDisplay();
-                    errors.showNotification('Connecté en tant que ' + nameSelect.value, 'success', 2000);
-                    // Rafraîchir les campagnes si le dossier est chargé
-                    var allMineSection = document.getElementById('allmine-section');
-                    if (allMineSection) {
-                        loadMyCampaigns();
-                    }
-                }
-            });
-
-            refreshUserDisplay();
         }
 
         function hideCampaignSections() {
@@ -1191,9 +990,6 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
             transform: translateY(-1px);
         }
-
-        /* Cacher le floating user-selector sur le dashboard */
-        #im-user-selector-widget { display: none !important; }
 
         /* Grille des deux cartes de configuration */
         .top-cards-row {
