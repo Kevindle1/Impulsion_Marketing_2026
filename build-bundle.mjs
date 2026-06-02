@@ -25,6 +25,7 @@ const MODULES = [
   'users-standalone.js',
   'workflow-standalone.js',
   'help-standalone.js',
+  'incident-standalone.js',
 ];
 
 const HEADER =
