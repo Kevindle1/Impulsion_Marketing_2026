@@ -3138,6 +3138,25 @@ window.ImpulsionMarketing.adminConfig = (function () {
     });
   }
 
+  // Amorçage : crée _config.json avec les valeurs par défaut s'il n'existe pas encore,
+  // afin que le fichier soit présent d'emblée sur le dossier racine V:// (point B).
+  // N'écrase jamais un fichier existant. Renvoie la config (lue ou amorcée).
+  function ensureSeed() {
+    return rootHandle().then(function (root) {
+      return root.getFileHandle(CONFIG_FILE, { create: false })
+        .then(function (fh) { return fh.getFile(); })
+        .then(function (f) { return f.text(); })
+        .then(function (txt) { var c = {}; try { c = JSON.parse(txt) || {}; } catch (e) { c = {}; } return c; })
+        .catch(function () {
+          // Fichier absent → on l'amorce avec les valeurs par défaut.
+          var seed = {};
+          if (IM.users && Array.isArray(IM.users.DEFAULT_USERS)) seed.users = IM.users.DEFAULT_USERS;
+          if (IM.config && Array.isArray(IM.config.CANAUX)) seed.canaux = IM.config.CANAUX.slice();
+          return save(seed).then(function () { return seed; }).catch(function () { return {}; });
+        });
+    }).catch(function () { return {}; });
+  }
+
   // Applique la config aux listes en mémoire (en place, pour ne pas casser les références).
   function applyConfig(cfg) {
     if (!cfg) return;
@@ -3168,7 +3187,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
   function init() {
     // Pas de menu (écran de connexion) → ne rien faire.
     if (!document.querySelector('.sidebar-nav')) return;
-    load()
+    // ensureSeed lit le fichier (ou le crée s'il manque) puis on applique la config.
+    ensureSeed()
       .then(function (cfg) { applyConfig(cfg); })
       .catch(function () {})
       .then(function () { injectAdminLink(); });
@@ -3180,5 +3200,5 @@ window.ImpulsionMarketing.adminConfig = (function () {
     init();
   }
 
-  return { load: load, save: save, applyConfig: applyConfig };
+  return { load: load, save: save, applyConfig: applyConfig, ensureSeed: ensureSeed };
 })();

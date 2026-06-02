@@ -190,7 +190,13 @@
 
         // ── TYPES DE LIVRABLES (canaux) ──
         function renderCanaux() {
-            var html = '<div class="admin-card"><h3>Types de livrables / canaux (' + canaux.length + ')</h3>';
+            var html = '<div class="admin-card" style="background:var(--amber-50,#fff8e6);border-color:#f0d98a;">'
+                + '<div style="font-size:13px;color:#7a5b00;line-height:1.55;">'
+                + '<strong>⚠️ À savoir :</strong> cette liste sert de choix proposés à la <strong>création d\'une nouvelle campagne</strong>. '
+                + 'Modifier ou supprimer un type <strong>ne change pas</strong> les campagnes déjà créées (elles gardent le nom enregistré dans leur fiche). '
+                + 'On peut donc ajouter de nouveaux types sans risque ; évitez en revanche de renommer/supprimer un type déjà utilisé.'
+                + '</div></div>';
+            html += '<div class="admin-card"><h3>Types de livrables / canaux (' + canaux.length + ')</h3>';
             if (!canaux.length) html += '<div class="empty-hint">Aucun type.</div>';
             canaux.forEach(function (c, i) {
                 html += '<div class="canal-row"><span class="person-name">' + esc(c) + '</span><button class="icon-del" data-delc="' + i + '">🗑</button></div>';
