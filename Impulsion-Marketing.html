@@ -117,6 +117,18 @@
             </header>
 
             <main class="content">
+                <!-- Bandeau d'accueil -->
+                <div class="dash-hero">
+                    <div class="dash-hero-text">
+                        <h1 id="hero-greeting">Bonjour 👋</h1>
+                        <p>Voici l'état de tes campagnes aujourd'hui.</p>
+                    </div>
+                    <a href="pages/campaign.html" class="dash-hero-cta">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+                        Créer une campagne
+                    </a>
+                </div>
+
                 <!-- Barre de recherche + reconstruire index -->
                 <div class="dashboard-toolbar" id="dashboard-toolbar" style="display:none;">
                     <div class="search-wrap">
@@ -233,6 +245,8 @@
                 avatar.style.background = roleColors[currentUser.role] || '#64748b';
                 nameEl.textContent = currentUser.name + ' · ' + currentUser.roleLabel;
                 document.getElementById('header-user').title = currentUser.name + ' (' + currentUser.roleLabel + ')';
+                var hero = document.getElementById('hero-greeting');
+                if (hero) hero.textContent = 'Bonjour ' + currentUser.name.trim().split(/\s+/)[0] + ' 👋';
             }
 
             var logoutBtn = document.getElementById('btn-logout');
@@ -805,9 +819,9 @@
 
         /* ── Sidebar ── */
         .sidebar {
-            width: 240px;
-            background: #0d1f14;
-            color: #ffffff;
+            width: 258px;
+            background: var(--sidebar-bg, #fff);
+            color: var(--sidebar-text, #56655e);
             display: flex;
             flex-direction: column;
             position: fixed;
@@ -815,12 +829,11 @@
             overflow-y: auto;
             overflow-x: hidden;
             z-index: 1000;
-            border-right: 1px solid rgba(255,255,255,0.04);
+            border-right: 1px solid var(--sidebar-line, #eaefec);
         }
 
         .sidebar-header {
-            padding: 22px 16px 18px;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 22px 18px 16px;
             flex-shrink: 0;
         }
 
@@ -834,22 +847,24 @@
 
         .brand-icon {
             flex-shrink: 0;
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, #16a34a, #15803d);
-            border-radius: 8px;
+            width: 40px;
+            height: 40px;
+            background: var(--gradient, linear-gradient(135deg, #12C386, #00734C));
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: #fff;
+            box-shadow: 0 6px 14px rgba(0, 135, 90, 0.30);
         }
 
-        .brand-icon svg { width: 18px; height: 18px; }
+        .brand-icon svg { width: 19px; height: 19px; }
 
         .brand-text h1 {
-            font-size: 15px;
-            font-weight: 700;
-            color: #ffffff !important;
-            -webkit-text-fill-color: #ffffff !important;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--ink, #0c1a14) !important;
+            -webkit-text-fill-color: var(--ink, #0c1a14) !important;
             background: none !important;
             background-clip: initial !important;
             -webkit-background-clip: initial !important;
@@ -860,36 +875,36 @@
         }
 
         .brand-text span {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.30);
-            font-weight: 500;
+            font-size: 9.5px;
+            color: var(--muted-2, #8b988f);
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 1.8px;
         }
 
-        .sidebar-nav { padding: 12px 10px 24px; flex: 1; }
-        .nav-section { margin-bottom: 4px; }
+        .sidebar-nav { padding: 6px 12px 24px; flex: 1; }
+        .nav-section { margin-bottom: 2px; }
 
         .nav-section-title {
             display: block;
-            padding: 12px 10px 5px;
+            padding: 14px 12px 6px;
             font-size: 10px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: rgba(255, 255, 255, 0.22);
+            letter-spacing: 1.3px;
+            color: var(--muted-2, #8b988f);
         }
 
         .nav-link {
             display: flex;
             align-items: center;
-            gap: 9px;
-            padding: 8px 10px;
-            color: rgba(255, 255, 255, 0.50);
+            gap: 11px;
+            padding: 9px 12px;
+            color: var(--sidebar-text, #56655e);
             text-decoration: none;
-            border-radius: 7px;
+            border-radius: 11px;
             font-size: 13.5px;
-            font-weight: 500;
+            font-weight: 550;
             position: relative;
             transition: background 0.15s, color 0.15s;
             margin-bottom: 2px;
@@ -898,30 +913,30 @@
         .nav-link::before { display: none; }
 
         .nav-link:hover {
-            background: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.85);
+            background: var(--line-2, #f0f4f1);
+            color: var(--sidebar-text-hover, #0c1a14);
         }
 
         .nav-link.active {
-            background: rgba(22, 163, 74, 0.16);
-            color: #4ade80;
-            font-weight: 600;
+            background: var(--sidebar-active-bg, #e8f6ef);
+            color: var(--sidebar-active-text, #00734C);
+            font-weight: 680;
         }
 
-        .nav-link.active .nav-icon { opacity: 1; color: #4ade80; }
+        .nav-link.active .nav-icon { opacity: 1; color: var(--primary, #00875A); }
 
         .nav-icon {
             flex-shrink: 0;
-            opacity: 0.45;
-            width: 16px;
-            height: 16px;
+            opacity: 0.85;
+            width: 18px;
+            height: 18px;
         }
 
-        .nav-link:hover .nav-icon { opacity: 0.7; }
+        .nav-link:hover .nav-icon { opacity: 1; }
 
         /* ── Main Container ── */
         .main-container {
-            margin-left: 240px;
+            margin-left: 258px;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -1158,15 +1173,52 @@
             margin-bottom: 20px;
         }
 
+        /* ── Hero d'accueil ── */
+        .dash-hero {
+            background: var(--gradient-hero, linear-gradient(120deg, #00734C, #0FA56E));
+            border-radius: 20px;
+            padding: 24px 26px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+            box-shadow: 0 14px 30px rgba(0, 115, 76, 0.26);
+            position: relative;
+            overflow: hidden;
+        }
+        .dash-hero::after {
+            content: "";
+            position: absolute;
+            right: -40px; top: -60px;
+            width: 240px; height: 240px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+        }
+        .dash-hero-text { position: relative; z-index: 1; }
+        .dash-hero h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #fff; margin: 0; }
+        .dash-hero p { font-size: 13.5px; opacity: 0.92; margin: 5px 0 0; color: #fff; }
+        .dash-hero-cta {
+            position: relative; z-index: 1;
+            display: inline-flex; align-items: center; gap: 7px;
+            background: #fff; color: var(--green-600, #00734C);
+            font-weight: 700; font-size: 13.5px;
+            padding: 11px 18px; border-radius: 12px;
+            text-decoration: none; white-space: nowrap;
+            transition: transform 0.12s ease, box-shadow 0.15s ease;
+        }
+        .dash-hero-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
+
         .section-title {
             font-size: 18px;
-            font-weight: 700;
-            color: #0f172a;
+            font-weight: 750;
+            color: var(--ink, #0c1a14);
             margin-bottom: 2px;
             letter-spacing: -0.3px;
         }
 
-        .section-subtitle { font-size: 13px; color: #64748b; font-weight: 400; }
+        .section-subtitle { font-size: 13px; color: var(--muted, #56655e); font-weight: 400; }
 
         .campaigns-grid {
             display: grid;
@@ -1179,19 +1231,19 @@
             align-items: center;
             gap: 14px;
             padding: 16px 18px;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
+            background: var(--bg-card, #fff);
+            border: 1px solid var(--line, #eaefec);
+            border-radius: 14px;
             text-decoration: none;
             color: inherit;
             transition: all 0.15s;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            box-shadow: var(--shadow-xs);
         }
 
         .campaign-card:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            box-shadow: var(--shadow-md);
             transform: translateY(-2px);
-            border-color: #16a34a;
+            border-color: var(--green-100, #ccebdd);
         }
 
         .campaign-card--inactive {
@@ -1242,12 +1294,12 @@
         .campaign-card-icon {
             width: 44px;
             height: 44px;
-            background: #f0fdf4;
-            border-radius: 9px;
+            background: var(--green-50, #e8f6ef);
+            border-radius: 11px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #16a34a;
+            color: var(--primary, #00875A);
             flex-shrink: 0;
         }
 
@@ -1273,7 +1325,7 @@
         }
 
         .campaign-card:hover .campaign-card-arrow {
-            color: #16a34a;
+            color: var(--primary, #00875A);
             transform: translateX(4px);
         }
 
@@ -1293,7 +1345,7 @@
             gap: 8px;
         }
 
-        .subsection-label--urgent { color: #16a34a; }
+        .subsection-label--urgent { color: var(--primary, #00875A); }
 
         .subsection-count {
             background: #f1f5f9;
@@ -1310,11 +1362,11 @@
         }
 
         /* Carte urgente (à mon tour) */
-        .campaign-card--urgent { border-left: 3px solid #16a34a; }
+        .campaign-card--urgent { border-left: 3px solid var(--red, #E2001A); }
 
         .campaign-card-icon--urgent {
-            background: #f0fdf4;
-            color: #16a34a;
+            background: var(--red-50, #fdeaec);
+            color: var(--red, #E2001A);
         }
 
         .badge-my-turn {
@@ -1415,8 +1467,8 @@
 
         /* ── Responsive ── */
         @media (max-width: 1024px) {
-            .sidebar { width: 220px; }
-            .main-container { margin-left: 220px; }
+            .sidebar { width: 230px; }
+            .main-container { margin-left: 230px; }
         }
 
         @media (max-width: 768px) {

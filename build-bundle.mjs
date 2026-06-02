@@ -24,7 +24,6 @@ const MODULES = [
   'directoryStorage-standalone.js',
   'users-standalone.js',
   'workflow-standalone.js',
-  'themes-standalone.js',
   'help-standalone.js',
 ];
 
