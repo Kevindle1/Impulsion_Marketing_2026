@@ -419,6 +419,24 @@
             display: block;
           }
 
+          /* ── Mise en page en grille 2 colonnes ── */
+          .form-step.form-step--grid.active { display: grid; }
+          .form-step--grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 22px;
+            align-items: start;
+          }
+          .form-step--grid > .step-title,
+          .form-step--grid > .step-description,
+          .form-step--grid > .step-navigation,
+          .form-step--grid > .form-group.fg-full {
+            grid-column: 1 / -1;
+          }
+          .form-step--grid > .form-group { margin-bottom: 18px; }
+          @media (max-width: 760px) {
+            .form-step--grid { grid-template-columns: 1fr; }
+          }
+
           .step-title {
             margin: 0 0 8px 0;
             font-size: 1.125rem;
@@ -904,7 +922,7 @@
                     </div>
 
                     <!-- Étape 1 : Informations générales -->
-                    <div class="form-step active" data-step="1">
+                    <div class="form-step form-step--grid active" data-step="1">
                         <h3 class="step-title">📋 Informations générales</h3>
                         <p class="step-description">Renseignez les informations de base de la campagne</p>
 
@@ -913,11 +931,11 @@
                             <input type="text" id="taskName" required>
                         </div>
                         
-                        <div class="form-group">
+                        <div class="form-group fg-full">
                             <label for="description">DESCRIPTION :</label>
                             <textarea id="description" required></textarea>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group fg-full">
                             <label>PO :</label>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 <select id="poTeam" style="flex: 1; min-width: 130px;">
@@ -981,7 +999,7 @@
                             <input type="text" id="campagneLiee" placeholder="Nom exact de la campagne liée...">
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group fg-full">
                             <label>Équipes nécessaires au projet :</label>
                             <div id="teamCheckboxes" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px;">
                                 <label id="labelTeamMarketing" style="display: flex; align-items: center; cursor: pointer;">
@@ -1006,7 +1024,7 @@
                             </small>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group fg-full">
                             <label>Validation juridique <span style="font-weight:400;color:#888;">(optionnel)</span></label>
                             <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
                                 <input type="checkbox" id="juridiqueRequired" style="width:18px;height:18px;cursor:pointer;">
@@ -1099,11 +1117,11 @@
                     </div>
 
                     <!-- Étape 3 : Détails produit -->
-                    <div class="form-step" data-step="3">
+                    <div class="form-step form-step--grid" data-step="3">
                         <h3 class="step-title">🛍️ Détails produit</h3>
                         <p class="step-description">Informations sur le produit et l'offre</p>
 
-                        <div class="form-group">
+                        <div class="form-group fg-full">
                             <label for="productUrl">URL FICHE PRODUIT :</label>
                             <input type="url" id="productUrl">
                         </div>
