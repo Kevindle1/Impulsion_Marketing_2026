@@ -10,62 +10,62 @@
     <style>
         /* ── Infos campagne : sections & grilles ── */
         .detail-section {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-left: 4px solid #16a34a;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 14px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            background: var(--bg-card, #fff);
+            border: 1px solid var(--line, #eaefec);
+            border-left: 4px solid var(--primary, #00875A);
+            border-radius: 16px;
+            padding: 20px 22px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow-xs);
         }
         .detail-section h3 {
-            margin: 0 0 12px 0;
-            color: #64748b;
-            font-size: 0.75rem;
+            margin: 0 0 14px 0;
+            color: var(--muted, #56655e);
+            font-size: 0.72rem;
             font-weight: 700;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line-2, #f0f4f1);
+            padding-bottom: 9px;
             text-transform: uppercase;
             letter-spacing: 0.8px;
         }
         .detail-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-            gap: 10px;
+            gap: 12px;
             margin-top: 10px;
         }
-        .detail-item { display: flex; flex-direction: column; gap: 3px; }
-        .detail-label { font-weight: 700; color: #94a3b8; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.7px; }
-        .detail-value { color: #0f172a; font-size: 0.875rem; padding: 5px 10px; background: #f8fafc; border-radius: 6px; border: 1px solid #e2e8f0; }
+        .detail-item { display: flex; flex-direction: column; gap: 4px; }
+        .detail-label { font-weight: 700; color: var(--muted-2, #8b988f); font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.7px; }
+        .detail-value { color: var(--ink, #0c1a14); font-size: 0.875rem; padding: 7px 11px; background: var(--line-2, #f0f4f1); border-radius: 9px; border: 1px solid var(--line, #eaefec); }
         .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .tag { display: inline-block; padding: 3px 10px; background: #dcfce7; color: #15803d; border-radius: 20px; font-size: 0.68rem; font-weight: 700; border: 1px solid #bbf7d0; }
-        .channel-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
-        .channel-card h4 { margin: 0 0 10px 0; color: #0f172a; font-size: 0.9375rem; font-weight: 600; letter-spacing: -0.2px; }
-        .error-message { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; padding: 16px; border-radius: 8px; text-align: center; margin: 32px 0; font-size: 0.875rem; }
+        .tag { display: inline-block; padding: 4px 11px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); border-radius: 999px; font-size: 0.68rem; font-weight: 700; border: 1px solid var(--green-100, #ccebdd); }
+        .channel-card { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--shadow-xs); }
+        .channel-card h4 { margin: 0 0 10px 0; color: var(--ink, #0c1a14); font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.2px; }
+        .error-message { background: var(--red-50, #fdeaec); border: 1px solid #fecaca; color: #991b1b; padding: 18px; border-radius: 14px; text-align: center; margin: 32px 0; font-size: 0.875rem; }
         .loading-container { text-align: center; padding: 48px 20px; }
-        .spinner { border: 3px solid #e2e8f0; border-top: 3px solid #16a34a; border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+        .spinner { border: 3px solid var(--line, #eaefec); border-top: 3px solid var(--primary, #00875A); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .back-button { display: inline-flex; align-items: center; gap: 6px; }
 
         /* ── Actor sections ── */
-        .actor-section { background: #fff; border: 1px solid #e2e8f0; border-left: 4px solid #cbd5e1; border-radius: 10px; padding: 20px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-        .actor-section--com { border-left-color: #3b82f6; }
-        .actor-section--ebf { border-left-color: #f97316; }
-        .actor-section--data { border-left-color: #16a34a; }
-        .actor-section--mep { border-left-color: #8b5cf6; }
-        .actor-section--revision { border-left-color: #f97316; }
-        .actor-section--revision h3 { color: #c2410c; }
-        .badge-revision { display: inline-block; background: #fff7ed; color: #c2410c; border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 8px; text-transform: none; letter-spacing: 0; border: 1px solid #fed7aa; }
-        .revision-alert { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #c2410c; }
+        .actor-section { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-left: 4px solid var(--gray-300, #d6ddd8); border-radius: 16px; padding: 20px 22px; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
+        .actor-section--com { border-left-color: var(--blue, #2563EB); }
+        .actor-section--ebf { border-left-color: var(--amber, #E8A100); }
+        .actor-section--data { border-left-color: var(--primary, #00875A); }
+        .actor-section--mep { border-left-color: var(--violet, #7C3AED); }
+        .actor-section--revision { border-left-color: var(--red, #E2001A); }
+        .actor-section--revision h3 { color: var(--red, #E2001A); }
+        .badge-revision { display: inline-block; background: var(--red-50, #fdeaec); color: var(--red, #E2001A); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 8px; text-transform: none; letter-spacing: 0; border: 1px solid #fecaca; }
+        .revision-alert { background: var(--red-50, #fdeaec); border: 1px solid #fecaca; border-radius: 12px; padding: 11px 14px; margin-bottom: 14px; font-size: 13px; color: var(--red, #E2001A); }
 
         /* ── Actor section header ── */
         .actor-section h3 {
             margin: 0 0 14px 0;
-            color: #475569;
-            font-size: 0.75rem;
+            color: var(--muted, #56655e);
+            font-size: 0.72rem;
             font-weight: 700;
-            border-bottom: 1px solid #f1f5f9;
-            padding-bottom: 9px;
+            border-bottom: 1px solid var(--line-2, #f0f4f1);
+            padding-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 0.8px;
             display: flex;
@@ -76,32 +76,32 @@
         /* ── Actor form ── */
         .actor-form { margin-bottom: 4px; }
         .form-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
-        .form-row label { font-size: 11px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; }
-        .form-control { padding: 8px 11px; border: 1px solid #e2e8f0; border-radius: 7px; font-size: 13.5px; font-family: inherit; color: #0f172a; background: #fff; width: 100%; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
-        .form-control:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
-        .form-control:disabled, .form-control[readonly] { background: #f8fafc; color: #94a3b8; cursor: not-allowed; border-color: #e2e8f0; }
+        .form-row label { font-size: 11px; font-weight: 700; color: var(--muted, #56655e); text-transform: uppercase; letter-spacing: 0.6px; }
+        .form-control { padding: 10px 12px; border: 1px solid var(--line, #eaefec); border-radius: 10px; font-size: 13.5px; font-family: inherit; color: var(--ink, #0c1a14); background: #fff; width: 100%; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
+        .form-control:focus { outline: none; border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
+        .form-control:disabled, .form-control[readonly] { background: var(--line-2, #f0f4f1); color: var(--muted-2, #8b988f); cursor: not-allowed; border-color: var(--line, #eaefec); }
         .radio-group { display: flex; gap: 20px; padding: 6px 0; }
-        .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13.5px; text-transform: none; letter-spacing: 0; color: #0f172a; cursor: pointer; }
-        .btn-actor-save { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 7px; padding: 7px 16px; font-size: 13px; font-weight: 600; cursor: pointer; color: #374151; transition: all 0.15s; margin-top: 4px; }
-        .btn-actor-save:hover { background: #f0fdf4; border-color: #16a34a; color: #15803d; }
+        .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13.5px; text-transform: none; letter-spacing: 0; color: var(--ink, #0c1a14); cursor: pointer; }
+        .btn-actor-save { background: #fff; border: 1px solid var(--line, #eaefec); border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 650; cursor: pointer; color: var(--gray-700, #33403a); transition: all 0.15s; margin-top: 4px; }
+        .btn-actor-save:hover { background: var(--green-50, #e8f6ef); border-color: var(--primary, #00875A); color: var(--green-600, #00734C); }
         .btn-actor-save:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-actor-submit { background: #16a34a; color: #fff; border: none; border-radius: 7px; padding: 9px 22px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .btn-actor-submit:hover { background: #15803d; box-shadow: 0 4px 12px rgba(22,163,74,0.3); }
+        .btn-actor-submit { background: var(--primary, #00875A); color: #fff; border: none; border-radius: 10px; padding: 10px 22px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; box-shadow: 0 2px 6px rgba(0,135,90,0.22); }
+        .btn-actor-submit:hover { background: var(--primary-hover, #00734C); box-shadow: 0 6px 16px rgba(0,135,90,0.3); }
         .btn-actor-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
-        .btn-actor-submit--mep { background: #7c3aed; }
-        .btn-actor-submit--mep:hover { background: #6d28d9; box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
+        .btn-actor-submit--mep { background: var(--violet, #7C3AED); box-shadow: 0 2px 6px rgba(124,58,237,0.22); }
+        .btn-actor-submit--mep:hover { background: #6d28d9; box-shadow: 0 6px 16px rgba(124,58,237,0.3); }
         .actor-submit-row { margin-top: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .actor-submit-note { font-size: 12px; color: #94a3b8; }
+        .actor-submit-note { font-size: 12px; color: var(--muted-2, #8b988f); }
 
         /* ── Read-only depot view ── */
-        .depot-readonly { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
-        .depot-readonly-title { font-size: 12px; font-weight: 700; color: #374151; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
-        .depot-readonly-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
-        .depot-readonly-item { font-size: 12px; color: #374151; }
-        .depot-readonly-item strong { display: block; color: #94a3b8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .depot-status-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .depot-status-badge--submitted { background: #dbeafe; color: #1d4ed8; }
-        .depot-status-badge--saved { background: #f1f5f9; color: #64748b; }
+        .depot-readonly { background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 13px 15px; margin-bottom: 10px; }
+        .depot-readonly-title { font-size: 12px; font-weight: 700; color: var(--gray-700, #33403a); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+        .depot-readonly-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 9px; }
+        .depot-readonly-item { font-size: 12px; color: var(--gray-700, #33403a); }
+        .depot-readonly-item strong { display: block; color: var(--muted-2, #8b988f); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .depot-status-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .depot-status-badge--submitted { background: var(--blue-50, #e8f0fe); color: #1d4ed8; }
+        .depot-status-badge--saved { background: var(--line-2, #f0f4f1); color: var(--muted, #56655e); }
 
         /* ── Onglets de navigation horizontaux ── */
         .details-shell {
@@ -116,11 +116,10 @@
             align-items: stretch;
             gap: 0;
             background: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 0 36px;
+            border-bottom: 1px solid var(--line, #eaefec);
+            padding: 0 28px;
             overflow-x: auto;
             flex-shrink: 0;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
         }
         .details-sidenav-label { display: none; }
         .details-nav-item {
@@ -129,8 +128,8 @@
             gap: 6px;
             padding: 14px 16px;
             font-size: 13px;
-            font-weight: 500;
-            color: #94a3b8;
+            font-weight: 550;
+            color: var(--muted-2, #8b988f);
             cursor: pointer;
             border: none;
             background: none;
@@ -141,19 +140,19 @@
             border-radius: 0;
             letter-spacing: -0.1px;
         }
-        .details-nav-item:hover { color: #0f172a; }
+        .details-nav-item:hover { color: var(--ink, #0c1a14); }
         .details-nav-item.active {
-            color: #16a34a;
-            font-weight: 600;
-            border-bottom-color: #16a34a;
+            color: var(--primary, #00875A);
+            font-weight: 700;
+            border-bottom-color: var(--primary, #00875A);
         }
         .details-nav-separator { display: none; }
         .details-panel {
             flex: 1;
             overflow-y: auto;
-            padding: 28px 36px;
+            padding: 26px 28px;
             min-width: 0;
-            background: #f8fafc;
+            background: var(--bg, #f4f7f5);
         }
         /* ── Lightbox ── */
         #lightbox-overlay {
@@ -192,19 +191,19 @@
 
         /* ── Discussion ── */
         .discussion-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-        .discussion-msg { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; }
+        .discussion-msg { background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 13px 15px; }
         .discussion-msg-header { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
-        .discussion-msg-avatar { width: 28px; height: 28px; border-radius: 50%; background: #16a34a; color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0; }
-        .discussion-msg-author { font-size: 13px; font-weight: 600; color: #0f172a; }
-        .discussion-msg-date { font-size: 11px; color: #94a3b8; margin-left: auto; white-space: nowrap; }
-        .discussion-msg-text { font-size: 13.5px; color: #374151; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+        .discussion-msg-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary, #00875A); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0; }
+        .discussion-msg-author { font-size: 13px; font-weight: 650; color: var(--ink, #0c1a14); }
+        .discussion-msg-date { font-size: 11px; color: var(--muted-2, #8b988f); margin-left: auto; white-space: nowrap; }
+        .discussion-msg-text { font-size: 13.5px; color: var(--gray-700, #33403a); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
         .discussion-msg-footer { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
-        .discussion-like-btn { background: none; border: 1px solid #e2e8f0; border-radius: 20px; padding: 3px 11px; font-size: 12px; cursor: pointer; color: #64748b; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; font-family: inherit; }
-        .discussion-like-btn:hover { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
-        .discussion-like-btn.liked { background: #f0fdf4; border-color: #16a34a; color: #16a34a; font-weight: 700; }
+        .discussion-like-btn { background: none; border: 1px solid var(--line, #eaefec); border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--muted, #56655e); display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; font-family: inherit; }
+        .discussion-like-btn:hover { border-color: var(--primary, #00875A); color: var(--primary, #00875A); background: var(--green-50, #e8f6ef); }
+        .discussion-like-btn.liked { background: var(--green-50, #e8f6ef); border-color: var(--primary, #00875A); color: var(--primary, #00875A); font-weight: 700; }
         .discussion-form { margin-top: 4px; }
-        .discussion-form textarea { width: 100%; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family: inherit; font-size: 13.5px; color: #0f172a; resize: vertical; min-height: 80px; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
-        .discussion-form textarea:focus { outline: none; border-color: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.1); }
+        .discussion-form textarea { width: 100%; padding: 11px 13px; border: 1px solid var(--line, #eaefec); border-radius: 12px; font-family: inherit; font-size: 13.5px; color: var(--ink, #0c1a14); resize: vertical; min-height: 80px; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
+        .discussion-form textarea:focus { outline: none; border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
         .discussion-form-row { display: flex; justify-content: flex-end; margin-top: 8px; }
     </style>
 </head>
@@ -271,7 +270,7 @@
                 <button id="editButton" class="btn primary back-button" style="display:none;" onclick="editCampaign()">✏️ Modifier</button>
                 <button id="duplicateButton" class="btn secondary back-button" style="display:none;" onclick="duplicateCampaign()">📋 Dupliquer</button>
                 <button id="toggleActifButton" class="btn secondary back-button" style="display:none;" onclick="toggleCampaignActif()"></button>
-                <button id="deleteCampaignButton" class="btn secondary back-button" style="display:none;color:#dc2626;" onclick="deleteCampaign()">🗑️ Supprimer</button>
+                <button id="deleteCampaignButton" class="btn secondary back-button" style="display:none;color:var(--red);" onclick="deleteCampaign()">🗑️ Supprimer</button>
             </div>
         </header>
 
@@ -397,7 +396,7 @@
                 var toggleActifBtn = document.getElementById('toggleActifButton');
                 if (toggleActifBtn) {
                     toggleActifBtn.textContent = nouvelEtat ? '⏸️ Rendre inactif' : '▶️ Réactiver';
-                    toggleActifBtn.style.color = nouvelEtat ? '#dc2626' : '#16a34a';
+                    toggleActifBtn.style.color = nouvelEtat ? 'var(--red)' : 'var(--primary)';
                 }
                 var msg = nouvelEtat ? 'Campagne réactivée.' : 'Campagne rendue inactive.';
                 errors.showNotification(msg, 'success', 2000);
@@ -581,7 +580,7 @@
             toggleActifBtn.style.display = 'inline-flex';
             var isActif = data.actif !== false;
             toggleActifBtn.textContent = isActif ? '⏸️ Rendre inactif' : '▶️ Réactiver';
-            toggleActifBtn.style.color = isActif ? '#dc2626' : '#16a34a';
+            toggleActifBtn.style.color = isActif ? 'var(--red)' : 'var(--primary)';
         }
         var deleteBtn = document.getElementById('deleteCampaignButton');
         if (deleteBtn) deleteBtn.style.display = 'inline-flex';
@@ -661,7 +660,7 @@
         }
         if (data.campagneLiee) {
             var linkedUrl = 'details.html?name=' + encodeURIComponent(data.campagneLiee);
-            html += '<div class="detail-item" style="margin-top:8px;"><span class="detail-label">Campagne liée</span><span class="detail-value"><a href="' + linkedUrl + '" style="color:#16a34a;">' + security.escapeHtml(data.campagneLiee) + ' →</a></span></div>';
+            html += '<div class="detail-item" style="margin-top:8px;"><span class="detail-label">Campagne liée</span><span class="detail-value"><a href="' + linkedUrl + '" style="color:var(--primary);">' + security.escapeHtml(data.campagneLiee) + ' →</a></span></div>';
         }
         html += '</div>';
 
@@ -695,19 +694,19 @@
             var jurStatus = jur.status || 'pending';
             var jurValidated = jurStatus === 'validated';
             var isPOJur = users.isCurrentUserPO(data);
-            html += '<div class="detail-section" style="border-left-color:' + (jurValidated ? '#16a34a' : '#f59e0b') + ';">';
+            html += '<div class="detail-section" style="border-left-color:' + (jurValidated ? 'var(--primary)' : 'var(--amber)') + ';">';
             html += '<h3>⚖️ Validation juridique</h3>';
             html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
-            html += '<span style="background:' + (jurValidated ? '#dcfce7' : '#fef3c7') + ';color:' + (jurValidated ? '#15803d' : '#d97706') + ';border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurValidated ? '✅ Validé' : '⏳ En attente') + '</span>';
+            html += '<span style="background:' + (jurValidated ? '#dcfce7' : '#fef3c7') + ';color:' + (jurValidated ? 'var(--primary-hover)' : '#d97706') + ';border-radius:6px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurValidated ? '✅ Validé' : '⏳ En attente') + '</span>';
             html += '</div>';
-            if (jur.comment) html += '<div style="font-size:13px;color:#374151;background:#f8fafc;border-radius:6px;padding:8px 12px;margin-bottom:8px;">' + security.escapeHtml(jur.comment) + '</div>';
-            if (jur.validatedAt) html += '<div style="font-size:12px;color:#64748b;">Validé le ' + security.escapeHtml(jur.validatedAt) + '</div>';
+            if (jur.comment) html += '<div style="font-size:13px;color:var(--gray-700);background:var(--line-2);border-radius:6px;padding:8px 12px;margin-bottom:8px;">' + security.escapeHtml(jur.comment) + '</div>';
+            if (jur.validatedAt) html += '<div style="font-size:12px;color:var(--muted);">Validé le ' + security.escapeHtml(jur.validatedAt) + '</div>';
             // PO peut valider / ré-ouvrir
             if (isPOJur) {
                 if (!jurValidated) {
-                    html += '<button id="btn-juridique-validate" style="margin-top:8px;background:#16a34a;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">✅ Marquer comme validé</button>';
+                    html += '<button id="btn-juridique-validate" style="margin-top:8px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">✅ Marquer comme validé</button>';
                 } else {
-                    html += '<button id="btn-juridique-reopen" style="margin-top:8px;background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">↩ Ré-ouvrir</button>';
+                    html += '<button id="btn-juridique-reopen" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">↩ Ré-ouvrir</button>';
                 }
             }
             html += '</div>';
@@ -716,20 +715,20 @@
         // Section documentaire (Item 21)
         html += '<div class="detail-section" id="documents-section">';
         html += '<h3>📁 Documents</h3>';
-        html += '<div id="documents-loading" style="color:#94a3b8;font-size:13px;">Chargement...</div>';
+        html += '<div id="documents-loading" style="color:var(--muted-2);font-size:13px;">Chargement...</div>';
         html += '<div id="documents-content" style="display:none;"></div>';
         html += '</div>';
 
         // Section discussion
         html += '<div class="detail-section">';
         html += '<h3>💬 Discussion</h3>';
-        html += '<div id="discussion-loading" style="color:#94a3b8;font-size:13px;padding:8px 0;">Chargement...</div>';
+        html += '<div id="discussion-loading" style="color:var(--muted-2);font-size:13px;padding:8px 0;">Chargement...</div>';
         html += '<div id="discussion-list" class="discussion-list" style="display:none;"></div>';
         html += '<div id="discussion-form" class="discussion-form" style="display:none;">';
         html += '<textarea id="discussion-input" placeholder="Écrire un commentaire..."></textarea>';
         html += '<div class="discussion-form-row"><button id="discussion-submit" class="btn-actor-submit">Publier</button></div>';
         html += '</div>';
-        html += '<div id="discussion-no-user" style="display:none;color:#94a3b8;font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>';
+        html += '<div id="discussion-no-user" style="display:none;color:var(--muted-2);font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>';
         html += '</div>';
 
         return html;
@@ -774,7 +773,7 @@
         html += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;">';
         html += '<h3 style="margin:0;">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (idx + 1))) + '</h3>';
         if (isPO) {
-            html += '<button onclick="deleteChannel(' + idx + ')" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">🗑️ Supprimer ce canal</button>';
+            html += '<button onclick="deleteChannel(' + idx + ')" style="background:none;border:1px solid var(--red);color:var(--red);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">🗑️ Supprimer ce canal</button>';
         }
         html += '</div>';
         html += '<div class="detail-grid">';
@@ -866,12 +865,12 @@
         var h = '<div class="actor-section actor-section--com' + (isRevision ? ' actor-section--revision' : '') + '" id="com-work-section">';
         h += '<h3>🎨 Maquette Com';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (stepStatus === 'submitted' && (steps.po_validation_maquette === 'validated' || steps.po_validation_maquette === 'completed')) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
-        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
-        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_maquette === 'validated' || steps.po_validation_maquette === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
         h += '</h3>';
         if (stepStatus === 'locked') {
-            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
+            h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
@@ -879,12 +878,12 @@
             h += buildReassignBlock('com', users.getUsersByRole('com'), getAssignees(data.workflow.assignments, 'com'));
         } else if (!editable) {
             var _comDisp = assigneesDisplay(data.workflow.assignments, 'com');
-            if (_comDisp) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Responsable(s) Com : <strong>' + _comDisp + '</strong></p>';
+            if (_comDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Responsable(s) Com : <strong>' + _comDisp + '</strong></p>';
         }
 
         h += '<div id="com-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
         h += '<div id="com-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
-        h += '<div id="com-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+        h += '<div id="com-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
 
         if (editable) {
             h += '<div class="actor-form">';
@@ -928,12 +927,12 @@
         var h = '<div class="actor-section actor-section--ebf' + (isRevision ? ' actor-section--revision' : '') + '" id="ebf-work-section">';
         h += '<h3>🖨️ Réalisation BAT';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (stepStatus === 'submitted' && (steps.po_validation_bat === 'validated' || steps.po_validation_bat === 'completed')) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
-        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
-        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_bat === 'validated' || steps.po_validation_bat === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
         h += '</h3>';
         if (stepStatus === 'locked') {
-            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation de la maquette Com.</p>';
+            h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation de la maquette Com.</p>';
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
@@ -941,16 +940,16 @@
             h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
         } else if (!editable) {
             var _ebfDisp = assigneesDisplay(data.workflow.assignments, 'ebf');
-            if (_ebfDisp) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp + '</strong></p>';
+            if (_ebfDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp + '</strong></p>';
         }
 
         h += '<div id="ebf-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
         h += '<div id="bat-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
-        h += '<div id="ebf-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+        h += '<div id="ebf-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
 
         if (editable) {
             h += '<div class="actor-form">';
-            h += '<p style="font-size:12px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.4px;margin-bottom:10px;">Initialisation</p>';
+            h += '<p style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:10px;">Initialisation</p>';
             h += '<div class="form-row"><label>Webmaster / Resp. EBF</label><select id="ebf-webmaster-' + idx + '" class="form-control"><option value="">-- Choisir --</option>';
             ebfUsers.forEach(function(u) { h += '<option value="' + security.escapeHtml(u.name) + '">' + security.escapeHtml(u.name) + '</option>'; });
             h += '</select></div>';
@@ -958,7 +957,7 @@
             h += '<div class="form-row"><label>Ref Paracom <small style="font-weight:normal">(max 32 car.)</small></label><input type="text" id="ebf-refpara-' + idx + '" maxlength="32" class="form-control"></div>';
             h += '<div class="form-row"><label>Nombre de CTA</label><input type="number" id="ebf-numcta-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="ebf-cta-urls-' + idx + '"></div>';
-            h += '<p style="font-size:12px;font-weight:700;color:#495057;text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
+            h += '<p style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
             h += '<div class="form-row"><label>Fichier BAT (PDF ou image)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
@@ -984,12 +983,12 @@
         var h = '<div class="actor-section actor-section--ebf' + (isRevision ? ' actor-section--revision' : '') + '" id="ebf-testprod-section">';
         h += '<h3>🔬 Test en production';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (stepStatus === 'submitted' && (steps.po_validation_test_prod === 'validated' || steps.po_validation_test_prod === 'completed')) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
-        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
-        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_test_prod === 'validated' || steps.po_validation_test_prod === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
         h += '</h3>';
         if (stepStatus === 'locked') {
-            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du BAT et du ciblage.</p>';
+            h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du BAT et du ciblage.</p>';
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
@@ -997,12 +996,12 @@
             h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
         } else if (!editable) {
             var _ebfDisp2 = assigneesDisplay(data.workflow.assignments, 'ebf');
-            if (_ebfDisp2) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp2 + '</strong></p>';
+            if (_ebfDisp2) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp2 + '</strong></p>';
         }
 
         h += '<div id="ebf-testprod-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
         h += '<div id="testprod-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
-        h += '<div id="ebf-testprod-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+        h += '<div id="ebf-testprod-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
 
         if (editable) {
             h += '<div class="actor-form">';
@@ -1036,13 +1035,13 @@
         var h = '<div class="actor-section actor-section--data' + (isRevision ? ' actor-section--revision' : '') + '" id="data-work-section">';
         h += '<h3>' + icon + ' ' + (stepLabel || 'Workflow Data');
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (isMep && stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
-        else if (stepStatus === 'submitted' && dataPoValidated) h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
-        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
-        else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ ' + (isMep ? 'Terminé' : 'Validé') + '</span>';
+        else if (isMep && stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
+        else if (stepStatus === 'submitted' && dataPoValidated) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
+        else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ ' + (isMep ? 'Terminé' : 'Validé') + '</span>';
         h += '</h3>';
         if (stepStatus === 'locked') {
-            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
+            h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
@@ -1050,22 +1049,22 @@
             h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'));
         } else if (!editable) {
             var _datDisp = assigneesDisplay(data.workflow.assignments, 'data');
-            if (_datDisp) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Data assigné(s) : <strong>' + _datDisp + '</strong></p>';
+            if (_datDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Data assigné(s) : <strong>' + _datDisp + '</strong></p>';
         }
 
         h += '<div id="data-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
-        h += '<div id="data-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+        h += '<div id="data-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
 
         if (editable) {
             h += '<div class="actor-form">';
             if (isCiblage) {
-                h += '<div class="form-row"><label>Volume cible <small style="font-weight:normal;color:#6c757d;">(nb de destinataires — alerte si &gt; 100 000)</small></label><input type="number" id="data-volume-' + idx + '" class="form-control" min="0" placeholder="Ex : 50000" value="' + (ch.volumeCible || '') + '"></div>';
+                h += '<div class="form-row"><label>Volume cible <small style="font-weight:normal;color:var(--muted);">(nb de destinataires — alerte si &gt; 100 000)</small></label><input type="number" id="data-volume-' + idx + '" class="form-control" min="0" placeholder="Ex : 50000" value="' + (ch.volumeCible || '') + '"></div>';
                 h += '<div class="form-row"><label>Code Projet</label><input type="text" id="data-codeproj-' + idx + '" class="form-control"></div>';
                 h += '<div class="form-row"><label>Code Action</label><input type="text" id="data-codeaction-' + idx + '" class="form-control"></div>';
                 h += '<div class="form-row"><label>Code MK</label><input type="text" id="data-codemk-' + idx + '" class="form-control"></div>';
                 h += '<div class="form-row"><label>Chemin de la Requête</label><input type="text" id="data-chemin-' + idx + '" class="form-control"></div>';
             } else if (isMep) {
-                h += '<p style="font-size:14px;color:#495057;margin-bottom:8px;">Confirmez la mise en production de ce canal.</p>';
+                h += '<p style="font-size:14px;color:var(--gray-700);margin-bottom:8px;">Confirmez la mise en production de ce canal.</p>';
             }
             h += '</div>';
             h += '<div class="actor-submit-row">';
@@ -1087,13 +1086,13 @@
         var stepStatus = cs.data_mise_en_prod;
         var h = '<div class="actor-section actor-section--mep" id="data-mep-section">';
         h += '<h3>🚀 Mise en production';
-        if (stepStatus === 'pending')   h += ' <span style="font-size:11px;background:#fff9c4;color:#f57f17;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ En attente</span>';
-        if (stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
+        if (stepStatus === 'pending')   h += ' <span style="font-size:11px;background:var(--amber-50);color:var(--amber);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ En attente</span>';
+        if (stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
         h += '</h3>';
-        if (!editable && data.workflow.assignments.data) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Data assigné : <strong>' + security.escapeHtml(data.workflow.assignments.data) + '</strong></p>';
+        if (!editable && data.workflow.assignments.data) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Data assigné : <strong>' + security.escapeHtml(data.workflow.assignments.data) + '</strong></p>';
 
         h += '<div id="data-mep-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
-        h += '<div id="data-mep-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
+        h += '<div id="data-mep-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
 
         if (editable) {
             h += '<div class="actor-form">';
@@ -1112,21 +1111,21 @@
         var stepStatus = cs.ebf_mise_en_prod;
         var h = '<div class="actor-section actor-section--mep" id="ebf-mep-section-' + idx + '">';
         h += '<h3>🚀 Mise en production LP';
-        if (stepStatus === 'pending')   h += ' <span style="font-size:11px;background:#fff9c4;color:#f57f17;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ En attente</span>';
-        if (stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
+        if (stepStatus === 'pending')   h += ' <span style="font-size:11px;background:var(--amber-50);color:var(--amber);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ En attente</span>';
+        if (stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
         h += '</h3>';
         if (stepStatus === 'locked') {
-            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
+            h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
             h += '</div>'; return h;
         }
         if (users && users.isCurrentUserTeamManager('ebf')) {
             h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
         } else if (!editable) {
             var _ebfDispMep = assigneesDisplay(data.workflow.assignments, 'ebf');
-            if (_ebfDispMep) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDispMep + '</strong></p>';
+            if (_ebfDispMep) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDispMep + '</strong></p>';
         }
         h += '<div id="ebf-mep-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
-        h += '<div id="ebf-mep-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
+        h += '<div id="ebf-mep-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
         if (editable) {
             h += '<div class="actor-form">';
             h += '<div class="form-row"><label>Date de mise en production effective</label><input type="date" id="ebf-mepdate-' + idx + '" class="form-control"></div>';
@@ -1149,11 +1148,11 @@
         var h = '<div class="actor-section actor-section--data' + (isRevision ? ' actor-section--revision' : '') + '" id="data-testlaunch-section">';
         h += '<h3>🧪 Lancement test en prod';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:#e3f2fd;color:#1565c0;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de MEP</span>';
-        else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Lancé</span>';
+        else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de MEP</span>';
+        else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Lancé</span>';
         h += '</h3>';
         if (stepStatus === 'locked') {
-            h += '<p style="color:#adb5bd;font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
+            h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
@@ -1161,11 +1160,11 @@
             h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'));
         } else if (!editable) {
             var _datDispLt = assigneesDisplay(data.workflow.assignments, 'data');
-            if (_datDispLt) h += '<p style="font-size:13px;color:#6c757d;margin-bottom:12px;">Data assigné(s) : <strong>' + _datDispLt + '</strong></p>';
+            if (_datDispLt) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Data assigné(s) : <strong>' + _datDispLt + '</strong></p>';
         }
 
         h += '<div id="data-testlaunch-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
-        h += '<div id="data-testlaunch-empty-' + idx + '" style="color:#6c757d;font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
+        h += '<div id="data-testlaunch-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
 
         if (editable) {
             h += '<div class="actor-form">';
@@ -1189,13 +1188,13 @@
         var cur = Array.isArray(currentAssignees) ? currentAssignees : (currentAssignees ? [currentAssignees] : []);
         var h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">';
         if (cur.length) {
-            h += '<span style="font-size:13px;color:#6c757d;">' + label + ' : <strong>' + cur.map(security.escapeHtml).join(', ') + '</strong></span>';
+            h += '<span style="font-size:13px;color:var(--muted);">' + label + ' : <strong>' + cur.map(security.escapeHtml).join(', ') + '</strong></span>';
         } else {
-            h += '<span style="font-size:13px;color:#adb5bd;font-style:italic;">' + label + ' : non assigné</span>';
+            h += '<span style="font-size:13px;color:var(--muted-2);font-style:italic;">' + label + ' : non assigné</span>';
         }
-        h += '<button class="btn-team-reassign" data-role="' + role + '" style="background:none;border:1px solid #adb5bd;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Modifier</button>';
+        h += '<button class="btn-team-reassign" data-role="' + role + '" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Modifier</button>';
         h += '</div>';
-        h += '<div id="reassign-form-' + role + '" style="display:none;background:#f5f5f5;border-radius:6px;padding:10px 12px;margin-bottom:12px;">';
+        h += '<div id="reassign-form-' + role + '" style="display:none;background:var(--line-2);border-radius:6px;padding:10px 12px;margin-bottom:12px;">';
         h += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
         teamUsers.forEach(function(u) {
             var checked = cur.indexOf(u.name) !== -1 ? ' checked' : '';
@@ -1204,7 +1203,7 @@
             h += security.escapeHtml(u.name) + '</label>';
         });
         h += '</div>';
-        h += '<button class="btn-team-reassign-save" data-role="' + role + '" style="background:#308276;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
+        h += '<button class="btn-team-reassign-save" data-role="' + role + '" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
         h += '</div>';
         return h;
     }
@@ -1214,13 +1213,13 @@
     function buildPoValidationBlock(poStepId, sourceStepId, canRevise, needsImage, channelIdx, channelVal) {
         // Si ce canal est déjà validé → afficher un badge vert
         if (channelVal === 'validated') {
-            return '<div style="background:#e8f5e9;border:1px solid #2e7d32;border-radius:8px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:600;color:#2e7d32;">✅ Ce canal a été validé</div>';
+            return '<div style="background:var(--green-50);border:1px solid var(--green-600);border-radius:8px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:600;color:var(--green-600);">✅ Ce canal a été validé</div>';
         }
         var chAttr = (channelIdx !== undefined) ? (' data-ch="' + channelIdx + '"') : '';
         var uid = poStepId + (channelIdx !== undefined ? ('-' + channelIdx) : '');
-        var h = '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:12px 14px;margin-top:12px;">';
+        var h = '<div style="background:var(--blue-50);border:1px solid var(--blue);border-radius:8px;padding:12px 14px;margin-top:12px;">';
         h += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
-        h += '<span style="font-size:13px;font-weight:600;color:#1565c0;">📤 En attente de votre validation</span>';
+        h += '<span style="font-size:13px;font-weight:600;color:var(--blue);">📤 En attente de votre validation</span>';
         if (needsImage) {
             h += '</div>';
             h += '<div style="margin-top:10px;margin-bottom:8px;">';
@@ -1232,15 +1231,15 @@
         } else {
             h += '<div style="display:flex;gap:8px;">';
         }
-        h += '<button class="btn-po-validate-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:#2e7d32;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">✅ Valider ce canal</button>';
+        h += '<button class="btn-po-validate-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:var(--green-600);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">✅ Valider ce canal</button>';
         if (canRevise) {
-            h += '<button class="btn-po-ask-revision-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:#e65100;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer;">🔄 Demander modification</button>';
+            h += '<button class="btn-po-ask-revision-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer;">🔄 Demander modification</button>';
         }
         h += '</div></div>';
         if (canRevise) {
             h += '<div id="revision-form-ch-' + uid + '" style="display:none;margin-top:10px;">';
-            h += '<textarea id="revision-comment-ch-' + uid + '" rows="3" placeholder="Décrivez la modification demandée..." style="width:100%;box-sizing:border-box;padding:8px;border:1px solid #e65100;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>';
-            h += '<button class="btn-po-send-revision-ch" data-step="' + poStepId + '"' + chAttr + ' data-source="' + sourceStepId + '" style="margin-top:8px;background:#e65100;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">📤 Envoyer la demande</button>';
+            h += '<textarea id="revision-comment-ch-' + uid + '" rows="3" placeholder="Décrivez la modification demandée..." style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--amber);border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>';
+            h += '<button class="btn-po-send-revision-ch" data-step="' + poStepId + '"' + chAttr + ' data-source="' + sourceStepId + '" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">📤 Envoyer la demande</button>';
             h += '</div>';
         }
         h += '</div>';
@@ -1258,11 +1257,11 @@
 
         var statusColors = {
             locked:             { bg: '#e0e0e0', color: '#9e9e9e', icon: '🔒' },
-            pending:            { bg: '#fff9c4', color: '#f57f17', icon: '⏳' },
-            submitted:          { bg: '#e3f2fd', color: '#1565c0', icon: '📤' },
-            validated:          { bg: '#e8f5e9', color: '#2e7d32', icon: '✅' },
-            completed:          { bg: '#c8e6c9', color: '#1b5e20', icon: '🏁' },
-            revision_requested: { bg: '#fff3e0', color: '#e65100', icon: '🔄' }
+            pending:            { bg: 'var(--amber-50)', color: 'var(--amber)', icon: '⏳' },
+            submitted:          { bg: 'var(--blue-50)', color: 'var(--blue)', icon: '📤' },
+            validated:          { bg: 'var(--green-50)', color: 'var(--green-600)', icon: '✅' },
+            completed:          { bg: '#c8e6c9', color: 'var(--green-700)', icon: '🏁' },
+            revision_requested: { bg: 'var(--amber-50)', color: 'var(--amber)', icon: '🔄' }
         };
 
         var globalSteps = data.workflow.steps || {};
@@ -1298,20 +1297,20 @@
 
         if (numCh > 0 && channelStepDefs.length > 0) {
             html += '<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px;">';
-            html += '<thead><tr><th style="text-align:left;padding:4px 8px;background:#f8fafc;border:1px solid #e2e8f0;font-weight:700;color:#64748b;">Canal</th>';
+            html += '<thead><tr><th style="text-align:left;padding:4px 8px;background:var(--line-2);border:1px solid var(--line);font-weight:700;color:var(--muted);">Canal</th>';
             channelStepDefs.forEach(function(step) {
-                html += '<th style="padding:4px 6px;background:#f8fafc;border:1px solid #e2e8f0;font-weight:700;color:#64748b;text-align:center;" title="' + step.description + '">' + step.icon + '</th>';
+                html += '<th style="padding:4px 6px;background:var(--line-2);border:1px solid var(--line);font-weight:700;color:var(--muted);text-align:center;" title="' + step.description + '">' + step.icon + '</th>';
             });
             html += '</tr></thead><tbody>';
             channels.forEach(function(ch, ci) {
                 var cs = channelSteps[ci] || {};
                 var chCompleted = isCompleted || workflow.isChannelCompleted(cs, data.requiredTeams, ch.type);
                 html += '<tr>';
-                html += '<td style="padding:4px 8px;border:1px solid #e2e8f0;font-weight:600;color:#0f172a;">' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</td>';
+                html += '<td style="padding:4px 8px;border:1px solid var(--line);font-weight:600;color:#0f172a;">' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</td>';
                 channelStepDefs.forEach(function(step) {
                     var status = chCompleted ? 'completed' : (cs[step.id] || 'locked');
                     var sc = statusColors[status] || statusColors.locked;
-                    html += '<td style="padding:4px 6px;border:1px solid #e2e8f0;text-align:center;background:' + sc.bg + ';color:' + sc.color + ';" title="' + step.label + ' : ' + status + '">' + sc.icon + '</td>';
+                    html += '<td style="padding:4px 6px;border:1px solid var(--line);text-align:center;background:' + sc.bg + ';color:' + sc.color + ';" title="' + step.label + ' : ' + status + '">' + sc.icon + '</td>';
                 });
                 html += '</tr>';
             });
@@ -1319,14 +1318,14 @@
         }
 
         if (isCompleted) {
-            html += '<div style="background:#c8e6c9;color:#1b5e20;border-radius:8px;padding:12px 16px;font-weight:700;margin-bottom:12px;">🏁 Campagne terminée !</div>';
+            html += '<div style="background:#c8e6c9;color:var(--green-700);border-radius:8px;padding:12px 16px;font-weight:700;margin-bottom:12px;">🏁 Campagne terminée !</div>';
             html += '</div>';
             return html;
         }
 
         var hasAssignments = getAssignees(assignments, 'com').length || getAssignees(assignments, 'ebf').length || getAssignees(assignments, 'data').length;
         if (hasAssignments) {
-            html += '<div style="background:#f5f5f5;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
+            html += '<div style="background:var(--line-2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
             html += '<strong>Équipes affectées :</strong> ';
             var parts = [];
             if (assignments.manager)                parts.push('Manager : ' + security.escapeHtml(assignments.manager));
@@ -1353,8 +1352,8 @@
             var _needsCom  = _requiredTeams.length === 0 || _requiredTeams.indexOf('Com')  !== -1;
             var _needsEbf  = _requiredTeams.length === 0 || _requiredTeams.indexOf('EBF')  !== -1;
             var _needsData = _requiredTeams.length === 0 || _requiredTeams.indexOf('Data') !== -1;
-            html += '<div style="background:#fff9c4;border:1px solid #f57f17;border-radius:8px;padding:14px;margin-bottom:12px;" id="assignment-form-container">';
-            html += '<h4 style="margin:0 0 12px;color:#e65100;">👥 Affecter les équipes</h4>';
+            html += '<div style="background:var(--amber-50);border:1px solid var(--amber);border-radius:8px;padding:14px;margin-bottom:12px;" id="assignment-form-container">';
+            html += '<h4 style="margin:0 0 12px;color:var(--amber);">👥 Affecter les équipes</h4>';
             if (!isGeneralManager) {
                 var _comArr = getAssignees(assignments, 'com');
                 var _ebfArr = getAssignees(assignments, 'ebf');
@@ -1391,7 +1390,7 @@
             html += '</div>';
             var _reqTeamsAttr = [_needsCom?'com':'', _needsEbf?'ebf':'', _needsData?'data':''].filter(function(x){return x;}).join(',');
             var btnLabel = isGeneralManager ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation';
-            html += '<button id="btn-validate-assignment" data-general="' + isGeneralManager + '" data-role="' + security.escapeHtml(currentUser.role) + '" data-required-teams="' + _reqTeamsAttr + '" style="margin-top:12px;background:#308276;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">' + btnLabel + '</button>';
+            html += '<button id="btn-validate-assignment" data-general="' + isGeneralManager + '" data-role="' + security.escapeHtml(currentUser.role) + '" data-required-teams="' + _reqTeamsAttr + '" style="margin-top:12px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">' + btnLabel + '</button>';
             if (!isGeneralManager) {
                 html += '<span style="margin-left:10px;font-size:12px;color:#888;">L\'étape sera validée quand tous les services requis seront renseignés.</span>';
             }
@@ -1403,8 +1402,8 @@
 
         // Résumé kick-off (visible par tous quand validé)
         if (steps.po_kickoff === 'validated' && data.kickoffDate) {
-            html += '<div style="background:#e8f5e9;border:1px solid #2e7d32;border-radius:8px;padding:14px;margin-bottom:12px;">';
-            html += '<h4 style="margin:0 0 10px;color:#1b5e20;">🚀 Kick-off réalisé le ' + security.escapeHtml(data.kickoffDate) + '</h4>';
+            html += '<div style="background:var(--green-50);border:1px solid var(--green-600);border-radius:8px;padding:14px;margin-bottom:12px;">';
+            html += '<h4 style="margin:0 0 10px;color:var(--green-700);">🚀 Kick-off réalisé le ' + security.escapeHtml(data.kickoffDate) + '</h4>';
             var kfNotes = data.kickoffPersonNotes || {};
             var kfNoteKeys = Object.keys(kfNotes);
             if (kfNoteKeys.length > 0) {
@@ -1412,8 +1411,8 @@
                 kfNoteKeys.forEach(function(person) {
                     if (kfNotes[person]) {
                         html += '<div style="background:#fff;border:1px solid #a5d6a7;border-radius:6px;padding:8px 10px;">';
-                        html += '<div style="font-size:11px;font-weight:700;color:#2e7d32;margin-bottom:4px;">' + security.escapeHtml(person) + '</div>';
-                        html += '<div style="font-size:12px;color:#374151;white-space:pre-wrap;">' + security.escapeHtml(kfNotes[person]) + '</div>';
+                        html += '<div style="font-size:11px;font-weight:700;color:var(--green-600);margin-bottom:4px;">' + security.escapeHtml(person) + '</div>';
+                        html += '<div style="font-size:12px;color:var(--gray-700);white-space:pre-wrap;">' + security.escapeHtml(kfNotes[person]) + '</div>';
                         html += '</div>';
                     }
                 });
@@ -1427,14 +1426,14 @@
             var _kfAllAssignees = getAssignees(assignments, 'com').concat(getAssignees(assignments, 'ebf')).concat(getAssignees(assignments, 'data'));
             if (_kfAllAssignees.indexOf(currentUser.name) !== -1) {
                 var _kfMyNote = (data.kickoffPersonNotes || {})[currentUser.name] || '';
-                html += '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:14px;margin-bottom:12px;" id="kickoff-personal-container">';
-                html += '<h4 style="margin:0 0 10px;color:#1565c0;">🚀 Kick-off — ma note</h4>';
-                html += '<div style="font-size:12px;color:#64748b;margin-bottom:10px;">Saisissez vos notes pour le kick-off. Le PO organisera la réunion.</div>';
+                html += '<div style="background:var(--blue-50);border:1px solid var(--blue);border-radius:8px;padding:14px;margin-bottom:12px;" id="kickoff-personal-container">';
+                html += '<h4 style="margin:0 0 10px;color:var(--blue);">🚀 Kick-off — ma note</h4>';
+                html += '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Saisissez vos notes pour le kick-off. Le PO organisera la réunion.</div>';
                 html += '<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:8px 10px;">';
-                html += '<div style="font-size:11px;font-weight:700;color:#1565c0;margin-bottom:4px;">' + security.escapeHtml(currentUser.name) + '</div>';
+                html += '<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px;">' + security.escapeHtml(currentUser.name) + '</div>';
                 html += '<textarea id="kickoff-my-note" class="form-control" rows="3" style="resize:vertical;font-size:13px;" placeholder="Vos notes, idées, questions pour le kick-off...">' + security.escapeHtml(_kfMyNote) + '</textarea>';
                 html += '</div>';
-                html += '<button id="btn-save-kickoff-note" style="margin-top:12px;background:#1565c0;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">💾 Sauvegarder ma note</button>';
+                html += '<button id="btn-save-kickoff-note" style="margin-top:12px;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">💾 Sauvegarder ma note</button>';
                 html += '</div>';
             }
         }
@@ -1450,28 +1449,28 @@
             getAssignees(assignments, 'data').forEach(function(n) { kfParticipants.push({ role: 'Data', name: n }); });
             var kfExistingNotes = data.kickoffPersonNotes || {};
 
-            html += '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:14px;margin-bottom:12px;" id="kickoff-form-container">';
-            html += '<h4 style="margin:0 0 12px;color:#1565c0;">🚀 Organiser le Kick-off</h4>';
+            html += '<div style="background:var(--blue-50);border:1px solid var(--blue);border-radius:8px;padding:14px;margin-bottom:12px;" id="kickoff-form-container">';
+            html += '<h4 style="margin:0 0 12px;color:var(--blue);">🚀 Organiser le Kick-off</h4>';
             html += '<div style="margin-bottom:14px;">';
             html += '<a href="' + teamsUrl + '" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:8px;background:#5558af;color:#fff;border-radius:6px;padding:8px 16px;font-weight:600;font-size:13px;text-decoration:none;">📅 Planifier sur Teams</a>';
-            html += '<span style="margin-left:10px;font-size:12px;color:#64748b;">Ouvre l\'agenda Teams avec le nom de la campagne pré-rempli</span>';
+            html += '<span style="margin-left:10px;font-size:12px;color:var(--muted);">Ouvre l\'agenda Teams avec le nom de la campagne pré-rempli</span>';
             html += '</div>';
-            html += '<div class="form-row"><label style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;">Date du kick-off</label>';
+            html += '<div class="form-row"><label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;">Date du kick-off</label>';
             html += '<input type="date" id="kickoff-date-input" class="form-control" value="' + security.escapeHtml(data.kickoffDate || '') + '"></div>';
             if (kfParticipants.length > 0) {
                 html += '<div class="form-row" style="margin-top:12px;">';
-                html += '<label style="font-size:12px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px;">Notes par personne <small style="font-weight:normal;text-transform:none;">(optionnel)</small></label>';
+                html += '<label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px;">Notes par personne <small style="font-weight:normal;text-transform:none;">(optionnel)</small></label>';
                 html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">';
                 kfParticipants.forEach(function(p) {
                     html += '<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:8px 10px;">';
-                    html += '<div style="font-size:11px;font-weight:700;color:#1565c0;margin-bottom:4px;">' + security.escapeHtml(p.role) + ' \u2014 ' + security.escapeHtml(p.name) + '</div>';
+                    html += '<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px;">' + security.escapeHtml(p.role) + ' \u2014 ' + security.escapeHtml(p.name) + '</div>';
                     html += '<textarea class="kickoff-person-note form-control" data-person="' + security.escapeHtml(p.name) + '" rows="2" style="resize:vertical;font-size:12px;" placeholder="Notes pour ' + security.escapeHtml(p.name) + '...">' + security.escapeHtml(kfExistingNotes[p.name] || '') + '</textarea>';
                     html += '</div>';
                 });
                 html += '</div>';
                 html += '</div>';
             }
-            html += '<button id="btn-validate-kickoff" style="margin-top:14px;background:#1565c0;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">✅ Kick-off réalisé</button>';
+            html += '<button id="btn-validate-kickoff" style="margin-top:14px;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">✅ Kick-off réalisé</button>';
             html += '</div>';
         }
 
@@ -1490,15 +1489,15 @@
             return h;
         }
 
-        var poStyle    = { bg:'#fff8e1', border:'#f9a825', color:'#e65100', icon:'⚠️', btnBg:'#f9a825' };
-        var actStyle   = { bg:'#e3f2fd', border:'#1565c0', color:'#1565c0', icon:'⚡', btnBg:'#1565c0' };
-        var revStyle   = { bg:'#fff3e0', border:'#e65100', color:'#e65100', icon:'🔄', btnBg:'#e65100' };
+        var poStyle    = { bg:'#fff8e1', border:'var(--amber)', color:'var(--amber)', icon:'⚠️', btnBg:'var(--amber)' };
+        var actStyle   = { bg:'var(--blue-50)', border:'var(--blue)', color:'var(--blue)', icon:'⚡', btnBg:'var(--blue)' };
+        var revStyle   = { bg:'var(--amber-50)', border:'var(--amber)', color:'var(--amber)', icon:'🔄', btnBg:'var(--amber)' };
 
         // PO : validations en attente
         var isPO = users.isCurrentUserPO(data);
         if (isPO) {
             if (steps.po_kickoff === 'pending')
-                html += '<div style="background:#e3f2fd;border:1px solid #1565c0;border-radius:8px;padding:12px 14px;margin-bottom:8px;font-size:13px;font-weight:600;color:#1565c0;">🚀 Kick-off à organiser avec les équipes affectées</div>';
+                html += '<div style="background:var(--blue-50);border:1px solid var(--blue);border-radius:8px;padding:12px 14px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--blue);">🚀 Kick-off à organiser avec les équipes affectées</div>';
             [
                 { id: 'po_validation_maquette',  label: 'Validation requise : <strong>Maquette Com</strong>' },
                 { id: 'po_validation_bat',       label: 'Validation requise : <strong>Réalisation BAT</strong>' },
@@ -1808,9 +1807,9 @@
                 var el  = document.getElementById('com-image-preview-' + idx);
                 if (!el) return;
                 if (file.type.startsWith('image/')) {
-                    el.innerHTML = '<img src="' + url + '" alt="Aperçu maquette" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+                    el.innerHTML = '<img src="' + url + '" alt="Aperçu maquette" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
                 } else {
-                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier maquette</a>';
+                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier maquette</a>';
                 }
             })
             .catch(function(err) {
@@ -1830,9 +1829,9 @@
                 var el  = document.getElementById('bat-image-preview-' + idx);
                 if (!el) return;
                 if (file.type.startsWith('image/')) {
-                    el.innerHTML = '<img src="' + url + '" alt="Aperçu BAT" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+                    el.innerHTML = '<img src="' + url + '" alt="Aperçu BAT" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
                 } else {
-                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier BAT</a>';
+                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier BAT</a>';
                 }
             })
             .catch(function(err) {
@@ -1852,9 +1851,9 @@
                 var el  = document.getElementById('testprod-image-preview-' + idx);
                 if (!el) return;
                 if (file.type.startsWith('image/')) {
-                    el.innerHTML = '<img src="' + url + '" alt="Aperçu test prod" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+                    el.innerHTML = '<img src="' + url + '" alt="Aperçu test prod" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
                 } else {
-                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:#308276;font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier test prod</a>';
+                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier test prod</a>';
                 }
             })
             .catch(function(err) {
@@ -2203,7 +2202,7 @@
                 if (!previewEl || !input.files || !input.files[0]) return;
                 var file = input.files[0];
                 var url = URL.createObjectURL(file);
-                previewEl.innerHTML = '<img src="' + url + '" alt="Aperçu capture" onclick="openLightbox(this.src)" style="max-width:100%;max-height:200px;border-radius:6px;border:1px solid #dee2e6;margin-top:4px;cursor:zoom-in;">';
+                previewEl.innerHTML = '<img src="' + url + '" alt="Aperçu capture" onclick="openLightbox(this.src)" style="max-width:100%;max-height:200px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
             });
         });
 
@@ -2570,7 +2569,7 @@
         var isEmpty = !tree || (tree.folders.length === 0 && tree.files.length === 0);
 
         if (isEmpty) {
-            html += '<p style="color:#94a3b8;font-size:13px;margin:0 0 12px;">Aucun document pour l\'instant.</p>';
+            html += '<p style="color:var(--muted-2);font-size:13px;margin:0 0 12px;">Aucun document pour l\'instant.</p>';
         } else {
             // Fichiers à la racine de documents/
             if (tree.files.length > 0) {
@@ -2582,11 +2581,11 @@
             }
             // Sous-dossiers
             tree.folders.forEach(function(folder) {
-                html += '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
-                html += '<div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">📂 ' + security.escapeHtml(folder.name) + ' <span style="font-weight:400;color:#94a3b8;font-size:12px;">(' + folder.files.length + ' fichier' + (folder.files.length !== 1 ? 's' : '') + ')</span></div>';
+                html += '<div style="background:var(--line-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
+                html += '<div style="font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:6px;">📂 ' + security.escapeHtml(folder.name) + ' <span style="font-weight:400;color:var(--muted-2);font-size:12px;">(' + folder.files.length + ' fichier' + (folder.files.length !== 1 ? 's' : '') + ')</span></div>';
                 if (folder.files.length > 0) {
                     folder.files.forEach(function(f) {
-                        html += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0 2px 16px;font-size:12px;color:#374151;">📄 ' + security.escapeHtml(f) + '</div>';
+                        html += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0 2px 16px;font-size:12px;color:var(--gray-700);">📄 ' + security.escapeHtml(f) + '</div>';
                     });
                 }
                 // Bouton upload dans ce dossier
@@ -2597,9 +2596,9 @@
 
         // Actions globales
         html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">';
-        html += '<button id="btn-new-doc-folder" style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📁 Nouveau dossier</button>';
+        html += '<button id="btn-new-doc-folder" style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📁 Nouveau dossier</button>';
         if (!isEmpty || (tree && tree.folders.length > 0)) {
-            html += '<label style="background:#f1f5f9;color:#374151;border:1px solid #e2e8f0;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📎 Ajouter à la racine<input type="file" id="doc-root-file-input" style="display:none;" multiple></label>';
+            html += '<label style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📎 Ajouter à la racine<input type="file" id="doc-root-file-input" style="display:none;" multiple></label>';
         }
         html += '</div>';
         contentEl.innerHTML = html;
@@ -2690,7 +2689,7 @@
 
         // Rendu des messages
         if (messages.length === 0) {
-            list.innerHTML = '<p style="color:#94a3b8;font-size:13px;margin:0;">Aucun message pour l\'instant. Soyez le premier à commenter !</p>';
+            list.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun message pour l\'instant. Soyez le premier à commenter !</p>';
         } else {
             list.innerHTML = messages.map(function(msg, idx) {
                 var parts    = (msg.author || '?').trim().split(/\s+/);
@@ -2699,7 +2698,7 @@
                 var dateStr  = dt.toLocaleDateString('fr-FR') + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                 var likes    = msg.likes || [];
                 var hasLiked = currentUser && likes.indexOf(currentUser.name) >= 0;
-                var avatarColors = ['#16a34a','#3b82f6','#f97316','#8b5cf6','#ec4899','#0891b2'];
+                var avatarColors = ['var(--primary)','#3b82f6','#f97316','#8b5cf6','#ec4899','#0891b2'];
                 var colorIdx = (msg.author || '').split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0) % avatarColors.length;
                 return '<div class="discussion-msg">'
                     + '<div class="discussion-msg-header">'
