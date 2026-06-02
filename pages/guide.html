@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
     <style>
+        /* Le contenu défile dans #guide-scroll (pas la fenêtre) → ancrage du sommaire fiable */
+        html, body { height: 100%; overflow: hidden; }
+        .main-container { height: 100vh; overflow: hidden; }
         .guide-container {
             max-width: 1160px;
             margin: 0 auto;
@@ -51,6 +54,12 @@
             margin: 24px 0 8px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+        }
+        .guide-container h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 18px 0 6px;
         }
         .guide-container p { margin: 0 0 12px; }
         .guide-container ul, .guide-container ol {
@@ -315,6 +324,11 @@
             var line = raw;
 
             // Headings
+            if (/^#### /.test(line)) {
+                closeLists(); closeTable();
+                out += '<h4>' + inline(line.slice(5)) + '</h4>';
+                return;
+            }
             if (/^### /.test(line)) {
                 closeLists(); closeTable();
                 var txt = line.slice(4);
