@@ -1041,15 +1041,14 @@
 
             html += '<td colspan="' + weeks.length + '" style="position:relative;height:' + rowHeight + 'px;padding:0;">';
 
-            // Week background strips
+            // Trames de fond par semaine — grille de calendrier discrète
             weeks.forEach(function(w, wi) {
-                var bgStyle = '';
-                if (today >= w.start && today <= w.end) bgStyle = 'background:var(--green-50);';
-                else if (wi % 2 === 1) bgStyle = 'background:var(--line-2);';
-                else bgStyle = 'background:#fff;';
+                var isToday = today >= w.start && today <= w.end;
+                var bgStyle = isToday ? 'background:var(--green-50);box-shadow:inset 2px 0 0 var(--primary);'
+                                      : (wi % 2 === 1 ? 'background:rgba(12,30,22,0.018);' : '');
                 var leftPct = weekLeftPct(w.start, rangeStart, totalDays);
                 var widthPct = weekWidthPct(w.start, w.end, rangeStart, totalDays);
-                html += '<div style="position:absolute;top:0;left:' + leftPct + '%;width:' + widthPct + '%;height:100%;' + bgStyle + 'border-right:1px solid var(--line);"></div>';
+                html += '<div style="position:absolute;top:0;left:' + leftPct + '%;width:' + widthPct + '%;height:100%;' + bgStyle + 'border-right:1px solid rgba(12,30,22,0.05);"></div>';
             });
 
             // Render campaign blocks with lane positioning
