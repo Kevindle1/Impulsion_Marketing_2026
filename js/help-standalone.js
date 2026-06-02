@@ -81,16 +81,20 @@
             icon: '📋',
             content: [
                 {
-                    subtitle: 'Informations complètes',
-                    text: 'Consultez toutes les informations de la campagne : dates, segments, UB, type, canaux, etc.'
+                    subtitle: 'Onglets',
+                    text: 'L\'onglet « Infos campagne » regroupe les informations générales, segments, univers de besoin, produit, documents et la discussion. Un onglet par canal donne accès au travail des équipes (COM, EBF, Data).'
                 },
                 {
-                    subtitle: 'Livrables',
-                    text: 'La liste des canaux affiche l\'état de chaque livrable (vide, en cours, ou complet). Cliquez sur un canal pour voir ses dépôts.'
+                    subtitle: 'Suivi du workflow',
+                    text: 'Le stepper en haut montre l\'avancement : étapes de préparation (saisie, affectation, kick-off) puis, pour chaque canal, les étapes par équipe. Couleurs : vert = fait, ambre = en cours, bleu = en validation, rouge = révision demandée, gris = à venir.'
                 },
                 {
-                    subtitle: 'Navigation',
-                    text: 'Utilisez les boutons pour accéder directement au dépôt d\'un livrable ou retourner à la liste des campagnes.'
+                    subtitle: 'Dépôts et validations',
+                    text: 'Dans l\'onglet d\'un canal, l\'acteur concerné dépose son livrable (maquette, BAT, ciblage, test, mise en prod) puis le soumet. Le PO valide chaque étape ou demande une révision.'
+                },
+                {
+                    subtitle: 'Documents & discussion',
+                    text: 'Ajoutez des fichiers dans l\'espace Documents et échangez avec l\'équipe via la Discussion en bas de l\'onglet Infos.'
                 }
             ]
         },
