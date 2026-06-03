@@ -1088,7 +1088,7 @@
                         </div>
 
                         <div class="form-group" style="margin-top:16px;">
-                            <label>Univers de besoin <span style="color:var(--red);font-weight:700;">*</span> <small style="font-weight:400;color:var(--muted);">(au moins un — sert à nommer le dossier)</small></label>
+                            <label>Univers de besoin <small style="font-weight:400;color:var(--muted);">(facultatif — cocher ce qui s'applique)</small></label>
                             <div id="ubContainer" style="margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;">
                                 <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Epargne / Collecte"> Epargne / Collecte</label>
                                 <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Crédits"> Crédits</label>
@@ -1729,27 +1729,12 @@
                     }
                 });
 
-                // Étape 2 : au moins un univers de besoin est obligatoire (il nomme le
-                // dossier de la campagne). On bloque ici, avec un message clair, plutôt
-                // que de laisser l'erreur tomber à la validation finale.
-                var customMsg = '';
-                if (step === 2 && currentFormStep.querySelectorAll('.ub-cb:checked').length === 0) {
-                    allValid = false;
-                    customMsg = 'Sélectionnez au moins un univers de besoin.';
-                    var ubBox = document.getElementById('ubContainer');
-                    if (ubBox) ubBox.style.borderColor = 'var(--red)';
-                } else {
-                    var ubBox2 = document.getElementById('ubContainer');
-                    if (ubBox2) ubBox2.style.borderColor = '';
-                }
-
                 if (!allValid) {
                     var errors = window.ImpulsionMarketing.errors;
-                    var msg = customMsg || 'Veuillez remplir tous les champs obligatoires';
                     if (errors && errors.showNotification) {
-                        errors.showNotification(msg, 'error');
+                        errors.showNotification('Veuillez remplir tous les champs obligatoires', 'error');
                     } else {
-                        alert(msg);
+                        alert('Veuillez remplir tous les champs obligatoires');
                     }
                 }
 
@@ -2409,11 +2394,12 @@
 
                 const taskName = $("#taskName").value.trim();
 
-                // Récupérer le premier UB coché
+                // Univers de besoin : facultatif. S'il est renseigné, il préfixe le nom
+                // du dossier ; sinon le dossier prend simplement le nom de la campagne.
                 const firstUBEl = document.querySelector('.ub-cb:checked');
                 const firstUB = firstUBEl ? firstUBEl.value : "";
 
-                if (!taskName || !firstUB) throw new Error("Nom de tâche et au moins un univers de besoin requis.");
+                if (!taskName) throw new Error("Le nom de la campagne est requis.");
 
                 let folderName;
                 let campaignDir;
@@ -2424,9 +2410,10 @@
                     campaignDir = await state.campaignsFolder.getDirectoryHandle(folderName);
                 } else {
                     // Mode création : créer un nouveau dossier
-                    const sanitizedUB1 = sanitizeFileName(firstUB);
                     const sanitizedTaskName = sanitizeFileName(taskName);
-                    folderName = `[${sanitizedUB1}] ${sanitizedTaskName}`;
+                    folderName = firstUB
+                        ? `[${sanitizeFileName(firstUB)}] ${sanitizedTaskName}`
+                        : sanitizedTaskName;
                     campaignDir = await state.campaignsFolder.getDirectoryHandle(folderName, { create: true });
                 }
 
