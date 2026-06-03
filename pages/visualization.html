@@ -364,12 +364,10 @@
         // =====================================================================
         window.addEventListener('load', function() {
             help.initHelp('visualization');
-            // Attendre que la config (éventuellement surchargée par l'admin) soit appliquée
-            // pour que les filtres reflètent les listes éditées.
-            var adminReady = (window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig && window.ImpulsionMarketing.adminConfig.ready)
-                ? window.ImpulsionMarketing.adminConfig.ready
-                : Promise.resolve();
-            adminReady.then(initPage);
+            // initPage récupère lui-même le dossier ; les filtres sont peuplés depuis
+            // la config en mémoire (surchargée par l'admin si déjà chargée). On ne bloque
+            // pas le chargement de la page sur une vérification de permission disque.
+            initPage();
         });
 
         function initPage() {
