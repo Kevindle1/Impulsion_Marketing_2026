@@ -2607,13 +2607,13 @@
                                     nextSub(sit);
                                 }).catch(function() { folder.files = subFiles; res(); });
                             }
-                            entry.values().then(nextSub);
+                            nextSub(entry.values());
                         }));
                     }
                     next(it);
                 }).catch(function() { resolve(result); });
             }
-            docsDir.values().then(next);
+            next(docsDir.values());
         });
     }
 
@@ -2627,40 +2627,50 @@
         var html = '';
         var isEmpty = !tree || (tree.folders.length === 0 && tree.files.length === 0);
 
+        // Rendu d'un fichier cliquable (ouverture dans un nouvel onglet).
+        function fileLine(name, folderName, indent) {
+            return '<a href="#" class="doc-file-link" data-folder="' + (folderName ? security.escapeHtml(folderName) : '')
+                + '" data-name="' + security.escapeHtml(name) + '" title="Ouvrir"'
+                + ' style="display:flex;align-items:center;gap:8px;padding:' + (indent ? '2px 0 2px 16px' : '4px 0')
+                + ';font-size:' + (indent ? '12px' : '13px') + ';color:var(--primary);text-decoration:none;">📄 '
+                + security.escapeHtml(name) + '</a>';
+        }
+
         if (isEmpty) {
             html += '<p style="color:var(--muted-2);font-size:13px;margin:0 0 12px;">Aucun document pour l\'instant.</p>';
         } else {
             // Fichiers à la racine de documents/
             if (tree.files.length > 0) {
                 html += '<div style="margin-bottom:10px;">';
-                tree.files.forEach(function(f) {
-                    html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;">📄 ' + security.escapeHtml(f) + '</div>';
-                });
+                tree.files.forEach(function(f) { html += fileLine(f, null, false); });
                 html += '</div>';
             }
             // Sous-dossiers
             tree.folders.forEach(function(folder) {
                 html += '<div style="background:var(--line-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
                 html += '<div style="font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:6px;">📂 ' + security.escapeHtml(folder.name) + ' <span style="font-weight:400;color:var(--muted-2);font-size:12px;">(' + folder.files.length + ' fichier' + (folder.files.length !== 1 ? 's' : '') + ')</span></div>';
-                if (folder.files.length > 0) {
-                    folder.files.forEach(function(f) {
-                        html += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0 2px 16px;font-size:12px;color:var(--gray-700);">📄 ' + security.escapeHtml(f) + '</div>';
-                    });
-                }
+                folder.files.forEach(function(f) { html += fileLine(f, folder.name, true); });
                 // Bouton upload dans ce dossier
                 html += '<label style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">📎 Ajouter un fichier<input type="file" style="display:none;" data-folder="' + security.escapeHtml(folder.name) + '" class="doc-file-input" multiple></label>';
                 html += '</div>';
             });
         }
 
-        // Actions globales
+        // Actions globales : créer un dossier et ajouter des fichiers à la racine
+        // (toujours disponibles, même quand l'espace est vide).
         html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">';
         html += '<button id="btn-new-doc-folder" style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📁 Nouveau dossier</button>';
-        if (!isEmpty || (tree && tree.folders.length > 0)) {
-            html += '<label style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📎 Ajouter à la racine<input type="file" id="doc-root-file-input" style="display:none;" multiple></label>';
-        }
+        html += '<label style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📎 Ajouter des fichiers<input type="file" id="doc-root-file-input" style="display:none;" multiple></label>';
         html += '</div>';
         contentEl.innerHTML = html;
+
+        // Event : ouvrir un fichier
+        contentEl.querySelectorAll('.doc-file-link').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                openDocFile(campaignName, link.getAttribute('data-folder') || null, link.getAttribute('data-name'));
+            });
+        });
 
         // Event : nouveau dossier
         var btnNewFolder = document.getElementById('btn-new-doc-folder');
@@ -2712,6 +2722,23 @@
             })
             .then(function() { loadDocuments(campaignName); })
             .catch(function(e) { alert('Erreur upload : ' + e.message); });
+    }
+
+    function openDocFile(campaignName, subFolderName, fileName) {
+        currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(d) { return d.getDirectoryHandle('documents'); })
+            .then(function(docsDir) {
+                return subFolderName ? docsDir.getDirectoryHandle(subFolderName) : docsDir;
+            })
+            .then(function(dir) { return dir.getFileHandle(fileName); })
+            .then(function(fh) { return fh.getFile(); })
+            .then(function(file) {
+                var url = URL.createObjectURL(file);
+                window.open(url, '_blank');
+                setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+            })
+            .catch(function(e) { alert('Impossible d\'ouvrir le fichier : ' + e.message); });
     }
 
     // ── Discussion ──────────────────────────────────────────
