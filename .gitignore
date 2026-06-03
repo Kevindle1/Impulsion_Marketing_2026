@@ -13,11 +13,9 @@ npm-debug.log*
 *.xlsm
 *.xlsx
 *.xls
-# Exception : on autorise les fichiers d'exemple/structure placés dans docs/
+# Exception : on autorise les fichiers .xlsx d'exemple/structure placés dans docs/
 # (ex. le fichier de suivi hebdomadaire « Suivi MDC-MKD_12mois_*.xlsx »).
 !docs/*.xlsx
-!docs/*.xls
-!docs/*.xlsm
 
 # Système
 .DS_Store
