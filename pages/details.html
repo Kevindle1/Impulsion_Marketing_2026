@@ -2688,7 +2688,7 @@
             }
             // Sous-dossiers
             tree.folders.forEach(function(folder) {
-                html += '<div style="background:var(--line-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
+                html += '<div class="doc-folder-card" data-folder="' + security.escapeHtml(folder.name) + '" style="background:var(--line-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:8px;">';
                 html += '<div style="font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:6px;">📂 ' + security.escapeHtml(folder.name) + ' <span style="font-weight:400;color:var(--muted-2);font-size:12px;">(' + folder.files.length + ' fichier' + (folder.files.length !== 1 ? 's' : '') + ')</span></div>';
                 folder.files.forEach(function(f) { html += fileLine(f, folder.name, true); });
                 // Bouton upload dans ce dossier
@@ -2703,7 +2703,27 @@
         html += '<button id="btn-new-doc-folder" style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📁 Nouveau dossier</button>';
         html += '<label style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:13px;">📎 Ajouter des fichiers<input type="file" id="doc-root-file-input" style="display:none;" multiple></label>';
         html += '</div>';
+
+        // Zone de glisser-déposer (racine). On peut aussi déposer directement sur un dossier.
+        html += '<div id="doc-dropzone" style="margin-top:10px;border:2px dashed var(--line);border-radius:8px;padding:16px;text-align:center;color:var(--muted-2);font-size:13px;transition:background .15s,border-color .15s;">⬇️ Glissez-déposez des fichiers ici (PDF, image, Excel…)<br><span style="font-size:11px;">déposez sur un dossier ci-dessus pour l\'y ranger</span></div>';
         contentEl.innerHTML = html;
+
+        // Glisser-déposer : zone racine + chaque dossier comme cible.
+        function setupDrop(el, folderName) {
+            if (!el || !campDir) return;
+            el.addEventListener('dragover', function(e) { e.preventDefault(); el.style.borderColor = 'var(--primary)'; el.style.background = '#eff6ff'; });
+            el.addEventListener('dragleave', function() { el.style.borderColor = ''; el.style.background = ''; });
+            el.addEventListener('drop', function(e) {
+                e.preventDefault();
+                el.style.borderColor = ''; el.style.background = '';
+                var files = (e.dataTransfer && e.dataTransfer.files) ? Array.prototype.slice.call(e.dataTransfer.files) : [];
+                if (files.length) uploadFiles(campDir, campaignName, files, folderName);
+            });
+        }
+        setupDrop(document.getElementById('doc-dropzone'), null);
+        contentEl.querySelectorAll('.doc-folder-card').forEach(function(card) {
+            setupDrop(card, card.getAttribute('data-folder'));
+        });
 
         // Event : ouvrir un fichier
         contentEl.querySelectorAll('.doc-file-link').forEach(function(link) {
@@ -2754,6 +2774,20 @@
 
     function uploadFiles(campDir, campaignName, files, subFolderName) {
         if (!files || files.length === 0) return;
+        var n = files.length;
+        var label = n + ' fichier' + (n > 1 ? 's' : '');
+        var dest = subFolderName ? ' dans « ' + subFolderName + ' »' : '';
+
+        // Retour visuel pendant l'écriture : bannière dans la zone documents.
+        var contentEl = document.getElementById('documents-content');
+        var banner = null;
+        if (contentEl) {
+            banner = document.createElement('div');
+            banner.textContent = '⏳ Envoi de ' + label + dest + ' en cours…';
+            banner.style.cssText = 'background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:10px;';
+            contentEl.insertBefore(banner, contentEl.firstChild);
+        }
+
         campDir.getDirectoryHandle('documents', { create: true })
             .then(function(docsDir) {
                 var targetDir = subFolderName
@@ -2767,8 +2801,14 @@
                     }));
                 });
             })
-            .then(function() { loadDocuments(campaignName); })
-            .catch(function(e) { notify('Erreur upload : ' + e.message, 'error'); });
+            .then(function() {
+                notify(label + dest + ' ajouté' + (n > 1 ? 's' : '') + ' ✓', 'success');
+                loadDocuments(campaignName); // re-render (retire la bannière)
+            })
+            .catch(function(e) {
+                if (banner) banner.remove();
+                notify('Erreur upload : ' + e.message, 'error');
+            });
     }
 
     function openDocFile(campaignName, subFolderName, fileName) {
