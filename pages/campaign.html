@@ -1707,6 +1707,32 @@
                     }
                 });
 
+                // Cohérence des dates (étape 1) : la saisie et le kick-off ne peuvent pas
+                // être postérieurs au lancement. Les valeurs sont au format ISO (YYYY-MM-DD),
+                // donc une comparaison de chaînes suffit pour l'ordre chronologique.
+                if (step === 1 && allValid) {
+                    var launchEl  = document.getElementById('launchDate');
+                    var saisieEl  = document.getElementById('instantiation');
+                    var kickoffEl = document.getElementById('kickoffDate');
+                    if (kickoffEl) kickoffEl.style.borderColor = '';
+                    var launch  = launchEl  && launchEl.value  ? launchEl.value  : null;
+                    var saisie  = saisieEl  && saisieEl.value  ? saisieEl.value  : null;
+                    var kickoff = kickoffEl && kickoffEl.value ? kickoffEl.value : null;
+                    var dateMsg = '';
+                    if (launch && saisie && saisie > launch) {
+                        dateMsg = 'La date de saisie ne peut pas être postérieure à la date de lancement.';
+                        if (saisieEl) saisieEl.style.borderColor = 'var(--red)';
+                    } else if (launch && kickoff && kickoff > launch) {
+                        dateMsg = 'La date de kick-off ne peut pas être postérieure à la date de lancement.';
+                        if (kickoffEl) kickoffEl.style.borderColor = 'var(--red)';
+                    }
+                    if (dateMsg) {
+                        if (launchEl) launchEl.style.borderColor = 'var(--red)';
+                        notify(dateMsg, 'warning');
+                        return false;
+                    }
+                }
+
                 if (!allValid) {
                     notify('Veuillez remplir tous les champs obligatoires', 'warning');
                 }
