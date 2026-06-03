@@ -2970,11 +2970,117 @@
         return html;
     }
 
+    var BILAN_COLORS = ['#00875A', '#2563EB', '#E8A100', '#7C3AED', '#E2001A', '#0891b2', '#65a30d', '#db2777'];
+
+    // Agrège les lignes d'un canal en un jeu de valeurs : sommes pour les volumes/leads,
+    // moyenne pondérée par les envois pour les taux.
+    function bilanAggregate(rows) {
+        var agg = {};
+        ['Nb_Envois', 'Nb_communications', 'Nb_MDC_Actifs', 'Nb_leads'].forEach(function (k) {
+            var s = 0, any = false;
+            rows.forEach(function (o) { var n = bilanToNumber(o[k]); if (n != null) { s += n; any = true; } });
+            agg[k] = any ? s : null;
+        });
+        BILAN_CHART_RATES.forEach(function (k) {
+            var wsum = 0, w = 0, ssum = 0, c = 0;
+            rows.forEach(function (o) {
+                var n = bilanToNumber(o[k]);
+                if (n != null) { var e = bilanToNumber(o.Nb_Envois) || 0; wsum += n * e; w += e; ssum += n; c++; }
+            });
+            agg[k] = (w > 0) ? (wsum / w) : (c > 0 ? ssum / c : null);
+        });
+        return agg;
+    }
+
+    function buildBilanSeries(channels, results) {
+        var series = [];
+        channels.forEach(function (ch, i) {
+            var res = results[i];
+            if (res && res.rows && res.rows.length) {
+                series.push({ name: ch.deliverableName || ('Canal ' + (i + 1)), color: BILAN_COLORS[i % BILAN_COLORS.length], agg: bilanAggregate(res.rows) });
+            }
+        });
+        return series;
+    }
+
+    // Graphe en barres groupées (SVG autonome). groups: libellés X ; series: [{name,color,values[]}].
+    function svgGroupedBars(groups, series, opts) {
+        opts = opts || {};
+        var unit = opts.unit || '';
+        var W = 640, H = opts.height || 230;
+        var padL = 34, padR = 10, padT = 14, padB = 40;
+        var plotW = W - padL - padR, plotH = H - padT - padB;
+        var maxV = 0;
+        series.forEach(function (s) { s.values.forEach(function (v) { if (v != null && v > maxV) maxV = v; }); });
+        if (maxV <= 0) maxV = 1;
+        var esc = security.escapeHtml;
+        var g = groups.length || 1, n = series.length || 1;
+        var groupW = plotW / g, barGap = 3;
+        var barW = Math.max(5, Math.min(46, (groupW * 0.72) / n));
+        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;font-family:inherit;">';
+        [0, 0.5, 1].forEach(function (t) {
+            var y = padT + plotH - t * plotH;
+            svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="#eaefec"/>';
+            svg += '<text x="' + (padL - 4) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="#8b988f">' + (Math.round(maxV * t * 10) / 10) + '</text>';
+        });
+        groups.forEach(function (gl, gi) {
+            var gx = padL + gi * groupW;
+            var clusterW = n * barW + (n - 1) * barGap;
+            var startX = gx + (groupW - clusterW) / 2;
+            series.forEach(function (s, si) {
+                var v = s.values[gi];
+                var x = startX + si * (barW + barGap);
+                if (v != null) {
+                    var hh = (v / maxV) * plotH, y = padT + plotH - hh;
+                    svg += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(0, hh).toFixed(1) + '" rx="2" fill="' + s.color + '"><title>' + esc(s.name + ' — ' + gl + ' : ' + (Math.round(v * 10) / 10) + unit) + '</title></rect>';
+                    if (barW >= 16) svg += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" text-anchor="middle" font-size="9" fill="#33403a">' + (Math.round(v * 10) / 10) + '</text>';
+                }
+            });
+            svg += '<text x="' + (gx + groupW / 2).toFixed(1) + '" y="' + (padT + plotH + 14) + '" text-anchor="middle" font-size="10" fill="#33403a">' + esc(gl) + '</text>';
+        });
+        svg += '</svg>';
+        var legend = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 2px;">';
+        series.forEach(function (s) { legend += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#33403a;"><span style="width:10px;height:10px;border-radius:2px;background:' + s.color + ';display:inline-block;"></span>' + esc(s.name) + '</span>'; });
+        legend += '</div>';
+        return legend + svg;
+    }
+
+    // Bloc graphiques : taux d'engagement (groupés) + leads. `extra` = série de comparaison.
+    function renderBilanCharts(series, extra) {
+        var all = series.slice(); if (extra) all.push(extra);
+        if (!all.length) return '';
+        var rateLabels = { Tx_Ouvreurs: 'Ouverture', Tx_Cliqueurs: 'Clic', Tx_Desabonnement: 'Désab.', Tx_Reussite: 'Réussite' };
+        var rateGroups = BILAN_CHART_RATES.map(function (k) { return rateLabels[k]; });
+        var rateSeries = all.map(function (s) { return { name: s.name, color: s.color, values: BILAN_CHART_RATES.map(function (k) { return s.agg[k]; }) }; });
+        var hasRates = rateSeries.some(function (s) { return s.values.some(function (v) { return v != null; }); });
+        var leadsGroups = all.map(function (s) { return s.name; });
+        var leadsSeries = [{ name: 'Leads', color: '#7C3AED', values: all.map(function (s) { return s.agg.Nb_leads; }) }];
+        var hasLeads = all.some(function (s) { return s.agg.Nb_leads != null; });
+        var h = '';
+        h += '<div style="margin-bottom:14px;"><div style="font-weight:600;font-size:13px;margin-bottom:4px;">Taux d\'engagement (%)</div>';
+        h += hasRates ? svgGroupedBars(rateGroups, rateSeries, { unit: '%' }) : '<div style="font-size:12px;color:var(--muted-2);">Aucun taux disponible pour ces canaux.</div>';
+        h += '</div>';
+        h += '<div><div style="font-weight:600;font-size:13px;margin-bottom:4px;">Leads</div>';
+        h += hasLeads ? svgGroupedBars(leadsGroups, leadsSeries, { unit: '' }) : '<div style="font-size:12px;color:var(--muted-2);">Aucun lead renseigné.</div>';
+        h += '</div>';
+        return h;
+    }
+
     function renderBilanContent(channels, results, idx) {
         var content = document.getElementById('bilan-content'), fileEl = document.getElementById('bilan-file');
         if (!content) return;
         if (fileEl) fileEl.textContent = idx ? ('Fichier courant : ' + (idx.label || '') + ' · 12 mois glissants') : 'Aucun fichier de suivi dans « Suivi »';
         if (!channels.length) { content.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun canal sur cette campagne.</p>'; return; }
+
+        // Graphiques (taux d'engagement + leads) en tête.
+        var series = buildBilanSeries(channels, results);
+        var chartsBlock = '';
+        if (series.length) {
+            chartsBlock = '<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:14px;">'
+                + '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">📈 Graphiques</div>'
+                + renderBilanCharts(series) + '</div>';
+        }
+
         var html = '';
         channels.forEach(function (ch, i) {
             var res = results[i];
@@ -2992,7 +3098,7 @@
             }
             html += '</div>';
         });
-        content.innerHTML = html;
+        content.innerHTML = chartsBlock + html;
     }
 
     // ── Documents (Item 21) ─────────────────────────────────
