@@ -2358,6 +2358,25 @@
                 document.getElementById('draft-discard').addEventListener('click', function () { clearDraft(); bar.remove(); });
             }
 
+            // Journalise une action dans activity.json de la campagne (journal d'activité).
+            function logCampaignActivity(folderName, type, detail) {
+                if (!state.campaignsFolder || !folderName) return Promise.resolve();
+                var u = window.ImpulsionMarketing.users && window.ImpulsionMarketing.users.getCurrentUser();
+                var actor = u ? u.name : '?';
+                return state.campaignsFolder.getDirectoryHandle(folderName)
+                    .then(function(dir) { return dir.getFileHandle('activity.json', { create: true }); })
+                    .then(function(fh) {
+                        return fh.getFile().then(function(f) { return f.text(); })
+                            .then(function(t) { var a; try { a = JSON.parse(t); } catch (e) { a = []; } return { fh: fh, list: Array.isArray(a) ? a : [] }; })
+                            .catch(function() { return { fh: fh, list: [] }; });
+                    })
+                    .then(function(res) {
+                        res.list.push({ id: 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4), date: new Date().toISOString(), type: type, acteur: actor, detail: detail });
+                        return res.fh.createWritable().then(function(w) { return w.write(JSON.stringify(res.list, null, 2)).then(function() { return w.close(); }); });
+                    })
+                    .catch(function(e) { console.warn('logCampaignActivity:', e && e.message); });
+            }
+
             $("#campaignForm").addEventListener("submit", async (e) => {
                 e.preventDefault();
                 $("#btnSubmit").disabled = true;
@@ -2366,6 +2385,7 @@
                 try {
                     var campaignFolder = await createCampaign();
                     clearDraft(); // création réussie → on jette le brouillon
+                    logCampaignActivity(campaignFolder, 'campagne', state.editMode ? 'Campagne modifiée' : 'Campagne créée');
 
                     // Invalider le cache métadonnées pour cette campagne (edit ou création)
                     MetadataCacheInvalidator.invalidate(campaignFolder);

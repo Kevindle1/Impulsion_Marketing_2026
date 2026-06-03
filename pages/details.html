@@ -475,6 +475,7 @@
                 }
                 var msg = nouvelEtat ? 'Campagne réactivée.' : 'Campagne rendue inactive.';
                 errors.showNotification(msg, 'success', 2000);
+                logActivity(currentCampaignName, 'statut', nouvelEtat ? 'Campagne réactivée' : 'Campagne rendue inactive');
             })
             .catch(function(err) {
                 errors.showNotification('Erreur : ' + err.message, 'error');
@@ -794,6 +795,18 @@
         docsHtml += '<div id="documents-content" style="display:none;"></div>';
         docsHtml += '</div>';
 
+        // Section journal d'activité (colonne latérale)
+        var actHtml = '<div class="detail-section" id="activity-section">';
+        actHtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">';
+        actHtml += '<h3 style="margin:0;">🕒 Activité</h3>';
+        actHtml += '<select id="activity-filter" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;">'
+            + '<option value="">Tout</option><option value="workflow">Workflow</option><option value="document">Documents</option>'
+            + '<option value="statut">Statut</option><option value="campagne">Campagne</option></select>';
+        actHtml += '</div>';
+        actHtml += '<div id="activity-loading" style="color:var(--muted-2);font-size:13px;margin-top:8px;">Chargement...</div>';
+        actHtml += '<div id="activity-content" style="display:none;margin-top:8px;"></div>';
+        actHtml += '</div>';
+
         // Section discussion (pleine largeur, en bas)
         var discHtml = '<div class="detail-section">';
         discHtml += '<h3>💬 Discussion</h3>';
@@ -812,7 +825,7 @@
         var html = workflowHtml;
         html += '<div class="info-layout">';
         html += '<div class="info-main">' + infoGen + smallCards + '</div>';
-        html += '<div class="info-side">' + jurHtml + docsHtml + discHtml + '</div>';
+        html += '<div class="info-side">' + jurHtml + docsHtml + actHtml + discHtml + '</div>';
         html += '</div>';
         return html;
     }
@@ -2601,10 +2614,110 @@
             });
         }
 
-        // Charger la discussion + les documents
+        // Charger la discussion + les documents + le journal d'activité
         loadDiscussion(name);
         loadDocuments(name);
+        loadActivity(name);
     }
+
+    // ── Journal d'activité ──────────────────────────────────
+    // Historique « qui a fait quoi, quand » par campagne, dans activity.json
+    // (dossier de la campagne). Les discussions ne sont volontairement PAS tracées.
+    var ACT_STEP_LABELS = {
+        po_saisie: 'Saisie projet', manager_affectation: 'Affectation', po_kickoff: 'Kick-off',
+        com_maquette: 'Maquette Com', po_validation_maquette: 'Validation maquette',
+        ebf_bat: 'Réalisation BAT', po_validation_bat: 'Validation BAT',
+        data_ciblage: 'Ciblage Data', po_validation_ciblage: 'Validation ciblage',
+        data_lancement_test: 'Lancement test', ebf_test_prod: 'Test en prod',
+        po_validation_test_prod: 'Validation test', data_mise_en_prod: 'Mise en prod',
+        ebf_mise_en_prod: 'Mise en prod LP'
+    };
+    var ACT_STATUS_LABELS = { submitted: 'soumis', validated: 'validé', completed: 'terminé', revision_requested: 'révision demandée' };
+    var ACT_ICONS = { workflow: '🔄', document: '📁', statut: '🔌', campagne: '📝' };
+    var _activityCache = [];
+
+    function logActivity(campaignName, type, detail) {
+        var u = users && users.getCurrentUser();
+        var actor = u ? u.name : '?';
+        if (!currentRootHandle || !campaignName) return Promise.resolve();
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(dir) {
+                return dir.getFileHandle('activity.json', { create: true }).then(function(fh) {
+                    return fh.getFile().then(function(f) { return f.text(); })
+                        .then(function(t) { var a; try { a = JSON.parse(t); } catch (e) { a = []; } return { fh: fh, list: Array.isArray(a) ? a : [] }; })
+                        .catch(function() { return { fh: fh, list: [] }; });
+                }).then(function(res) {
+                    res.list.push({ id: 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4), date: new Date().toISOString(), type: type, acteur: actor, detail: detail });
+                    return res.fh.createWritable().then(function(w) { return w.write(JSON.stringify(res.list, null, 2)).then(function() { return w.close(); }); });
+                });
+            })
+            .then(function() { if (campaignName === currentCampaignName) loadActivity(campaignName); })
+            .catch(function(e) { console.warn('logActivity:', e && e.message); });
+    }
+
+    function readActivity(campaignName) {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function(d) { return d.getDirectoryHandle(campaignName); })
+            .then(function(d) { return d.getFileHandle('activity.json'); })
+            .then(function(fh) { return fh.getFile(); }).then(function(f) { return f.text(); })
+            .then(function(t) { var a = JSON.parse(t); return Array.isArray(a) ? a : []; })
+            .catch(function() { return []; });
+    }
+
+    function loadActivity(campaignName) {
+        var loading = document.getElementById('activity-loading'), content = document.getElementById('activity-content');
+        if (!loading || !content) return;
+        readActivity(campaignName).then(function(list) { _activityCache = list; renderActivity(); });
+        var filter = document.getElementById('activity-filter');
+        if (filter && !filter._actBound) { filter._actBound = true; filter.addEventListener('change', renderActivity); }
+    }
+
+    function renderActivity() {
+        var loading = document.getElementById('activity-loading'), content = document.getElementById('activity-content');
+        if (!loading || !content) return;
+        loading.style.display = 'none'; content.style.display = 'block';
+        var filter = (document.getElementById('activity-filter') || {}).value || '';
+        var list = _activityCache.slice().sort(function(a, b) { return (b.date || '').localeCompare(a.date || ''); });
+        if (filter) list = list.filter(function(e) { return e.type === filter; });
+        if (!list.length) { content.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucune activité' + (filter ? ' pour ce filtre' : '') + '.</p>'; return; }
+        var html = '';
+        list.forEach(function(e) {
+            var when = e.date ? new Date(e.date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+            html += '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);">'
+                + '<span style="flex:none;">' + (ACT_ICONS[e.type] || '•') + '</span>'
+                + '<div style="flex:1;min-width:0;"><div style="font-size:13px;color:var(--ink,#0c1a14);">' + security.escapeHtml(e.detail || '') + '</div>'
+                + '<div style="font-size:11px;color:var(--muted-2,#8b988f);">' + security.escapeHtml(e.acteur || '?') + ' · ' + when + '</div></div></div>';
+        });
+        content.innerHTML = html;
+    }
+
+    // Journalise automatiquement les transitions de workflow en enveloppant le module
+    // (couvre affectation, kick-off et toutes les actions de canaux, sans toucher aux handlers).
+    var _pendingActivity = [];
+    (function installWorkflowActivity() {
+        if (!workflow || workflow._activityWrapped) return;
+        workflow._activityWrapped = true;
+        var origAdv = workflow.advanceStep;
+        workflow.advanceStep = function(data, stepId, status) {
+            if (ACT_STATUS_LABELS[status]) _pendingActivity.push({ type: 'workflow', detail: (ACT_STEP_LABELS[stepId] || stepId) + ' — ' + ACT_STATUS_LABELS[status] });
+            return origAdv.apply(this, arguments);
+        };
+        var origAdvCh = workflow.advanceChannelStep;
+        workflow.advanceChannelStep = function(data, idx, stepId, status) {
+            if (ACT_STATUS_LABELS[status]) _pendingActivity.push({ type: 'workflow', detail: 'Canal ' + (idx + 1) + ' · ' + (ACT_STEP_LABELS[stepId] || stepId) + ' — ' + ACT_STATUS_LABELS[status] });
+            return origAdvCh.apply(this, arguments);
+        };
+        var origSave = workflow.saveCampaignWorkflow;
+        workflow.saveCampaignWorkflow = function(root, name, data) {
+            var p = origSave.apply(this, arguments);
+            if (_pendingActivity.length) {
+                var buf = _pendingActivity.splice(0);
+                p.then(function() { buf.forEach(function(a) { logActivity(name, a.type, a.detail); }); });
+            }
+            return p;
+        };
+    })();
 
     // ── Documents (Item 21) ─────────────────────────────────
     function loadDocuments(campaignName) {
@@ -2746,7 +2859,7 @@
                         var safe = folderName.replace(/[<>:"|?*\\/]/g, '_');
                         campDir.getDirectoryHandle('documents', { create: true })
                             .then(function(docsDir) { return docsDir.getDirectoryHandle(safe, { create: true }); })
-                            .then(function() { notify('Dossier « ' + safe + ' » créé.', 'success'); loadDocuments(campaignName); })
+                            .then(function() { notify('Dossier « ' + safe + ' » créé.', 'success'); logActivity(campaignName, 'document', 'Dossier créé : ' + safe); loadDocuments(campaignName); })
                             .catch(function(e) { notify('Erreur : ' + e.message, 'error'); });
                     }
                 });
@@ -2803,6 +2916,7 @@
             })
             .then(function() {
                 notify(label + dest + ' ajouté' + (n > 1 ? 's' : '') + ' ✓', 'success');
+                logActivity(campaignName, 'document', label + ' déposé' + (n > 1 ? 's' : '') + dest);
                 loadDocuments(campaignName); // re-render (retire la bannière)
             })
             .catch(function(e) {
