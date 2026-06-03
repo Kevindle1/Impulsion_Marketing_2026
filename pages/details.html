@@ -246,6 +246,12 @@
         .bilan-tile .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
         .bilan-tile .val { font-size: 1.05rem; font-weight: 750; color: var(--ink, #0c1a14); margin-top: 2px; line-height: 1.1; }
         .bilan-tile.accent .val { color: var(--primary, #00875A); }
+        .bilan-tiles.primary { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); margin-bottom: 8px; }
+        .bilan-tiles.sec { grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); }
+        .bilan-tile.primary { padding: 10px 12px; }
+        .bilan-tile.primary .val { font-size: 1.4rem; }
+        .bilan-tile.sec { background: transparent; }
+        .bilan-tile.sec .val { font-size: 0.95rem; font-weight: 700; }
         .bilan-charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
         .bilan-chart-card { border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 10px 12px; background: var(--bg-card, #fff); }
         .bilan-chart-card h5 { margin: 0 0 6px; font-size: 0.8rem; font-weight: 700; color: var(--gray-700, #33403a); }
@@ -2996,20 +3002,23 @@
 
     function tnum(n) { return (n == null) ? '—' : Math.round(n).toLocaleString('fr-FR'); }
     function tpct(n) { return (n == null) ? '—' : (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' %'; }
+    function bilanTile(lbl, val, cls) {
+        return '<div class="bilan-tile ' + cls + '"><div class="lbl">' + lbl + '</div><div class="val">' + security.escapeHtml(val) + '</div></div>';
+    }
     function bilanTiles(agg) {
-        var tiles = [
-            { lbl: 'Envois', v: tnum(agg.Nb_Envois) },
-            { lbl: 'Comm.', v: tnum(agg.Nb_communications) },
-            { lbl: 'MDC actifs', v: tnum(agg.Nb_MDC_Actifs) },
-            { lbl: 'Tx ouv.', v: tpct(agg.Tx_Ouvreurs), accent: true },
-            { lbl: 'Tx clic', v: tpct(agg.Tx_Cliqueurs), accent: true },
-            { lbl: 'Tx désab.', v: tpct(agg.Tx_Desabonnement) },
-            { lbl: 'Tx réussite', v: tpct(agg.Tx_Reussite), accent: true },
-            { lbl: 'Leads', v: tnum(agg.Nb_leads) }
-        ];
-        var h = '<div class="bilan-tiles">';
-        tiles.forEach(function (t) { h += '<div class="bilan-tile' + (t.accent ? ' accent' : '') + '"><div class="lbl">' + t.lbl + '</div><div class="val">' + security.escapeHtml(t.v) + '</div></div>'; });
-        h += '</div>';
+        // Principaux : envois + taux clés (on masque un taux absent).
+        var prim = [bilanTile('Envois', tnum(agg.Nb_Envois), 'primary')];
+        if (agg.Tx_Ouvreurs != null) prim.push(bilanTile('Tx ouverture', tpct(agg.Tx_Ouvreurs), 'primary accent'));
+        if (agg.Tx_Cliqueurs != null) prim.push(bilanTile('Tx clic', tpct(agg.Tx_Cliqueurs), 'primary accent'));
+        if (agg.Tx_Reussite != null) prim.push(bilanTile('Tx réussite', tpct(agg.Tx_Reussite), 'primary accent'));
+        // Secondaires : on masque les valeurs vides, et les zéros peu informatifs.
+        var sec = [];
+        if (agg.Nb_communications != null) sec.push(bilanTile('Comm.', tnum(agg.Nb_communications), 'sec'));
+        if (agg.Nb_MDC_Actifs != null && agg.Nb_MDC_Actifs !== 0) sec.push(bilanTile('MDC actifs', tnum(agg.Nb_MDC_Actifs), 'sec'));
+        if (agg.Tx_Desabonnement != null) sec.push(bilanTile('Tx désab.', tpct(agg.Tx_Desabonnement), 'sec'));
+        if (agg.Nb_leads != null && agg.Nb_leads !== 0) sec.push(bilanTile('Leads', tnum(agg.Nb_leads), 'sec'));
+        var h = '<div class="bilan-tiles primary">' + prim.join('') + '</div>';
+        if (sec.length) h += '<div class="bilan-tiles sec">' + sec.join('') + '</div>';
         return h;
     }
 
@@ -3087,26 +3096,32 @@
         return legend + svg;
     }
 
-    // Bloc graphiques : taux d'engagement (groupés) + leads. `extra` = série de comparaison.
+    // Un graphe de taux pour un sous-ensemble d'indicateurs (échelle propre), si données.
+    function bilanRateChart(all, keys, labels, title) {
+        var groups = keys.map(function (k) { return labels[k]; });
+        var ser = all.map(function (s) { return { name: s.name, color: s.color, values: keys.map(function (k) { return s.agg[k]; }) }; });
+        var has = ser.some(function (s) { return s.values.some(function (v) { return v != null; }); });
+        if (!has) return '';
+        return '<div class="bilan-chart-card"><h5>' + title + '</h5>' + svgGroupedBars(groups, ser, { unit: '%' }) + '</div>';
+    }
+
+    // Bloc graphiques : on sépare les gros taux (ouverture/réussite) des petits (clic/désab)
+    // pour des échelles lisibles, + leads si renseignés. `extra` = série de comparaison.
     function renderBilanCharts(series, extra) {
         var all = series.slice(); if (extra) all.push(extra);
         if (!all.length) return '';
-        var rateLabels = { Tx_Ouvreurs: 'Ouverture', Tx_Cliqueurs: 'Clic', Tx_Desabonnement: 'Désab.', Tx_Reussite: 'Réussite' };
-        var rateGroups = BILAN_CHART_RATES.map(function (k) { return rateLabels[k]; });
-        var rateSeries = all.map(function (s) { return { name: s.name, color: s.color, values: BILAN_CHART_RATES.map(function (k) { return s.agg[k]; }) }; });
-        var hasRates = rateSeries.some(function (s) { return s.values.some(function (v) { return v != null; }); });
-        var leadsGroups = all.map(function (s) { return s.name; });
-        var leadsSeries = [{ name: 'Leads', color: '#7C3AED', values: all.map(function (s) { return s.agg.Nb_leads; }) }];
-        var hasLeads = all.some(function (s) { return s.agg.Nb_leads != null; });
-        var h = '<div class="bilan-charts-grid">';
-        h += '<div class="bilan-chart-card"><h5>Taux d\'engagement (%)</h5>';
-        h += hasRates ? svgGroupedBars(rateGroups, rateSeries, { unit: '%' }) : '<div style="font-size:12px;color:var(--muted-2);">Aucun taux disponible.</div>';
-        h += '</div>';
-        h += '<div class="bilan-chart-card"><h5>Leads</h5>';
-        h += hasLeads ? svgGroupedBars(leadsGroups, leadsSeries, { unit: '' }) : '<div style="font-size:12px;color:var(--muted-2);">Aucun lead renseigné.</div>';
-        h += '</div>';
-        h += '</div>';
-        return h;
+        var L = { Tx_Ouvreurs: 'Ouverture', Tx_Reussite: 'Réussite', Tx_Cliqueurs: 'Clic', Tx_Desabonnement: 'Désab.' };
+        var cards = '';
+        cards += bilanRateChart(all, ['Tx_Ouvreurs', 'Tx_Reussite'], L, 'Ouverture & réussite (%)');
+        cards += bilanRateChart(all, ['Tx_Cliqueurs', 'Tx_Desabonnement'], L, 'Clic & désabonnement (%)');
+        var hasLeads = all.some(function (s) { return s.agg.Nb_leads != null && s.agg.Nb_leads !== 0; });
+        if (hasLeads) {
+            cards += '<div class="bilan-chart-card"><h5>Leads</h5>'
+                + svgGroupedBars(all.map(function (s) { return s.name; }), [{ name: 'Leads', color: '#7C3AED', values: all.map(function (s) { return s.agg.Nb_leads; }) }], { unit: '' })
+                + '</div>';
+        }
+        if (!cards) return '<div style="font-size:12px;color:var(--muted-2);">Pas encore de données chiffrées à représenter' + (extra ? '' : ' (choisissez une comparaison ci-dessus)') + '.</div>';
+        return '<div class="bilan-charts-grid">' + cards + '</div>';
     }
 
     // ── Comparaison avec une communication d'une autre campagne ──
