@@ -2849,6 +2849,88 @@
             });
     }
 
+    // ── @mentions : notifie les personnes citées dans un message (@Nom Complet) ──
+    function notifyMentions(text, campaignName, authorName) {
+        var U = (users && users.USERS) ? users.USERS : [];
+        var mentioned = U.filter(function(u) { return u.name !== authorName && text.indexOf('@' + u.name) !== -1; })
+                         .map(function(u) { return u.name; });
+        if (!mentioned.length) return Promise.resolve();
+        return currentRootHandle.getFileHandle('_notifications.json', { create: true })
+            .then(function(fh) {
+                return fh.getFile().then(function(f) { return f.text(); })
+                    .then(function(t) { return { fh: fh, notifs: JSON.parse(t) }; })
+                    .catch(function() { return { fh: fh, notifs: [] }; });
+            })
+            .then(function(res) {
+                var now = new Date().toISOString();
+                mentioned.forEach(function(dest) {
+                    res.notifs.push({
+                        id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                        type: 'mention', destinataire: dest,
+                        campagneId: campaignName, campagneTitre: campaignName,
+                        auteur: authorName, dateCreation: now, lu: false
+                    });
+                });
+                return res.fh.createWritable().then(function(w) {
+                    return w.write(JSON.stringify(res.notifs, null, 2)).then(function() { return w.close(); });
+                });
+            })
+            .then(function() {
+                notify(mentioned.length + ' personne' + (mentioned.length > 1 ? 's' : '') + ' notifiée' + (mentioned.length > 1 ? 's' : '') + ' (mention).', 'success');
+            })
+            .catch(function(e) { console.warn('notifyMentions:', e && e.message); });
+    }
+
+    // ── Autocomplétion @ : propose les membres quand on tape « @ » dans un message ──
+    function setupMentionAutocomplete(input) {
+        if (!input || input._mentionBound) return;
+        input._mentionBound = true;
+        var U = (users && users.USERS) ? users.USERS.slice().sort(function(a, b) { return a.name.localeCompare(b.name); }) : [];
+        if (input.parentNode && getComputedStyle(input.parentNode).position === 'static') input.parentNode.style.position = 'relative';
+
+        var dd = document.createElement('div');
+        dd.style.cssText = 'position:absolute;z-index:50;background:#fff;border:1px solid var(--line,#eaefec);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:200px;overflow-y:auto;display:none;min-width:220px;';
+        input.parentNode.appendChild(dd);
+
+        var anchor = -1; // position du « @ » courant
+
+        function hide() { dd.style.display = 'none'; anchor = -1; }
+        function pick(name) {
+            var val = input.value, pos = input.selectionStart;
+            input.value = val.slice(0, anchor) + '@' + name + ' ' + val.slice(pos);
+            var caret = anchor + name.length + 2;
+            input.focus(); input.setSelectionRange(caret, caret);
+            hide();
+        }
+        function refresh() {
+            var val = input.value, pos = input.selectionStart;
+            var at = val.lastIndexOf('@', pos - 1);
+            if (at === -1) { hide(); return; }
+            var query = val.slice(at + 1, pos);
+            if (/[\n@]/.test(query) || query.length > 30) { hide(); return; }
+            var q = query.toLowerCase();
+            var matches = U.filter(function(u) { return u.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 6);
+            if (!matches.length) { hide(); return; }
+            anchor = at;
+            dd.innerHTML = matches.map(function(u) {
+                return '<div class="mention-opt" data-name="' + security.escapeHtml(u.name) + '" style="padding:7px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;">'
+                    + '<span>' + security.escapeHtml(u.name) + '</span>'
+                    + '<span style="color:var(--muted,#8b988f);font-size:11px;">' + security.escapeHtml(u.roleLabel || u.role || '') + '</span></div>';
+            }).join('');
+            dd.querySelectorAll('.mention-opt').forEach(function(opt) {
+                opt.addEventListener('mousedown', function(e) { e.preventDefault(); pick(opt.getAttribute('data-name')); });
+                opt.addEventListener('mouseover', function() { opt.style.background = '#f1f5f9'; });
+                opt.addEventListener('mouseout', function() { opt.style.background = ''; });
+            });
+            dd.style.left = '0px';
+            dd.style.top = (input.offsetTop + input.offsetHeight + 4) + 'px';
+            dd.style.display = 'block';
+        }
+        input.addEventListener('input', refresh);
+        input.addEventListener('keyup', function(e) { if (e.key === 'Escape') hide(); else if (e.key !== 'Enter') refresh(); });
+        input.addEventListener('blur', function() { setTimeout(hide, 150); });
+    }
+
     function renderDiscussionMessages(messages) {
         var loading = document.getElementById('discussion-loading');
         var list    = document.getElementById('discussion-list');
@@ -2905,8 +2987,10 @@
                     saveDiscussion(currentCampaignName, messages).then(function() {
                         input.value = '';
                         renderDiscussionMessages(messages);
+                        notifyMentions(text, currentCampaignName, currentUser.name);
                     });
                 };
+                setupMentionAutocomplete(input);
             }
 
             // Boutons like
