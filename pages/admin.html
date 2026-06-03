@@ -78,6 +78,7 @@
                 <button class="admin-tab" data-tab="lists">📋 Listes de choix</button>
                 <button class="admin-tab" data-tab="segments">🎯 Segments</button>
                 <button class="admin-tab" data-tab="incidents">🐞 Signalements</button>
+                <button class="admin-tab" data-tab="whatsnew">📣 Quoi de neuf</button>
             </div>
 
             <section class="admin-section active" id="tab-overview"><div id="overview-container"></div></section>
@@ -85,6 +86,7 @@
             <section class="admin-section" id="tab-lists"><div id="lists-container"></div></section>
             <section class="admin-section" id="tab-segments"><div id="segments-container"></div></section>
             <section class="admin-section" id="tab-incidents"><div id="incidents-container"></div></section>
+            <section class="admin-section" id="tab-whatsnew"><div id="whatsnew-container"></div></section>
         </main>
     </div>
 </div>
@@ -417,6 +419,135 @@
             }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
         }
 
+        // ── QUOI DE NEUF (annonces) ──────────────────────────────────────────────
+        // Persisté dans _whatsnew.json à la racine. Chaque annonce : { id, dateLabel,
+        // title, type, text, audience:[noms] (vide = tout le monde), seenBy:[noms] }.
+        var WHATSNEW_FILE = '_whatsnew.json';
+        var whatsNewList = [];
+        var WN_BADGE = {
+            'new':     { icon: '🆕', label: 'Nouveau', color: '#16a34a' },
+            'fix':     { icon: '🛠️', label: 'Correction', color: '#0d6efd' },
+            'improve': { icon: '✨', label: 'Amélioration', color: '#7c3aed' }
+        };
+
+        function readWhatsNewFile() {
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') return [];
+                return res.handle.getFileHandle(WHATSNEW_FILE).then(function (fh) { return fh.getFile(); })
+                    .then(function (f) { return f.text(); })
+                    .then(function (t) { try { var a = JSON.parse(t); return Array.isArray(a) ? a : []; } catch (e) { return []; } })
+                    .catch(function () { return []; });
+            }).catch(function () { return []; });
+        }
+        function writeWhatsNewFile(list) {
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') throw new Error('Dossier non chargé.');
+                return res.handle.getFileHandle(WHATSNEW_FILE, { create: true });
+            }).then(function (fh) { return fh.createWritable(); })
+              .then(function (w) { return w.write(JSON.stringify(list, null, 2)).then(function () { return w.close(); }); });
+        }
+        function loadWhatsNew() {
+            return readWhatsNewFile().then(function (list) { whatsNewList = list; renderWhatsNew(); });
+        }
+
+        function renderWhatsNew() {
+            var cont = document.getElementById('whatsnew-container');
+            if (!cont) return;
+            var typeOpts = Object.keys(WN_BADGE).map(function (k) {
+                return '<option value="' + k + '">' + WN_BADGE[k].icon + ' ' + WN_BADGE[k].label + '</option>';
+            }).join('');
+
+            // Liste des personnes (audience)
+            var people = (users.USERS || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+            var peopleHtml = people.map(function (p) {
+                return '<label style="display:flex;align-items:center;gap:7px;font-size:13px;padding:3px 0;">'
+                    + '<input type="checkbox" class="wn-person" value="' + esc(p.name) + '"> ' + esc(p.name)
+                    + ' <span style="color:var(--muted);font-size:11px;">' + esc(p.roleLabel || p.role || '') + '</span></label>';
+            }).join('');
+
+            var html = '';
+            html += '<div class="admin-card"><h3>📣 Publier une annonce</h3>';
+            html += '<div class="form-row" style="margin-bottom:10px;"><label class="admin-label">Titre</label>'
+                + '<input class="admin-input" id="wn-title" placeholder="Ex : Nouvelle fonctionnalité Documents" style="width:100%;"></div>';
+            html += '<div class="form-row" style="margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'
+                + '<label class="admin-label">Type</label><select class="admin-input" id="wn-type">' + typeOpts + '</select></div>';
+            html += '<div class="form-row" style="margin-bottom:10px;"><label class="admin-label">Message</label>'
+                + '<textarea class="admin-input" id="wn-text" rows="3" placeholder="Décrivez la nouveauté ou la correction…" style="width:100%;resize:vertical;"></textarea></div>';
+            html += '<div class="form-row" style="margin-bottom:10px;"><label class="admin-label">Destinataires</label>'
+                + '<label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;margin-bottom:6px;"><input type="checkbox" id="wn-all" checked> Tout le monde</label>'
+                + '<div id="wn-people" style="max-height:180px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:8px 12px;opacity:.45;pointer-events:none;">' + (peopleHtml || '<span class="empty-hint">Aucune personne.</span>') + '</div></div>';
+            html += '<div class="save-bar"><button class="btn btn-primary" id="wn-publish">📣 Publier l\'annonce</button></div>';
+            html += '</div>';
+
+            // Liste des annonces existantes
+            var sorted = whatsNewList.slice().sort(function (a, b) { return (b.id || 0) - (a.id || 0); });
+            html += '<div class="admin-card"><h3>Annonces publiées (' + sorted.length + ')</h3>';
+            if (!sorted.length) {
+                html += '<div class="empty-hint">Aucune annonce pour le moment.</div>';
+            } else {
+                sorted.forEach(function (e) {
+                    var b = WN_BADGE[e.type] || WN_BADGE.improve;
+                    var audience = (Array.isArray(e.audience) && e.audience.length) ? (e.audience.length + ' personne' + (e.audience.length > 1 ? 's' : '')) : 'Tout le monde';
+                    var seen = Array.isArray(e.seenBy) ? e.seenBy.length : 0;
+                    html += '<div class="canal-row" style="align-items:flex-start;">';
+                    html += '<div style="flex:1;min-width:0;">'
+                        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:3px;">'
+                        + '<span style="font-size:11px;font-weight:700;color:#fff;background:' + b.color + ';border-radius:4px;padding:2px 6px;">' + b.icon + ' ' + b.label + '</span>'
+                        + '<strong>' + esc(e.title) + '</strong>'
+                        + '<span style="color:var(--muted);font-size:11px;">' + esc(e.dateLabel || '') + '</span></div>'
+                        + (e.text ? '<div style="font-size:12.5px;color:var(--muted-2,#667);white-space:pre-wrap;line-height:1.45;">' + esc(e.text) + '</div>' : '')
+                        + '<div style="font-size:11px;color:var(--muted);margin-top:4px;">👥 ' + esc(audience) + ' · 👁 vu par ' + seen + '</div>'
+                        + '</div>';
+                    html += '<button class="icon-del" data-wn-del="' + e.id + '" title="Supprimer">🗑</button>';
+                    html += '</div>';
+                });
+            }
+            html += '</div>';
+            cont.innerHTML = html;
+
+            // Activer/désactiver la liste des personnes selon « Tout le monde »
+            var allCb = document.getElementById('wn-all');
+            var peopleBox = document.getElementById('wn-people');
+            allCb.addEventListener('change', function () {
+                if (allCb.checked) { peopleBox.style.opacity = '.45'; peopleBox.style.pointerEvents = 'none'; }
+                else { peopleBox.style.opacity = '1'; peopleBox.style.pointerEvents = 'auto'; }
+            });
+            document.getElementById('wn-publish').addEventListener('click', publishWhatsNew);
+            cont.querySelectorAll('[data-wn-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () { deleteWhatsNew(+btn.getAttribute('data-wn-del')); });
+            });
+        }
+
+        function publishWhatsNew() {
+            var title = (document.getElementById('wn-title').value || '').trim();
+            var type = document.getElementById('wn-type').value;
+            var text = (document.getElementById('wn-text').value || '').trim();
+            var all = document.getElementById('wn-all').checked;
+            if (!title) { notify('Indiquez un titre pour l\'annonce.', 'error'); return; }
+            var audience = [];
+            if (!all) {
+                audience = Array.prototype.map.call(document.querySelectorAll('.wn-person:checked'), function (c) { return c.value; });
+                if (!audience.length) { notify('Sélectionnez au moins une personne, ou cochez « Tout le monde ».', 'error'); return; }
+            }
+            var entry = {
+                id: Date.now(),
+                dateLabel: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+                title: title, type: type, text: text, audience: audience, seenBy: []
+            };
+            whatsNewList.push(entry);
+            writeWhatsNewFile(whatsNewList)
+                .then(function () { notify('Annonce publiée.'); renderWhatsNew(); })
+                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+        }
+
+        function deleteWhatsNew(id) {
+            if (!confirm('Supprimer cette annonce ?')) return;
+            whatsNewList = whatsNewList.filter(function (e) { return e.id !== id; });
+            writeWhatsNewFile(whatsNewList)
+                .then(function () { notify('Annonce supprimée.'); renderWhatsNew(); })
+                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+        }
+
         // ── Init : charger config + incidents puis rendre ──
         function clone(a) { return a.map(function (x) { return Object.assign({}, x); }); }
         function loadStateFromConfig() {
@@ -436,6 +567,7 @@
         ready.then(function () {
             loadStateFromConfig();
             renderAll();
+            loadWhatsNew();
             // incidents
             return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
                 if (res.status !== 'success') return [];
@@ -450,7 +582,7 @@
             renderOverview();
         }).catch(function () {
             loadStateFromConfig();
-            renderAll(); renderIncidents(); renderOverview();
+            renderAll(); renderIncidents(); renderOverview(); loadWhatsNew();
         });
     })();
 </script>

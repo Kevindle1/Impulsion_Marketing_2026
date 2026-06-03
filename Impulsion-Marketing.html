@@ -220,6 +220,7 @@
                 .then(function(result) {
                     if (result.status === 'success') {
                         loadMyCampaigns();
+                        loadAndShowWhatsNew();
                     } else {
                         // Dossier indisponible (permission/handle) → retour au login
                         window.location.replace('login.html');
@@ -230,38 +231,61 @@
                 });
         });
 
-        // ── « Quoi de neuf » : nouveautés et corrections mises en avant à l'ouverture ──
-        // Pour ajouter une entrée : ajoutez un objet EN TÊTE du tableau (version plus
-        // récente). La modale s'ouvre automatiquement tant que l'utilisateur n'a pas vu
-        // la dernière version.
-        var WHATS_NEW = [
-            {
-                version: '2026.06.03',
-                date: '3 juin 2026',
-                title: 'Documents, dates et notifications',
-                items: [
-                    { type: 'new',     text: 'Espace Documents : créez des dossiers et déposez vos fichiers (PDF, image, Excel…) — y compris par glisser-déposer.' },
-                    { type: 'new',     text: 'Création : contrôle de cohérence des dates (saisie et kick-off ne peuvent pas être après le lancement).' },
-                    { type: 'fix',     text: 'Création : l\'univers de besoin est désormais facultatif.' },
-                    { type: 'fix',     text: 'Workflow : l\'équipe du PO n\'est plus exclue — un PO EBF conserve ses étapes EBF.' },
-                    { type: 'improve', text: 'Détails : champ « ID Planner » retiré et description affichée sur plusieurs lignes.' },
-                    { type: 'improve', text: 'Messages d\'erreur et de validation en notifications discrètes (fini les pop-ups bloquantes).' }
-                ]
-            }
-        ];
-        var WHATS_NEW_SEEN_KEY = 'im_whatsnew_seen';
+        // ── « Quoi de neuf » : annonces gérées depuis l'Administration (_whatsnew.json) ──
+        // Chaque annonce mémorise qui l'a vue (seenBy) pour ne plus la réafficher à cette
+        // personne. Les administrateurs créent / suppriment les annonces dans le panneau Admin.
+        var WHATSNEW_FILE = '_whatsnew.json';
+        var _whatsNewCache = [];
 
-        function latestWhatsNewVersion() { return WHATS_NEW.length ? WHATS_NEW[0].version : ''; }
-        function getSeenWhatsNew() { try { return localStorage.getItem(WHATS_NEW_SEEN_KEY) || ''; } catch (e) { return ''; } }
-        function markWhatsNewSeen() { try { localStorage.setItem(WHATS_NEW_SEEN_KEY, latestWhatsNewVersion()); } catch (e) {} updateWhatsNewDot(); }
-        function hasUnseenWhatsNew() { return WHATS_NEW.length > 0 && getSeenWhatsNew() !== latestWhatsNewVersion(); }
+        function readWhatsNew() {
+            return directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') return [];
+                return res.handle.getFileHandle(WHATSNEW_FILE).then(function (fh) { return fh.getFile(); })
+                    .then(function (f) { return f.text(); })
+                    .then(function (t) { try { var a = JSON.parse(t); return Array.isArray(a) ? a : []; } catch (e) { return []; } })
+                    .catch(function () { return []; });
+            }).catch(function () { return []; });
+        }
+        function writeWhatsNew(list) {
+            return directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') throw new Error('Dossier non chargé.');
+                return res.handle.getFileHandle(WHATSNEW_FILE, { create: true });
+            }).then(function (fh) { return fh.createWritable(); })
+              .then(function (w) { return w.write(JSON.stringify(list, null, 2)).then(function () { return w.close(); }); });
+        }
+        function currentUserName() { var u = users.getCurrentUser(); return u ? u.name : ''; }
+        function isSeenBy(entry, name) { return Array.isArray(entry.seenBy) && entry.seenBy.indexOf(name) !== -1; }
+        // audience vide / absente = tout le monde ; sinon, seulement les noms listés.
+        function inAudience(entry, name) { return !Array.isArray(entry.audience) || entry.audience.length === 0 || entry.audience.indexOf(name) !== -1; }
 
         function updateWhatsNewDot() {
             var dot = document.getElementById('whatsnew-dot');
-            if (dot) dot.style.display = hasUnseenWhatsNew() ? 'block' : 'none';
+            if (!dot) return;
+            var name = currentUserName();
+            dot.style.display = _whatsNewCache.some(function (e) { return inAudience(e, name) && !isSeenBy(e, name); }) ? 'block' : 'none';
         }
 
-        function showWhatsNew() {
+        // Marque des annonces (par id) comme vues par l'utilisateur courant, puis persiste.
+        // On relit le fichier juste avant d'écrire pour limiter l'écrasement concurrent.
+        function markWhatsNewSeen(ids) {
+            var name = currentUserName();
+            if (!name || !ids || !ids.length) { updateWhatsNewDot(); return Promise.resolve(); }
+            return readWhatsNew().then(function (list) {
+                var changed = false;
+                list.forEach(function (e) {
+                    if (ids.indexOf(e.id) !== -1) {
+                        if (!Array.isArray(e.seenBy)) e.seenBy = [];
+                        if (e.seenBy.indexOf(name) === -1) { e.seenBy.push(name); changed = true; }
+                    }
+                });
+                _whatsNewCache = list;
+                updateWhatsNewDot();
+                return changed ? writeWhatsNew(list) : null;
+            }).catch(function () {});
+        }
+
+        function renderWhatsNewModal(entries, markIds) {
+            if (!entries || !entries.length) return;
             var esc = (security && security.escapeHtml) ? security.escapeHtml : function (s) { return String(s == null ? '' : s); };
             var badge = {
                 'new':     { icon: '🆕', label: 'Nouveau', color: '#16a34a' },
@@ -269,45 +293,63 @@
                 'improve': { icon: '✨', label: 'Amélioration', color: '#7c3aed' }
             };
             var body = '';
-            WHATS_NEW.forEach(function (rel) {
-                body += '<div style="margin-bottom:14px;">';
-                body += '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px;">'
-                    + '<strong style="font-size:14px;color:var(--ink,#0c1a14);">' + esc(rel.title) + '</strong>'
-                    + '<span style="font-size:12px;color:var(--muted-2,#8b988f);">' + esc(rel.date) + '</span></div>';
-                rel.items.forEach(function (it) {
-                    var b = badge[it.type] || badge.improve;
-                    body += '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:13px;color:var(--ink,#0c1a14);">'
-                        + '<span style="flex:none;font-size:11px;font-weight:700;color:#fff;background:' + b.color + ';border-radius:4px;padding:2px 6px;">' + b.icon + ' ' + b.label + '</span>'
-                        + '<span style="line-height:1.5;">' + esc(it.text) + '</span></div>';
-                });
+            entries.forEach(function (e) {
+                var b = badge[e.type] || badge.improve;
+                body += '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line,#eaefec);">';
+                body += '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px;">'
+                    + '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><span style="font-size:11px;font-weight:700;color:#fff;background:' + b.color + ';border-radius:4px;padding:2px 6px;">' + b.icon + ' ' + b.label + '</span>'
+                    + '<strong style="font-size:14px;color:var(--ink,#0c1a14);">' + esc(e.title) + '</strong></span>'
+                    + '<span style="font-size:12px;color:var(--muted-2,#8b988f);white-space:nowrap;">' + esc(e.dateLabel || '') + '</span></div>';
+                if (e.text) body += '<div style="font-size:13px;line-height:1.5;color:var(--ink,#0c1a14);white-space:pre-wrap;">' + esc(e.text) + '</div>';
                 body += '</div>';
             });
-
             var overlay = document.createElement('div');
             overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
             var box = document.createElement('div');
             box.style.cssText = 'background:#fff;border-radius:14px;padding:24px;width:min(520px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);';
-            box.innerHTML =
-                '<h2 style="margin:0 0 4px;font-size:18px;color:var(--ink,#0c1a14);">🎉 Quoi de neuf</h2>'
+            box.innerHTML = '<h2 style="margin:0 0 4px;font-size:18px;color:var(--ink,#0c1a14);">🎉 Quoi de neuf</h2>'
                 + '<p style="margin:0 0 16px;font-size:13px;color:var(--muted-2,#8b988f);">Les dernières nouveautés et corrections.</p>'
                 + body
-                + '<div style="display:flex;justify-content:flex-end;margin-top:8px;">'
-                + '<button data-act="ok" style="background:var(--primary,#00875A);color:#fff;border:none;border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;font-weight:600;">Compris</button>'
-                + '</div>';
+                + '<div style="display:flex;justify-content:flex-end;margin-top:8px;"><button data-act="ok" style="background:var(--primary,#00875A);color:#fff;border:none;border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;font-weight:600;">Compris</button></div>';
             overlay.appendChild(box);
             document.body.appendChild(overlay);
-            function close() { overlay.remove(); markWhatsNewSeen(); }
+            function close() { overlay.remove(); markWhatsNewSeen(markIds); }
             box.querySelector('[data-act="ok"]').addEventListener('click', close);
             overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
             document.addEventListener('keydown', function onEsc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); } });
         }
 
+        function byNewest(a, b) { return (b.id || 0) - (a.id || 0); }
+
+        // Ouverture manuelle (bouton) : montre les annonces destinées à l'utilisateur.
+        function openWhatsNewManually() {
+            readWhatsNew().then(function (list) {
+                _whatsNewCache = list;
+                var name = currentUserName();
+                var visible = list.filter(function (e) { return inAudience(e, name); }).sort(byNewest);
+                if (!visible.length) {
+                    renderWhatsNewModal([{ type: 'improve', title: 'Aucune annonce pour le moment', text: '', dateLabel: '' }], []);
+                    return;
+                }
+                renderWhatsNewModal(visible, visible.map(function (e) { return e.id; }));
+            });
+        }
+
+        // Au chargement : affiche automatiquement les annonces non vues par l'utilisateur
+        // (et qui le concernent).
+        function loadAndShowWhatsNew() {
+            readWhatsNew().then(function (list) {
+                _whatsNewCache = list;
+                updateWhatsNewDot();
+                var name = currentUserName();
+                var unseen = list.filter(function (e) { return inAudience(e, name) && !isSeenBy(e, name); }).sort(byNewest);
+                if (unseen.length) renderWhatsNewModal(unseen, unseen.map(function (e) { return e.id; }));
+            });
+        }
+
         function initWhatsNew() {
             var btn = document.getElementById('btn-whatsnew');
-            if (btn) btn.addEventListener('click', showWhatsNew);
-            updateWhatsNewDot();
-            // Ouverture automatique si une nouvelle version n'a pas encore été vue.
-            if (hasUnseenWhatsNew()) showWhatsNew();
+            if (btn) btn.addEventListener('click', openWhatsNewManually);
         }
 
         // Affiche le badge utilisateur (lecture seule) et gère la déconnexion
