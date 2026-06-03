@@ -2791,6 +2791,8 @@
     var SUIVI_SHEET = 'détail-tous';
     var _suiviIndex = null;
     var _bilanResults = null;   // résultats par canal (cache pour graphiques / comparaison)
+    var _bilanState = null;     // { campaignName, channels, results, idx }
+    var _bilanCompareSeries = null; // série de comparaison (autre campagne)
     var BILAN_IDENT = ['Canal', 'ID_ACTION', 'code_communication', 'CAMPAGNE', 'ACTION'];
     var BILAN_KPIS = [
         { k: 'Nb_Envois', label: 'Envois', pct: false },
@@ -2946,6 +2948,8 @@
                     });
                     if (snapChanged) writeBilanSnapshot(campaignName, snap);
                     _bilanResults = results;
+                    _bilanState = { campaignName: campaignName, channels: channels, results: results, idx: idx };
+                    _bilanCompareSeries = null;
                     loading.style.display = 'none'; content.style.display = 'block';
                     renderBilanContent(channels, results, idx);
                 });
@@ -3066,6 +3070,86 @@
         return h;
     }
 
+    // ── Comparaison avec une communication d'une autre campagne ──
+    function listCampaignsForCompare() {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function (d) { return d.getFileHandle('_index.json'); })
+            .then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
+            .then(function (t) { var idx = JSON.parse(t); return Object.keys(idx.campaigns || {}); })
+            .catch(function () { return []; });
+    }
+    function loadCampaignChannels(name) {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function (d) { return d.getDirectoryHandle(name); })
+            .then(function (d) { return d.getFileHandle('campagne.json'); })
+            .then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
+            .then(function (t) { var data = JSON.parse(t); return data.channels || []; })
+            .catch(function () { return []; });
+    }
+    // Lignes (normalisées) d'un canal de campagne quelconque : live depuis le fichier,
+    // sinon repli sur l'archive bilan.json de cette campagne.
+    function resolveChannelRows(campName, ch, chIdx) {
+        var folder = sanitizeName(ch.deliverableName || ('canal_' + chIdx));
+        return Promise.all([
+            readDepotFile(campName, folder, 'depotdata.json').catch(function () { return null; }),
+            readDepotFile(campName, folder, 'depotebf.json').catch(function () { return null; })
+        ]).then(function (res) {
+            var codes = { codeActions: splitCodes((res[0] || {}).codeAction), codeComs: splitCodes((res[1] || {}).codeCom) };
+            var liveRows = _suiviIndex ? matchSuiviRows(_suiviIndex, codes).map(function (row) { return normalizeRow(row, _suiviIndex.col); }) : [];
+            if (liveRows.length) return liveRows;
+            return readBilanSnapshot(campName).then(function (snap) { var s = snap.channels[String(chIdx)]; return (s && s.rows) ? s.rows : []; });
+        });
+    }
+    function resolveExternalChannelBilan(campName, chIdx) {
+        return loadCampaignChannels(campName).then(function (channels) {
+            var ch = channels[chIdx]; if (!ch) return null;
+            return resolveChannelRows(campName, ch, chIdx).then(function (rows) {
+                if (!rows.length) return null;
+                return { name: campName + ' · ' + (ch.deliverableName || ('Canal ' + (chIdx + 1))), color: '#111827', agg: bilanAggregate(rows), rows: rows };
+            });
+        });
+    }
+
+    function refreshBilanCharts() {
+        var el = document.getElementById('bilan-charts');
+        if (!el || !_bilanState) return;
+        var series = buildBilanSeries(_bilanState.channels, _bilanState.results);
+        el.innerHTML = series.length ? renderBilanCharts(series, _bilanCompareSeries) : '<div style="font-size:12px;color:var(--muted-2);">Aucune donnée chiffrée à représenter.</div>';
+    }
+
+    function setupBilanCompare() {
+        var campSel = document.getElementById('cmp-campaign'), chSel = document.getElementById('cmp-channel'),
+            note = document.getElementById('cmp-note'), detail = document.getElementById('bilan-compare-detail');
+        if (!campSel) return;
+        listCampaignsForCompare().then(function (names) {
+            names.filter(function (n) { return n !== (_bilanState && _bilanState.campaignName); }).sort()
+                .forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; campSel.appendChild(o); });
+        });
+        campSel.addEventListener('change', function () {
+            chSel.innerHTML = '<option value="">— livrable —</option>'; chSel.disabled = true;
+            if (detail) detail.innerHTML = '';
+            _bilanCompareSeries = null; refreshBilanCharts();
+            if (!campSel.value) { if (note) note.textContent = ''; return; }
+            if (note) note.textContent = 'Chargement…';
+            loadCampaignChannels(campSel.value).then(function (channels) {
+                channels.forEach(function (ch, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = ch.deliverableName || ('Canal ' + (i + 1)); chSel.appendChild(o); });
+                chSel.disabled = channels.length === 0;
+                if (note) note.textContent = channels.length ? '' : 'Aucun canal sur cette campagne.';
+            });
+        });
+        chSel.addEventListener('change', function () {
+            if (detail) detail.innerHTML = '';
+            if (!chSel.value) { _bilanCompareSeries = null; refreshBilanCharts(); return; }
+            if (note) note.textContent = 'Chargement…';
+            resolveExternalChannelBilan(campSel.value, parseInt(chSel.value, 10)).then(function (ext) {
+                if (note) note.textContent = '';
+                if (!ext) { _bilanCompareSeries = null; refreshBilanCharts(); if (detail) detail.innerHTML = '<div style="font-size:12px;color:var(--muted-2);">Aucun chiffre pour ce livrable (fichier ni archive).</div>'; return; }
+                _bilanCompareSeries = ext; refreshBilanCharts();
+                if (detail) detail.innerHTML = '<div style="font-weight:600;font-size:12.5px;margin:6px 0 4px;">Comparé : ' + security.escapeHtml(ext.name) + '</div>' + bilanTable(ext.rows);
+            });
+        });
+    }
+
     function renderBilanContent(channels, results, idx) {
         var content = document.getElementById('bilan-content'), fileEl = document.getElementById('bilan-file');
         if (!content) return;
@@ -3077,8 +3161,16 @@
         var chartsBlock = '';
         if (series.length) {
             chartsBlock = '<div style="border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:14px;">'
-                + '<div style="font-weight:700;font-size:13px;margin-bottom:8px;">📈 Graphiques</div>'
-                + renderBilanCharts(series) + '</div>';
+                + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">'
+                + '<span style="font-weight:700;font-size:13px;">📈 Graphiques</span>'
+                + '<span style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--gray-700);">Comparer avec :'
+                + '<select id="cmp-campaign" style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;max-width:200px;"><option value="">— campagne —</option></select>'
+                + '<select id="cmp-channel" disabled style="font-size:12px;padding:3px 6px;border:1px solid var(--line);border-radius:6px;max-width:180px;"><option value="">— livrable —</option></select>'
+                + '<span id="cmp-note" style="color:var(--muted-2);"></span></span>'
+                + '</div>'
+                + '<div id="bilan-charts">' + renderBilanCharts(series) + '</div>'
+                + '<div id="bilan-compare-detail" style="margin-top:8px;"></div>'
+                + '</div>';
         }
 
         var html = '';
@@ -3099,6 +3191,7 @@
             html += '</div>';
         });
         content.innerHTML = chartsBlock + html;
+        if (series.length) setupBilanCompare();
     }
 
     // ── Documents (Item 21) ─────────────────────────────────
