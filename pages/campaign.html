@@ -1867,13 +1867,23 @@
                 if (!cfg) return;
                 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
-                // Listes déroulantes simples : on conserve l'option « Choisir... » puis on régénère.
+                // IMPORTANT : la régénération réécrit les blocs. On capture d'abord les
+                // sélections de l'utilisateur pour les restaurer ensuite (ne jamais perdre
+                // ce qui a été coché si cette fonction est rappelée — ex. config admin tardive).
+                function checkedValues(sel) { return Array.prototype.map.call(document.querySelectorAll(sel), function (c) { return c.value; }); }
+                var prevUB = checkedValues('.ub-cb:checked');
+                var prevSeg = checkedValues('.segment-cb:checked');
+
+                // Listes déroulantes simples : on conserve l'option « Choisir... », la
+                // sélection courante, puis on régénère.
                 function fillSelect(id, items) {
                     var sel = document.getElementById(id);
                     if (!sel || !Array.isArray(items)) return;
+                    var prev = sel.value;
                     var ph = sel.querySelector('option[value=""]');
                     var phHtml = ph ? ph.outerHTML : '';
                     sel.innerHTML = phHtml + items.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+                    if (prev && items.indexOf(prev) !== -1) sel.value = prev;
                 }
                 fillSelect('typology', cfg.TYPOLOGIES);
                 fillSelect('market', cfg.MARCHES);
@@ -1908,6 +1918,16 @@
                         return '<label style="' + ubLab + '"><input type="checkbox" class="ub-cb" value="' + esc(u) + '"> ' + esc(u) + '</label>';
                     }).join('');
                 }
+
+                // Restaurer les cases précédemment cochées (segments + univers de besoin).
+                function restore(sel, values) {
+                    if (!values.length) return;
+                    Array.prototype.forEach.call(document.querySelectorAll(sel), function (cb) {
+                        if (values.indexOf(cb.value) !== -1) cb.checked = true;
+                    });
+                }
+                restore('.segment-cb', prevSeg);
+                restore('.ub-cb', prevUB);
 
                 bindSegAll();
             }
