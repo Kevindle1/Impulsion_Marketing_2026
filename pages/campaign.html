@@ -1016,7 +1016,7 @@
                                 </label>
                             </div>
                             <small id="teamRestrictionNote" style="color: var(--muted); display: block; margin-top: 8px;">
-                                Sélectionnez les équipes qui devront intervenir sur cette campagne. Le service du PO est exclu automatiquement.
+                                Sélectionnez les équipes qui devront intervenir sur cette campagne (votre équipe incluse si vous êtes PO).
                             </small>
                         </div>
 
@@ -1567,12 +1567,10 @@
                 updateTeamRestrictions();
             }
 
-            // Mise à jour des restrictions d'équipes selon le service du PO
+            // Mise à jour de la sélection d'équipes selon le service du PO.
+            // L'équipe du PO n'est plus exclue : elle reste sélectionnable (un PO EBF,
+            // par exemple, doit pouvoir garder l'EBF pour conserver ses étapes de workflow).
             function updateTeamRestrictions() {
-                var poName = $("#po").value.trim();
-                var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
-
-                // Tableau de correspondance role → id checkbox et id label
                 var roleToTeam = {
                     'marketing': { cbId: 'teamMarketing', lblId: 'labelTeamMarketing', name: 'Marketing' },
                     'com':       { cbId: 'teamCom',       lblId: 'labelTeamCom',       name: 'Com' },
@@ -1580,43 +1578,16 @@
                     'data':      { cbId: 'teamData',      lblId: 'labelTeamData',      name: 'Data' }
                 };
 
-                // Réactiver tous les checkboxes
+                // Toutes les équipes restent actives et cochables (y compris celle du PO).
                 Object.values(roleToTeam).forEach(function(t) {
                     var cb = document.getElementById(t.cbId);
                     var lbl = document.getElementById(t.lblId);
-                    if (cb) {
-                        cb.disabled = false;
-                        if (lbl) lbl.style.opacity = '1';
-                        if (lbl) lbl.title = '';
-                    }
+                    if (cb) cb.disabled = false;
+                    if (lbl) { lbl.style.opacity = '1'; lbl.title = ''; }
                 });
 
-                // Mettre à jour la note
                 var note = document.getElementById('teamRestrictionNote');
-
-                if (!poName || !users) {
-                    if (note) note.textContent = 'Sélectionnez les équipes qui devront intervenir sur cette campagne. Le service du PO est exclu automatiquement.';
-                    return;
-                }
-
-                // Chercher le PO dans la liste des utilisateurs
-                var poUser = users.USERS.find(function(u) { return u.name === poName; });
-                if (!poUser || !roleToTeam[poUser.role]) {
-                    if (note) note.textContent = 'Sélectionnez les équipes qui devront intervenir sur cette campagne.';
-                    return;
-                }
-
-                // Désactiver le service du PO
-                var team = roleToTeam[poUser.role];
-                var cb = document.getElementById(team.cbId);
-                var lbl = document.getElementById(team.lblId);
-                if (cb) {
-                    cb.disabled = true;
-                    cb.checked = false;
-                    if (lbl) lbl.style.opacity = '0.4';
-                    if (lbl) lbl.title = 'Le PO fait partie de cette équipe';
-                }
-                if (note) note.textContent = 'Le service "' + team.name + '" est exclu car le PO (' + poName + ') en fait partie.';
+                if (note) note.textContent = 'Sélectionnez les équipes qui devront intervenir sur cette campagne (votre équipe incluse si vous êtes PO).';
             }
 
             // Écouter les changements du sélecteur d'équipe PO
