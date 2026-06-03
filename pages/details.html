@@ -680,7 +680,6 @@
         // Informations générales (carte principale)
         var infoGen = '<div class="detail-section"><h3>📋 Informations générales</h3><div class="detail-grid">';
         infoGen += '<div class="detail-item"><span class="detail-label">Nom</span><span class="detail-value">' + security.escapeHtml(name) + '</span></div>';
-        infoGen += '<div class="detail-item"><span class="detail-label">ID Planner</span><span class="detail-value">' + security.escapeHtml(data.id || '-') + '</span></div>';
         infoGen += '<div class="detail-item"><span class="detail-label">PO</span><span class="detail-value">' + security.escapeHtml(data.po || '-') + '</span></div>';
         infoGen += '<div class="detail-item"><span class="detail-label">Typologie</span><span class="detail-value">' + security.escapeHtml(data.typology || '-') + '</span></div>';
         infoGen += '<div class="detail-item"><span class="detail-label">Marché</span><span class="detail-value">' + security.escapeHtml(data.market || '-') + '</span></div>';
@@ -689,7 +688,7 @@
         infoGen += '<div class="detail-item"><span class="detail-label">Date de saisie</span><span class="detail-value">' + security.escapeHtml(data.instantiation || '-') + '</span></div>';
         infoGen += '</div>';
         if (data.description) {
-            infoGen += '<div class="detail-item" style="margin-top:16px;"><span class="detail-label">Description</span><span class="detail-value">' + security.escapeHtml(data.description) + '</span></div>';
+            infoGen += '<div class="detail-item" style="margin-top:16px;"><span class="detail-label">Description</span><span class="detail-value" style="white-space:pre-wrap;line-height:1.55;">' + security.escapeHtml(data.description) + '</span></div>';
         }
         if (data.campagneLiee) {
             var linkedUrl = 'details.html?name=' + encodeURIComponent(data.campagneLiee);
