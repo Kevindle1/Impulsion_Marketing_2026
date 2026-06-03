@@ -99,6 +99,10 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input type="text" id="campaign-search" placeholder="Rechercher une campagne, un PO…">
                     </div>
+                    <button id="btn-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                        <span id="whatsnew-dot" style="display:none;position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:var(--primary,#00875A);border-radius:50%;border:2px solid #fff;"></span>
+                    </button>
                     <div style="position:relative;">
                         <button id="btn-notif-bell" class="icon-btn" title="Notifications" aria-label="Notifications">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -209,6 +213,7 @@
 
             initHeaderUser();
             initDashboardToolbar();
+            initWhatsNew();
 
             // ── Chargement du dossier mémorisé (connecté au login) ──
             directoryStorage.getRootHandleWithCheck()
@@ -224,6 +229,86 @@
                     window.location.replace('login.html');
                 });
         });
+
+        // ── « Quoi de neuf » : nouveautés et corrections mises en avant à l'ouverture ──
+        // Pour ajouter une entrée : ajoutez un objet EN TÊTE du tableau (version plus
+        // récente). La modale s'ouvre automatiquement tant que l'utilisateur n'a pas vu
+        // la dernière version.
+        var WHATS_NEW = [
+            {
+                version: '2026.06.03',
+                date: '3 juin 2026',
+                title: 'Documents, dates et notifications',
+                items: [
+                    { type: 'new',     text: 'Espace Documents : créez des dossiers et déposez vos fichiers (PDF, image, Excel…) — y compris par glisser-déposer.' },
+                    { type: 'new',     text: 'Création : contrôle de cohérence des dates (saisie et kick-off ne peuvent pas être après le lancement).' },
+                    { type: 'fix',     text: 'Création : l\'univers de besoin est désormais facultatif.' },
+                    { type: 'fix',     text: 'Workflow : l\'équipe du PO n\'est plus exclue — un PO EBF conserve ses étapes EBF.' },
+                    { type: 'improve', text: 'Détails : champ « ID Planner » retiré et description affichée sur plusieurs lignes.' },
+                    { type: 'improve', text: 'Messages d\'erreur et de validation en notifications discrètes (fini les pop-ups bloquantes).' }
+                ]
+            }
+        ];
+        var WHATS_NEW_SEEN_KEY = 'im_whatsnew_seen';
+
+        function latestWhatsNewVersion() { return WHATS_NEW.length ? WHATS_NEW[0].version : ''; }
+        function getSeenWhatsNew() { try { return localStorage.getItem(WHATS_NEW_SEEN_KEY) || ''; } catch (e) { return ''; } }
+        function markWhatsNewSeen() { try { localStorage.setItem(WHATS_NEW_SEEN_KEY, latestWhatsNewVersion()); } catch (e) {} updateWhatsNewDot(); }
+        function hasUnseenWhatsNew() { return WHATS_NEW.length > 0 && getSeenWhatsNew() !== latestWhatsNewVersion(); }
+
+        function updateWhatsNewDot() {
+            var dot = document.getElementById('whatsnew-dot');
+            if (dot) dot.style.display = hasUnseenWhatsNew() ? 'block' : 'none';
+        }
+
+        function showWhatsNew() {
+            var esc = (security && security.escapeHtml) ? security.escapeHtml : function (s) { return String(s == null ? '' : s); };
+            var badge = {
+                'new':     { icon: '🆕', label: 'Nouveau', color: '#16a34a' },
+                'fix':     { icon: '🛠️', label: 'Correction', color: '#0d6efd' },
+                'improve': { icon: '✨', label: 'Amélioration', color: '#7c3aed' }
+            };
+            var body = '';
+            WHATS_NEW.forEach(function (rel) {
+                body += '<div style="margin-bottom:14px;">';
+                body += '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px;">'
+                    + '<strong style="font-size:14px;color:var(--ink,#0c1a14);">' + esc(rel.title) + '</strong>'
+                    + '<span style="font-size:12px;color:var(--muted-2,#8b988f);">' + esc(rel.date) + '</span></div>';
+                rel.items.forEach(function (it) {
+                    var b = badge[it.type] || badge.improve;
+                    body += '<div style="display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:13px;color:var(--ink,#0c1a14);">'
+                        + '<span style="flex:none;font-size:11px;font-weight:700;color:#fff;background:' + b.color + ';border-radius:4px;padding:2px 6px;">' + b.icon + ' ' + b.label + '</span>'
+                        + '<span style="line-height:1.5;">' + esc(it.text) + '</span></div>';
+                });
+                body += '</div>';
+            });
+
+            var overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
+            var box = document.createElement('div');
+            box.style.cssText = 'background:#fff;border-radius:14px;padding:24px;width:min(520px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);';
+            box.innerHTML =
+                '<h2 style="margin:0 0 4px;font-size:18px;color:var(--ink,#0c1a14);">🎉 Quoi de neuf</h2>'
+                + '<p style="margin:0 0 16px;font-size:13px;color:var(--muted-2,#8b988f);">Les dernières nouveautés et corrections.</p>'
+                + body
+                + '<div style="display:flex;justify-content:flex-end;margin-top:8px;">'
+                + '<button data-act="ok" style="background:var(--primary,#00875A);color:#fff;border:none;border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;font-weight:600;">Compris</button>'
+                + '</div>';
+            overlay.appendChild(box);
+            document.body.appendChild(overlay);
+            function close() { overlay.remove(); markWhatsNewSeen(); }
+            box.querySelector('[data-act="ok"]').addEventListener('click', close);
+            overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+            document.addEventListener('keydown', function onEsc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); } });
+        }
+
+        function initWhatsNew() {
+            var btn = document.getElementById('btn-whatsnew');
+            if (btn) btn.addEventListener('click', showWhatsNew);
+            updateWhatsNewDot();
+            // Ouverture automatique si une nouvelle version n'a pas encore été vue.
+            if (hasUnseenWhatsNew()) showWhatsNew();
+        }
 
         // Affiche le badge utilisateur (lecture seule) et gère la déconnexion
         function initHeaderUser() {
