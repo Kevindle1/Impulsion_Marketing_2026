@@ -2745,6 +2745,8 @@
     ];
 
     function bilanClean(v) { v = (v == null ? '' : String(v)).trim(); return (v === '.' || v === '') ? '' : v; }
+    // Un canal peut porter plusieurs codes saisis « A / B / C » (ou , ; retour-ligne).
+    function splitCodes(s) { return bilanClean(s).split(/[\/,;\n]+/).map(function (x) { return x.trim(); }).filter(Boolean); }
     function bilanNum(v) { v = bilanClean(v); if (v === '') return '—'; var n = Number(v.replace(',', '.')); return isNaN(n) ? v : n.toLocaleString('fr-FR'); }
     function bilanPct(v) { v = bilanClean(v); if (v === '') return '—'; var n = Number(v.replace(',', '.')); return isNaN(n) ? v : (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' %'; }
 
@@ -2805,15 +2807,16 @@
             readDepotFile(campaignName, folder, 'depotebf.json').catch(function() { return null; })
         ]).then(function(res) {
             var d = res[0] || {}, e = res[1] || {};
-            return { codeAction: bilanClean(d.codeAction), codeCom: bilanClean(e.codeCom) };
+            // Plusieurs codes possibles par canal (saisis « A / B / C »).
+            return { codeActions: splitCodes(d.codeAction), codeComs: splitCodes(e.codeCom) };
         });
     }
 
     function matchSuiviRows(idx, codes) {
         var set = [];
         function add(r) { if (set.indexOf(r) === -1) set.push(r); }
-        if (codes.codeAction && idx.byAction[codes.codeAction]) idx.byAction[codes.codeAction].forEach(add);
-        if (codes.codeCom && idx.byComm[codes.codeCom]) idx.byComm[codes.codeCom].forEach(add);
+        codes.codeActions.forEach(function(a) { (idx.byAction[a] || []).forEach(add); });
+        codes.codeComs.forEach(function(c) { (idx.byComm[c] || []).forEach(add); });
         return set;
     }
 
@@ -2845,9 +2848,10 @@
             html += '<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px;">';
             html += '<div style="font-weight:600;font-size:13px;margin-bottom:6px;">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (i + 1))) + '</div>';
             if (!rows.length) {
-                var why = (!codes.codeAction && !codes.codeCom)
+                var hasCodes = codes.codeActions.length || codes.codeComs.length;
+                var why = !hasCodes
                     ? 'code action / communication non renseigné dans les dépôts'
-                    : 'aucune ligne correspondante dans le suivi (codes : ' + (codes.codeAction || '—') + ' / ' + (codes.codeCom || '—') + ')';
+                    : 'aucune ligne correspondante dans le suivi (codes : ' + (codes.codeActions.join(', ') || '—') + ' / ' + (codes.codeComs.join(', ') || '—') + ')';
                 html += '<div style="font-size:12px;color:var(--muted-2);">— ' + security.escapeHtml(why) + '</div>';
             } else {
                 html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr>';
