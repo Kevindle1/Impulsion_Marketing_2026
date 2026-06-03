@@ -2976,22 +2976,21 @@
 
     var BILAN_COLORS = ['#00875A', '#2563EB', '#E8A100', '#7C3AED', '#E2001A', '#0891b2', '#65a30d', '#db2777'];
 
-    // Agrège les lignes d'un canal en un jeu de valeurs : sommes pour les volumes/leads,
-    // moyenne pondérée par les envois pour les taux.
+    // Agrège les lignes d'un canal : on additionne le nombre de communications et de
+    // leads ; tout le reste (envois, MDC actifs, taux) est une moyenne simple.
+    var BILAN_SUM_KEYS = ['Nb_communications', 'Nb_leads'];
+    var BILAN_AVG_KEYS = ['Nb_Envois', 'Nb_MDC_Actifs', 'Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
     function bilanAggregate(rows) {
         var agg = {};
-        ['Nb_Envois', 'Nb_communications', 'Nb_MDC_Actifs', 'Nb_leads'].forEach(function (k) {
+        BILAN_SUM_KEYS.forEach(function (k) {
             var s = 0, any = false;
             rows.forEach(function (o) { var n = bilanToNumber(o[k]); if (n != null) { s += n; any = true; } });
             agg[k] = any ? s : null;
         });
-        BILAN_CHART_RATES.forEach(function (k) {
-            var wsum = 0, w = 0, ssum = 0, c = 0;
-            rows.forEach(function (o) {
-                var n = bilanToNumber(o[k]);
-                if (n != null) { var e = bilanToNumber(o.Nb_Envois) || 0; wsum += n * e; w += e; ssum += n; c++; }
-            });
-            agg[k] = (w > 0) ? (wsum / w) : (c > 0 ? ssum / c : null);
+        BILAN_AVG_KEYS.forEach(function (k) {
+            var s = 0, c = 0;
+            rows.forEach(function (o) { var n = bilanToNumber(o[k]); if (n != null) { s += n; c++; } });
+            agg[k] = c > 0 ? (s / c) : null;
         });
         return agg;
     }
