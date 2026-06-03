@@ -683,6 +683,7 @@
         var channels = data.channels || [];
         var h = '<span class="details-sidenav-label">Navigation</span>';
         h += '<button class="details-nav-item" id="nav-item-info" data-page="info">📋 Infos campagne</button>';
+        h += '<button class="details-nav-item" id="nav-item-bilan" data-page="bilan">📊 Bilan</button>';
         if (channels.length > 0) {
             h += '<div class="details-nav-separator"></div>';
             h += '<span class="details-sidenav-label">Canaux</span>';
@@ -695,7 +696,7 @@
         nav.querySelectorAll('.details-nav-item').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var p = btn.getAttribute('data-page');
-                navigateTo(p === 'info' ? 'info' : parseInt(p, 10));
+                navigateTo((p === 'info' || p === 'bilan') ? p : parseInt(p, 10));
             });
         });
     }
@@ -711,6 +712,9 @@
         if (pageKey === 'info') {
             panel.innerHTML = renderInfoPage(currentCampaignName, currentCampaignData);
             setupGlobalEvents(currentCampaignName, currentCampaignData);
+        } else if (pageKey === 'bilan') {
+            panel.innerHTML = renderBilanPage();
+            loadBilanPage(currentCampaignName);
         } else {
             var idx = pageKey;
             panel.innerHTML = renderChannelPage(idx, currentCampaignData);
@@ -834,12 +838,6 @@
         // Gauche : infos générales + segments + UB + produit (empilés)
         // Droite : documents + discussion (en long)
         var html = workflowHtml;
-        html += '<div class="detail-section" id="bilan-section">'
-            + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">'
-            + '<h3 style="margin:0;">📊 Bilan par canal</h3>'
-            + '<span id="bilan-file" style="font-size:12px;color:var(--muted-2,#8b988f);"></span></div>'
-            + '<div id="bilan-loading" style="color:var(--muted-2);font-size:13px;margin-top:8px;">Chargement…</div>'
-            + '<div id="bilan-content" style="display:none;margin-top:8px;"></div></div>';
         html += '<div class="info-layout">';
         html += '<div class="info-main">' + infoGen + smallCards + '</div>';
         html += '<div class="info-side">' + jurHtml + docsHtml + actHtml + discHtml + '</div>';
@@ -2684,7 +2682,6 @@
         loadDiscussion(name);
         loadDocuments(name);
         loadActivity(name);
-        loadBilan(name);
     }
 
     // ── Journal d'activité ──────────────────────────────────
@@ -2793,21 +2790,28 @@
     var SUIVI_FOLDER = 'Suivi';
     var SUIVI_SHEET = 'détail-tous';
     var _suiviIndex = null;
+    var _bilanResults = null;   // résultats par canal (cache pour graphiques / comparaison)
+    var BILAN_IDENT = ['Canal', 'ID_ACTION', 'code_communication', 'CAMPAGNE', 'ACTION'];
     var BILAN_KPIS = [
         { k: 'Nb_Envois', label: 'Envois', pct: false },
         { k: 'Nb_communications', label: 'Comm.', pct: false },
+        { k: 'Nb_MDC_Actifs', label: 'MDC actifs', pct: false },
         { k: 'Tx_Ouvreurs', label: 'Tx ouv.', pct: true },
         { k: 'Tx_Cliqueurs', label: 'Tx clic', pct: true },
         { k: 'Tx_Desabonnement', label: 'Tx désab.', pct: true },
-        { k: 'Nb_leads', label: 'Leads', pct: false },
-        { k: 'Tx_Reussite', label: 'Tx réussite', pct: true }
+        { k: 'Tx_Reussite', label: 'Tx réussite', pct: true },
+        { k: 'Nb_leads', label: 'Leads', pct: false }
     ];
+    // Indicateurs tracés en graphiques.
+    var BILAN_CHART_RATES = ['Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
 
     function bilanClean(v) { v = (v == null ? '' : String(v)).trim(); return (v === '.' || v === '') ? '' : v; }
     // Un canal peut porter plusieurs codes saisis « A / B / C » (ou , ; retour-ligne).
     function splitCodes(s) { return bilanClean(s).split(/[\/,;\n]+/).map(function (x) { return x.trim(); }).filter(Boolean); }
     function bilanNum(v) { v = bilanClean(v); if (v === '') return '—'; var n = Number(v.replace(',', '.')); return isNaN(n) ? v : n.toLocaleString('fr-FR'); }
     function bilanPct(v) { v = bilanClean(v); if (v === '') return '—'; var n = Number(v.replace(',', '.')); return isNaN(n) ? v : (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' %'; }
+    function bilanToNumber(v) { v = bilanClean(v); if (v === '') return null; var n = Number(v.replace(',', '.')); return isNaN(n) ? null : n; }
+    function bilanDateShort(iso) { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch (e) { return ''; } }
 
     function collectSuiviXlsx(dir) {
         var files = [];
@@ -2879,55 +2883,112 @@
         return set;
     }
 
-    function loadBilan(campaignName) {
-        var loading = document.getElementById('bilan-loading'), content = document.getElementById('bilan-content'), fileEl = document.getElementById('bilan-file');
+    // Normalise une ligne du suivi en objet {colonne: valeur} (robuste aux réordonnancements
+    // de colonnes, et stockable tel quel dans l'archive bilan.json).
+    function normalizeRow(row, col) {
+        var o = {};
+        BILAN_IDENT.forEach(function (k) { o[k] = (col[k] != null) ? bilanClean(row[col[k]]) : ''; });
+        BILAN_KPIS.forEach(function (kp) { o[kp.k] = (col[kp.k] != null) ? bilanClean(row[col[kp.k]]) : ''; });
+        return o;
+    }
+
+    function readBilanSnapshot(campaignName) {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function (d) { return d.getDirectoryHandle(campaignName); })
+            .then(function (d) { return d.getFileHandle('bilan.json'); })
+            .then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
+            .then(function (t) { var o = JSON.parse(t); return (o && o.channels) ? o : { channels: {} }; })
+            .catch(function () { return { channels: {} }; });
+    }
+    function writeBilanSnapshot(campaignName, snap) {
+        return currentRootHandle.getDirectoryHandle('Campagnes')
+            .then(function (d) { return d.getDirectoryHandle(campaignName); })
+            .then(function (d) { return d.getFileHandle('bilan.json', { create: true }); })
+            .then(function (fh) { return fh.createWritable(); })
+            .then(function (w) { return w.write(JSON.stringify(snap, null, 2)).then(function () { return w.close(); }); })
+            .catch(function (e) { console.warn('writeBilanSnapshot:', e && e.message); });
+    }
+
+    function renderBilanPage() {
+        var h = '<div class="detail-section">';
+        h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">';
+        h += '<h3 style="margin:0;">📊 Bilan par canal</h3>';
+        h += '<span id="bilan-file" style="font-size:12px;color:var(--muted-2,#8b988f);"></span></div>';
+        h += '<div id="bilan-loading" style="color:var(--muted-2);font-size:13px;margin-top:10px;">Chargement…</div>';
+        h += '<div id="bilan-content" style="display:none;margin-top:10px;"></div>';
+        h += '</div>';
+        return h;
+    }
+
+    function loadBilanPage(campaignName) {
+        var loading = document.getElementById('bilan-loading'), content = document.getElementById('bilan-content');
         if (!loading || !content) return;
-        loadSuiviFile().then(function(idx) {
-            loading.style.display = 'none'; content.style.display = 'block';
-            if (!idx) {
-                content.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun fichier de suivi trouvé. Déposez le dernier « Suivi MDC-MKD_12mois_*.xlsx » dans le dossier <strong>Suivi</strong> de l\'espace de travail.</p>';
-                return;
-            }
-            if (fileEl) fileEl.textContent = 'Source : ' + (idx.label || 'suivi') + ' (12 mois glissants)';
-            var channels = currentCampaignData.channels || [];
-            if (!channels.length) { content.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun canal sur cette campagne.</p>'; return; }
-            Promise.all(channels.map(function(ch, i) { return readChannelCodes(campaignName, i); }))
-                .then(function(codesList) { renderBilan(channels, codesList, idx); });
+        var channels = currentCampaignData.channels || [];
+        Promise.all([loadSuiviFile(), readBilanSnapshot(campaignName)]).then(function (r) {
+            var idx = r[0], snap = r[1] || { channels: {} };
+            Promise.all(channels.map(function (ch, i) { return readChannelCodes(campaignName, i); }))
+                .then(function (codesList) {
+                    var results = [], snapChanged = false;
+                    channels.forEach(function (ch, i) {
+                        var codes = codesList[i];
+                        var liveRows = idx ? matchSuiviRows(idx, codes).map(function (row) { return normalizeRow(row, idx.col); }) : [];
+                        var key = String(i);
+                        if (liveRows.length) {
+                            results.push({ source: 'live', label: idx.label, rows: liveRows, codes: codes });
+                            snap.channels[key] = { fileLabel: idx.label, savedAt: new Date().toISOString(), codeActions: codes.codeActions, codeComs: codes.codeComs, rows: liveRows };
+                            snapChanged = true;
+                        } else if (snap.channels[key] && snap.channels[key].rows && snap.channels[key].rows.length) {
+                            var s = snap.channels[key];
+                            results.push({ source: 'archive', label: s.fileLabel, savedAt: s.savedAt, rows: s.rows, codes: codes });
+                        } else {
+                            results.push({ source: 'none', rows: [], codes: codes });
+                        }
+                    });
+                    if (snapChanged) writeBilanSnapshot(campaignName, snap);
+                    _bilanResults = results;
+                    loading.style.display = 'none'; content.style.display = 'block';
+                    renderBilanContent(channels, results, idx);
+                });
         });
     }
 
-    function renderBilan(channels, codesList, idx) {
-        var content = document.getElementById('bilan-content');
+    function bilanTable(rows) {
+        var html = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr>';
+        html += '<th style="text-align:left;padding:4px 6px;color:var(--muted-2);font-weight:600;">Canal (suivi)</th>';
+        BILAN_KPIS.forEach(function (kp) { html += '<th style="text-align:right;padding:4px 6px;color:var(--muted-2);font-weight:600;white-space:nowrap;">' + kp.label + '</th>'; });
+        html += '</tr></thead><tbody>';
+        rows.forEach(function (o) {
+            var canal = String(o.Canal || '').replace(/\s+/g, ' ').trim();
+            html += '<tr><td style="padding:4px 6px;border-top:1px solid var(--line);">' + security.escapeHtml(canal) + '</td>';
+            BILAN_KPIS.forEach(function (kp) {
+                var v = kp.pct ? bilanPct(o[kp.k]) : bilanNum(o[kp.k]);
+                html += '<td style="text-align:right;padding:4px 6px;border-top:1px solid var(--line);white-space:nowrap;">' + security.escapeHtml(v) + '</td>';
+            });
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        return html;
+    }
+
+    function renderBilanContent(channels, results, idx) {
+        var content = document.getElementById('bilan-content'), fileEl = document.getElementById('bilan-file');
         if (!content) return;
-        var col = idx.col;
+        if (fileEl) fileEl.textContent = idx ? ('Fichier courant : ' + (idx.label || '') + ' · 12 mois glissants') : 'Aucun fichier de suivi dans « Suivi »';
+        if (!channels.length) { content.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun canal sur cette campagne.</p>'; return; }
         var html = '';
-        channels.forEach(function(ch, i) {
-            var codes = codesList[i];
-            var rows = matchSuiviRows(idx, codes);
-            html += '<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:10px;">';
-            html += '<div style="font-weight:600;font-size:13px;margin-bottom:6px;">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (i + 1))) + '</div>';
-            if (!rows.length) {
-                var hasCodes = codes.codeActions.length || codes.codeComs.length;
-                var why = !hasCodes
-                    ? 'code action / communication non renseigné dans les dépôts'
-                    : 'aucune ligne correspondante dans le suivi (codes : ' + (codes.codeActions.join(', ') || '—') + ' / ' + (codes.codeComs.join(', ') || '—') + ')';
-                html += '<div style="font-size:12px;color:var(--muted-2);">— ' + security.escapeHtml(why) + '</div>';
+        channels.forEach(function (ch, i) {
+            var res = results[i];
+            html += '<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;">';
+            html += '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">';
+            html += '<span style="font-weight:600;font-size:13px;">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (i + 1))) + '</span>';
+            if (res.source === 'archive') html += '<span style="font-size:11px;color:#b45309;background:var(--amber-50,#fff8e6);border:1px solid #f0d98a;border-radius:4px;padding:2px 8px;">🗄️ Archivé le ' + bilanDateShort(res.savedAt) + (res.label ? ' · ' + security.escapeHtml(res.label) : '') + '</span>';
+            else if (res.source === 'live') html += '<span style="font-size:11px;color:var(--primary);background:var(--green-50,#e9f7f1);border-radius:4px;padding:2px 8px;">● À jour' + (res.label ? ' · ' + security.escapeHtml(res.label) : '') + '</span>';
+            html += '</div>';
+            if (!res.rows.length) {
+                var hasCodes = res.codes && (res.codes.codeActions.length || res.codes.codeComs.length);
+                html += '<div style="font-size:12px;color:var(--muted-2);">— ' + (hasCodes ? 'aucune ligne correspondante (ni dans le fichier ni en archive)' : 'code action / communication non renseigné dans les dépôts') + '</div>';
             } else {
-                html += '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12px;"><thead><tr>';
-                html += '<th style="text-align:left;padding:4px 6px;color:var(--muted-2);font-weight:600;">Canal (suivi)</th>';
-                BILAN_KPIS.forEach(function(kp) { html += '<th style="text-align:right;padding:4px 6px;color:var(--muted-2);font-weight:600;white-space:nowrap;">' + kp.label + '</th>'; });
-                html += '</tr></thead><tbody>';
-                rows.forEach(function(r) {
-                    var canal = String(r[col['Canal']] || '').replace(/\s+/g, ' ').trim();
-                    html += '<tr><td style="padding:4px 6px;border-top:1px solid var(--line);">' + security.escapeHtml(canal) + '</td>';
-                    BILAN_KPIS.forEach(function(kp) {
-                        var raw = (col[kp.k] != null) ? r[col[kp.k]] : '';
-                        var v = kp.pct ? bilanPct(raw) : bilanNum(raw);
-                        html += '<td style="text-align:right;padding:4px 6px;border-top:1px solid var(--line);white-space:nowrap;">' + security.escapeHtml(v) + '</td>';
-                    });
-                    html += '</tr>';
-                });
-                html += '</tbody></table></div>';
+                html += bilanTable(res.rows);
             }
             html += '</div>';
         });
