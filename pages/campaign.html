@@ -2265,6 +2265,99 @@
                 }
             }
 
+            // ── Brouillon auto-sauvegardé du formulaire de création ──────────────────
+            // Sauvegarde la saisie en cours dans localStorage (mode création uniquement)
+            // pour ne rien perdre si l'onglet est fermé / rechargé. Vidé à la création.
+            var DRAFT_KEY = 'im_campaign_draft';
+            var _draftTimer = null;
+            var isCreationMode = !(new URLSearchParams(location.search).get('edit') || new URLSearchParams(location.search).get('duplicate'));
+
+            function collectDraft() {
+                var form = document.getElementById('campaignForm');
+                if (!form) return null;
+                var d = { fields: {}, checks: {}, radios: {}, ub: [], seg: [], ts: Date.now() };
+                form.querySelectorAll('input, select, textarea').forEach(function (el) {
+                    if (el.type === 'file' || el.type === 'button' || el.type === 'submit') return;
+                    if (el.type === 'radio') { if (el.checked && el.name) d.radios[el.name] = el.value; return; }
+                    if (el.type === 'checkbox') {
+                        if (el.classList.contains('ub-cb')) { if (el.checked) d.ub.push(el.value); return; }
+                        if (el.classList.contains('segment-cb')) { if (el.checked) d.seg.push(el.value); return; }
+                        if (el.id) d.checks[el.id] = el.checked;
+                        return;
+                    }
+                    if (el.id) d.fields[el.id] = el.value;
+                });
+                return d;
+            }
+            function saveDraft() { if (isCreationMode) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft())); } catch (e) {} } }
+            function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+            function loadDraft() { try { var t = localStorage.getItem(DRAFT_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+            function draftIsMeaningful(d) {
+                if (!d) return false;
+                var f = d.fields || {};
+                if ((d.ub && d.ub.length) || (d.seg && d.seg.length)) return true;
+                return Object.keys(f).some(function (k) { return f[k] && String(f[k]).trim(); });
+            }
+            function startDraftAutosave() {
+                var form = document.getElementById('campaignForm');
+                if (!form || form._draftBound) return;
+                form._draftBound = true;
+                var handler = function () { clearTimeout(_draftTimer); _draftTimer = setTimeout(saveDraft, 600); };
+                form.addEventListener('input', handler);
+                form.addEventListener('change', handler);
+            }
+            // Restauration échelonnée : canaux d'abord (régénération), puis selects (avec
+            // 'change' pour révéler les champs dépendants), enfin les autres champs.
+            function applyDraft(d) {
+                var form = document.getElementById('campaignForm');
+                if (!form || !d) return;
+                if (d.radios && d.radios.numChannels) {
+                    var nc = form.querySelector('input[name="numChannels"][value="' + d.radios.numChannels + '"]');
+                    if (nc) { nc.checked = true; nc.dispatchEvent(new Event('change')); }
+                }
+                setTimeout(function () {
+                    Object.keys(d.fields || {}).forEach(function (id) {
+                        var el = document.getElementById(id);
+                        if (el && el.tagName === 'SELECT') { el.value = d.fields[id]; el.dispatchEvent(new Event('change')); }
+                    });
+                    Object.keys(d.radios || {}).forEach(function (name) {
+                        if (name === 'numChannels') return;
+                        form.querySelectorAll('input[type=radio][name="' + name + '"]').forEach(function (el) {
+                            if (el.value === d.radios[name]) { el.checked = true; el.dispatchEvent(new Event('change')); }
+                        });
+                    });
+                    setTimeout(function () {
+                        Object.keys(d.fields || {}).forEach(function (id) {
+                            var el = document.getElementById(id);
+                            if (el && el.tagName !== 'SELECT') el.value = d.fields[id];
+                        });
+                        Object.keys(d.checks || {}).forEach(function (id) {
+                            var el = document.getElementById(id); if (el) el.checked = d.checks[id];
+                        });
+                        (d.ub || []).forEach(function (v) { Array.prototype.forEach.call(form.querySelectorAll('.ub-cb'), function (c) { if (c.value === v) c.checked = true; }); });
+                        (d.seg || []).forEach(function (v) { Array.prototype.forEach.call(form.querySelectorAll('.segment-cb'), function (c) { if (c.value === v) c.checked = true; }); });
+                        updateTeamRestrictions();
+                    }, 200);
+                }, 200);
+            }
+            function offerDraftRestore() {
+                if (!isCreationMode) return;
+                var d = loadDraft();
+                if (!draftIsMeaningful(d)) return;
+                var form = document.getElementById('campaignForm');
+                if (!form || document.getElementById('draft-bar')) return;
+                var when = d.ts ? new Date(d.ts).toLocaleString('fr-FR') : '';
+                var bar = document.createElement('div');
+                bar.id = 'draft-bar';
+                bar.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;';
+                bar.innerHTML = '<span>📝 Un brouillon non terminé a été retrouvé' + (when ? ' (' + when + ')' : '') + '.</span>'
+                    + '<span style="display:flex;gap:8px;"><button type="button" id="draft-restore" class="btn btn-primary" style="padding:6px 14px;">Restaurer</button>'
+                    + '<button type="button" id="draft-discard" style="padding:6px 14px;border:1px solid var(--line,#ddd);background:#fff;border-radius:6px;cursor:pointer;">Supprimer</button></span>';
+                form.parentNode.insertBefore(bar, form);
+                document.getElementById('draft-restore').addEventListener('click', function () { applyDraft(d); bar.remove(); notify('Brouillon restauré.', 'success'); });
+                document.getElementById('draft-discard').addEventListener('click', function () { clearDraft(); bar.remove(); });
+            }
+
             $("#campaignForm").addEventListener("submit", async (e) => {
                 e.preventDefault();
                 $("#btnSubmit").disabled = true;
@@ -2272,6 +2365,7 @@
                 $(".loader").style.display = "block";
                 try {
                     var campaignFolder = await createCampaign();
+                    clearDraft(); // création réussie → on jette le brouillon
 
                     // Invalider le cache métadonnées pour cette campagne (edit ou création)
                     MetadataCacheInvalidator.invalidate(campaignFolder);
@@ -2547,6 +2641,8 @@
                 // Vérifier le dossier puis, le cas échéant, charger la campagne à éditer.
                 checkFolder().then(() => {
                     if (state.campaignsFolder) checkEditMode();
+                    // Brouillon (mode création uniquement) : autosave + proposition de restauration
+                    if (isCreationMode) { startDraftAutosave(); offerDraftRestore(); }
                 });
 
                 // Si l'admin a surchargé des listes via _config.json, les re-appliquer
