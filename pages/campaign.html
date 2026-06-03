@@ -1231,6 +1231,13 @@
             var directoryStorage = window.ImpulsionMarketing.directoryStorage;
             var help = window.ImpulsionMarketing.help;
 
+            // Notification (remplace alert) — repli sur alert si le module n'est pas chargé.
+            function notify(message, type) {
+                var e = window.ImpulsionMarketing && window.ImpulsionMarketing.errors;
+                if (e && e.showNotification) e.showNotification(message, type || 'info');
+                else alert(message);
+            }
+
             // Invalidation MetadataCache lors de la création/modification d'une campagne
             var MetadataCacheInvalidator = (function() {
                 var DB = 'ImpulsionMetaCache', STORE = 'meta';
@@ -1322,7 +1329,7 @@
                         populateForm(data);
                     } catch (error) {
                         console.error("Erreur lors du chargement de la campagne:", error);
-                        alert("Erreur lors du chargement de la campagne: " + error.message);
+                        notify("Erreur lors du chargement de la campagne : " + error.message, 'error');
                     }
                 } else if (duplicateCampaignName) {
                     // Mode duplication : pré-remplir mais créer un nouveau dossier
@@ -1349,7 +1356,7 @@
                         populateForm(data);
                     } catch (error) {
                         console.error("Erreur lors du chargement de la campagne source:", error);
-                        alert("Erreur lors du chargement de la campagne source: " + error.message);
+                        notify("Erreur lors du chargement de la campagne source : " + error.message, 'error');
                     }
                 }
             }
@@ -1701,12 +1708,7 @@
                 });
 
                 if (!allValid) {
-                    var errors = window.ImpulsionMarketing.errors;
-                    if (errors && errors.showNotification) {
-                        errors.showNotification('Veuillez remplir tous les champs obligatoires', 'error');
-                    } else {
-                        alert('Veuillez remplir tous les champs obligatoires');
-                    }
+                    notify('Veuillez remplir tous les champs obligatoires', 'warning');
                 }
 
                 return allValid;
@@ -2264,7 +2266,7 @@
                     if (errors && errors.showNotification) {
                         errors.showNotification('Erreur : ' + error.message, 'error');
                     } else {
-                        alert("Erreur : " + error.message);
+                        notify("Erreur : " + error.message, 'error');
                     }
                     $("#btnSubmit").disabled = false;
                     $("#btnSubmit").textContent = state.editMode ? "Modifier la campagne" : "Créer la campagne";

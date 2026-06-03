@@ -335,6 +335,47 @@
     var users            = window.ImpulsionMarketing.users;
     var workflow         = window.ImpulsionMarketing.workflow;
 
+    // Notification (remplace alert) — repli sur alert si le module n'est pas chargé.
+    function notify(message, type) {
+        if (errors && errors.showNotification) errors.showNotification(message, type || 'info');
+        else alert(message);
+    }
+
+    // Petite modale de saisie texte (remplace prompt). Appelle onConfirm(valeur) à la validation.
+    function showPromptModal(opts) {
+        opts = opts || {};
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
+        var box = document.createElement('div');
+        box.style.cssText = 'background:#fff;border-radius:10px;padding:22px;width:min(420px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
+        box.innerHTML =
+            '<h3 style="margin:0 0 6px;font-size:16px;color:var(--gray-700);">' + security.escapeHtml(opts.title || 'Saisie') + '</h3>'
+            + (opts.label ? '<p style="margin:0 0 12px;font-size:13px;color:var(--muted-2);">' + security.escapeHtml(opts.label) + '</p>' : '')
+            + '<input type="text" class="form-control" placeholder="' + security.escapeHtml(opts.placeholder || '') + '" style="width:100%;box-sizing:border-box;margin-bottom:16px;">'
+            + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+            + '<button data-act="cancel" style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">Annuler</button>'
+            + '<button data-act="ok" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">' + security.escapeHtml(opts.confirmText || 'Valider') + '</button>'
+            + '</div>';
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        var input = box.querySelector('input');
+        input.focus();
+        function close() { overlay.remove(); }
+        function submit() {
+            var v = input.value.trim();
+            if (!v) { input.style.borderColor = 'var(--red)'; input.focus(); return; }
+            close();
+            if (opts.onConfirm) opts.onConfirm(v);
+        }
+        box.querySelector('[data-act="cancel"]').addEventListener('click', close);
+        box.querySelector('[data-act="ok"]').addEventListener('click', submit);
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') submit();
+            else if (e.key === 'Escape') close();
+        });
+    }
+
     var currentCampaignName = null;
     var currentRootHandle   = null;
     var currentCampaignData = null;
@@ -2243,12 +2284,12 @@
             btn.addEventListener('click', function() {
                 var role = btn.getAttribute('data-role');
                 var newAssignees = Array.from(document.querySelectorAll('.reassign-cb-' + role + ':checked')).map(function(cb){ return cb.value; });
-                if (!newAssignees.length) { alert('Veuillez choisir au moins un membre de l\'équipe.'); return; }
+                if (!newAssignees.length) { notify('Veuillez choisir au moins un membre de l\'équipe.', 'warning'); return; }
                 disableBtn(btn, 'Enregistrement...');
                 currentCampaignData.workflow.assignments[role] = newAssignees;
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '💾 Enregistrer'); alert('Erreur : ' + err.message); });
+                    .catch(function(err) { enableBtn(btn, '💾 Enregistrer'); notify('Erreur : ' + err.message, 'error'); });
             });
         });
 
@@ -2296,7 +2337,7 @@
                     return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData);
                 })
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '✅ Valider ce canal'); alert('Erreur : ' + err.message); });
+                    .catch(function(err) { enableBtn(btn, '✅ Valider ce canal'); notify('Erreur : ' + err.message, 'error'); });
             });
         });
         document.querySelectorAll('.btn-po-ask-revision-ch').forEach(function(btn) {
@@ -2316,12 +2357,12 @@
                 var uid = stepId + '-' + channelIdx;
                 var commentEl = document.getElementById('revision-comment-ch-' + uid);
                 var comment = commentEl ? commentEl.value.trim() : '';
-                if (!comment) { alert('Veuillez décrire la modification demandée.'); return; }
+                if (!comment) { notify('Veuillez décrire la modification demandée.', 'warning'); return; }
                 disableBtn(btn, 'Envoi...');
                 workflow.requestChannelRevision(currentCampaignData, stepId, sourceId, channelIdx, comment);
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '📤 Envoyer la demande'); alert('Erreur : ' + err.message); });
+                    .catch(function(err) { enableBtn(btn, '📤 Envoyer la demande'); notify('Erreur : ' + err.message, 'error'); });
             });
         });
 
@@ -2449,7 +2490,7 @@
                     if (reqTeamsArr.indexOf('com')  !== -1 && !com.length) missing = true;
                     if (reqTeamsArr.indexOf('ebf')  !== -1 && !ebf.length) missing = true;
                     if (reqTeamsArr.indexOf('data') !== -1 && !dat.length) missing = true;
-                    if (missing) { alert('Veuillez sélectionner au moins une personne pour chaque équipe requise.'); return; }
+                    if (missing) { notify('Veuillez sélectionner au moins une personne pour chaque équipe requise.', 'warning'); return; }
                     if (com.length) currentCampaignData.workflow.assignments.com  = com;
                     if (ebf.length) currentCampaignData.workflow.assignments.ebf  = ebf;
                     if (dat.length) currentCampaignData.workflow.assignments.data = dat;
@@ -2457,7 +2498,7 @@
                     workflow.advanceStep(currentCampaignData, 'manager_affectation', 'validated');
                 } else {
                     var vals = collectChecked('assign-cb-' + userRole);
-                    if (!vals.length) { alert('Veuillez sélectionner au moins une personne.'); return; }
+                    if (!vals.length) { notify('Veuillez sélectionner au moins une personne.', 'warning'); return; }
                     currentCampaignData.workflow.assignments[userRole] = vals;
                     var a = currentCampaignData.workflow.assignments;
                     var allAssigned = true;
@@ -2471,7 +2512,7 @@
                     .then(function() { refreshCurrentPage(); })
                     .catch(function(err) {
                         enableBtn(btnAssign, (btnAssign.getAttribute('data-general') === 'true') ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation');
-                        alert('Erreur : ' + err.message);
+                        notify('Erreur : ' + err.message, 'error');
                     });
             });
         }
@@ -2482,7 +2523,7 @@
             btnKickoff.addEventListener('click', function() {
                 var dateEl = document.getElementById('kickoff-date-input');
                 var kickoffDate = dateEl ? dateEl.value : '';
-                if (!kickoffDate) { alert('Veuillez saisir la date du kick-off.'); return; }
+                if (!kickoffDate) { notify('Veuillez saisir la date du kick-off.', 'warning'); return; }
                 currentCampaignData.kickoffDate = kickoffDate;
                 // Notes par personne
                 var personNotes = {};
@@ -2500,7 +2541,7 @@
                     .then(function() { refreshCurrentPage(); })
                     .catch(function(err) {
                         enableBtn(btnKickoff, '✅ Kick-off réalisé');
-                        alert('Erreur : ' + err.message);
+                        notify('Erreur : ' + err.message, 'error');
                     });
             });
         }
@@ -2522,7 +2563,7 @@
                     })
                     .catch(function(err) {
                         enableBtn(btnSaveNote, '💾 Sauvegarder ma note');
-                        alert('Erreur : ' + err.message);
+                        notify('Erreur : ' + err.message, 'error');
                     });
             });
         }
@@ -2544,7 +2585,7 @@
                 disableBtn(btnJurVal, 'Enregistrement...');
                 workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btnJurVal, '✅ Marquer comme validé'); alert('Erreur : ' + err.message); });
+                    .catch(function(err) { enableBtn(btnJurVal, '✅ Marquer comme validé'); notify('Erreur : ' + err.message, 'error'); });
             });
         }
         var btnJurReopen = document.getElementById('btn-juridique-reopen');
@@ -2556,7 +2597,7 @@
                 disableBtn(btnJurReopen, 'Enregistrement...');
                 workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btnJurReopen, '↩ Ré-ouvrir'); alert('Erreur : ' + err.message); });
+                    .catch(function(err) { enableBtn(btnJurReopen, '↩ Ré-ouvrir'); notify('Erreur : ' + err.message, 'error'); });
             });
         }
 
@@ -2676,13 +2717,19 @@
         var btnNewFolder = document.getElementById('btn-new-doc-folder');
         if (btnNewFolder && campDir) {
             btnNewFolder.addEventListener('click', function() {
-                var folderName = prompt('Nom du dossier :');
-                if (!folderName || !folderName.trim()) return;
-                var safe = folderName.trim().replace(/[<>:"|?*\\/]/g, '_');
-                campDir.getDirectoryHandle('documents', { create: true })
-                    .then(function(docsDir) { return docsDir.getDirectoryHandle(safe, { create: true }); })
-                    .then(function() { loadDocuments(campaignName); })
-                    .catch(function(e) { alert('Erreur : ' + e.message); });
+                showPromptModal({
+                    title: 'Nouveau dossier',
+                    label: 'Nom du dossier à créer dans cette campagne :',
+                    placeholder: 'Ex : Maquettes',
+                    confirmText: 'Créer',
+                    onConfirm: function(folderName) {
+                        var safe = folderName.replace(/[<>:"|?*\\/]/g, '_');
+                        campDir.getDirectoryHandle('documents', { create: true })
+                            .then(function(docsDir) { return docsDir.getDirectoryHandle(safe, { create: true }); })
+                            .then(function() { notify('Dossier « ' + safe + ' » créé.', 'success'); loadDocuments(campaignName); })
+                            .catch(function(e) { notify('Erreur : ' + e.message, 'error'); });
+                    }
+                });
             });
         }
 
@@ -2721,7 +2768,7 @@
                 });
             })
             .then(function() { loadDocuments(campaignName); })
-            .catch(function(e) { alert('Erreur upload : ' + e.message); });
+            .catch(function(e) { notify('Erreur upload : ' + e.message, 'error'); });
     }
 
     function openDocFile(campaignName, subFolderName, fileName) {
@@ -2738,7 +2785,7 @@
                 window.open(url, '_blank');
                 setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
             })
-            .catch(function(e) { alert('Impossible d\'ouvrir le fichier : ' + e.message); });
+            .catch(function(e) { notify('Impossible d\'ouvrir le fichier : ' + e.message, 'error'); });
     }
 
     // ── Discussion ──────────────────────────────────────────

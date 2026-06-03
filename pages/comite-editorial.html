@@ -718,6 +718,13 @@
         })();
     </script>
     <script>
+    // Notification (remplace alert) — repli sur alert si le module n'est pas chargé.
+    function notify(message, type) {
+        var e = window.ImpulsionMarketing && window.ImpulsionMarketing.errors;
+        if (e && e.showNotification) e.showNotification(message, type || 'info');
+        else alert(message);
+    }
+
     // ── Constants ──────────────────────────────────────────────────────────────
     var WEB_ZONES = [
         "Zone de Gauche ( synthese des comptes)",
@@ -857,7 +864,7 @@
 
     async function connectFresh() {
         var ds = window.ImpulsionMarketing && window.ImpulsionMarketing.directoryStorage;
-        if (!ds) { alert('Module de stockage non chargé.'); return; }
+        if (!ds) { notify('Module de stockage non chargé.', 'error'); return; }
         try {
             var root = await ds.promptAndSaveDirectory();
             if (!root) return;
@@ -868,7 +875,7 @@
             await loadAndRender();
         } catch(e) {
             if (e.message !== 'Sélection du dossier annulée') {
-                alert('Erreur connexion : ' + e.message);
+                notify('Erreur connexion : ' + e.message, 'error');
             }
         }
     }
@@ -889,7 +896,7 @@
                 await connectFresh();
             }
         } catch(e) {
-            alert('Erreur reconnexion : ' + e.message);
+            notify('Erreur reconnexion : ' + e.message, 'error');
         }
     }
 
@@ -931,7 +938,7 @@
                 } catch(err) { /* skip folders without campagne.json */ }
             }
         } catch(e) {
-            alert('Erreur chargement campagnes : ' + e.message);
+            notify('Erreur chargement campagnes : ' + e.message, 'error');
             return;
         }
         renderGantt();
@@ -1391,7 +1398,7 @@
             await loadAndRender();
             showNotifToast(newStatus === 'confirmed' ? 'Zone approuvée.' : 'Zone refusée. Le chargé a été notifié.');
         } catch(e) {
-            alert('Erreur : ' + e.message);
+            notify('Erreur : ' + e.message, 'error');
         }
     }
 
