@@ -205,7 +205,17 @@
             max-height: 92vh;
             border-radius: 8px;
             box-shadow: 0 8px 40px rgba(0,0,0,0.6);
-            cursor: default;
+            cursor: zoom-in;
+            transform-origin: center center;
+            transition: transform 0.06s ease-out;
+        }
+        #lightbox-overlay iframe {
+            width: 92vw;
+            height: 92vh;
+            border: none;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.6);
         }
         #lightbox-close {
             position: fixed;
@@ -1896,24 +1906,94 @@
         if (emptyEl) emptyEl.style.display = 'none';
     }
     // ── Lightbox ──
+    // État de zoom/pan de l'image en plein écran.
+    var _lbScale = 1, _lbTx = 0, _lbTy = 0, _lbDrag = null;
+    function _lbApply() {
+        var img = document.getElementById('lightbox-img');
+        if (!img) return;
+        img.style.transform = 'translate(' + _lbTx + 'px,' + _lbTy + 'px) scale(' + _lbScale + ')';
+        img.style.cursor = _lbScale > 1 ? 'grab' : 'zoom-in';
+    }
+    function _lbReset() { _lbScale = 1; _lbTx = 0; _lbTy = 0; _lbApply(); }
+
     (function() {
         var overlay = document.createElement('div');
         overlay.id = 'lightbox-overlay';
-        overlay.innerHTML = '<button id="lightbox-close">✕</button><img id="lightbox-img" src="" alt="">';
+        overlay.innerHTML = '<button id="lightbox-close">✕</button>'
+            + '<div id="lightbox-hint" style="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);color:#fff;opacity:.65;font-size:12px;pointer-events:none;">Molette : zoom · double-clic : zoom/dézoom · glisser : déplacer</div>'
+            + '<img id="lightbox-img" src="" alt=""><iframe id="lightbox-frame" style="display:none;"></iframe>';
         document.body.appendChild(overlay);
         overlay.addEventListener('click', function(e) {
-            if (e.target !== document.getElementById('lightbox-img')) closeLightbox();
+            if (e.target === overlay || e.target === document.getElementById('lightbox-close')) closeLightbox();
         });
         document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
         document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeLightbox(); });
+
+        var img = document.getElementById('lightbox-img');
+        img.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            _lbScale = Math.min(8, Math.max(1, _lbScale * (e.deltaY < 0 ? 1.2 : 1 / 1.2)));
+            if (_lbScale === 1) { _lbTx = 0; _lbTy = 0; }
+            _lbApply();
+        }, { passive: false });
+        img.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+            if (_lbScale > 1) _lbReset(); else { _lbScale = 2.5; _lbApply(); }
+        });
+        img.addEventListener('mousedown', function(e) {
+            if (_lbScale <= 1) return;
+            e.preventDefault();
+            _lbDrag = { x: e.clientX - _lbTx, y: e.clientY - _lbTy };
+            img.style.cursor = 'grabbing';
+        });
+        document.addEventListener('mousemove', function(e) {
+            if (!_lbDrag) return;
+            _lbTx = e.clientX - _lbDrag.x; _lbTy = e.clientY - _lbDrag.y; _lbApply();
+        });
+        document.addEventListener('mouseup', function() { if (_lbDrag) { _lbDrag = null; _lbApply(); } });
     })();
 
     function openLightbox(url) {
-        document.getElementById('lightbox-img').src = url;
+        var img = document.getElementById('lightbox-img'), fr = document.getElementById('lightbox-frame');
+        fr.style.display = 'none'; fr.src = '';
+        document.getElementById('lightbox-hint').style.display = '';
+        img.style.display = ''; img.src = url; _lbReset();
+        document.getElementById('lightbox-overlay').classList.add('open');
+    }
+    function openLightboxPdf(url) {
+        var img = document.getElementById('lightbox-img'), fr = document.getElementById('lightbox-frame');
+        img.style.display = 'none'; img.src = '';
+        document.getElementById('lightbox-hint').style.display = 'none';
+        fr.style.display = ''; fr.src = url;
         document.getElementById('lightbox-overlay').classList.add('open');
     }
     function closeLightbox() {
+        var img = document.getElementById('lightbox-img'), fr = document.getElementById('lightbox-frame');
         document.getElementById('lightbox-overlay').classList.remove('open');
+        if (img) img.src = '';
+        if (fr) fr.src = '';
+        _lbReset();
+    }
+
+    // Aperçu d'un fichier déposé (maquette / BAT / test prod) : image cliquable (zoom),
+    // PDF en aperçu inline + bouton plein écran, sinon lien d'ouverture.
+    function renderDepotPreview(el, file, label) {
+        if (!el) return;
+        var url = URL.createObjectURL(file);
+        var isImg = (file.type || '').indexOf('image/') === 0;
+        var isPdf = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name || '');
+        if (isImg) {
+            el.innerHTML = '<img src="' + url + '" alt="Aperçu ' + label + '" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:340px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
+        } else if (isPdf) {
+            el.innerHTML =
+                '<div style="margin-top:4px;border:1px solid var(--line);border-radius:6px;overflow:hidden;">'
+                + '<iframe src="' + url + '#toolbar=1" style="width:100%;height:380px;border:none;display:block;"></iframe></div>'
+                + '<div style="margin-top:6px;display:flex;gap:10px;align-items:center;">'
+                + '<button type="button" onclick="openLightboxPdf(\'' + url + '\')" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-size:12px;">⛶ Agrandir</button>'
+                + '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:12px;">↗ Ouvrir dans un onglet</a></div>';
+        } else {
+            el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier ' + label + '</a>';
+        }
     }
 
     function loadComFilePreview(idx, folder, filename) {
@@ -1923,14 +2003,7 @@
             .then(function(d) { return d.getFileHandle(filename); })
             .then(function(fh) { return fh.getFile(); })
             .then(function(file) {
-                var url = URL.createObjectURL(file);
-                var el  = document.getElementById('com-image-preview-' + idx);
-                if (!el) return;
-                if (file.type.startsWith('image/')) {
-                    el.innerHTML = '<img src="' + url + '" alt="Aperçu maquette" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
-                } else {
-                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier maquette</a>';
-                }
+                renderDepotPreview(document.getElementById('com-image-preview-' + idx), file, 'maquette');
             })
             .catch(function(err) {
                 // Aucun aperçu disponible (fichier non encore déposé) — cas normal, pas d'alerte.
@@ -1945,14 +2018,7 @@
             .then(function(d) { return d.getFileHandle(filename); })
             .then(function(fh) { return fh.getFile(); })
             .then(function(file) {
-                var url = URL.createObjectURL(file);
-                var el  = document.getElementById('bat-image-preview-' + idx);
-                if (!el) return;
-                if (file.type.startsWith('image/')) {
-                    el.innerHTML = '<img src="' + url + '" alt="Aperçu BAT" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
-                } else {
-                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier BAT</a>';
-                }
+                renderDepotPreview(document.getElementById('bat-image-preview-' + idx), file, 'BAT');
             })
             .catch(function(err) {
                 // Aucun aperçu disponible (fichier non encore déposé) — cas normal, pas d'alerte.
@@ -1967,14 +2033,7 @@
             .then(function(d) { return d.getFileHandle(filename); })
             .then(function(fh) { return fh.getFile(); })
             .then(function(file) {
-                var url = URL.createObjectURL(file);
-                var el  = document.getElementById('testprod-image-preview-' + idx);
-                if (!el) return;
-                if (file.type.startsWith('image/')) {
-                    el.innerHTML = '<img src="' + url + '" alt="Aperçu test prod" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:320px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
-                } else {
-                    el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier test prod</a>';
-                }
+                renderDepotPreview(document.getElementById('testprod-image-preview-' + idx), file, 'test prod');
             })
             .catch(function(err) {
                 // Aucun aperçu disponible (fichier non encore déposé) — cas normal, pas d'alerte.
