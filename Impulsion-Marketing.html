@@ -162,8 +162,8 @@
                 <section class="campaigns-section" id="allmine-section" style="display: none;">
                     <div class="section-header">
                         <div>
-                            <h2 class="section-title">Toutes mes campagnes</h2>
-                            <p class="section-subtitle" id="allmine-subtitle">Campagnes actives sur lesquelles vous êtes assigné</p>
+                            <h2 class="section-title">Mes campagnes en cours</h2>
+                            <p class="section-subtitle" id="allmine-subtitle">Campagnes en cours sur lesquelles vous êtes assigné</p>
                         </div>
                         <a href="pages/visualization.html" class="btn btn-link">
                             <span>Vue complète</span>
@@ -548,6 +548,7 @@
                 return {
                     name: name,
                     lastModified: m.mod || 0,
+                    done: m.done === true,   // complétion pré-calculée à l'indexation (channelSteps dispo)
                     data: {
                         po:          m.po || '',
                         description: m.desc || '',
@@ -571,8 +572,10 @@
          * Filtre, trie et rend les campagnes (partagé entre les deux chemins de chargement)
          */
         function processAndRender(all, currentUser, workflowModule) {
+            // Exclut les campagnes terminées : on s'appuie sur le flag `done` de l'index
+            // (calculé avec les channelSteps), avec repli sur isCompleted si données complètes.
             var active = all.filter(function(c) {
-                return !workflowModule.isCompleted(c.data);
+                return !(c.done || workflowModule.isCompleted(c.data));
             });
 
             var myTurn = [];
@@ -793,7 +796,7 @@
 
             // Mettre à jour le compteur dans le sous-titre
             var sub = document.getElementById('allmine-subtitle');
-            if (sub) sub.textContent = allMine.length + ' campagne' + (allMine.length > 1 ? 's' : '') + ' active' + (allMine.length > 1 ? 's' : '');
+            if (sub) sub.textContent = allMine.length + ' campagne' + (allMine.length > 1 ? 's' : '') + ' en cours';
 
             // Stocker pour la recherche / pagination
             _myTurn = myTurn;
@@ -935,7 +938,7 @@
                 return c.isActif !== false && d && d.diff <= 7;
             }).length;
             var cards = [
-                { ic: 'g', svg: '<path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/>', num: allMine.length, cap: 'Campagnes actives' },
+                { ic: 'g', svg: '<path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/>', num: allMine.length, cap: 'Campagnes en cours' },
                 { ic: 'b', svg: '<path d="M5 12l5 5L20 7"/>', num: myTurn.length, cap: 'À produire (mon tour)' },
                 { ic: 'a', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', num: aValider, cap: 'En attente de validation' },
                 { ic: 'r', svg: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', num: urgent, cap: 'Échéance < 7 jours', delta: urgent > 0 ? 'r' : '' }
