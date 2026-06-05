@@ -2531,7 +2531,7 @@
                 }
 
                 // Collect all form data
-                const data = {
+                let data = {
                     id: taskName,
                     description: $("#description").value,
                     po: $("#po").value,
@@ -2601,25 +2601,25 @@
                     });
                 }
 
-                // Initialiser le workflow (préserve le workflow existant en mode édition)
-                if (window.ImpulsionMarketing && window.ImpulsionMarketing.workflow) {
-                    if (state.editMode) {
-                        // Préserver le workflow existant, juste s'assurer qu'il est initialisé
-                        try {
-                            const existingFileHandle = await campaignDir.getFileHandle("campagne.json", { create: false });
-                            const existingFile = await existingFileHandle.getFile();
-                            const existingJson = JSON.parse(await existingFile.text());
-                            if (existingJson.workflow) {
-                                data.workflow = existingJson.workflow;
-                            } else {
-                                window.ImpulsionMarketing.workflow.initWorkflow(data);
-                            }
-                        } catch(e) {
-                            window.ImpulsionMarketing.workflow.initWorkflow(data);
-                        }
-                    } else {
-                        window.ImpulsionMarketing.workflow.initWorkflow(data);
+                // Mode édition : fusionner les valeurs du formulaire PAR-DESSUS le JSON
+                // existant. Sans cela, les champs absents du formulaire (notes de
+                // kick-off, domaine, validation juridique, bilan, etc.) seraient perdus
+                // à chaque modification de la campagne.
+                if (state.editMode) {
+                    try {
+                        const existingFileHandle = await campaignDir.getFileHandle("campagne.json", { create: false });
+                        const existingFile = await existingFileHandle.getFile();
+                        const existingJson = JSON.parse(await existingFile.text());
+                        data = Object.assign({}, existingJson, data);
+                    } catch(e) {
+                        // Pas de JSON existant lisible : on conserve les seules données du formulaire.
                     }
+                }
+
+                // Initialiser le workflow si absent (création, ou édition d'une campagne
+                // sans workflow). En édition, data.workflow est déjà préservé par la fusion.
+                if (window.ImpulsionMarketing && window.ImpulsionMarketing.workflow && !data.workflow) {
+                    window.ImpulsionMarketing.workflow.initWorkflow(data);
                 }
 
                 // Write JSON file

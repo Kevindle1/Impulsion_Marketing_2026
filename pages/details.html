@@ -2659,9 +2659,11 @@
             btnSaveNote.addEventListener('click', function() {
                 var noteEl = document.getElementById('kickoff-my-note');
                 if (!noteEl) return;
+                var kfUser = users && users.getCurrentUser();
+                if (!kfUser) { notify('Session expirée, veuillez vous reconnecter.', 'warning'); return; }
                 var noteVal = noteEl.value.trim();
                 if (!currentCampaignData.kickoffPersonNotes) currentCampaignData.kickoffPersonNotes = {};
-                currentCampaignData.kickoffPersonNotes[currentUser.name] = noteVal;
+                currentCampaignData.kickoffPersonNotes[kfUser.name] = noteVal;
                 disableBtn(btnSaveNote, 'Enregistrement...');
                 workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
                     .then(function() {
