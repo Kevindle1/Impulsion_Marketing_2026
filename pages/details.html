@@ -2668,7 +2668,7 @@
                 workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
                     .then(function() {
                         enableBtn(btnSaveNote, '💾 Sauvegarder ma note');
-                        errors.showToast('Note sauvegardée', 'success');
+                        errors.showNotification('Note sauvegardée', 'success', 2000);
                     })
                     .catch(function(err) {
                         enableBtn(btnSaveNote, '💾 Sauvegarder ma note');
