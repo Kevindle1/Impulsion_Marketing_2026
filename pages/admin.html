@@ -480,6 +480,13 @@
                     message: it.reponse.texte,
                     auteur: me,
                     dateCreation: new Date().toISOString(),
+                    // Snapshot du signalement d'origine, pour l'afficher dans la modale
+                    // côté destinataire (la cloche n'a pas accès à incidents.json).
+                    signalementId: it.id,
+                    signalementType: typeLabel,
+                    signalementPage: it.page || '',
+                    signalementDescription: it.description || '',
+                    signalementDate: it.date || '',
                     lu: false
                 });
                 return r.fh.createWritable().then(function (w) { return w.write(JSON.stringify(r.notifs, null, 2)).then(function () { return w.close(); }); });

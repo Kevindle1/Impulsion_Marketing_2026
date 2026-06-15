@@ -992,6 +992,43 @@
             }
         }
 
+        // Ouvre une modale récapitulant le signalement et la réponse reçue,
+        // afin que le destinataire sache exactement de quel signalement il s'agit.
+        function openSignalementModal(n) {
+            var esc = security.escapeHtml;
+            var panel = document.getElementById('notif-panel');
+            if (panel) panel.style.display = 'none';
+            var m = document.getElementById('signalement-modal');
+            if (!m) {
+                m = document.createElement('div');
+                m.id = 'signalement-modal';
+                m.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(12,30,22,0.5);z-index:10001;align-items:center;justify-content:center;padding:20px;';
+                document.body.appendChild(m);
+                m.addEventListener('click', function (e) { if (e.target === m) m.style.display = 'none'; });
+            }
+            var header = (n.signalementType || '🔔 Signalement') + (n.signalementPage ? ' · ' + esc(n.signalementPage) : '');
+            var sigDate = n.signalementDate ? esc(n.signalementDate.slice(0, 10)) : '';
+            var repDate = n.dateCreation ? esc(n.dateCreation.slice(0, 10)) : '';
+            m.innerHTML =
+                '<div style="background:#fff;border-radius:18px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.28);overflow:hidden;">' +
+                    '<div style="background:var(--gradient,linear-gradient(135deg,#12C386,#00734C));color:#fff;padding:16px 20px;font-weight:750;font-size:15px;display:flex;justify-content:space-between;align-items:center;">' +
+                        '<span>🔔 Réponse à votre signalement</span>' +
+                        '<span id="sig-modal-close" style="cursor:pointer;font-size:22px;line-height:1;opacity:.9;">&times;</span>' +
+                    '</div>' +
+                    '<div style="padding:20px;display:flex;flex-direction:column;gap:14px;">' +
+                        '<div style="font-size:13px;font-weight:700;color:#374151;">' + header + (sigDate ? ' <span style="font-weight:400;color:#94a3b8;">· ' + sigDate + '</span>' : '') + '</div>' +
+                        '<div><div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Votre signalement</div>' +
+                            '<div style="font-size:13.5px;color:#374151;white-space:pre-wrap;background:#f8fafc;border:1px solid #eef2f7;border-radius:8px;padding:10px 12px;">' + esc(n.signalementDescription || '—') + '</div></div>' +
+                        '<div><div style="font-size:11px;font-weight:700;color:#0f766e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Réponse</div>' +
+                            (n.statutReponse ? '<div style="font-size:13px;font-weight:700;color:#0f766e;margin-bottom:6px;">' + esc(n.statutReponse) + '</div>' : '') +
+                            '<div style="font-size:13.5px;color:#374151;white-space:pre-wrap;background:var(--green-50,#e8f6ef);border:1px solid var(--green-100,#cdeede);border-radius:8px;padding:10px 12px;">' + esc(n.message || '—') + '</div>' +
+                            '<div style="font-size:11px;color:#94a3b8;margin-top:6px;">par ' + esc(n.auteur || '?') + (repDate ? ' · ' + repDate : '') + '</div></div>' +
+                    '</div>' +
+                '</div>';
+            document.getElementById('sig-modal-close').addEventListener('click', function () { m.style.display = 'none'; });
+            m.style.display = 'flex';
+        }
+
         // Écrit la liste complète des notifications (retourne une promesse).
         function writeNotifications(updated, rootHandle) {
             if (!rootHandle) return Promise.resolve();
@@ -1087,6 +1124,8 @@
                             var me = currentUserName();
                             var mineNow = updated.filter(function(n) { return n.destinataire === me && !n.lu; });
                             renderNotifications(mineNow, updated, rootHandle);
+                            // Réponse à un signalement : ouvrir le détail dans une modale.
+                            if (notif && notif.type === 'signalement_reponse') openSignalementModal(notif);
                         }
                     }
 
