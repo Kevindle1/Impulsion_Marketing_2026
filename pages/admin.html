@@ -34,6 +34,14 @@
         .inc-type.amelioration { background: var(--amber-50); color: #9a6b00; }
         .inc-meta { font-size: 12px; color: var(--muted-2); }
         .inc-desc { font-size: 13.5px; color: var(--gray-700); line-height: 1.5; white-space: pre-wrap; }
+        .inc-reponse-saved { background: var(--green-50, #e8f6ef); border: 1px solid var(--green-200, #b7e4cd); border-radius: 8px; padding: 9px 12px; margin-top: 10px; font-size: 13px; color: var(--gray-700); white-space: pre-wrap; }
+        .inc-reponse-meta { font-size: 11px; color: var(--muted-2); margin-top: 4px; }
+        .inc-reply { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px; }
+        .inc-reply-text { width: 100%; box-sizing: border-box; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; }
+        .inc-reply-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+        .inc-reply-statut { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit; cursor: pointer; }
+        .btn-reply { padding: 8px 14px; border: none; border-radius: 8px; background: var(--primary, #00875A); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .btn-reply:disabled { opacity: .6; cursor: default; }
         .empty-hint { color: var(--muted-2); font-size: 14px; padding: 16px 0; }
         .toggle-label { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; }
     </style>
@@ -375,6 +383,19 @@
         }
 
         // ── SIGNALEMENTS ──
+        // Statuts de réponse proposés quand on traite un signalement.
+        // `incStatut` = statut appliqué au signalement (les non-« traité » restent « ouverts »).
+        var REPONSE_STATUTS = [
+            { value: 'resolu',      label: '✅ Résolu',                  incStatut: 'traité' },
+            { value: 'pris_compte', label: '🕒 Pris en compte (bientôt)', incStatut: 'en cours' },
+            { value: 'rejete',      label: '❌ Ne sera pas traité',      incStatut: 'traité' },
+            { value: 'autre',       label: '💬 Autre / info',            incStatut: 'en cours' }
+        ];
+        function statutReponseLabel(v) {
+            for (var k = 0; k < REPONSE_STATUTS.length; k++) if (REPONSE_STATUTS[k].value === v) return REPONSE_STATUTS[k].label;
+            return v || '';
+        }
+
         function renderIncidents() {
             var c = document.getElementById('incidents-container');
             if (!incidents.length) { c.innerHTML = '<div class="admin-card"><div class="empty-hint">Aucun signalement pour l\'instant.</div></div>'; return; }
@@ -382,10 +403,24 @@
             incidents.slice().reverse().forEach(function (it) {
                 var i = incidents.indexOf(it);
                 var done = it.statut === 'traité';
+                var rep = it.reponse;
+                var selVal = rep ? rep.statut : 'resolu';
+                var optsHtml = REPONSE_STATUTS.map(function (o) {
+                    return '<option value="' + o.value + '"' + (o.value === selVal ? ' selected' : '') + '>' + o.label + '</option>';
+                }).join('');
                 html += '<div class="inc-item' + (done ? ' done' : '') + '">'
                     + '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
                     + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + '</span></div>'
-                    + '<div class="inc-desc">' + esc(it.description || '') + '</div>'
+                    + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
+                if (rep && rep.texte) {
+                    html += '<div class="inc-reponse-saved">↳ <strong>' + esc(statutReponseLabel(rep.statut)) + '</strong> — ' + esc(rep.texte)
+                        + '<div class="inc-reponse-meta">par ' + esc(rep.par || '?') + ' · ' + esc((rep.date || '').slice(0, 10)) + ' · auteur notifié</div></div>';
+                }
+                html += '<div class="inc-reply">'
+                    + '<textarea class="inc-reply-text" data-rep="' + i + '" rows="2" placeholder="Réponse à l\'auteur : ce que vous avez fait…">' + esc(rep ? rep.texte : '') + '</textarea>'
+                    + '<div class="inc-reply-row"><select class="inc-reply-statut" data-reps="' + i + '">' + optsHtml + '</select>'
+                    + '<button class="btn-reply" data-reply="' + i + '">💬 Répondre &amp; notifier</button></div>'
+                    + '</div>'
                     + '<div class="save-bar" style="margin-top:10px;">'
                     + '<button class="btn btn-secondary" data-toggle="' + i + '">' + (done ? '↩ Rouvrir' : '✅ Marquer traité') + '</button>'
                     + '<button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div>'
@@ -395,6 +430,60 @@
             c.innerHTML = html;
             c.querySelectorAll('[data-toggle]').forEach(function (b) { b.addEventListener('click', function () { var i = +b.getAttribute('data-toggle'); incidents[i].statut = incidents[i].statut === 'traité' ? 'nouveau' : 'traité'; saveIncidents(); }); });
             c.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
+            c.querySelectorAll('[data-reply]').forEach(function (b) { b.addEventListener('click', function () { respondToIncident(+b.getAttribute('data-reply'), b); }); });
+        }
+
+        // Répond à un signalement : enregistre la réponse, met à jour le statut
+        // et notifie l'auteur via _notifications.json (lecture-puis-écriture).
+        function respondToIncident(i, btn) {
+            var it = incidents[i];
+            if (!it) return;
+            var card = btn.closest('.inc-item');
+            var texte = card.querySelector('.inc-reply-text').value.trim();
+            var statut = card.querySelector('.inc-reply-statut').value;
+            if (!texte) { notify('Saisissez une réponse avant de notifier l\'auteur.', 'error'); return; }
+            var me = (users && users.getCurrentUser()) ? users.getCurrentUser().name : 'Admin';
+            var def = REPONSE_STATUTS.filter(function (o) { return o.value === statut; })[0] || REPONSE_STATUTS[0];
+
+            it.reponse = { texte: texte, statut: statut, par: me, date: new Date().toISOString() };
+            it.statut = def.incStatut;
+
+            btn.disabled = true; btn.textContent = 'Envoi…';
+            notifyAuthor(it, def, me)
+                .then(function () {
+                    return writeJson('docs', 'incidents.json', incidents, 'Réponse enregistrée — auteur notifié.');
+                })
+                .then(function () { renderIncidents(); renderOverview(); })
+                .catch(function (e) { btn.disabled = false; btn.textContent = '💬 Répondre & notifier'; notify('Échec : ' + (e && e.message), 'error'); });
+        }
+
+        // Ajoute une notification destinée à l'auteur du signalement.
+        function notifyAuthor(it, def, me) {
+            var dest = (it.auteur || '').trim();
+            if (!dest) return Promise.resolve();
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') throw new Error('Dossier non chargé.');
+                return res.handle.getFileHandle('_notifications.json', { create: true });
+            }).then(function (fh) {
+                return fh.getFile().then(function (f) { return f.text(); })
+                    .then(function (t) { var a; try { a = JSON.parse(t); } catch (e) { a = []; } return { fh: fh, notifs: Array.isArray(a) ? a : [] }; })
+                    .catch(function () { return { fh: fh, notifs: [] }; });
+            }).then(function (r) {
+                var typeLabel = it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident';
+                r.notifs.push({
+                    id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                    type: 'signalement_reponse',
+                    destinataire: dest,
+                    campagneId: '',
+                    campagneTitre: typeLabel + (it.page ? ' · ' + it.page : ''),
+                    statutReponse: def.label,
+                    message: it.reponse.texte,
+                    auteur: me,
+                    dateCreation: new Date().toISOString(),
+                    lu: false
+                });
+                return r.fh.createWritable().then(function (w) { return w.write(JSON.stringify(r.notifs, null, 2)).then(function () { return w.close(); }); });
+            });
         }
         function saveIncidents() {
             writeJson('docs', 'incidents.json', incidents, 'Signalement mis à jour.').then(renderIncidents);
