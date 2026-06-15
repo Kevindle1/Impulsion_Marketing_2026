@@ -820,7 +820,7 @@
             var jurValidated = jurStatus === 'validated';
             var isPOJur = users.isCurrentUserPO(data);
             jurHtml += '<div class="detail-section" style="border-left-color:' + (jurValidated ? 'var(--primary)' : 'var(--amber)') + ';">';
-            jurHtml += '<h3>⚖️ Validation juridique</h3>';
+            jurHtml += '<h3>⚖️ Validation juridique et conformité</h3>';
             jurHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
             jurHtml += '<span style="background:' + (jurValidated ? 'var(--green-50)' : 'var(--amber-50)') + ';color:' + (jurValidated ? 'var(--primary-hover)' : '#d97706') + ';border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurValidated ? '✅ Validé' : '⏳ En attente') + '</span>';
             jurHtml += '</div>';
@@ -1035,8 +1035,8 @@
             h += '<div class="form-row"><label>URL Figma</label><input type="url" id="com-figma-' + idx + '" class="form-control" placeholder="https://figma.com/..."></div>';
             h += '<div class="form-row"><label>Nombre d\'images</label><input type="number" id="com-numimages-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="com-img-urls-' + idx + '"></div>';
-            h += '<div class="form-row"><label>Validation juridique</label><div class="radio-group"><label><input type="radio" name="com-juri-' + idx + '" value="Oui"> Oui</label><label><input type="radio" name="com-juri-' + idx + '" value="Non"> Non</label></div></div>';
-            h += '<div class="form-row"><label>Fichier (PDF ou image)</label><input type="file" id="com-pdf-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
+            h += '<div class="form-row"><label>Validation juridique et conformité</label><div class="radio-group"><label><input type="radio" name="com-juri-' + idx + '" value="Oui"> Oui</label><label><input type="radio" name="com-juri-' + idx + '" value="Non"> Non</label></div></div>';
+            h += '<div class="form-row"><label>Déposer votre maquette ici (PDF ou image)</label><input type="file" id="com-pdf-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-com" data-ch="' + idx + '">💾 Enregistrer</button>';

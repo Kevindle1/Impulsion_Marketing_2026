@@ -151,13 +151,12 @@ window.ImpulsionMarketing.config = (function() {
   // Types de Communication
   // ========================================
 
+  // Nature de la communication. Le périmètre Caisse/Natio est porté séparément
+  // par le champ « Typologie de communication » (Création Caisse / Reprise Natio).
   const TYPES_COM = [
-    "Commerciale Caisse",
-    "Commerciale Natio",
-    "Reglementaire Caisse",
-    "Reglementaire Natio",
-    "Gestion Caisse",
-    "Gestion Natio"
+    "Commerciales",
+    "Gestion",
+    "Réglementaire"
   ];
 
   // ========================================
