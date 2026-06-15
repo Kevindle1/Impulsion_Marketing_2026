@@ -674,6 +674,7 @@
                         currentCampaignData = data;
                         // Mémorise l'état disque pour la fusion concurrente à la sauvegarde
                         if (workflow && workflow.captureBaseline) workflow.captureBaseline(data);
+                        markCampaignMentionsRead(campaignName);
                         initDetailsUI(campaignName, data);
                         checkPublicationEndDates(campaignName, data);
                     });
@@ -3531,6 +3532,32 @@
                     })
                     .then(function() { return merged; });
             });
+    }
+
+    // Consulter une campagne marque comme lues mes notifications « mention »
+    // qui la concernent (le compteur de la cloche ne restait pas bloqué).
+    function markCampaignMentionsRead(campaignName) {
+        var me = (users && users.getCurrentUser()) ? users.getCurrentUser().name : null;
+        if (!me || !currentRootHandle) return;
+        var fhRef;
+        currentRootHandle.getFileHandle('_notifications.json', { create: false })
+            .then(function(fh) { fhRef = fh; return fh.getFile(); })
+            .then(function(f) { return f.text(); })
+            .then(function(t) {
+                var arr; try { arr = JSON.parse(t); } catch (e) { arr = []; }
+                if (!Array.isArray(arr)) return;
+                var changed = false;
+                arr.forEach(function(n) {
+                    if (!n.lu && n.destinataire === me && n.type === 'mention' && n.campagneId === campaignName) {
+                        n.lu = true; changed = true;
+                    }
+                });
+                if (!changed) return;
+                return fhRef.createWritable().then(function(w) {
+                    return w.write(JSON.stringify(arr, null, 2)).then(function() { return w.close(); });
+                });
+            })
+            .catch(function() { /* pas de fichier notifs : rien à faire */ });
     }
 
     // ── @mentions : notifie les personnes citées dans un message (@Nom Complet) ──

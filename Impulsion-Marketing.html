@@ -109,7 +109,10 @@
                             <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--red,#E2001A);color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:11px;font-weight:700;line-height:18px;text-align:center;padding:0 3px;border:2px solid #fff;">0</span>
                         </button>
                         <div id="notif-panel" style="display:none;position:absolute;top:48px;right:0;width:340px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;">
-                            <div style="padding:12px 16px;border-bottom:1px solid var(--line,#eaefec);font-weight:700;font-size:14px;color:var(--ink,#0c1a14);">🔔 Notifications</div>
+                            <div style="padding:12px 16px;border-bottom:1px solid var(--line,#eaefec);display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                                <span style="font-weight:700;font-size:14px;color:var(--ink,#0c1a14);">🔔 Notifications</span>
+                                <button id="notif-mark-all" style="display:none;background:none;border:none;color:var(--primary,#00875A);font-size:12px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap;">Tout marquer comme lu</button>
+                            </div>
                             <div id="notif-list" style="padding:8px 0;"></div>
                         </div>
                     </div>
@@ -989,9 +992,18 @@
             }
         }
 
+        // Écrit la liste complète des notifications (retourne une promesse).
+        function writeNotifications(updated, rootHandle) {
+            if (!rootHandle) return Promise.resolve();
+            return rootHandle.getFileHandle('_notifications.json', { create: true })
+                .then(function(fh) { return fh.createWritable(); })
+                .then(function(w) { return w.write(JSON.stringify(updated, null, 2)).then(function() { return w.close(); }); });
+        }
+
         function renderNotifications(mine, allNotifs, rootHandle) {
             var badge = document.getElementById('notif-badge');
             var list  = document.getElementById('notif-list');
+            var markAll = document.getElementById('notif-mark-all');
             if (!badge || !list) return;
 
             if (mine.length > 0) {
@@ -1000,6 +1012,31 @@
             } else {
                 badge.style.display = 'none';
             }
+            if (markAll) markAll.style.display = mine.length > 0 ? 'inline' : 'none';
+
+            // « Tout marquer comme lu » : passe toutes MES notifs à lu et persiste.
+            if (markAll && !markAll._bound) {
+                markAll._bound = true;
+                markAll.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    var me = currentUserName();
+                    var current = renderNotifications._all || allNotifs;
+                    var updated = current.map(function(n) {
+                        if (n.destinataire === me && !n.lu) n.lu = true;
+                        return n;
+                    });
+                    writeNotifications(updated, renderNotifications._root || rootHandle)
+                        .then(function() {
+                            renderNotifications([], updated, renderNotifications._root || rootHandle);
+                        })
+                        .catch(function(err) {
+                            if (errors && errors.showNotification) errors.showNotification('Échec : ' + err.message, 'error');
+                        });
+                });
+            }
+            // Mémorise le dernier état pour le bouton « tout marquer comme lu ».
+            renderNotifications._all = allNotifs;
+            renderNotifications._root = rootHandle;
 
             if (mine.length === 0) {
                 list.innerHTML = '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">Aucune notification</div>';
@@ -1031,30 +1068,36 @@
             });
             list.innerHTML = html;
 
-            // Clic sur une notif → marquer comme lu + naviguer
+            // Clic sur une notif → marquer comme lu, PUIS naviguer (l'écriture doit
+            // se terminer avant la navigation, sinon elle est annulée et la notif
+            // reste « non lue » — cause du compteur qui ne descendait pas).
             list.querySelectorAll('.notif-item').forEach(function(el) {
                 el.addEventListener('click', function() {
                     var id = el.getAttribute('data-id');
-                    // Marquer comme lu
-                    var updated = allNotifs.map(function(n) {
-                        if (n.id === id) { n.lu = true; }
-                        return n;
-                    });
-                    if (rootHandle) {
-                        rootHandle.getFileHandle('_notifications.json', { create: true })
-                            .then(function(fh) { return fh.createWritable(); })
-                            .then(function(w) { return w.write(JSON.stringify(updated, null, 2)).then(function() { return w.close(); }); })
-                            .catch(function(err) {
-                                console.error('Échec de la mise à jour de _notifications.json :', err);
-                                if (errors && errors.showNotification) errors.showNotification('La notification n\'a pas pu être marquée comme lue : ' + err.message, 'error');
-                            });
-                    }
-                    // Naviguer vers la campagne
                     var notif = allNotifs.filter(function(n) { return n.id === id; })[0];
-                    if (notif && notif.campagneId) {
-                        window.location.href = 'pages/details.html?name=' + encodeURIComponent(notif.campagneId);
-                    } else if (notif && notif.type === 'zone_conflit_attente') {
-                        window.location.href = 'pages/comite-editorial.html';
+                    var updated = allNotifs.map(function(n) { if (n.id === id) n.lu = true; return n; });
+
+                    function go() {
+                        if (notif && notif.campagneId) {
+                            window.location.href = 'pages/details.html?name=' + encodeURIComponent(notif.campagneId);
+                        } else if (notif && notif.type === 'zone_conflit_attente') {
+                            window.location.href = 'pages/comite-editorial.html';
+                        } else {
+                            // Pas de navigation : on rafraîchit le panneau (badge à jour).
+                            var me = currentUserName();
+                            var mineNow = updated.filter(function(n) { return n.destinataire === me && !n.lu; });
+                            renderNotifications(mineNow, updated, rootHandle);
+                        }
+                    }
+
+                    if (rootHandle) {
+                        writeNotifications(updated, rootHandle).then(go).catch(function(err) {
+                            console.error('Échec de la mise à jour de _notifications.json :', err);
+                            if (errors && errors.showNotification) errors.showNotification('La notification n\'a pas pu être marquée comme lue : ' + err.message, 'error');
+                            go();
+                        });
+                    } else {
+                        go();
                     }
                 });
             });
