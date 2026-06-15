@@ -798,11 +798,22 @@
             data.ubs.forEach(function(u) { smallCards += '<span class="tag">' + security.escapeHtml(u) + '</span>'; });
             smallCards += '</div></div>';
         }
-        if (data.targetProduct || data.productUrl || data.offerValidityDate) {
+        if (data.cibleProspect) {
+            smallCards += '<div class="detail-section"><h3>🧲 Prospects</h3><div class="detail-grid">';
+            smallCards += '<div class="detail-item"><span class="detail-label">Cible prospects</span><span class="detail-value">Oui</span></div>';
+            if (data.prospectSource) smallCards += '<div class="detail-item"><span class="detail-label">Source</span><span class="detail-value">' + security.escapeHtml(data.prospectSource) + '</span></div>';
+            smallCards += '</div></div>';
+        }
+        // Produits ciblés : nouveau champ multi (targetProducts) avec repli sur l'ancien (targetProduct)
+        var _detProds = Array.isArray(data.targetProducts) ? data.targetProducts : (data.targetProduct ? [data.targetProduct] : []);
+        if (_detProds.length || data.productUrl || data.offerValidityDate || data.offrePromo || data.parcoursSelfcare || data.parcoursSimulateur) {
             smallCards += '<div class="detail-section"><h3>🛍️ Produit</h3><div class="detail-grid">';
-            if (data.targetProduct) smallCards += '<div class="detail-item"><span class="detail-label">Produit cible</span><span class="detail-value">' + security.escapeHtml(data.targetProduct) + '</span></div>';
+            if (_detProds.length) smallCards += '<div class="detail-item"><span class="detail-label">Produits ciblés</span><span class="detail-value">' + security.escapeHtml(_detProds.join(', ')) + '</span></div>';
             if (data.productUrl)    smallCards += '<div class="detail-item"><span class="detail-label">URL Fiche Produit</span><span class="detail-value"><a href="' + security.escapeHtml(data.productUrl) + '" target="_blank">' + security.escapeHtml(data.productUrl) + '</a></span></div>';
+            if (data.offrePromo) smallCards += '<div class="detail-item"><span class="detail-label">Offre promotionnelle</span><span class="detail-value">' + security.escapeHtml(data.offrePromo) + '</span></div>';
             if (data.offerValidityDate) smallCards += '<div class="detail-item"><span class="detail-label">Date validité offre</span><span class="detail-value">' + security.escapeHtml(data.offerValidityDate) + '</span></div>';
+            if (data.parcoursSelfcare) smallCards += '<div class="detail-item"><span class="detail-label">Parcours selfcare</span><span class="detail-value">' + security.escapeHtml(data.parcoursSelfcare) + '</span></div>';
+            if (data.parcoursSimulateur) smallCards += '<div class="detail-item"><span class="detail-label">Parcours simulateur</span><span class="detail-value">' + security.escapeHtml(data.parcoursSimulateur) + '</span></div>';
             smallCards += '</div></div>';
         }
         if (data.transfo) {

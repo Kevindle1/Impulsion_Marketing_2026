@@ -992,7 +992,8 @@
                         </div> 
 <div class="form-group">
                             <label for="campagneLiee">Campagne liée <span style="font-weight:400;color:#888;">(optionnel)</span></label>
-                            <input type="text" id="campagneLiee" placeholder="Nom exact de la campagne liée...">
+                            <input type="text" id="campagneLiee" list="campagnesListData" placeholder="Choisir ou saisir une campagne...">
+                            <datalist id="campagnesListData"></datalist>
                         </div>
 
                         <div class="form-group fg-full">
@@ -1042,6 +1043,17 @@
                     <div class="form-step" data-step="2">
                         <h3 class="step-title">🎯 Segmentation</h3>
                         <p class="step-description">Définissez les segments et univers de besoin</p>
+
+                        <div class="form-group" style="background:var(--green-50,#e8f6ef);border:1px solid var(--green-100,#cdeede);border-radius:8px;padding:12px 14px;">
+                            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
+                                <input type="checkbox" id="cibleProspect" style="width:17px;height:17px;cursor:pointer;">
+                                <span>Cible aussi des <strong>prospects</strong></span>
+                            </label>
+                            <div id="prospectSourceGroup" style="display:none;margin-top:10px;">
+                                <label for="prospectSource" style="font-size:13px;">Source / précision <span style="font-weight:400;color:#888;">(ex : courriers refus EER, listes entreprises…)</span></label>
+                                <input type="text" id="prospectSource" placeholder="Préciser la source des prospects...">
+                            </div>
+                        </div>
 
                         <div class="form-group">
                             <label>Segments <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
@@ -1121,13 +1133,36 @@
                             <label for="productUrl">URL FICHE PRODUIT :</label>
                             <input type="url" id="productUrl">
                         </div>
+                        <div class="form-group fg-full">
+                            <label>Produits ciblés <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
+                            <div id="targetProductsContainer" style="margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                                <span id="targetProductsEmpty" style="grid-column:1/-1;font-size:12px;color:var(--muted);">Aucun produit configuré. Ajoutez-les dans Administration → Produits.</span>
+                            </div>
+                        </div>
                         <div class="form-group">
-                            <label for="targetProduct">Produit cible :</label>
-                            <input type="text" id="targetProduct">
+                            <label>Offre promotionnelle :</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="offrePromo" value="Oui"> Oui</label>
+                                <label><input type="radio" name="offrePromo" value="Non"> Non</label>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="offerValidityDate">DATE CONDITION VIGEUR DE L'OFFRE :</label>
                             <input type="date" id="offerValidityDate">
+                        </div>
+                        <div class="form-group">
+                            <label>Parcours selfcare :</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="parcoursSelfcare" value="Oui"> Oui</label>
+                                <label><input type="radio" name="parcoursSelfcare" value="Non"> Non</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Parcours simulateur :</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="parcoursSimulateur" value="Oui"> Oui</label>
+                                <label><input type="radio" name="parcoursSimulateur" value="Non"> Non</label>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Transfo :</label>
@@ -1420,10 +1455,29 @@
 
                 if (data.persona) $("#persona").value = data.persona;
 
+                // Prospect (bloc en tête de Segmentation)
+                if (data.cibleProspect) {
+                    var cpCb = document.getElementById('cibleProspect');
+                    if (cpCb) { cpCb.checked = true; cpCb.dispatchEvent(new Event('change')); }
+                    if (data.prospectSource) { var ps = $("#prospectSource"); if (ps) ps.value = data.prospectSource; }
+                }
+
                 // Produit
                 if (data.productUrl) $("#productUrl").value = data.productUrl;
-                if (data.targetProduct) $("#targetProduct").value = data.targetProduct;
+                // Produits ciblés (multi). Rétro-compat : ancien champ texte `targetProduct`.
+                var _prods = Array.isArray(data.targetProducts) ? data.targetProducts
+                           : (data.targetProduct ? [data.targetProduct] : []);
+                _prods.forEach(function(p) {
+                    var cb = document.querySelector('.product-cb[value="' + String(p).trim().replace(/"/g, '\\"') + '"]');
+                    if (cb) cb.checked = true;
+                });
                 if (data.offerValidityDate) $("#offerValidityDate").value = data.offerValidityDate;
+                ['offrePromo', 'parcoursSelfcare', 'parcoursSimulateur'].forEach(function(name) {
+                    if (data[name]) {
+                        var r = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]');
+                        if (r) r.checked = true;
+                    }
+                });
 
                 // Transfo — default to "Non" if missing to avoid blocking step 3 validation
                 const transfoValue = data.transfo || "Non";
@@ -1615,6 +1669,15 @@
                 });
             });
 
+            // Affiche le champ « source » quand la cible prospects est cochée
+            var cibleProspectCb = document.getElementById('cibleProspect');
+            if (cibleProspectCb) {
+                cibleProspectCb.addEventListener('change', function (e) {
+                    var g = document.getElementById('prospectSourceGroup');
+                    if (g) g.style.display = e.target.checked ? 'block' : 'none';
+                });
+            }
+
             // Variables globales pour le stepper
             var currentStep = 1;
             var totalSteps = 5;
@@ -1768,6 +1831,10 @@
                 html += '<div class="summary-section">';
                 html += '  <h4>🎯 Segmentation</h4>';
 
+                if (document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked) {
+                    var _ps = ($("#prospectSource") ? $("#prospectSource").value : '').trim();
+                    html += '  <div class="summary-item"><span class="summary-label">Cible prospects :</span><span class="summary-value">Oui' + (_ps ? ' — ' + _ps : '') + '</span></div>';
+                }
                 var checkedSegments = Array.from(document.querySelectorAll('.segment-cb:checked')).map(function(cb) { return cb.value; });
                 if (checkedSegments.length > 0) {
                     html += '  <div class="summary-item"><span class="summary-label">Segments :</span><span class="summary-value">' + checkedSegments.join(', ') + '</span></div>';
@@ -1783,8 +1850,12 @@
                 html += '<div class="summary-section">';
                 html += '  <h4>🛍️ Détails produit</h4>';
                 html += '  <div class="summary-item"><span class="summary-label">URL Fiche Produit :</span><span class="summary-value">' + ($("#productUrl").value || '-') + '</span></div>';
-                html += '  <div class="summary-item"><span class="summary-label">Produit cible :</span><span class="summary-value">' + ($("#targetProduct").value || '-') + '</span></div>';
+                var _summaryProds = Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function(cb){ return cb.value; });
+                html += '  <div class="summary-item"><span class="summary-label">Produits ciblés :</span><span class="summary-value">' + (_summaryProds.length ? _summaryProds.join(', ') : '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Offre promotionnelle :</span><span class="summary-value">' + (document.querySelector('input[name="offrePromo"]:checked')?.value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Date validité offre :</span><span class="summary-value">' + ($("#offerValidityDate").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Parcours selfcare :</span><span class="summary-value">' + (document.querySelector('input[name="parcoursSelfcare"]:checked')?.value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Parcours simulateur :</span><span class="summary-value">' + (document.querySelector('input[name="parcoursSimulateur"]:checked')?.value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Transfo :</span><span class="summary-value">' + (document.querySelector('input[name="transfo"]:checked')?.value || '-') + '</span></div>';
                 if (document.querySelector('input[name="transfo"]:checked')?.value === 'Oui') {
                     html += '  <div class="summary-item"><span class="summary-label">Numéro de Lot :</span><span class="summary-value">' + ($("#lotNumber").value || '-') + '</span></div>';
@@ -1857,6 +1928,7 @@
                 function checkedValues(sel) { return Array.prototype.map.call(document.querySelectorAll(sel), function (c) { return c.value; }); }
                 var prevUB = checkedValues('.ub-cb:checked');
                 var prevSeg = checkedValues('.segment-cb:checked');
+                var prevProd = checkedValues('.product-cb:checked');
 
                 // Listes déroulantes simples : on conserve l'option « Choisir... », la
                 // sélection courante, puis on régénère.
@@ -1903,6 +1975,20 @@
                     }).join('');
                 }
 
+                // Produits ciblés (liste de référence configurable en Admin)
+                var prodC = document.getElementById('targetProductsContainer');
+                if (prodC) {
+                    var prodList = Array.isArray(cfg.PRODUITS) ? cfg.PRODUITS : [];
+                    if (prodList.length) {
+                        var prodLab = 'font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;';
+                        prodC.innerHTML = prodList.map(function (p) {
+                            return '<label style="' + prodLab + '"><input type="checkbox" class="product-cb" value="' + esc(p) + '"> ' + esc(p) + '</label>';
+                        }).join('');
+                    } else {
+                        prodC.innerHTML = '<span style="grid-column:1/-1;font-size:12px;color:var(--muted);">Aucun produit configuré. Ajoutez-les dans Administration → Produits.</span>';
+                    }
+                }
+
                 // Restaurer les cases précédemment cochées (segments + univers de besoin).
                 function restore(sel, values) {
                     if (!values.length) return;
@@ -1912,6 +1998,7 @@
                 }
                 restore('.segment-cb', prevSeg);
                 restore('.ub-cb', prevUB);
+                restore('.product-cb', prevProd);
 
                 bindSegAll();
             }
@@ -1978,9 +2065,11 @@
                 text += '\n';
 
                 // Section 2 : Segmentation
-                if (data.segments.length > 0 || data.ubs.length > 0 || data.persona) {
+                if (data.segments.length > 0 || data.ubs.length > 0 || data.persona || data.cibleProspect) {
                     text += '🎯 SEGMENTATION\n';
                     text += '─────────────────────────────────────\n';
+
+                    if (data.cibleProspect) text += 'Cible prospects     : Oui' + (data.prospectSource ? ' — ' + data.prospectSource : '') + '\n';
 
                     if (data.segments.length > 0) {
                         text += 'Segments (' + data.segments.length + '):\n';
@@ -2001,13 +2090,18 @@
                 }
 
                 // Section 3 : Détails produit
-                if (data.objetEmail || data.productUrl || data.targetProduct || data.offerValidityDate || data.transfo) {
+                var _expProds = Array.isArray(data.targetProducts) ? data.targetProducts
+                              : (data.targetProduct ? [data.targetProduct] : []);
+                if (data.objetEmail || data.productUrl || _expProds.length || data.offerValidityDate || data.transfo || data.offrePromo || data.parcoursSelfcare || data.parcoursSimulateur) {
                     text += '🛍️ DÉTAILS PRODUIT\n';
                     text += '─────────────────────────────────────\n';
                     if (data.objetEmail) text += 'Objet de l\'email    : ' + data.objetEmail + '\n';
                     if (data.productUrl) text += 'URL Fiche Produit   : ' + data.productUrl + '\n';
-                    if (data.targetProduct) text += 'Produit cible       : ' + data.targetProduct + '\n';
+                    if (_expProds.length) text += 'Produits ciblés     : ' + _expProds.join(', ') + '\n';
+                    if (data.offrePromo) text += 'Offre promotionnelle: ' + data.offrePromo + '\n';
                     if (data.offerValidityDate) text += 'Date validité offre : ' + data.offerValidityDate + '\n';
+                    if (data.parcoursSelfcare) text += 'Parcours selfcare   : ' + data.parcoursSelfcare + '\n';
+                    if (data.parcoursSimulateur) text += 'Parcours simulateur : ' + data.parcoursSimulateur + '\n';
                     if (data.transfo) text += 'Transfo             : ' + data.transfo + '\n';
                     if (data.transfo === 'Oui' && data.lotNumber) {
                         text += 'Numéro de Lot       : ' + data.lotNumber + '\n';
@@ -2275,13 +2369,14 @@
             function collectDraft() {
                 var form = document.getElementById('campaignForm');
                 if (!form) return null;
-                var d = { fields: {}, checks: {}, radios: {}, ub: [], seg: [], ts: Date.now() };
+                var d = { fields: {}, checks: {}, radios: {}, ub: [], seg: [], prod: [], ts: Date.now() };
                 form.querySelectorAll('input, select, textarea').forEach(function (el) {
                     if (el.type === 'file' || el.type === 'button' || el.type === 'submit') return;
                     if (el.type === 'radio') { if (el.checked && el.name) d.radios[el.name] = el.value; return; }
                     if (el.type === 'checkbox') {
                         if (el.classList.contains('ub-cb')) { if (el.checked) d.ub.push(el.value); return; }
                         if (el.classList.contains('segment-cb')) { if (el.checked) d.seg.push(el.value); return; }
+                        if (el.classList.contains('product-cb')) { if (el.checked) d.prod.push(el.value); return; }
                         if (el.id) d.checks[el.id] = el.checked;
                         return;
                     }
@@ -2332,10 +2427,11 @@
                             if (el && el.tagName !== 'SELECT') el.value = d.fields[id];
                         });
                         Object.keys(d.checks || {}).forEach(function (id) {
-                            var el = document.getElementById(id); if (el) el.checked = d.checks[id];
+                            var el = document.getElementById(id); if (el) { el.checked = d.checks[id]; if (id === 'cibleProspect') el.dispatchEvent(new Event('change')); }
                         });
                         (d.ub || []).forEach(function (v) { Array.prototype.forEach.call(form.querySelectorAll('.ub-cb'), function (c) { if (c.value === v) c.checked = true; }); });
                         (d.seg || []).forEach(function (v) { Array.prototype.forEach.call(form.querySelectorAll('.segment-cb'), function (c) { if (c.value === v) c.checked = true; }); });
+                        (d.prod || []).forEach(function (v) { Array.prototype.forEach.call(form.querySelectorAll('.product-cb'), function (c) { if (c.value === v) c.checked = true; }); });
                         updateTeamRestrictions();
                     }, 200);
                 }, 200);
@@ -2440,7 +2536,12 @@
                     persona: $("#persona").value,
 
                     productUrl: $("#productUrl").value,
-                    targetProduct: $("#targetProduct").value,
+                    targetProducts: Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function(cb){ return cb.value; }),
+                    offrePromo: (document.querySelector('input[name="offrePromo"]:checked') || {}).value || '',
+                    parcoursSelfcare: (document.querySelector('input[name="parcoursSelfcare"]:checked') || {}).value || '',
+                    parcoursSimulateur: (document.querySelector('input[name="parcoursSimulateur"]:checked') || {}).value || '',
+                    cibleProspect: !!(document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked),
+                    prospectSource: ($("#prospectSource") ? $("#prospectSource").value : '').trim(),
                     offerValidityDate: $("#offerValidityDate").value,
                     transfo: document.querySelector('input[name="transfo"]:checked')?.value,
                     lotNumber: $("#lotNumber").value,
@@ -2541,13 +2642,19 @@
                     typology: $("#typology").value,
                     market: $("#market").value,
                     recurrence: $("#recurrence").value,
+                    campagneLiee: $("#campagneLiee").value.trim(),
                     requiredTeams: [],
                     segments: [],
                     ubs: [],
                     persona: $("#persona").value,
 
                     productUrl: $("#productUrl").value,
-                    targetProduct: $("#targetProduct").value,
+                    targetProducts: Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function(cb){ return cb.value; }),
+                    offrePromo: (document.querySelector('input[name="offrePromo"]:checked') || {}).value || '',
+                    parcoursSelfcare: (document.querySelector('input[name="parcoursSelfcare"]:checked') || {}).value || '',
+                    parcoursSimulateur: (document.querySelector('input[name="parcoursSimulateur"]:checked') || {}).value || '',
+                    cibleProspect: !!(document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked),
+                    prospectSource: ($("#prospectSource") ? $("#prospectSource").value : '').trim(),
                     offerValidityDate: $("#offerValidityDate").value,
                     transfo: document.querySelector('input[name="transfo"]:checked')?.value,
                     lotNumber: $("#lotNumber").value,
@@ -2646,6 +2753,24 @@
                 return folderName;
             }
 
+            // Remplit la liste de suggestions « Campagne liée » avec les campagnes
+            // existantes (noms de dossiers, tels qu'utilisés par la page Détails).
+            async function populateCampaignDatalist() {
+                var dl = document.getElementById('campagnesListData');
+                if (!dl || !state.campaignsFolder) return;
+                try {
+                    var names = [];
+                    var current = state.editCampaignName || state.duplicateCampaignName || '';
+                    for await (var entry of state.campaignsFolder.values()) {
+                        if (entry.kind === 'directory' && entry.name !== current) names.push(entry.name);
+                    }
+                    names.sort(function (a, b) { return a.localeCompare(b); });
+                    dl.innerHTML = names.map(function (n) {
+                        return '<option value="' + String(n).replace(/"/g, '&quot;') + '"></option>';
+                    }).join('');
+                } catch (e) { /* liste indisponible : la saisie libre reste possible */ }
+            }
+
             window.addEventListener("load", () => {
                 // Initialiser le système d'aide
                 help.initHelp('saisie-campagne');
@@ -2660,7 +2785,7 @@
 
                 // Vérifier le dossier puis, le cas échéant, charger la campagne à éditer.
                 checkFolder().then(() => {
-                    if (state.campaignsFolder) checkEditMode();
+                    if (state.campaignsFolder) { checkEditMode(); populateCampaignDatalist(); }
                     // Brouillon (mode création uniquement) : autosave + proposition de restauration
                     if (isCreationMode) { startDraftAutosave(); offerDraftRestore(); }
                 });

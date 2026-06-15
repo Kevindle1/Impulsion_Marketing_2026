@@ -173,6 +173,12 @@ window.ImpulsionMarketing.config = (function() {
   ];
 
   // ========================================
+  // Produits (liste de référence, configurable en Administration)
+  // ========================================
+
+  const PRODUITS = [];
+
+  // ========================================
   // Marchés
   // ========================================
 
@@ -379,6 +385,7 @@ window.ImpulsionMarketing.config = (function() {
     CANAUX: CANAUX,
     TYPES_COM: TYPES_COM,
     TYPOLOGIES: TYPOLOGIES,
+    PRODUITS: PRODUITS,
     MARCHES: MARCHES,
     RECURRENCES: RECURRENCES,
     LOTS: LOTS,
