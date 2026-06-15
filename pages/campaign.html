@@ -2634,6 +2634,15 @@
                     market: $("#market").value,
                     recurrence: $("#recurrence").value,
                     campagneLiee: $("#campagneLiee").value.trim(),
+                    juridique: (function() {
+                        var req = document.getElementById('juridiqueRequired');
+                        if (!req || !req.checked) return null;
+                        return {
+                            required: true,
+                            comment: ($("#juridiqueComment") || {}).value || '',
+                            status: 'pending'
+                        };
+                    })(),
                     requiredTeams: [],
                     segments: [],
                     ubs: [],
