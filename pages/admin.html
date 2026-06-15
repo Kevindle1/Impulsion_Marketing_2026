@@ -138,12 +138,11 @@
             { key: 'universBesoins', label: 'Univers de besoin',           ph: 'Ex : Épargne, Crédits…' },
             { key: 'typesCom',       label: 'Types de communication',      ph: 'Ex : Commerciales, Gestion, Réglementaire…' },
             { key: 'typologies',     label: 'Typologies',                  ph: 'Ex : PR, Campagne' },
-            { key: 'produits',       label: 'Produits',                    ph: 'Ex : Livret A, Assurance Auto…' },
             { key: 'marches',        label: 'Marchés',                     ph: 'Ex : Particuliers…' },
             { key: 'recurrences',    label: 'Récurrences',                 ph: 'Ex : Mensuel, One shot…' },
             { key: 'lots',           label: 'Numéros de lot',              ph: 'Ex : 1, 2, Création' }
         ];
-        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', produits: 'PRODUITS', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS' };
+        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS' };
 
         // ── Onglets ──
         document.querySelectorAll('.admin-tab').forEach(function (btn) {
@@ -452,7 +451,7 @@
             btn.disabled = true; btn.textContent = 'Envoi…';
             notifyAuthor(it, def, me)
                 .then(function () {
-                    return writeJson('docs', 'incidents.json', incidents, 'Réponse enregistrée — auteur notifié.');
+                    return writeJson('Données', 'incidents.json', incidents, 'Réponse enregistrée — auteur notifié.');
                 })
                 .then(function () { renderIncidents(); renderOverview(); })
                 .catch(function (e) { btn.disabled = false; btn.textContent = '💬 Répondre & notifier'; notify('Échec : ' + (e && e.message), 'error'); });
@@ -494,7 +493,7 @@
             });
         }
         function saveIncidents() {
-            writeJson('docs', 'incidents.json', incidents, 'Signalement mis à jour.').then(renderIncidents);
+            writeJson('Données', 'incidents.json', incidents, 'Signalement mis à jour.').then(renderIncidents);
         }
 
         // ── Persistance ──
@@ -668,7 +667,7 @@
             // incidents
             return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
                 if (res.status !== 'success') return [];
-                return res.handle.getDirectoryHandle('docs').then(function (d) {
+                return res.handle.getDirectoryHandle('Données').then(function (d) {
                     return d.getFileHandle('incidents.json').then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
                         .then(function (t) { try { return JSON.parse(t) || []; } catch (e) { return []; } });
                 }).catch(function () { return []; });

@@ -1,7 +1,7 @@
 /**
  * Signalement d'incident / amélioration — Impulsion Marketing
  * Injecte un bouton en bas du menu latéral + une fenêtre de signalement.
- * Les signalements sont enregistrés dans docs/incidents.json sur le dossier racine.
+ * Les signalements sont enregistrés dans Données/incidents.json sur le dossier racine.
  */
 window.ImpulsionMarketing = window.ImpulsionMarketing || {};
 
@@ -44,7 +44,7 @@ window.ImpulsionMarketing.incident = (function () {
     ds.getRootHandleWithCheck()
       .then(function (res) {
         if (res.status !== 'success') throw new Error('Dossier de travail non chargé.');
-        return res.handle.getDirectoryHandle('docs', { create: true });
+        return res.handle.getDirectoryHandle('Données', { create: true });
       })
       .then(function (docsDir) {
         return docsDir.getFileHandle('incidents.json', { create: true }).then(function (fh) {

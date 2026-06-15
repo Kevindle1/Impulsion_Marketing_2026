@@ -2831,8 +2831,8 @@
 
     // ── Bilan des campagnes : remontée du suivi hebdo (.xlsx) par canal ──────────
     // Le fichier « Suivi MDC-MKD_12mois_*.xlsx » le plus récent est lu dans le dossier
-    // « Suivi » de l'espace de travail. On relie chaque canal aux lignes du suivi via
-    // codeAction (dépôt Data = ID_ACTION) et codeCom (dépôt EBF = code_communication).
+    // « Données/Suivi » de l'espace de travail. On relie chaque canal aux lignes du suivi
+    // via codeAction (dépôt Data = ID_ACTION) et codeCom (dépôt EBF = code_communication).
     var SUIVI_FOLDER = 'Suivi';
     var SUIVI_SHEET = 'détail-tous';
     var _suiviIndex = null;
@@ -2896,7 +2896,8 @@
         if (_suiviIndex) return Promise.resolve(_suiviIndex);
         var sx = window.ImpulsionMarketing && window.ImpulsionMarketing.suiviXlsx;
         if (!currentRootHandle || !sx) return Promise.resolve(null);
-        return currentRootHandle.getDirectoryHandle(SUIVI_FOLDER)
+        return currentRootHandle.getDirectoryHandle('Données')
+            .then(function(d) { return d.getDirectoryHandle(SUIVI_FOLDER); })
             .then(function(dir) {
                 return collectSuiviXlsx(dir).then(function(files) {
                     if (!files.length) return null;

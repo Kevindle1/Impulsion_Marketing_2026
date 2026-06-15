@@ -1135,8 +1135,8 @@
                         </div>
                         <div class="form-group fg-full">
                             <label>Produits ciblés <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
-                            <div id="targetProductsContainer" style="margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-                                <span id="targetProductsEmpty" style="grid-column:1/-1;font-size:12px;color:var(--muted);">Aucun produit configuré. Ajoutez-les dans Administration → Produits.</span>
+                            <div id="targetProductsContainer" style="margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+                                <div style="padding:10px 14px;font-size:12px;color:var(--muted);">Chargement des produits…</div>
                             </div>
                         </div>
                         <div class="form-group">
@@ -1928,7 +1928,6 @@
                 function checkedValues(sel) { return Array.prototype.map.call(document.querySelectorAll(sel), function (c) { return c.value; }); }
                 var prevUB = checkedValues('.ub-cb:checked');
                 var prevSeg = checkedValues('.segment-cb:checked');
-                var prevProd = checkedValues('.product-cb:checked');
 
                 // Listes déroulantes simples : on conserve l'option « Choisir... », la
                 // sélection courante, puis on régénère.
@@ -1975,20 +1974,6 @@
                     }).join('');
                 }
 
-                // Produits ciblés (liste de référence configurable en Admin)
-                var prodC = document.getElementById('targetProductsContainer');
-                if (prodC) {
-                    var prodList = Array.isArray(cfg.PRODUITS) ? cfg.PRODUITS : [];
-                    if (prodList.length) {
-                        var prodLab = 'font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;';
-                        prodC.innerHTML = prodList.map(function (p) {
-                            return '<label style="' + prodLab + '"><input type="checkbox" class="product-cb" value="' + esc(p) + '"> ' + esc(p) + '</label>';
-                        }).join('');
-                    } else {
-                        prodC.innerHTML = '<span style="grid-column:1/-1;font-size:12px;color:var(--muted);">Aucun produit configuré. Ajoutez-les dans Administration → Produits.</span>';
-                    }
-                }
-
                 // Restaurer les cases précédemment cochées (segments + univers de besoin).
                 function restore(sel, values) {
                     if (!values.length) return;
@@ -1998,7 +1983,6 @@
                 }
                 restore('.segment-cb', prevSeg);
                 restore('.ub-cb', prevUB);
-                restore('.product-cb', prevProd);
 
                 bindSegAll();
             }
@@ -2771,6 +2755,78 @@
                 } catch (e) { /* liste indisponible : la saisie libre reste possible */ }
             }
 
+            // Charge la liste des produits depuis les CSV de référence
+            // (Données/SOLEAD_EXPORT_CNS_PRODUITS.csv + ..._UNIVERS.csv) et rend des
+            // cases à cocher groupées par univers. Séparateur « ; », en-tête en 1re ligne.
+            //   PRODUITS : id;cr;id_univers;libelle   ·   UNIVERS : id;cr;libelle
+            async function loadProductsFromCsv() {
+                var prodC = document.getElementById('targetProductsContainer');
+                if (!prodC || !state.root) return;
+                function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+                function note(msg) { prodC.innerHTML = '<div style="padding:10px 14px;font-size:12px;color:var(--muted);">' + esc(msg) + '</div>'; }
+                var prev = Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function (c) { return c.value; });
+                try {
+                    var dir = await state.root.getDirectoryHandle('Données');
+                    async function readCsv(name) {
+                        try {
+                            var fh = await dir.getFileHandle(name);
+                            var txt = await (await fh.getFile()).text();
+                            return txt.replace(/^\uFEFF/, '').split(/\r?\n/)
+                                .filter(function (l) { return l.trim() !== ''; })
+                                .map(function (l) { return l.split(';'); });
+                        } catch (e) { return null; }
+                    }
+                    var prodRows = await readCsv('SOLEAD_EXPORT_CNS_PRODUITS.csv');
+                    if (!prodRows || prodRows.length < 2) { note('Fichier SOLEAD_EXPORT_CNS_PRODUITS.csv introuvable ou vide dans le dossier « Données ».'); return; }
+                    var univRows = await readCsv('SOLEAD_EXPORT_CNS_UNIVERS.csv');
+
+                    // Univers : id -> libellé (en conservant l'ordre du fichier)
+                    var uMap = {}, uOrder = [];
+                    (univRows || []).slice(1).forEach(function (r) {
+                        var id = (r[0] || '').trim(); var lib = (r.slice(2).join(';') || '').trim();
+                        if (id) { uMap[id] = lib; uOrder.push(id); }
+                    });
+
+                    // Produits regroupés par id_univers (dédoublonnage par libellé)
+                    var groups = {};
+                    prodRows.slice(1).forEach(function (r) {
+                        var idu = (r[2] || '').trim(); var lib = (r.slice(3).join(';') || '').trim();
+                        if (!lib) return;
+                        if (!groups[idu]) groups[idu] = [];
+                        if (groups[idu].indexOf(lib) === -1) groups[idu].push(lib);
+                    });
+
+                    // Ordre des groupes : ceux du fichier univers d'abord, puis le reste
+                    var keys = [];
+                    uOrder.forEach(function (k) { if (groups[k]) keys.push(k); });
+                    Object.keys(groups).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); });
+                    if (!keys.length) { note('Aucun produit trouvé dans le fichier.'); return; }
+
+                    var hdrStyle = 'background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);';
+                    var labStyle = 'font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;justify-self:start;';
+                    var html = '';
+                    keys.forEach(function (k, gi) {
+                        var title = uMap[k] || (k ? 'Univers ' + k : 'Autres');
+                        var last = gi === keys.length - 1;
+                        html += '<div style="' + hdrStyle + '">' + esc(title) + '</div>';
+                        html += '<div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;' + (last ? '' : 'border-bottom:1px solid var(--line);') + '">';
+                        groups[k].sort(function (a, b) { return a.localeCompare(b); }).forEach(function (lib) {
+                            html += '<label style="' + labStyle + '"><input type="checkbox" class="product-cb" value="' + esc(lib) + '"> ' + esc(lib) + '</label>';
+                        });
+                        html += '</div>';
+                    });
+                    prodC.innerHTML = html;
+
+                    // Restaurer les cases précédemment cochées (édition, ou rechargement)
+                    prev.forEach(function (v) {
+                        var cb = prodC.querySelector('.product-cb[value="' + String(v).replace(/"/g, '\\"') + '"]');
+                        if (cb) cb.checked = true;
+                    });
+                } catch (e) {
+                    note('Dossier « Données » introuvable. Placez-y les fichiers CSV des produits.');
+                }
+            }
+
             window.addEventListener("load", () => {
                 // Initialiser le système d'aide
                 help.initHelp('saisie-campagne');
@@ -2784,8 +2840,12 @@
                 updateTeamRestrictions();
 
                 // Vérifier le dossier puis, le cas échéant, charger la campagne à éditer.
-                checkFolder().then(() => {
-                    if (state.campaignsFolder) { checkEditMode(); populateCampaignDatalist(); }
+                checkFolder().then(async () => {
+                    if (state.campaignsFolder) {
+                        await loadProductsFromCsv();   // produits prêts avant le pré-remplissage
+                        checkEditMode();
+                        populateCampaignDatalist();
+                    }
                     // Brouillon (mode création uniquement) : autosave + proposition de restauration
                     if (isCreationMode) { startDraftAutosave(); offerDraftRestore(); }
                 });
