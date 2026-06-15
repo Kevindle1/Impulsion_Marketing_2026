@@ -703,7 +703,9 @@
             toggleActifBtn.style.color = isActif ? 'var(--red)' : 'var(--primary)';
         }
         var deleteBtn = document.getElementById('deleteCampaignButton');
-        if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+        // #12 : la suppression d'une campagne est réservée à l'administrateur.
+        var canDelete = users && users.isCurrentUserSuperAdmin && users.isCurrentUserSuperAdmin();
+        if (deleteBtn) deleteBtn.style.display = canDelete ? 'inline-flex' : 'none';
         buildSideNav(name, data);
         navigateTo('info');
     }
@@ -1218,6 +1220,7 @@
                 h += '<div class="form-row"><label>Code Action</label><input type="text" id="data-codeaction-' + idx + '" class="form-control"></div>';
                 h += '<div class="form-row"><label>Code MK</label><input type="text" id="data-codemk-' + idx + '" class="form-control"></div>';
                 h += '<div class="form-row"><label>Chemin de la Requête</label><input type="text" id="data-chemin-' + idx + '" class="form-control"></div>';
+                h += '<div class="form-row"><label>URL de l\'échantillon à valider <small style="font-weight:normal;color:var(--muted);">(lien vers l\'échantillon)</small></label><input type="url" id="data-urlechantillon-' + idx + '" class="form-control" placeholder="https://..."></div>';
             } else if (isMep) {
                 h += '<p style="font-size:14px;color:var(--gray-700);margin-bottom:8px;">Confirmez la mise en production de ce canal.</p>';
             }
@@ -1885,6 +1888,7 @@
             codeAction: (document.getElementById('data-codeaction-' + idx) || {}).value || '',
             codeMK: (document.getElementById('data-codemk-' + idx) || {}).value || '',
             cheminRequete: (document.getElementById('data-chemin-' + idx) || {}).value || '',
+            urlEchantillon: (document.getElementById('data-urlechantillon-' + idx) || {}).value || '',
             depositDate: new Date().toISOString()
         };
     }
@@ -1914,6 +1918,7 @@
         setVal('data-codeaction-' + idx, d.codeAction);
         setVal('data-codemk-' + idx, d.codeMK);
         setVal('data-chemin-' + idx, d.cheminRequete);
+        setVal('data-urlechantillon-' + idx, d.urlEchantillon);
         setVal('data-testreceivers-' + idx, d.testReceivers);
     }
 
@@ -2102,6 +2107,7 @@
         if (d.codeAction) h += '<div class="depot-readonly-item"><strong>Code Action</strong>' + security.escapeHtml(d.codeAction) + '</div>';
         if (d.codeMK) h += '<div class="depot-readonly-item"><strong>Code MK</strong>' + security.escapeHtml(d.codeMK) + '</div>';
         if (d.cheminRequete) h += '<div class="depot-readonly-item"><strong>Chemin requête</strong>' + security.escapeHtml(d.cheminRequete) + '</div>';
+        if (d.urlEchantillon) h += '<div class="depot-readonly-item"><strong>Échantillon à valider</strong><a href="' + security.escapeHtml(d.urlEchantillon) + '" target="_blank" rel="noopener">' + security.escapeHtml(d.urlEchantillon) + '</a></div>';
         h += '</div>';
         el.innerHTML = h;
         el.style.display = 'block';
