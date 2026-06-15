@@ -1726,6 +1726,28 @@
                 html += renderAlertBanner('Action requise : <strong>Déposer la maquette Com</strong>', false, actStyle);
             else if (steps.com_maquette === 'revision_requested')
                 html += renderAlertBanner('Modification demandée : <strong>Maquette Com</strong>', true, revStyle);
+
+            // COM : validation juridique et conformité (par canal, si requise)
+            if (data.juridique && data.juridique.required) {
+                var jcs = (data.workflow && data.workflow.channelSteps) || {};
+                var jurPending = [];
+                (data.channels || []).forEach(function(jch, jci) {
+                    var jst = jcs[jci] && jcs[jci].com_juridique;
+                    if (jst === 'pending') jurPending.push({ ch: jch, idx: jci });
+                });
+                function jurBanner(label, list, style) {
+                    var bh = '<div style="background:' + style.bg + ';border:1px solid ' + style.border + ';border-radius:8px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
+                    bh += '<span style="font-size:13px;font-weight:600;color:' + style.color + ';">⚖️ ' + label + '</span>';
+                    bh += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+                    list.forEach(function(jc) {
+                        bh += '<button class="btn-goto-channel" data-idx="' + jc.idx + '" style="background:' + style.btnBg + ';color:#fff;border:none;border-radius:6px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:12px;">📡 ' + security.escapeHtml(jc.ch.deliverableName || ('Canal ' + (jc.idx + 1))) + ' →</button>';
+                    });
+                    bh += '</div></div>';
+                    return bh;
+                }
+                if (jurPending.length > 0)
+                    html += jurBanner('Action requise : <strong>Validation juridique et conformité</strong>', jurPending, actStyle);
+            }
         }
 
         // EBF : BAT + Test en prod
