@@ -558,16 +558,112 @@ window.ImpulsionMarketing.workflow = (function () {
   // SAUVEGARDE
   // ─────────────────────────────────────────────────────────
 
+  // Le dossier Campagnes/ est partagé (OneDrive/SharePoint) : plusieurs
+  // utilisateurs peuvent éditer la même campagne en parallèle. Comme chaque
+  // sauvegarde réécrit tout campagne.json, un « dernier qui écrit gagne »
+  // écrasait les modifications des autres (notes kick-off, validations, canaux…).
+  //
+  // On corrige par une fusion 3-way : à l'ouverture on mémorise l'état lu sur
+  // disque (baseline) ; à la sauvegarde on relit le disque et on n'applique que
+  // les champs que CET utilisateur a réellement modifiés, par-dessus la version
+  // disque (qui peut contenir les modifs concurrentes des autres).
+  var _baselines = (typeof WeakMap !== 'undefined') ? new WeakMap() : null;
+
+  function _isPlainObject(v) {
+    return v !== null && typeof v === 'object' && !Array.isArray(v);
+  }
+  function _deepClone(v) {
+    return (v === undefined || v === null) ? v : JSON.parse(JSON.stringify(v));
+  }
+  function _deepEqual(a, b) {
+    return JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+  }
+
   /**
-   * Sauvegarde campagne.json avec le workflow mis à jour
+   * Fusion 3-way : repart de `theirs` (version disque la plus récente) et
+   * applique uniquement les changements de `mine` par rapport à `base`.
+   * - objets : fusion récursive clé par clé
+   * - tableaux / scalaires : si je l'ai modifié vs base → ma valeur gagne,
+   *   sinon on garde la valeur disque (celle des autres)
+   */
+  function threeWayMerge(base, mine, theirs) {
+    if (!_isPlainObject(mine)) {
+      // Valeur non-objet : ma valeur si je l'ai changée, sinon celle du disque
+      return _deepEqual(mine, base) ? _deepClone(theirs) : _deepClone(mine);
+    }
+    base = _isPlainObject(base) ? base : {};
+    var result = _isPlainObject(theirs) ? _deepClone(theirs) : {};
+
+    Object.keys(mine).forEach(function (k) {
+      var mv = mine[k], bv = base[k], tv = result[k];
+      if (_isPlainObject(mv) && (_isPlainObject(tv) || tv === undefined)) {
+        result[k] = threeWayMerge(bv, mv, tv);
+      } else if (!_deepEqual(mv, bv)) {
+        result[k] = _deepClone(mv);            // je l'ai modifié → ma valeur gagne
+      } else if (tv === undefined) {
+        result[k] = _deepClone(mv);            // inchangé mais absent du disque
+      }
+      // sinon : inchangé par moi → on garde la valeur disque déjà présente
+    });
+
+    // Clés que j'ai supprimées (présentes dans base, absentes de mine) :
+    // on ne les retire que si le disque ne les a pas modifiées entre-temps.
+    Object.keys(base).forEach(function (k) {
+      if (!(k in mine) && (k in result) && _deepEqual(base[k], result[k])) {
+        delete result[k];
+      }
+    });
+    return result;
+  }
+
+  /**
+   * Mémorise l'état de référence d'une campagne (à appeler juste après le
+   * chargement depuis le disque). Permet la fusion 3-way à la sauvegarde.
+   */
+  function captureBaseline(campaignData) {
+    if (_baselines && _isPlainObject(campaignData)) {
+      _baselines.set(campaignData, _deepClone(campaignData));
+    }
+  }
+
+  // Remplace en place le contenu de `target` par celui de `source`
+  // (conserve la référence objet utilisée ailleurs dans la page).
+  function _replaceInPlace(target, source) {
+    Object.keys(target).forEach(function (k) { if (!(k in source)) delete target[k]; });
+    Object.keys(source).forEach(function (k) { target[k] = _deepClone(source[k]); });
+  }
+
+  /**
+   * Sauvegarde campagne.json avec le workflow mis à jour.
+   * Relit le disque et fusionne (3-way) pour ne pas écraser les modifications
+   * concurrentes d'autres utilisateurs. En cas d'échec de relecture/fusion,
+   * on retombe sur l'écriture directe (comportement historique) pour ne jamais
+   * bloquer une sauvegarde.
    */
   function saveCampaignWorkflow(rootHandle, campaignName, campaignData) {
+    var campaignDirRef;
     return rootHandle.getDirectoryHandle('Campagnes')
       .then(function (campagnesDir) {
         return campagnesDir.getDirectoryHandle(campaignName);
       })
       .then(function (campaignDir) {
-        return campaignDir.getFileHandle('campagne.json', { create: false });
+        campaignDirRef = campaignDir;
+        // Relecture de la version disque pour fusion (non bloquante)
+        return campaignDir.getFileHandle('campagne.json', { create: false })
+          .then(function (fh) { return fh.getFile(); })
+          .then(function (f) { return f.text(); })
+          .then(function (txt) { try { return JSON.parse(txt); } catch (e) { return null; } })
+          .catch(function () { return null; });
+      })
+      .then(function (diskData) {
+        var baseline = _baselines ? _baselines.get(campaignData) : null;
+        if (diskData && baseline) {
+          var merged = threeWayMerge(baseline, campaignData, diskData);
+          _replaceInPlace(campaignData, merged); // l'objet en mémoire reflète la fusion
+        }
+        // Nouvelle référence = ce qu'on vient d'écrire
+        if (_baselines) _baselines.set(campaignData, _deepClone(campaignData));
+        return campaignDirRef.getFileHandle('campagne.json', { create: false });
       })
       .then(function (fileHandle) {
         return fileHandle.createWritable();
@@ -762,6 +858,8 @@ window.ImpulsionMarketing.workflow = (function () {
     isCompleted:              isCompleted,
     getCurrentStepLabel:      getCurrentStepLabel,
     saveCampaignWorkflow:     saveCampaignWorkflow,
+    captureBaseline:          captureBaseline,
+    threeWayMerge:            threeWayMerge,
     getAvailableActions:      getAvailableActions,
     updateCampaignIndex:      updateCampaignIndex,
     updateCampaignIndexFromDir: updateCampaignIndexFromDir,

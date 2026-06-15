@@ -672,6 +672,8 @@
                         var data = JSON.parse(text);
                         if (workflow) workflow.initWorkflow(data);
                         currentCampaignData = data;
+                        // Mémorise l'état disque pour la fusion concurrente à la sauvegarde
+                        if (workflow && workflow.captureBaseline) workflow.captureBaseline(data);
                         initDetailsUI(campaignName, data);
                         checkPublicationEndDates(campaignName, data);
                     });
@@ -3484,13 +3486,50 @@
             .catch(function() { renderDiscussionMessages([]); });
     }
 
+    // Fusion par id : le dossier est partagé, deux personnes peuvent commenter
+    // en parallèle. On réunit les messages locaux et ceux du disque (clé = id)
+    // pour ne perdre aucun commentaire. Les « likes » sont fusionnés par union.
+    function mergeDiscussion(localMsgs, diskMsgs) {
+        var byId = {}, order = [];
+        function add(m) {
+            if (!m) return;
+            var key = (m.id != null) ? m.id : ('_noid_' + order.length);
+            if (byId[key]) {
+                var likes = (byId[key].likes || []).slice();
+                (m.likes || []).forEach(function(n) { if (likes.indexOf(n) < 0) likes.push(n); });
+                byId[key].likes = likes;
+            } else {
+                byId[key] = JSON.parse(JSON.stringify(m));
+                order.push(key);
+            }
+        }
+        (diskMsgs || []).forEach(add);
+        (localMsgs || []).forEach(add);
+        var merged = order.map(function(k) { return byId[k]; });
+        merged.sort(function(a, b) { return (a.id || 0) - (b.id || 0); }); // ordre chronologique (id = Date.now)
+        return merged;
+    }
+
+    // Renvoie la liste fusionnée effectivement écrite (à ré-afficher par l'appelant).
     function saveDiscussion(campaignName, messages) {
+        var dirRef;
         return currentRootHandle.getDirectoryHandle('Campagnes')
             .then(function(d) { return d.getDirectoryHandle(campaignName); })
-            .then(function(d) { return d.getFileHandle('discussion.json', { create: true }); })
-            .then(function(fh) { return fh.createWritable(); })
-            .then(function(w) {
-                return w.write(JSON.stringify({ messages: messages }, null, 2)).then(function() { return w.close(); });
+            .then(function(d) { dirRef = d; return d.getFileHandle('discussion.json', { create: true }); })
+            .then(function(fh) {
+                // Relit la version disque pour fusion concurrente (non bloquant)
+                return fh.getFile().then(function(f) { return f.text(); })
+                    .then(function(t) { try { return JSON.parse(t).messages || []; } catch (e) { return []; } })
+                    .catch(function() { return []; });
+            })
+            .then(function(diskMsgs) {
+                var merged = mergeDiscussion(messages, diskMsgs);
+                return dirRef.getFileHandle('discussion.json', { create: true })
+                    .then(function(fh) { return fh.createWritable(); })
+                    .then(function(w) {
+                        return w.write(JSON.stringify({ messages: merged }, null, 2)).then(function() { return w.close(); });
+                    })
+                    .then(function() { return merged; });
             });
     }
 
@@ -3629,9 +3668,9 @@
                     var msg = { id: Date.now(), author: currentUser.name, date: new Date().toISOString(), text: text, likes: [] };
                     messages.push(msg);
                     submitBtn.disabled = true;
-                    saveDiscussion(currentCampaignName, messages).then(function() {
+                    saveDiscussion(currentCampaignName, messages).then(function(merged) {
                         input.value = '';
-                        renderDiscussionMessages(messages);
+                        renderDiscussionMessages(merged || messages);
                         notifyMentions(text, currentCampaignName, currentUser.name);
                     });
                 };
@@ -3648,8 +3687,8 @@
                     var pos   = likes.indexOf(currentUser.name);
                     if (pos >= 0) { likes.splice(pos, 1); } else { likes.push(currentUser.name); }
                     msg.likes = likes;
-                    saveDiscussion(currentCampaignName, messages).then(function() {
-                        renderDiscussionMessages(messages);
+                    saveDiscussion(currentCampaignName, messages).then(function(merged) {
+                        renderDiscussionMessages(merged || messages);
                     });
                 };
             });

@@ -139,3 +139,53 @@ test('getCurrentStepLabel — libellés d’état clés', () => {
   done.workflow.channelSteps[0].data_mise_en_prod = 'completed';
   assert.equal(workflow.getCurrentStepLabel(done), 'Terminée');
 });
+
+// ─────────────────────────────────────────────────────────
+// FUSION 3-WAY (sauvegarde concurrente — dossier partagé)
+// ─────────────────────────────────────────────────────────
+test('threeWayMerge — ne touche pas aux champs modifiés par les autres', () => {
+  const base   = { titre: 'A', statut: 'pending' };
+  const mine   = { titre: 'A', statut: 'validated' };     // je change le statut
+  const theirs = { titre: 'B', statut: 'pending' };        // un autre a changé le titre
+  const merged = workflow.threeWayMerge(base, mine, theirs);
+  assert.equal(merged.statut, 'validated', 'mon changement est conservé');
+  assert.equal(merged.titre, 'B', 'le changement de l’autre est préservé');
+});
+
+test('threeWayMerge — notes kick-off : deux participants ne s’écrasent pas', () => {
+  // Chacun a chargé un objet vide, puis a ajouté SA note.
+  const base   = { kickoffPersonNotes: {} };
+  const mine   = { kickoffPersonNotes: { Alice: 'note Alice' } };
+  const theirs = { kickoffPersonNotes: { Bob: 'note Bob' } }; // Bob a sauvegardé entre-temps
+  const merged = workflow.threeWayMerge(base, mine, theirs);
+  assert.equal(merged.kickoffPersonNotes.Alice, 'note Alice');
+  assert.equal(merged.kickoffPersonNotes.Bob, 'note Bob', 'la note de Bob survit');
+});
+
+test('threeWayMerge — la validation PO n’efface pas une note saisie après coup', () => {
+  // Le PO a ouvert avec un objet vide et ne renseigne aucune note participant.
+  const base   = { kickoffPersonNotes: {}, kickoffDate: '' };
+  const mine   = { kickoffPersonNotes: {}, kickoffDate: '2026-06-20' }; // PO pose la date
+  const theirs = { kickoffPersonNotes: { Carla: 'ma note' }, kickoffDate: '' };
+  const merged = workflow.threeWayMerge(base, mine, theirs);
+  assert.equal(merged.kickoffDate, '2026-06-20', 'la date posée par le PO est écrite');
+  assert.equal(merged.kickoffPersonNotes.Carla, 'ma note', 'la note de Carla n’est pas écrasée');
+});
+
+test('threeWayMerge — sans baseline équivalent, ma valeur inchangée laisse celle du disque', () => {
+  const base   = { x: 1 };
+  const mine   = { x: 1 };       // je n’ai pas touché x
+  const theirs = { x: 2 };       // un autre a changé x
+  const merged = workflow.threeWayMerge(base, mine, theirs);
+  assert.equal(merged.x, 2, 'champ non modifié par moi → valeur disque conservée');
+});
+
+test('threeWayMerge — suppression respectée seulement si le disque n’a pas changé la clé', () => {
+  const base   = { a: 1, b: 2 };
+  const mine   = { a: 1 };               // j’ai supprimé b
+  const theirs = { a: 1, b: 2 };         // disque inchangé
+  assert.equal('b' in workflow.threeWayMerge(base, mine, theirs), false, 'b supprimé');
+
+  const theirs2 = { a: 1, b: 99 };       // un autre a modifié b
+  assert.equal(workflow.threeWayMerge(base, mine, theirs2).b, 99, 'b conservé car modifié ailleurs');
+});
