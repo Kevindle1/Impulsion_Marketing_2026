@@ -293,6 +293,13 @@ window.ImpulsionMarketing.workflow = (function () {
         ? (cs.com_juridique === 'validated' || cs.com_juridique === 'completed')
         : comValidated;
       if (canStartBat && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
+      // Gate juridique : tant que la validation juridique requise n'est pas faite,
+      // le BAT ne doit pas être ouvert. On re-verrouille un ebf_bat resté/passé
+      // à 'pending' (état hérité d'avant l'ajout du juridique, ou recalcul) —
+      // sans toucher un BAT déjà commencé (submitted/validated/completed).
+      if (juridiqueRequired && !canStartBat && cs.ebf_bat === 'pending') {
+        cs.ebf_bat = 'locked';
+      }
     }
     if (reqEbf && cs.ebf_bat === 'submitted' && cs.po_validation_bat === 'locked') {
       cs.po_validation_bat = 'pending';

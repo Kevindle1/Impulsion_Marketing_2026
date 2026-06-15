@@ -246,3 +246,24 @@ test('juridique requise — canal Com seul : non terminé tant que le juridique 
   workflow.advanceChannelStep(data, 0, 'com_juridique', 'validated');
   assert.equal(workflow.isChannelCompleted(ch0(data), data.requiredTeams, undefined, true), true, 'terminé après validation juridique');
 });
+
+test('juridique requise — un ebf_bat ouvert par erreur est re-verrouillé tant que le juridique n’est pas validé', () => {
+  const data = makeJurCampaign(true); // maquette validée, com_juridique pending
+  // Simule un état hérité : BAT ouvert avant l'ajout du juridique
+  data.workflow.channelSteps[0].ebf_bat = 'pending';
+  // Tout recalcul (rendu, action) doit re-verrouiller le BAT
+  workflow.initWorkflow(data);
+  assert.equal(ch0(data).ebf_bat, 'locked', 'le BAT est re-verrouillé tant que le juridique n’est pas validé');
+  assert.equal(ch0(data).com_juridique, 'pending', 'la validation juridique reste à faire');
+  // Après validation juridique, le BAT s’ouvre
+  workflow.advanceChannelStep(data, 0, 'com_juridique', 'validated');
+  assert.equal(ch0(data).ebf_bat, 'pending', 'le BAT s’ouvre une fois le juridique validé');
+});
+
+test('juridique requise — un BAT déjà commencé (submitted) n’est PAS re-verrouillé', () => {
+  const data = makeJurCampaign(true);
+  data.workflow.channelSteps[0].com_juridique = 'validated';
+  data.workflow.channelSteps[0].ebf_bat = 'submitted';
+  workflow.initWorkflow(data);
+  assert.equal(ch0(data).ebf_bat, 'submitted', 'le travail EBF en cours est préservé');
+});

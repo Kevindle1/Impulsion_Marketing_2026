@@ -1497,6 +1497,7 @@
         var reqData = isTeamRequired(data, 'Data');
         var channelStepDefs = workflow.STEPS.slice(3).filter(function(step) {
             if (step.id === 'com_maquette' || step.id === 'po_validation_maquette') return reqCom;
+            if (step.id === 'com_juridique') return reqCom && !!(data.juridique && data.juridique.required);
             if (step.id === 'ebf_bat' || step.id === 'po_validation_bat') return reqEbf;
             if (step.id === 'data_ciblage' || step.id === 'po_validation_ciblage') return reqData;
             if (step.id === 'data_lancement_test' || step.id === 'ebf_test_prod' || step.id === 'po_validation_test_prod') return reqEbf && reqData;
