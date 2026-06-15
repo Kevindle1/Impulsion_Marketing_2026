@@ -19,6 +19,7 @@ window.ImpulsionMarketing.workflow = (function () {
     { id: 'po_kickoff',             label: 'Kick-off',            actor: 'po',      icon: '🚀', description: 'Le PO organise le kick-off avec les équipes affectées' },
     { id: 'com_maquette',           label: 'Maquette Com',        actor: 'com',     icon: '🎨', description: 'La Com réalise la maquette' },
     { id: 'po_validation_maquette', label: 'Validation maquette', actor: 'po',      icon: '✅', description: 'Le PO valide la maquette' },
+    { id: 'com_juridique',          label: 'Validation juridique', actor: 'com',     icon: '⚖️', description: 'La Com valide juridiquement la maquette (si requis)' },
     { id: 'ebf_bat',                label: 'Réalisation BAT',     actor: 'ebf',     icon: '🖨️', description: "L'EBF réalise le BAT" },
     { id: 'po_validation_bat',      label: 'Validation BAT',      actor: 'po',      icon: '✅', description: 'Le PO valide le BAT' },
     { id: 'data_ciblage',           label: 'Ciblage Data',        actor: 'data',    icon: '🎯', description: 'La Data réalise le ciblage (parallèle possible)' },
@@ -35,7 +36,7 @@ window.ImpulsionMarketing.workflow = (function () {
 
   // IDs des étapes par canal (chaque canal a sa propre progression)
   var CHANNEL_STEP_IDS = [
-    'com_maquette', 'po_validation_maquette',
+    'com_maquette', 'po_validation_maquette', 'com_juridique',
     'ebf_bat', 'po_validation_bat',
     'data_ciblage', 'po_validation_ciblage',
     'data_lancement_test',
@@ -55,6 +56,7 @@ window.ImpulsionMarketing.workflow = (function () {
   var DEFAULT_CHANNEL_STEPS = {
     com_maquette:           'locked',
     po_validation_maquette: 'locked',
+    com_juridique:          'locked',
     ebf_bat:                'locked',
     po_validation_bat:      'locked',
     data_ciblage:           'locked',
@@ -79,6 +81,14 @@ window.ImpulsionMarketing.workflow = (function () {
   function isTeamRequired(requiredTeams, team) {
     if (!requiredTeams || !Array.isArray(requiredTeams)) return true;
     return requiredTeams.indexOf(team) !== -1;
+  }
+
+  /**
+   * La campagne nécessite-t-elle une validation juridique et conformité ?
+   * (flag posé à la création — étape com_juridique insérée dans le workflow)
+   */
+  function juridiqueRequired(campaignData) {
+    return !!(campaignData && campaignData.juridique && campaignData.juridique.required);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -195,7 +205,7 @@ window.ImpulsionMarketing.workflow = (function () {
 
       // Recalculer les déblocages pour ce canal
       var chType = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
-      cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chType);
+      cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chType, juridiqueRequired(campaignData));
     }
 
     if (!campaignData.kickoffDate) campaignData.kickoffDate = '';
@@ -245,7 +255,7 @@ window.ImpulsionMarketing.workflow = (function () {
    * EBF seul (sans Data): kickoff → BAT → val.BAT → fin
    * Data seul          : kickoff → ciblage → val.ciblage → MEP
    */
-  function recalcChannelUnlocks(cs, globalSteps, requiredTeams, channelType) {
+  function recalcChannelUnlocks(cs, globalSteps, requiredTeams, channelType, juridiqueRequired) {
     var reqCom  = isTeamRequired(requiredTeams, 'Com');
     var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
     var reqData = isTeamRequired(requiredTeams, 'Data');
@@ -265,14 +275,24 @@ window.ImpulsionMarketing.workflow = (function () {
     if (reqCom && cs.com_maquette === 'submitted' && cs.po_validation_maquette === 'locked') {
       cs.po_validation_maquette = 'pending';
     }
+    // Validation juridique (Com) : débloquée après validation PO de la maquette,
+    // uniquement si la campagne requiert une validation juridique et conformité.
+    if (reqCom && juridiqueRequired) {
+      var maquetteValForJur = cs.po_validation_maquette === 'validated' || cs.po_validation_maquette === 'completed';
+      if (maquetteValForJur && cs.com_juridique === 'locked') cs.com_juridique = 'pending';
+    }
 
     // ── Chaîne EBF ──
     // ebf_bat se débloque quand :
-    // - Com requise : après po_validation_maquette validée
+    // - Com requise sans juridique : après po_validation_maquette validée
+    // - Com requise avec juridique : après com_juridique validée (par la Com)
     // - Com non requise : déjà géré ci-dessus (après kickoff)
     if (reqEbf && reqCom) {
       var comValidated = cs.po_validation_maquette === 'validated' || cs.po_validation_maquette === 'completed';
-      if (comValidated && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
+      var canStartBat = juridiqueRequired
+        ? (cs.com_juridique === 'validated' || cs.com_juridique === 'completed')
+        : comValidated;
+      if (canStartBat && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
     }
     if (reqEbf && cs.ebf_bat === 'submitted' && cs.po_validation_bat === 'locked') {
       cs.po_validation_bat = 'pending';
@@ -351,7 +371,7 @@ window.ImpulsionMarketing.workflow = (function () {
     for (var i = 0; i < numChannels; i++) {
       if (cs[i]) {
         var chTypeG = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
-        cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chTypeG);
+        cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chTypeG, juridiqueRequired(campaignData));
       }
     }
     return campaignData;
@@ -367,7 +387,7 @@ window.ImpulsionMarketing.workflow = (function () {
     if (!cs[channelIdx]) cs[channelIdx] = Object.assign({}, DEFAULT_CHANNEL_STEPS);
     cs[channelIdx][stepId] = newStatus;
     var chTypeC = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].type;
-    cs[channelIdx] = recalcChannelUnlocks(cs[channelIdx], campaignData.workflow.steps, campaignData.requiredTeams, chTypeC);
+    cs[channelIdx] = recalcChannelUnlocks(cs[channelIdx], campaignData.workflow.steps, campaignData.requiredTeams, chTypeC, juridiqueRequired(campaignData));
     return campaignData;
   }
 
@@ -412,6 +432,25 @@ window.ImpulsionMarketing.workflow = (function () {
   }
 
   /**
+   * Refus de la validation juridique (par la Com) pour un canal.
+   * On rejoue la séquence : retour à la maquette Com (révision demandée),
+   * la validation PO et la validation juridique sont reverrouillées, le motif
+   * est conservé. Quand la Com redépose, la séquence repart automatiquement.
+   */
+  function refuseChannelJuridique(campaignData, channelIdx, reason) {
+    initWorkflow(campaignData);
+    var cs = campaignData.workflow.channelSteps;
+    if (!cs || !cs[channelIdx]) return campaignData;
+    cs[channelIdx].com_juridique          = 'locked';
+    cs[channelIdx].po_validation_maquette = 'locked';
+    cs[channelIdx].com_maquette           = 'revision_requested';
+    if (!campaignData.workflow.channelRevisionComments) campaignData.workflow.channelRevisionComments = {};
+    if (!campaignData.workflow.channelRevisionComments[channelIdx]) campaignData.workflow.channelRevisionComments[channelIdx] = {};
+    campaignData.workflow.channelRevisionComments[channelIdx].com_maquette = '⚖️ Refus juridique : ' + (reason || '');
+    return campaignData;
+  }
+
+  /**
    * Initialise channelValidations (conservé pour rétrocompat, non utilisé en v2)
    */
   function initChannelValidations(campaignData, numChannels) {
@@ -428,7 +467,7 @@ window.ImpulsionMarketing.workflow = (function () {
   /**
    * Vérifie si UN canal est terminé selon les requiredTeams
    */
-  function isChannelCompleted(channelSteps, requiredTeams, channelType) {
+  function isChannelCompleted(channelSteps, requiredTeams, channelType, juridiqueRequired) {
     var reqCom  = isTeamRequired(requiredTeams, 'Com');
     var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
     var reqData = isTeamRequired(requiredTeams, 'Data');
@@ -444,7 +483,13 @@ window.ImpulsionMarketing.workflow = (function () {
       return channelSteps.po_validation_bat === 'validated' || channelSteps.po_validation_bat === 'completed';
     }
     if (reqCom) {
-      return channelSteps.po_validation_maquette === 'validated' || channelSteps.po_validation_maquette === 'completed';
+      // Canal Com seul (sans EBF ni Data) : terminé après validation de la
+      // maquette par le PO — et, si requis, après la validation juridique Com.
+      var maquetteOk = channelSteps.po_validation_maquette === 'validated' || channelSteps.po_validation_maquette === 'completed';
+      if (juridiqueRequired) {
+        return maquetteOk && (channelSteps.com_juridique === 'validated' || channelSteps.com_juridique === 'completed');
+      }
+      return maquetteOk;
     }
     return true;
   }
@@ -459,7 +504,7 @@ window.ImpulsionMarketing.workflow = (function () {
     var numChannels = Math.max((campaignData.channels || []).length, 1);
     for (var i = 0; i < numChannels; i++) {
       var chTypeI = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
-      if (!cs[i] || !isChannelCompleted(cs[i], campaignData.requiredTeams, chTypeI)) return false;
+      if (!cs[i] || !isChannelCompleted(cs[i], campaignData.requiredTeams, chTypeI, juridiqueRequired(campaignData))) return false;
     }
     return true;
   }
@@ -853,6 +898,8 @@ window.ImpulsionMarketing.workflow = (function () {
     requestChannelRevision:   requestChannelRevision,
     initChannelValidations:   initChannelValidations,
     validateChannelStep:      validateChannelStep,
+    refuseChannelJuridique:   refuseChannelJuridique,
+    juridiqueRequired:        juridiqueRequired,
     recalcUnlocks:            recalcUnlocks,
     recalcChannelUnlocks:     recalcChannelUnlocks,
     isCompleted:              isCompleted,

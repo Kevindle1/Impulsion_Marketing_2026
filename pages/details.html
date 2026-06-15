@@ -825,27 +825,28 @@
             smallCards += '</div></div>';
         }
 
-        // Section juridique (colonne latérale)
+        // Section juridique (colonne latérale) — vue d'ensemble en lecture seule.
+        // La validation/refus se fait désormais étape par étape dans le workflow,
+        // par la Com, sur chaque canal (étape ⚖️ Validation juridique).
         var jurHtml = '';
         if (data.juridique && data.juridique.required) {
             var jur = data.juridique;
-            var jurStatus = jur.status || 'pending';
-            var jurValidated = jurStatus === 'validated';
-            var isPOJur = users.isCurrentUserPO(data);
-            jurHtml += '<div class="detail-section" style="border-left-color:' + (jurValidated ? 'var(--primary)' : 'var(--amber)') + ';">';
+            var jcs = (data.workflow && data.workflow.channelSteps) || [];
+            var jurTotal = 0, jurDone = 0;
+            for (var ji = 0; ji < jcs.length; ji++) {
+                var st = jcs[ji] && jcs[ji].com_juridique;
+                if (st === undefined || st === 'na') continue;
+                jurTotal++;
+                if (st === 'validated' || st === 'completed') jurDone++;
+            }
+            var jurAllDone = jurTotal > 0 && jurDone === jurTotal;
+            jurHtml += '<div class="detail-section" style="border-left-color:' + (jurAllDone ? 'var(--primary)' : 'var(--amber)') + ';">';
             jurHtml += '<h3>⚖️ Validation juridique et conformité</h3>';
             jurHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
-            jurHtml += '<span style="background:' + (jurValidated ? 'var(--green-50)' : 'var(--amber-50)') + ';color:' + (jurValidated ? 'var(--primary-hover)' : '#d97706') + ';border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurValidated ? '✅ Validé' : '⏳ En attente') + '</span>';
+            jurHtml += '<span style="background:' + (jurAllDone ? 'var(--green-50)' : 'var(--amber-50)') + ';color:' + (jurAllDone ? 'var(--primary-hover)' : '#d97706') + ';border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurAllDone ? '✅ Validée sur tous les canaux' : ('⏳ ' + jurDone + '/' + jurTotal + ' canal(aux) validé(s)')) + '</span>';
             jurHtml += '</div>';
-            if (jur.comment) jurHtml += '<div style="font-size:13px;color:var(--gray-700);background:var(--line-2);border-radius:8px;padding:8px 12px;margin-bottom:8px;">' + security.escapeHtml(jur.comment) + '</div>';
-            if (jur.validatedAt) jurHtml += '<div style="font-size:12px;color:var(--muted);">Validé le ' + security.escapeHtml(jur.validatedAt) + '</div>';
-            if (isPOJur) {
-                if (!jurValidated) {
-                    jurHtml += '<button id="btn-juridique-validate" style="margin-top:8px;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">✅ Marquer comme validé</button>';
-                } else {
-                    jurHtml += '<button id="btn-juridique-reopen" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:8px;padding:7px 18px;font-weight:600;cursor:pointer;font-size:13px;">↩ Ré-ouvrir</button>';
-                }
-            }
+            jurHtml += '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Validation requise par la Com sur chaque canal, après validation de la maquette par le PO et avant transmission à l\'EBF.</div>';
+            if (jur.comment) jurHtml += '<div style="font-size:13px;color:var(--gray-700);background:var(--line-2);border-radius:8px;padding:8px 12px;">' + security.escapeHtml(jur.comment) + '</div>';
             jurHtml += '</div>';
         }
 
@@ -969,6 +970,12 @@
             html += buildComChannelSection(data, ch, idx, cs, isAssignedCom && comActive);
         }
 
+        // Zone 1.5 : Validation juridique Com — visible si juridique requis et déverrouillée
+        if (reqCom && data.juridique && data.juridique.required && cs.com_juridique && cs.com_juridique !== 'locked') {
+            var jurEditable = isAssignedCom && cs.com_juridique === 'pending';
+            html += buildJuridiqueChannelSection(data, ch, idx, cs, jurEditable);
+        }
+
         // Zone 2 : BAT EBF — visible seulement si EBF requis
         if (reqEbf) {
             var ebfBatActive = cs.ebf_bat === 'pending' || cs.ebf_bat === 'revision_requested';
@@ -1048,7 +1055,6 @@
             h += '<div class="form-row"><label>URL Figma</label><input type="url" id="com-figma-' + idx + '" class="form-control" placeholder="https://figma.com/..."></div>';
             h += '<div class="form-row"><label>Nombre d\'images</label><input type="number" id="com-numimages-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="com-img-urls-' + idx + '"></div>';
-            h += '<div class="form-row"><label>Validation juridique et conformité</label><div class="radio-group"><label><input type="radio" name="com-juri-' + idx + '" value="Oui"> Oui</label><label><input type="radio" name="com-juri-' + idx + '" value="Non"> Non</label></div></div>';
             h += '<div class="form-row"><label>Déposer votre maquette ici (PDF ou image)</label><input type="file" id="com-pdf-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
@@ -1068,6 +1074,36 @@
             if (chDates.depotMaquetteDate) h += '<div class="depot-readonly-item"><strong>Date dépôt maquette</strong>' + security.escapeHtml(chDates.depotMaquetteDate) + '</div>';
             if (chDates.validationMaquetteDate) h += '<div class="depot-readonly-item"><strong>Date validation maquette</strong>' + security.escapeHtml(chDates.validationMaquetteDate) + '</div>';
             h += '</div>';
+        }
+        h += '</div>';
+        return h;
+    }
+
+    // Zone 1.5 — Validation juridique et conformité (par la Com, par canal)
+    function buildJuridiqueChannelSection(data, ch, idx, cs, editable) {
+        var st       = cs.com_juridique;
+        var validated = st === 'validated' || st === 'completed';
+        var h = '<div class="actor-section actor-section--com" id="com-juridique-section-' + idx + '">';
+        h += '<h3>⚖️ Validation juridique et conformité';
+        if (validated) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (st === 'pending') h += ' <span style="font-size:11px;background:var(--amber-50);color:#d97706;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ À valider</span>';
+        h += '</h3>';
+        h += '<p style="color:var(--muted);font-size:13px;margin:4px 0 8px;">La maquette a été validée par le PO. La Com vérifie la conformité juridique avant transmission à l\'EBF pour le BAT.</p>';
+        if (data.juridique && data.juridique.comment) {
+            h += '<div style="font-size:13px;color:var(--gray-700);background:var(--line-2);border-radius:8px;padding:8px 12px;margin-bottom:8px;"><strong>Contact / note juridique :</strong> ' + security.escapeHtml(data.juridique.comment) + '</div>';
+        }
+        if (editable) {
+            h += '<div class="actor-form">';
+            h += '<div class="form-row"><label>Motif (obligatoire en cas de refus)</label><textarea id="juri-refuse-reason-' + idx + '" class="form-control" rows="2" placeholder="Ex : mention légale manquante, mentions tarifaires à corriger..."></textarea></div>';
+            h += '</div>';
+            h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-submit btn-juridique-validate-canal" data-ch="' + idx + '">✅ Valider juridiquement</button>';
+            h += '<button type="button" class="btn-actor-save btn-juridique-refuse-canal" data-ch="' + idx + '" style="background:var(--amber);color:#fff;">❌ Refuser (retour Com)</button>';
+            h += '</div>';
+        } else if (validated) {
+            h += '<p style="color:var(--green-600);font-size:13px;font-weight:600;margin:4px 0 0;">✅ Conformité juridique validée par la Com.</p>';
+        } else {
+            h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">⏳ En attente de la validation juridique par la Com.</p>';
         }
         h += '</div>';
         return h;
@@ -1471,7 +1507,7 @@
         if (numCh > 0 && channelStepDefs.length > 0) {
             channels.forEach(function(ch, ci) {
                 var cs = channelSteps[ci] || {};
-                var chCompleted = isCompleted || workflow.isChannelCompleted(cs, data.requiredTeams, ch.type);
+                var chCompleted = isCompleted || workflow.isChannelCompleted(cs, data.requiredTeams, ch.type, !!(data.juridique && data.juridique.required));
                 // Badge d'état courant du canal
                 var badge = 'En cours', badgeCls = '';
                 if (chCompleted) { badge = '🏁 Terminé'; badgeCls = 'done'; }
@@ -1814,13 +1850,11 @@
             var el = document.getElementById('com-img-' + idx + '-' + i);
             imgUrls.push(el ? el.value : '');
         }
-        var juriEl = document.querySelector('input[name="com-juri-' + idx + '"]:checked');
         var pdfEl  = document.getElementById('com-pdf-' + idx);
         return {
             campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
             figmaUrl: (document.getElementById('com-figma-' + idx) || {}).value || '',
             numImages: num, imageUrls: imgUrls,
-            juridique: juriEl ? juriEl.value : '',
             pdfFileName: pdfEl && pdfEl.files[0] ? pdfEl.files[0].name : '',
             depotMaquetteDate: (document.getElementById('com-depot-date-' + idx) || {}).value || '',
             depositDate: new Date().toISOString()
@@ -1901,10 +1935,6 @@
         setVal('com-figma-' + idx, d.figmaUrl);
         setVal('com-numimages-' + idx, d.numImages || 0);
         updateComImageUrls(idx, d.numImages || 0, d.imageUrls);
-        if (d.juridique) {
-            var r = document.querySelector('input[name="com-juri-' + idx + '"][value="' + d.juridique + '"]');
-            if (r) r.checked = true;
-        }
     }
     function fillEbfForm(idx, d) {
         setVal('ebf-webmaster-' + idx, d.webmaster);
@@ -1928,7 +1958,6 @@
         var h = '<div class="depot-readonly-grid">';
         if (d.depotMaquetteDate) h += '<div class="depot-readonly-item"><strong>Date dépôt maquette</strong>' + security.escapeHtml(d.depotMaquetteDate) + '</div>';
         if (d.figmaUrl) h += '<div class="depot-readonly-item"><strong>Figma</strong><a href="' + security.escapeHtml(d.figmaUrl) + '" target="_blank">Ouvrir</a></div>';
-        if (d.juridique) h += '<div class="depot-readonly-item"><strong>Juridique</strong>' + security.escapeHtml(d.juridique) + '</div>';
         if (d.numImages) h += '<div class="depot-readonly-item"><strong>Images</strong>' + d.numImages + '</div>';
         if (d.pdfFileName) h += '<div class="depot-readonly-item"><strong>Fichier</strong>' + security.escapeHtml(d.pdfFileName) + '</div>';
         h += '</div>';
@@ -2704,31 +2733,30 @@
             });
         });
 
-        // ── PO : validation juridique ──
-        var btnJurVal = document.getElementById('btn-juridique-validate');
-        if (btnJurVal) {
-            btnJurVal.addEventListener('click', function() {
-                if (!currentCampaignData.juridique) return;
-                currentCampaignData.juridique.status = 'validated';
-                currentCampaignData.juridique.validatedAt = new Date().toLocaleDateString('fr-FR');
-                disableBtn(btnJurVal, 'Enregistrement...');
-                workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
+        // ── Com : validation juridique par canal ──
+        document.querySelectorAll('.btn-juridique-validate-canal').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                disableBtn(btn, 'Validation...');
+                workflow.advanceChannelStep(currentCampaignData, channelIdx, 'com_juridique', 'validated');
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btnJurVal, '✅ Marquer comme validé'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '✅ Valider juridiquement'); notify('Erreur : ' + err.message, 'error'); });
             });
-        }
-        var btnJurReopen = document.getElementById('btn-juridique-reopen');
-        if (btnJurReopen) {
-            btnJurReopen.addEventListener('click', function() {
-                if (!currentCampaignData.juridique) return;
-                currentCampaignData.juridique.status = 'pending';
-                delete currentCampaignData.juridique.validatedAt;
-                disableBtn(btnJurReopen, 'Enregistrement...');
-                workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
+        });
+        document.querySelectorAll('.btn-juridique-refuse-canal').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                var reasonEl = document.getElementById('juri-refuse-reason-' + channelIdx);
+                var reason = reasonEl ? reasonEl.value.trim() : '';
+                if (!reason) { notify('Merci d\'indiquer le motif du refus juridique.', 'warning'); if (reasonEl) reasonEl.focus(); return; }
+                disableBtn(btn, 'Envoi...');
+                workflow.refuseChannelJuridique(currentCampaignData, channelIdx, reason);
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btnJurReopen, '↩ Ré-ouvrir'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '❌ Refuser (retour Com)'); notify('Erreur : ' + err.message, 'error'); });
             });
-        }
+        });
 
         // Charger la discussion + les documents + le journal d'activité
         loadDiscussion(name);

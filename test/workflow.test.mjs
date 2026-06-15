@@ -189,3 +189,60 @@ test('threeWayMerge — suppression respectée seulement si le disque n’a pas 
   const theirs2 = { a: 1, b: 99 };       // un autre a modifié b
   assert.equal(workflow.threeWayMerge(base, mine, theirs2).b, 99, 'b conservé car modifié ailleurs');
 });
+
+// ─────────────────────────────────────────────────────────
+// VALIDATION JURIDIQUE PAR CANAL (#8)
+// ─────────────────────────────────────────────────────────
+function makeJurCampaign(required) {
+  const data = makeCampaign(['Com', 'EBF', 'Data']);
+  data.juridique = { required: required };
+  workflow.initWorkflow(data);
+  workflow.advanceStep(data, 'manager_affectation', 'validated');
+  workflow.advanceStep(data, 'po_kickoff', 'validated');
+  workflow.advanceChannelStep(data, 0, 'com_maquette', 'submitted');
+  workflow.advanceChannelStep(data, 0, 'po_validation_maquette', 'validated');
+  return data;
+}
+
+test('juridique requise — la validation PO maquette débloque com_juridique, pas le BAT', () => {
+  const data = makeJurCampaign(true);
+  assert.equal(ch0(data).com_juridique, 'pending', 'la validation juridique est à faire');
+  assert.equal(ch0(data).ebf_bat, 'locked', 'le BAT reste verrouillé tant que le juridique n’est pas validé');
+});
+
+test('juridique requise — valider le juridique débloque le BAT', () => {
+  const data = makeJurCampaign(true);
+  workflow.advanceChannelStep(data, 0, 'com_juridique', 'validated');
+  assert.equal(ch0(data).ebf_bat, 'pending', 'le BAT se débloque après validation juridique');
+});
+
+test('juridique requise — refus : retour maquette + reverrouillage + motif', () => {
+  const data = makeJurCampaign(true);
+  workflow.refuseChannelJuridique(data, 0, 'Mention légale manquante');
+  assert.equal(ch0(data).com_maquette, 'revision_requested');
+  assert.equal(ch0(data).po_validation_maquette, 'locked');
+  assert.equal(ch0(data).com_juridique, 'locked');
+  assert.match(data.workflow.channelRevisionComments[0].com_maquette, /Mention légale manquante/);
+  // On rejoue : nouveau dépôt maquette → la validation PO se redébloque
+  workflow.advanceChannelStep(data, 0, 'com_maquette', 'submitted');
+  assert.equal(ch0(data).po_validation_maquette, 'pending');
+});
+
+test('juridique NON requise — le BAT se débloque directement (com_juridique ignoré)', () => {
+  const data = makeJurCampaign(false);
+  assert.equal(ch0(data).ebf_bat, 'pending', 'sans juridique, le BAT se débloque après validation PO');
+  assert.equal(ch0(data).com_juridique, 'locked', 'l’étape juridique reste verrouillée et n’est pas utilisée');
+});
+
+test('juridique requise — canal Com seul : non terminé tant que le juridique n’est pas validé', () => {
+  const data = makeCampaign(['Com']);
+  data.juridique = { required: true };
+  workflow.initWorkflow(data);
+  workflow.advanceStep(data, 'manager_affectation', 'validated');
+  workflow.advanceStep(data, 'po_kickoff', 'validated');
+  workflow.advanceChannelStep(data, 0, 'com_maquette', 'submitted');
+  workflow.advanceChannelStep(data, 0, 'po_validation_maquette', 'validated');
+  assert.equal(workflow.isChannelCompleted(ch0(data), data.requiredTeams, undefined, true), false, 'pas terminé : juridique en attente');
+  workflow.advanceChannelStep(data, 0, 'com_juridique', 'validated');
+  assert.equal(workflow.isChannelCompleted(ch0(data), data.requiredTeams, undefined, true), true, 'terminé après validation juridique');
+});
