@@ -501,26 +501,41 @@
 
     function toggleCampaignActif() {
         if (!currentCampaignName || !currentCampaignData) return;
+        // #13 : réservé à l'équipe Data (+ super-admin), avec motif obligatoire.
+        var cu = users && users.getCurrentUser();
+        if (!cu || !(cu.role === 'data' || cu.isSuperAdmin)) {
+            notify('Seule l\'équipe Data peut activer ou désactiver une campagne.', 'warning');
+            return;
+        }
         var isActif = currentCampaignData.actif !== false;
         var nouvelEtat = !isActif;
-        var label = nouvelEtat ? 'réactiver' : 'rendre inactif';
-        if (!confirm('Voulez-vous ' + label + ' cette campagne ?')) return;
-        currentCampaignData.actif = nouvelEtat;
-        if (!nouvelEtat) pushNotifDebrancher(currentCampaignName, currentCampaignData);
-        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
-            .then(function() {
-                var toggleActifBtn = document.getElementById('toggleActifButton');
-                if (toggleActifBtn) {
-                    toggleActifBtn.textContent = nouvelEtat ? '⏸️ Rendre inactif' : '▶️ Réactiver';
-                    toggleActifBtn.style.color = nouvelEtat ? 'var(--red)' : 'var(--primary)';
-                }
-                var msg = nouvelEtat ? 'Campagne réactivée.' : 'Campagne rendue inactive.';
-                errors.showNotification(msg, 'success', 2000);
-                logActivity(currentCampaignName, 'statut', nouvelEtat ? 'Campagne réactivée' : 'Campagne rendue inactive');
-            })
-            .catch(function(err) {
-                errors.showNotification('Erreur : ' + err.message, 'error');
-            });
+        showPromptModal({
+            title: nouvelEtat ? 'Réactiver la campagne' : 'Rendre la campagne inactive',
+            label: nouvelEtat
+                ? 'Indiquez le motif de réactivation. L\'action et son auteur sont enregistrés dans le journal.'
+                : 'Indiquez le motif (la campagne ne tournera plus). L\'action et son auteur sont enregistrés dans le journal.',
+            placeholder: 'Motif…',
+            confirmText: nouvelEtat ? '▶️ Réactiver' : '⏸️ Rendre inactif',
+            onConfirm: function(motif) {
+                currentCampaignData.actif = nouvelEtat;
+                if (!nouvelEtat) pushNotifDebrancher(currentCampaignName, currentCampaignData);
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function() {
+                        var toggleActifBtn = document.getElementById('toggleActifButton');
+                        if (toggleActifBtn) {
+                            toggleActifBtn.textContent = nouvelEtat ? '⏸️ Rendre inactif' : '▶️ Réactiver';
+                            toggleActifBtn.style.color = nouvelEtat ? 'var(--red)' : 'var(--primary)';
+                        }
+                        errors.showNotification(nouvelEtat ? 'Campagne réactivée.' : 'Campagne rendue inactive.', 'success', 2000);
+                        logActivity(currentCampaignName, 'statut',
+                            (nouvelEtat ? 'Campagne réactivée' : 'Campagne rendue inactive')
+                            + ' par ' + cu.name + ' — motif : ' + motif);
+                    })
+                    .catch(function(err) {
+                        errors.showNotification('Erreur : ' + err.message, 'error');
+                    });
+            }
+        });
     }
     // ─────────────────────────────────────────────
     // SUPPRESSION CAMPAGNE (Item 14)
@@ -700,10 +715,18 @@
         if (editBtn) editBtn.style.display = canEdit ? 'inline-flex' : 'none';
         if (dupBtn)  dupBtn.style.display  = 'inline-flex';
         if (toggleActifBtn) {
-            toggleActifBtn.style.display = 'inline-flex';
-            var isActif = data.actif !== false;
-            toggleActifBtn.textContent = isActif ? '⏸️ Rendre inactif' : '▶️ Réactiver';
-            toggleActifBtn.style.color = isActif ? 'var(--red)' : 'var(--primary)';
+            // #13 : l'activation/désactivation d'une campagne est réservée à l'équipe Data
+            // (tout utilisateur de rôle Data) et au super-admin.
+            var _cu = users && users.getCurrentUser();
+            var canToggleActif = _cu && (_cu.role === 'data' || _cu.isSuperAdmin);
+            if (canToggleActif) {
+                toggleActifBtn.style.display = 'inline-flex';
+                var isActif = data.actif !== false;
+                toggleActifBtn.textContent = isActif ? '⏸️ Rendre inactif' : '▶️ Réactiver';
+                toggleActifBtn.style.color = isActif ? 'var(--red)' : 'var(--primary)';
+            } else {
+                toggleActifBtn.style.display = 'none';
+            }
         }
         var deleteBtn = document.getElementById('deleteCampaignButton');
         // #12 : la suppression d'une campagne est réservée à l'administrateur.
