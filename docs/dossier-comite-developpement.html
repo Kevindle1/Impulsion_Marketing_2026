@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Impulsion Marketing — Dossier comité de développement</title>
+<style>
+    /* ===========================================================
+       DOSSIER 4 PAGES — A4 — Charte Impulsion Marketing
+       Pour exporter en PDF :
+         1. Ouvrez ce fichier dans Chrome ou Edge.
+         2. Insérez vos captures (voir la bannière jaune en haut).
+         3. Ctrl/Cmd + P → Destination « Enregistrer au format PDF »
+            → Format A4 → Marges « Aucune » → cochez
+            « Graphiques d'arrière-plan ».
+       =========================================================== */
+    :root{
+        --ink:#0c1a14; --muted:#56655e; --muted-2:#8b988f;
+        --line:#eaefec; --line-2:#f0f4f1;
+        --primary:#00875A; --primary-hover:#00734C; --green-50:#e8f6ef; --green-600:#00734C; --green-700:#005C3D;
+        --red:#E2001A; --red-50:#fdeaec; --amber:#E8A100; --amber-50:#fdf3e2; --blue:#2563EB; --blue-50:#e8f0fe;
+        --gradient:linear-gradient(135deg,#12C386 0%,#00734C 100%);
+        --gradient-hero:linear-gradient(120deg,#00734C 0%,#00875A 55%,#0FA56E 100%);
+    }
+    *{ box-sizing:border-box; }
+    html,body{ margin:0; padding:0; background:#5b6b63; }
+    body{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+    /* Bannière d'aide (ne s'imprime pas) */
+    .help{ max-width:210mm; margin:18px auto; background:#fff8e6; border:1px solid #f0d98a; border-radius:12px; padding:16px 20px; color:#7a5b00; font-size:13.5px; line-height:1.6; }
+    .help h2{ margin:0 0 6px; font-size:15px; color:#7a5b00; }
+    .help code{ background:#fff; border:1px solid #f0d98a; border-radius:4px; padding:1px 5px; }
+
+    /* Page A4 */
+    .page{
+        width:210mm; min-height:297mm; background:#fff; margin:16px auto; position:relative;
+        padding:16mm 15mm 20mm; box-shadow:0 6px 30px rgba(0,0,0,.25); overflow:hidden;
+    }
+    .page-footer{ position:absolute; left:15mm; right:15mm; bottom:9mm; display:flex; justify-content:space-between; align-items:center; font-size:10px; color:var(--muted-2); border-top:1px solid var(--line); padding-top:6px; }
+    .page-footer .pf-brand{ font-weight:700; color:var(--primary); }
+
+    @page{ size:A4; margin:0; }
+    @media print{
+        html,body{ background:#fff; }
+        .help{ display:none; }
+        .page{ margin:0; box-shadow:none; page-break-after:always; }
+        .page:last-of-type{ page-break-after:auto; }
+    }
+
+    /* Logo / marque */
+    .brand{ display:flex; align-items:center; gap:11px; }
+    .brand-mark{ width:40px; height:40px; border-radius:11px; background:var(--gradient); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; letter-spacing:-.5px; }
+    .brand-name{ font-size:16px; font-weight:800; letter-spacing:-.3px; }
+    .brand-name span{ display:block; font-size:11px; font-weight:600; color:var(--muted); letter-spacing:.5px; }
+
+    /* Couverture */
+    .cover-hero{ background:var(--gradient-hero); color:#fff; border-radius:18px; padding:34px 32px; margin-top:20px; }
+    .cover-kicker{ font-size:12px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; opacity:.9; }
+    .cover-hero h1{ margin:10px 0 6px; font-size:38px; line-height:1.05; font-weight:850; letter-spacing:-1px; }
+    .cover-hero .sub{ font-size:16px; font-weight:600; opacity:.95; }
+    .cover-hero .meta{ margin-top:18px; font-size:13px; opacity:.92; display:flex; gap:22px; flex-wrap:wrap; }
+    .cover-hero .meta b{ font-weight:800; }
+
+    h2.sec{ font-size:21px; font-weight:850; letter-spacing:-.4px; margin:0 0 4px; display:flex; align-items:center; gap:10px; }
+    h2.sec .dot{ width:10px; height:22px; border-radius:4px; background:var(--gradient); }
+    .sec-sub{ color:var(--muted); font-size:13.5px; margin:0 0 16px; }
+
+    p{ font-size:13.5px; }
+    .lead{ font-size:15px; color:var(--ink); }
+
+    /* Cartes "en bref" */
+    .stat-row{ display:flex; gap:14px; margin:22px 0; }
+    .stat{ flex:1; background:#fff; border:1px solid var(--line); border-left:4px solid var(--primary); border-radius:12px; padding:16px 18px; }
+    .stat .n{ font-size:26px; font-weight:850; color:var(--primary); line-height:1; }
+    .stat .l{ font-size:12.5px; color:var(--muted); font-weight:600; margin-top:6px; }
+    .stat.amber{ border-left-color:var(--amber); } .stat.amber .n{ color:#a06f00; }
+    .stat.blue{ border-left-color:var(--blue); } .stat.blue .n{ color:var(--blue); }
+
+    /* Timeline horizontale (contexte) */
+    .flow{ display:flex; gap:0; margin:8px 0 4px; }
+    .flow-step{ flex:1; text-align:center; position:relative; padding-top:26px; }
+    .flow-step::before{ content:""; position:absolute; top:9px; left:0; right:0; height:3px; background:var(--line); }
+    .flow-step:first-child::before{ left:50%; } .flow-step:last-child::before{ right:50%; }
+    .flow-dot{ position:absolute; top:3px; left:50%; transform:translateX(-50%); width:15px; height:15px; border-radius:50%; background:#fff; border:3px solid var(--line); }
+    .flow-step.done .flow-dot{ background:var(--primary); border-color:var(--primary); }
+    .flow-step.done::before{ background:var(--primary); }
+    .flow-step.now .flow-dot{ background:#fff; border-color:var(--amber); box-shadow:0 0 0 4px var(--amber-50); }
+    .flow-t{ font-size:12.5px; font-weight:750; }
+    .flow-d{ font-size:11px; color:var(--muted); margin-top:2px; }
+
+    /* Captures */
+    .shot{ margin:0 0 14px; }
+    .shot-ph{ border:2px dashed #bcd9cc; border-radius:12px; background:linear-gradient(135deg,#f4faf7,#eaf5ef); min-height:118mm; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--green-700); text-align:center; padding:20px; }
+    .shot-ph.sm{ min-height:74mm; }
+    .shot-ph .ic{ font-size:34px; }
+    .shot-ph .lbl{ font-size:15px; font-weight:800; }
+    .shot-ph .hint{ font-size:11.5px; color:var(--muted); max-width:80%; }
+    .shot-img{ width:100%; border:1px solid var(--line); border-radius:12px; display:block; }
+    figcaption{ font-size:12px; color:var(--muted); margin-top:7px; padding-left:2px; border-left:3px solid var(--primary); padding:2px 0 2px 9px; }
+    figcaption b{ color:var(--ink); }
+
+    .two{ display:flex; gap:16px; }
+    .two > *{ flex:1; min-width:0; }
+
+    /* Liste à puces vertes */
+    ul.check{ list-style:none; padding:0; margin:10px 0; }
+    ul.check li{ position:relative; padding:5px 0 5px 26px; font-size:13px; }
+    ul.check li::before{ content:"✓"; position:absolute; left:0; top:5px; width:17px; height:17px; border-radius:50%; background:var(--green-50); color:var(--primary); font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+
+    /* Parcours d'une campagne (stepper vertical) */
+    .steps{ border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+    .step{ display:flex; gap:13px; padding:9px 0; border-bottom:1px dashed var(--line); }
+    .step:last-child{ border-bottom:none; }
+    .step .si{ width:30px; height:30px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; font-weight:800; }
+    .step .st{ font-size:13px; font-weight:750; }
+    .step .sd{ font-size:11.5px; color:var(--muted); }
+    .badge{ font-size:10px; font-weight:800; padding:2px 8px; border-radius:999px; margin-left:auto; align-self:center; }
+    .b-com{ background:var(--blue-50); color:var(--blue); } .b-ebf{ background:var(--amber-50); color:#a06f00; }
+    .b-data{ background:var(--green-50); color:var(--green-600); } .b-po{ background:#f3e8ff; color:#7C3AED; }
+
+    /* Roadmap : phases */
+    .phase{ border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-bottom:13px; position:relative; padding-left:54px; }
+    .phase .ph-num{ position:absolute; left:16px; top:16px; width:26px; height:26px; border-radius:50%; background:var(--gradient); color:#fff; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; }
+    .phase h4{ margin:0 0 4px; font-size:14.5px; font-weight:800; }
+    .phase p{ margin:0; font-size:12.5px; color:var(--muted); }
+
+    .callout{ background:var(--green-50); border:1px solid var(--green-100,#ccebdd); border-radius:14px; padding:16px 18px; margin-top:14px; }
+    .callout h4{ margin:0 0 6px; font-size:14px; color:var(--green-700); display:flex; align-items:center; gap:8px; }
+    .callout p{ margin:0; font-size:12.5px; color:#2c4a3c; }
+
+    .pill{ display:inline-block; font-size:11px; font-weight:800; padding:3px 11px; border-radius:999px; background:var(--green-50); color:var(--primary); }
+    .divider{ height:1px; background:var(--line); margin:18px 0; }
+</style>
+</head>
+<body>
+
+<!-- Bannière d'aide (invisible à l'impression) -->
+<div class="help">
+    <h2>📄 Comment générer le PDF (4 pages)</h2>
+    1. Ouvrez ce fichier dans <b>Chrome</b> ou <b>Edge</b>.<br>
+    2. <b>Insérez vos captures</b> : dans le code, à chaque cadre en pointillés, une ligne <code>&lt;img&gt;</code> est préparée en commentaire — retirez les balises <code>&lt;!--</code> / <code>--&gt;</code> autour, indiquez le nom de votre image (placée à côté de ce fichier), puis supprimez le bloc <code>&lt;div class="shot-ph"&gt;…&lt;/div&gt;</code> juste en dessous.<br>
+    3. <b>Ctrl/Cmd + P</b> → Destination « <b>Enregistrer au format PDF</b> » → Format <b>A4</b> → Marges <b>Aucune</b> → cochez <b>Graphiques d'arrière-plan</b>.
+</div>
+
+<!-- ====================== PAGE 1 — COUVERTURE & CONTEXTE ====================== -->
+<section class="page">
+    <div class="brand">
+        <div class="brand-mark">IM</div>
+        <div class="brand-name">Impulsion<span>Marketing</span></div>
+    </div>
+
+    <div class="cover-hero">
+        <div class="cover-kicker">Comité de développement</div>
+        <h1>Impulsion Marketing</h1>
+        <div class="sub">Pilotage de bout en bout des campagnes marketing</div>
+        <div class="meta">
+            <span><b>Étape :</b> point d'avancement</span>
+            <span><b>Date :</b> 19 juin 2026</span>
+            <span><b>Statut :</b> développement livré ✓</span>
+        </div>
+    </div>
+
+    <div style="margin-top:26px;">
+        <h2 class="sec"><span class="dot"></span>Contexte &amp; objectif</h2>
+        <p class="sec-sub">Pourquoi ce passage en comité.</p>
+        <p class="lead">
+            Il y a trois semaines, le <b>COFON (comité de fonctionnement)</b> a donné son aval pour lancer
+            le développement d'Impulsion Marketing. Ce développement est aujourd'hui <b>réalisé et opérationnel</b>.
+            L'objet de ce passage est de <b>contextualiser l'avancement</b> : ce qui a été livré, la phase de
+            test en cours, et le plan de généralisation à venir.
+        </p>
+    </div>
+
+    <div class="stat-row">
+        <div class="stat">
+            <div class="n">100%</div>
+            <div class="l">Développement livré et fonctionnel</div>
+        </div>
+        <div class="stat amber">
+            <div class="n">2</div>
+            <div class="l">Campagnes pilotes lancées en parallèle</div>
+        </div>
+        <div class="stat blue">
+            <div class="n">Prêt</div>
+            <div class="l">Équipes formées &amp; accès ouverts</div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2 class="sec" style="font-size:17px;"><span class="dot"></span>Là où nous en sommes</h2>
+    <div class="flow" style="margin-top:14px;">
+        <div class="flow-step done"><span class="flow-dot"></span><div class="flow-t">COFON</div><div class="flow-d">Aval donné · il y a 3 sem.</div></div>
+        <div class="flow-step done"><span class="flow-dot"></span><div class="flow-t">Développement</div><div class="flow-d">Réalisé ✓</div></div>
+        <div class="flow-step now"><span class="flow-dot"></span><div class="flow-t">Pilote</div><div class="flow-d">2 campagnes en test</div></div>
+        <div class="flow-step"><span class="flow-dot"></span><div class="flow-t">Généralisation</div><div class="flow-d">À venir · 2 temps</div></div>
+        <div class="flow-step"><span class="flow-dot"></span><div class="flow-t">Essaimage</div><div class="flow-d">Autres caisses</div></div>
+    </div>
+
+    <div class="callout">
+        <h4>🎯 En une phrase</h4>
+        <p>Impulsion centralise tout le cycle d'une campagne — de la demande à la mise en production — avec un
+        suivi clair des livrables, des rôles et des échéances. La solution est prête ; nous validons en conditions
+        réelles avant le déploiement à l'ensemble des équipes.</p>
+    </div>
+
+    <div class="page-footer">
+        <span class="pf-brand">Impulsion Marketing</span>
+        <span>Dossier comité de développement — Juin 2026</span>
+        <span>1 / 4</span>
+    </div>
+</section>
+
+<!-- ====================== PAGE 2 — CE QUE LA SOLUTION APPORTE ====================== -->
+<section class="page">
+    <h2 class="sec"><span class="dot"></span>Ce que la solution apporte</h2>
+    <p class="sec-sub">Une vision d'ensemble, accessible à chaque rôle.</p>
+
+    <p>
+        Chaque collaborateur retrouve, dès la page d'accueil, <b>ses campagnes</b> et <b>ce qui l'attend</b>.
+        Les indicateurs sont cliquables et mènent directement à la liste filtrée correspondante.
+    </p>
+
+    <!-- CAPTURE 1 — TABLEAU DE BORD -->
+    <figure class="shot">
+        <!-- ▶ Pour insérer la capture : décommentez la ligne ci-dessous, indiquez le nom du fichier, puis supprimez le bloc .shot-ph -->
+        <!-- <img class="shot-img" src="capture-tableau-de-bord.png" alt="Tableau de bord"> -->
+        <div class="shot-ph">
+            <span class="ic">🖼️</span>
+            <span class="lbl">Capture — Tableau de bord</span>
+            <span class="hint">Indicateurs (à produire, en cours, à valider, échéances), « À produire » et « Mes campagnes en cours ».</span>
+        </div>
+        <figcaption><b>Tableau de bord</b> — priorisation immédiate : ce qui est à produire, en attente de validation, et les échéances proches.</figcaption>
+    </figure>
+
+    <!-- CAPTURE 2 — COMITÉ ÉDITORIAL -->
+    <figure class="shot">
+        <!-- <img class="shot-img" src="capture-comite-editorial.png" alt="Comité éditorial"> -->
+        <div class="shot-ph sm">
+            <span class="ic">🗓️</span>
+            <span class="lbl">Capture — Comité éditorial</span>
+            <span class="hint">Vue de planification éditoriale des campagnes.</span>
+        </div>
+        <figcaption><b>Comité éditorial</b> — vue de planification partagée pour arbitrer et programmer les campagnes.</figcaption>
+    </figure>
+
+    <ul class="check">
+        <li>Un point d'entrée unique, du brief jusqu'à la mise en production.</li>
+        <li>Des rôles clairs : PO / Marketing, Communication, EBF, Data, managers.</li>
+        <li>Recherche par références (code projet, réf. com/paracom…) et filtres.</li>
+    </ul>
+
+    <div class="page-footer">
+        <span class="pf-brand">Impulsion Marketing</span>
+        <span>Dossier comité de développement — Juin 2026</span>
+        <span>2 / 4</span>
+    </div>
+</section>
+
+<!-- ====================== PAGE 3 — LE SUIVI DE BOUT EN BOUT ====================== -->
+<section class="page">
+    <h2 class="sec"><span class="dot"></span>Le suivi d'une campagne, de bout en bout</h2>
+    <p class="sec-sub">Chaque livrable, chaque validation, chaque date — tracés.</p>
+
+    <p>
+        Pour une campagne donnée, on retrouve <b>l'intégralité des livrables</b> et leur avancement :
+        maquette Communication, BAT / VAT (EBF), ciblage et test en production (Data), jusqu'à la
+        mise en production. <b>Chaque étape est horodatée</b> : qui, quoi, quand.
+    </p>
+
+    <div class="two">
+        <div class="steps">
+            <div class="step"><span class="si b-po" style="background:#7C3AED;">1</span><div><div class="st">Saisie de la demande</div><div class="sd">Le PO crée la campagne</div></div><span class="badge b-po">PO</span></div>
+            <div class="step"><span class="si" style="background:#7C3AED;">2</span><div><div class="st">Affectation &amp; kick-off</div><div class="sd">Le manager affecte les équipes</div></div><span class="badge b-po">Manager</span></div>
+            <div class="step"><span class="si b-com" style="background:#2563EB;">3</span><div><div class="st">Maquette</div><div class="sd">Conception du visuel</div></div><span class="badge b-com">Com</span></div>
+            <div class="step"><span class="si b-ebf" style="background:#E8A100;">4</span><div><div class="st">BAT / VAT</div><div class="sd">Bon à tirer, validation</div></div><span class="badge b-ebf">EBF</span></div>
+            <div class="step"><span class="si b-data" style="background:#00875A;">5</span><div><div class="st">Ciblage</div><div class="sd">Sélection des cibles</div></div><span class="badge b-data">Data</span></div>
+            <div class="step"><span class="si b-data" style="background:#00875A;">6</span><div><div class="st">Test en production</div><div class="sd">Contrôle avant envoi</div></div><span class="badge b-data">Data</span></div>
+            <div class="step"><span class="si" style="background:var(--green-700);">7</span><div><div class="st">Mise en production</div><div class="sd">Campagne lancée</div></div><span class="badge b-po">MEP</span></div>
+        </div>
+
+        <!-- CAPTURE 3 — DÉTAIL / TIMELINE D'UNE CAMPAGNE -->
+        <figure class="shot" style="margin:0;">
+            <!-- <img class="shot-img" src="capture-detail-campagne.png" alt="Détail d'une campagne"> -->
+            <div class="shot-ph" style="min-height:118mm;">
+                <span class="ic">🧭</span>
+                <span class="lbl">Capture — Détail d'une campagne</span>
+                <span class="hint">Timeline des étapes avec dates et statuts (Fait / En cours / À valider).</span>
+            </div>
+            <figcaption><b>Fiche campagne</b> — la timeline complète des livrables, avec dates et statuts par étape.</figcaption>
+        </figure>
+    </div>
+
+    <div class="callout">
+        <h4>✅ Bénéfice</h4>
+        <p>Plus de suivi éparpillé : un seul endroit pour savoir où en est chaque livrable, qui doit agir,
+        et l'historique daté de toutes les validations.</p>
+    </div>
+
+    <div class="page-footer">
+        <span class="pf-brand">Impulsion Marketing</span>
+        <span>Dossier comité de développement — Juin 2026</span>
+        <span>3 / 4</span>
+    </div>
+</section>
+
+<!-- ====================== PAGE 4 — CE QU'IL RESTE À FAIRE ====================== -->
+<section class="page">
+    <h2 class="sec"><span class="dot"></span>Ce qu'il nous reste à faire</h2>
+    <p class="sec-sub">Du pilote à la généralisation, puis l'essaimage.</p>
+
+    <p>
+        <span class="pill">Phase actuelle</span> &nbsp;Deux campagnes ont été lancées <b>en parallèle</b> sur Impulsion.
+        Objectif : <b>valider l'outil à 100 %</b> en conditions réelles avant d'embarquer l'ensemble des équipes.
+    </p>
+
+    <h2 class="sec" style="font-size:16px; margin-top:18px;"><span class="dot"></span>Une généralisation en deux temps</h2>
+    <div class="phase">
+        <span class="ph-num">1</span>
+        <h4>Bascule encadrée</h4>
+        <p>Arrêt du flux sur les anciens outils. Une <b>équipe dédiée de 5 à 6 personnes</b> migre toutes les
+        tâches en une seule fois sur Impulsion, pour repartir d'une base propre et complète.</p>
+    </div>
+    <div class="phase">
+        <span class="ph-num">2</span>
+        <h4>Autonomie des équipes</h4>
+        <p>On redonne la main à toutes les équipes pour qu'elles travaillent <b>directement dans Impulsion</b>,
+        au quotidien.</p>
+    </div>
+
+    <div class="callout">
+        <h4>🚀 Déjà prêt pour le déploiement</h4>
+        <p>Toutes les équipes ont reçu une <b>présentation de l'outil</b> et l'ensemble des <b>accès sont ouverts</b>.
+        Le terrain est préparé pour une bascule rapide.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2 class="sec" style="font-size:16px;"><span class="dot"></span>Au-delà de notre caisse</h2>
+    <p>
+        Le <b>16 juin</b>, l'outil a été présenté à <b>deux caisses régionales</b>, intéressées pour le récupérer.
+        Un rendez-vous est prévu pour les <b>accompagner dans la configuration et le déploiement</b> chez elles.
+    </p>
+
+    <div class="callout" style="background:var(--green-700); border-color:var(--green-700);">
+        <h4 style="color:#fff;">🏁 En synthèse</h4>
+        <p style="color:#eafff5;">Développement livré, pilote en cours, équipes formées et accès prêts, et un
+        intérêt déjà au-delà de notre périmètre. <b style="color:#fff;">Un projet en réussite</b>, sur le point
+        de passer à l'échelle.</p>
+    </div>
+
+    <div class="page-footer">
+        <span class="pf-brand">Impulsion Marketing</span>
+        <span>Dossier comité de développement — Juin 2026</span>
+        <span>4 / 4</span>
+    </div>
+</section>
+
+</body>
+</html>
