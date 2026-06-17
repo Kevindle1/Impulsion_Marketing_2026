@@ -285,6 +285,114 @@
         var PAGE_SIZE = 30;
         var currentPage = 0;
 
+        // ── Filtre « catégorie KPI » (ouvert depuis une carte du tableau de bord) ──
+        // Valeurs possibles dans l'URL ?filter= : encours | aproduire | validation | urgent
+        var KPI_LABELS = {
+            encours:    'Campagnes en cours',
+            aproduire:  'À produire (mon tour)',
+            validation: 'En attente de validation',
+            urgent:     'Échéance < 7 jours'
+        };
+        var kpiFilter = (function() {
+            try {
+                var v = new URLSearchParams(window.location.search).get('filter');
+                return (v && KPI_LABELS[v]) ? v : null;
+            } catch (e) { return null; }
+        })();
+
+        // Réplique du calcul d'échéance du tableau de bord (urgence = J-7 ou dépassé).
+        function computeDelay(launchDate) {
+            if (!launchDate) return null;
+            var today = new Date(); today.setHours(0, 0, 0, 0);
+            var launch = new Date(launchDate); launch.setHours(0, 0, 0, 0);
+            var diff = Math.round((launch - today) / 86400000);
+            return { diff: diff };
+        }
+
+        // Périmètre « mes campagnes » identique au tableau de bord : manager → tout ;
+        // sinon PO ou présent dans une affectation (gère les tableaux de noms).
+        function userInvolved(data) {
+            var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            var currentUser = users && users.getCurrentUser();
+            if (!currentUser) return true;
+            if (currentUser.role === 'manager' || currentUser.isManager) return true;
+            if (data.po === currentUser.name) return true;
+            var a = (data.workflow && data.workflow.assignments) || {};
+            function has(v) { return Array.isArray(v) ? v.indexOf(currentUser.name) !== -1 : v === currentUser.name; }
+            return has(a.com) || has(a.ebf) || has(a.data);
+        }
+
+        // Une campagne appartient-elle à la catégorie KPI demandée ? (mêmes règles que
+        // les compteurs du tableau de bord, restreintes au périmètre de l'utilisateur)
+        function matchesKpiCategory(campaign) {
+            if (!kpiFilter) return true;
+            var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            var data = campaign.data || {};
+            var currentUser = users && users.getCurrentUser();
+            var hasWf = !!(wf && data.workflow);
+            var completed = hasWf ? wf.isCompleted(data) : false;
+            var isActif = data.actif !== false;
+
+            switch (kpiFilter) {
+                case 'aproduire':
+                    // « mon tour » : l'utilisateur a au moins une action disponible (campagne active)
+                    if (!currentUser || !isActif || !hasWf) return false;
+                    return wf.getAvailableActions(currentUser, data).length > 0;
+                case 'encours':
+                    return !completed && userInvolved(data);
+                case 'validation': {
+                    if (!hasWf || completed) return false;
+                    var L = (wf.getCurrentStepLabel(data) || '').toLowerCase();
+                    return /validation|valider/.test(L) && userInvolved(data);
+                }
+                case 'urgent': {
+                    if (!isActif || completed) return false;
+                    var d = computeDelay(data.launchDate);
+                    return d && d.diff <= 7 && userInvolved(data);
+                }
+                default:
+                    return true;
+            }
+        }
+
+        // Affichage initial : si un filtre KPI est actif (ouvert depuis le dashboard),
+        // on passe par le pipeline de filtrage ; sinon on affiche tout.
+        function initialDisplay() {
+            if (kpiFilter) { currentPage = 0; filterCampaigns(); return; }
+            filteredCampaigns = allCampaigns.slice();
+            sortAndDisplayCampaigns();
+        }
+
+        // Bandeau indiquant le filtre KPI actif, avec bouton pour le retirer.
+        function renderKpiChip() {
+            var existing = document.getElementById('kpi-filter-chip');
+            if (!kpiFilter) { if (existing) existing.remove(); return; }
+            if (!existing) {
+                var row = document.querySelector('.filters-row');
+                existing = document.createElement('div');
+                existing.id = 'kpi-filter-chip';
+                existing.className = 'kpi-chip';
+                if (row && row.parentNode) row.parentNode.insertBefore(existing, row.nextSibling);
+            }
+            existing.innerHTML = '<span>🎯 Filtre : <strong>' + security.escapeHtml(KPI_LABELS[kpiFilter] || '') + '</strong></span>'
+                + '<button type="button" id="kpi-chip-clear" title="Retirer ce filtre" aria-label="Retirer ce filtre">✕ Retirer</button>';
+            var clearBtn = document.getElementById('kpi-chip-clear');
+            if (clearBtn) clearBtn.addEventListener('click', clearKpiFilter);
+        }
+
+        function clearKpiFilter() {
+            kpiFilter = null;
+            try {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('filter');
+                window.history.replaceState({}, '', url.toString());
+            } catch (e) {}
+            renderKpiChip();
+            currentPage = 0;
+            filterCampaigns();
+        }
+
         // =====================================================================
         // CALCUL COMPLÉTION (inchangé)
         // =====================================================================
@@ -377,6 +485,7 @@
                     loadAllCampaigns();
                     setupEventListeners();
                     populateFilters();
+                    renderKpiChip();
                 })
                 .catch(function(error) { showError('Erreur : ' + error.message); });
         }
@@ -394,6 +503,15 @@
                 document.getElementById('filter-ub').value = '';
                 document.getElementById('filter-canal').value = '';
                 document.getElementById('filter-type').value = '';
+                if (kpiFilter) {
+                    kpiFilter = null;
+                    try {
+                        var url = new URL(window.location.href);
+                        url.searchParams.delete('filter');
+                        window.history.replaceState({}, '', url.toString());
+                    } catch (e) {}
+                    renderKpiChip();
+                }
                 currentPage = 0;
                 filterCampaigns();
             });
@@ -438,8 +556,7 @@
             if (mem) {
                 allCampaigns = mem.campaigns;
                 folderHandles = mem.handles;
-                filteredCampaigns = allCampaigns.slice();
-                sortAndDisplayCampaigns();
+                initialDisplay();
                 var needsProgress = allCampaigns.filter(function(c) { return c.completionStatus.percentage === -1; });
                 if (needsProgress.length > 0) loadProgressAsync(needsProgress);
                 return;
@@ -493,8 +610,7 @@
                     campaigns = campaigns.filter(function(c) { return c !== null; });
                     performance.Cache.set(memKey, { campaigns: campaigns, handles: folderHandles }, 300000);
                     allCampaigns = campaigns;
-                    filteredCampaigns = campaigns.slice();
-                    sortAndDisplayCampaigns();
+                    initialDisplay();
                     loadProgressAsync(campaigns);
                 })
                 .catch(function(error) {
@@ -632,7 +748,9 @@
 
                 var matchesUser = !myViewMode || matchesCurrentUser(campaign);
 
-                return matchesSearch && matchesUB && matchesCanal && matchesType && matchesUser;
+                var matchesKpi = matchesKpiCategory(campaign);
+
+                return matchesSearch && matchesUB && matchesCanal && matchesType && matchesUser && matchesKpi;
             });
 
             currentPage = 0;
@@ -820,6 +938,34 @@
             flex-wrap: wrap;
             align-items: flex-end;
         }
+
+        /* Bandeau « filtre KPI actif » (ouvert depuis le tableau de bord) */
+        .kpi-chip {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 10px 16px;
+            background: var(--green-50, #e9f7f0);
+            border: 1px solid var(--primary, #00875A);
+            border-radius: 999px;
+            font-size: 14px;
+            color: var(--ink);
+            width: fit-content;
+        }
+        .kpi-chip strong { color: var(--primary, #00875A); }
+        .kpi-chip button {
+            border: none;
+            background: var(--primary, #00875A);
+            color: #fff;
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .2s ease;
+        }
+        .kpi-chip button:hover { background: var(--primary-hover, #00734C); }
 
         .filter-group {
             flex: 1;

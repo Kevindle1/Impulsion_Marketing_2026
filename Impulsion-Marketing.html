@@ -949,17 +949,19 @@
                 return c.isActif !== false && d && d.diff <= 7;
             }).length;
             var cards = [
-                { ic: 'g', svg: '<path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/>', num: allMine.length, cap: 'Campagnes en cours' },
-                { ic: 'b', svg: '<path d="M5 12l5 5L20 7"/>', num: myTurn.length, cap: 'À produire (mon tour)' },
-                { ic: 'a', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', num: aValider, cap: 'En attente de validation' },
-                { ic: 'r', svg: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', num: urgent, cap: 'Échéance < 7 jours', delta: urgent > 0 ? 'r' : '' }
+                { ic: 'g', svg: '<path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/>', num: allMine.length, cap: 'Campagnes en cours', link: 'encours' },
+                { ic: 'b', svg: '<path d="M5 12l5 5L20 7"/>', num: myTurn.length, cap: 'À produire (mon tour)', link: 'aproduire' },
+                { ic: 'a', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', num: aValider, cap: 'En attente de validation', link: 'validation' },
+                { ic: 'r', svg: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', num: urgent, cap: 'Échéance < 7 jours', delta: urgent > 0 ? 'r' : '', link: 'urgent' }
             ];
             var h = '';
             cards.forEach(function (k) {
-                h += '<div class="kpi"><div class="kpi-top"><div class="kpi-ic ' + k.ic + '">';
+                // Chaque carte KPI ouvre la vue complète (Visualisation) pré-filtrée sur sa catégorie.
+                var href = 'pages/visualization.html?filter=' + k.link;
+                h += '<a class="kpi" href="' + href + '" title="Voir ces campagnes"><div class="kpi-top"><div class="kpi-ic ' + k.ic + '">';
                 h += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + k.svg + '</svg></div>';
                 h += '<span class="kpi-delta ' + (k.delta || '') + '">' + (k.ic === 'r' ? 'Urgent' : k.ic === 'a' ? 'À traiter' : 'Actif') + '</span></div>';
-                h += '<div class="kpi-num">' + k.num + '</div><div class="kpi-cap">' + k.cap + '</div></div>';
+                h += '<div class="kpi-num">' + k.num + '</div><div class="kpi-cap">' + k.cap + '</div></a>';
             });
             row.innerHTML = h;
             row.style.display = 'grid';
@@ -1588,6 +1590,9 @@
             padding: 18px;
             box-shadow: var(--shadow-xs);
         }
+        a.kpi { display: block; text-decoration: none; color: inherit; cursor: pointer; transition: box-shadow .18s, transform .18s, border-color .18s; }
+        a.kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--green-100, #a7f3d0); }
+        a.kpi:focus-visible { outline: 2px solid var(--primary, #00875A); outline-offset: 2px; }
         .kpi-top { display: flex; align-items: center; justify-content: space-between; }
         .kpi-ic { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .kpi-ic svg { width: 20px; height: 20px; }
