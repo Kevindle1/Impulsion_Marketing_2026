@@ -2525,6 +2525,35 @@ window.ImpulsionMarketing.workflow = (function () {
    * Retourne la liste des étapes disponibles pour un utilisateur sur une campagne
    * Agrège toutes les étapes actives de tous les canaux
    */
+  // Manager général (marketing) ou super-admin : a la main sur toute l'étape
+  // d'affectation jusqu'à sa validation.
+  function isGeneralManager(currentUser) {
+    return !!currentUser && (
+      (currentUser.role === 'marketing' && currentUser.isManager === true) ||
+      currentUser.isSuperAdmin === true
+    );
+  }
+
+  // #14 — Un manager de SERVICE (com/ebf/data) a terminé sa part d'affectation
+  // dès qu'au moins une personne de son équipe est affectée — ou si son équipe
+  // n'est pas requise par la campagne. On cesse alors de lui proposer l'action
+  // d'affectation : la carte disparaît du tableau de bord « à produire » et le
+  // bloc d'affectation n'est plus présenté. Le manager général garde la main
+  // jusqu'à la validation de l'étape globale.
+  function managerAffectationDone(currentUser, campaignData) {
+    if (!currentUser || currentUser.isManager !== true || !campaignData) return false;
+    if (isGeneralManager(currentUser)) return false;
+    var role = currentUser.role;
+    var teamLabel = role === 'com' ? 'Com' : (role === 'ebf' ? 'EBF' : (role === 'data' ? 'Data' : null));
+    if (!teamLabel) return false; // rôle non concerné par l'affectation d'équipe
+    var requiredTeams = campaignData.requiredTeams || [];
+    if (!isTeamRequired(requiredTeams, teamLabel)) return true; // rien à affecter pour ce service
+    var assignments = (campaignData.workflow && campaignData.workflow.assignments) || {};
+    var assigned = assignments[role];
+    var arr = Array.isArray(assigned) ? assigned : (assigned ? [assigned] : []);
+    return arr.length > 0;
+  }
+
   function getAvailableActions(currentUser, campaignData) {
     if (!currentUser || !campaignData) return [];
     initWorkflow(campaignData);
@@ -2542,6 +2571,11 @@ window.ImpulsionMarketing.workflow = (function () {
         actorMatch = currentUser.name === campaignData.po;
       } else if (step.actor === 'manager') {
         actorMatch = currentUser.isManager === true;
+        // #14 : un manager de service ayant déjà affecté son équipe n'a plus
+        // l'action d'affectation (la carte quitte le tableau de bord « à produire »).
+        if (actorMatch && step.id === 'manager_affectation' && managerAffectationDone(currentUser, campaignData)) {
+          actorMatch = false;
+        }
       }
       if (actorMatch) actions.push({ step: step, status: status });
     });
@@ -2911,6 +2945,7 @@ window.ImpulsionMarketing.workflow = (function () {
     captureBaseline:          captureBaseline,
     threeWayMerge:            threeWayMerge,
     getAvailableActions:      getAvailableActions,
+    managerAffectationDone:   managerAffectationDone,
     updateCampaignIndex:      updateCampaignIndex,
     updateCampaignIndexFromDir: updateCampaignIndexFromDir,
     buildFullIndex:           buildFullIndex

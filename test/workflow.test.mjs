@@ -292,3 +292,72 @@ test('buildSearchBlob — un terme absent n’est pas trouvé', () => {
   const blob = workflow.buildSearchBlob({ id: 'X', po: 'Bob', channels: [] });
   assert.ok(!blob.includes('proj-789'));
 });
+
+// ─────────────────────────────────────────────────────────
+// #14 — managerAffectationDone : un manager de service n'a plus l'action
+// d'affectation dès que son équipe est affectée (ou non requise).
+test('managerAffectationDone — manager Com sans affectation : pas encore fait', () => {
+  const data = makeCampaign(['Com', 'Data']);
+  workflow.initWorkflow(data);
+  const comMgr = { name: 'Chef Com', role: 'com', isManager: true };
+  assert.equal(workflow.managerAffectationDone(comMgr, data), false);
+});
+
+test('managerAffectationDone — manager Com après avoir affecté son équipe : fait', () => {
+  const data = makeCampaign(['Com', 'Data']);
+  workflow.initWorkflow(data);
+  data.workflow.assignments.com = ['Agent Com'];
+  const comMgr = { name: 'Chef Com', role: 'com', isManager: true };
+  assert.equal(workflow.managerAffectationDone(comMgr, data), true);
+});
+
+test('managerAffectationDone — équipe non requise : rien à affecter, considéré fait', () => {
+  const data = makeCampaign(['Com']); // Data non requis
+  workflow.initWorkflow(data);
+  const dataMgr = { name: 'Chef Data', role: 'data', isManager: true };
+  assert.equal(workflow.managerAffectationDone(dataMgr, data), true);
+});
+
+test('managerAffectationDone — manager général (marketing) jamais "fait"', () => {
+  const data = makeCampaign(['Com', 'Data']);
+  workflow.initWorkflow(data);
+  data.workflow.assignments.com = ['Agent Com'];
+  const genMgr = { name: 'Sébastien', role: 'marketing', isManager: true };
+  assert.equal(workflow.managerAffectationDone(genMgr, data), false);
+});
+
+test('managerAffectationDone — super-admin jamais "fait"', () => {
+  const data = makeCampaign(['Com']);
+  workflow.initWorkflow(data);
+  const admin = { name: 'Admin', role: 'com', isManager: true, isSuperAdmin: true };
+  assert.equal(workflow.managerAffectationDone(admin, data), false);
+});
+
+test('managerAffectationDone — non-manager : false', () => {
+  const data = makeCampaign(['Com']);
+  workflow.initWorkflow(data);
+  const agent = { name: 'Agent Com', role: 'com', isManager: false };
+  assert.equal(workflow.managerAffectationDone(agent, data), false);
+});
+
+test('getAvailableActions — manager Com déjà affecté : plus d\'action d\'affectation', () => {
+  const data = makeCampaign(['Com', 'Data']);
+  workflow.initWorkflow(data);
+  data.workflow.steps.manager_affectation = 'pending';
+  data.workflow.assignments.com = ['Agent Com'];
+  const comMgr = { name: 'Chef Com', role: 'com', isManager: true };
+  const actions = workflow.getAvailableActions(comMgr, data);
+  assert.ok(!actions.some(a => a.step.id === 'manager_affectation'),
+    'le manager Com déjà affecté ne doit plus avoir l\'action manager_affectation');
+});
+
+test('getAvailableActions — manager Data non encore affecté : action d\'affectation présente', () => {
+  const data = makeCampaign(['Com', 'Data']);
+  workflow.initWorkflow(data);
+  data.workflow.steps.manager_affectation = 'pending';
+  data.workflow.assignments.com = ['Agent Com']; // Com fait, Data pas encore
+  const dataMgr = { name: 'Chef Data', role: 'data', isManager: true };
+  const actions = workflow.getAvailableActions(dataMgr, data);
+  assert.ok(actions.some(a => a.step.id === 'manager_affectation'),
+    'le manager Data non affecté doit garder l\'action manager_affectation');
+});

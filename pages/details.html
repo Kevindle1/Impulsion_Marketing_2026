@@ -1581,7 +1581,9 @@
         }
 
         // Manager : affectation
-        if (users.isCurrentUserManager() && steps.manager_affectation === 'pending') {
+        // #14 : un manager de service ayant déjà affecté son équipe ne voit plus le bloc.
+        if (users.isCurrentUserManager() && steps.manager_affectation === 'pending'
+            && !workflow.managerAffectationDone(currentUser, data)) {
             // isGeneralManager = marketing manager (Sébastien L) → voit les 3 dropdowns
             // Les managers de service (com/ebf/data) ne voient que leur propre dropdown (item 15)
             var isGeneralManager = (currentUser.role === 'marketing' && currentUser.isManager === true) || (currentUser.isSuperAdmin === true);
