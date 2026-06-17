@@ -694,7 +694,10 @@
         var editBtn        = document.getElementById('editButton');
         var dupBtn         = document.getElementById('duplicateButton');
         var toggleActifBtn = document.getElementById('toggleActifButton');
-        if (editBtn) editBtn.style.display = 'inline-flex';
+        // #11 : la modification d'une campagne est réservée au PO (et au super-admin).
+        var canEdit = (users && users.isCurrentUserPO && users.isCurrentUserPO(data))
+            || (users && users.isCurrentUserSuperAdmin && users.isCurrentUserSuperAdmin());
+        if (editBtn) editBtn.style.display = canEdit ? 'inline-flex' : 'none';
         if (dupBtn)  dupBtn.style.display  = 'inline-flex';
         if (toggleActifBtn) {
             toggleActifBtn.style.display = 'inline-flex';

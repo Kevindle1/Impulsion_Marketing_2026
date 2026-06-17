@@ -393,6 +393,10 @@
                                     <h3>Chef de projet (PO) <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3>
                                     <div id="poBreakdown" class="breakdown-body"></div>
                                 </div>
+                                <div class="breakdown-card">
+                                    <h3>Univers de besoin <svg class="collapse-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg></h3>
+                                    <div id="ubBreakdown" class="breakdown-body"></div>
+                                </div>
                             </div>
 
                             <div class="chart-card">
@@ -871,11 +875,15 @@
             $('#totalCampaigns').textContent = campaigns.length;
             $('#activeCampaigns').textContent = campaigns.filter(function(c) { return c.actif !== false; }).length;
 
-            var marketCounts = {}, typologyCounts = {}, channelCounts = {}, poCounts = {};
+            var marketCounts = {}, typologyCounts = {}, channelCounts = {}, poCounts = {}, ubCounts = {};
             campaigns.forEach(function(c) {
                 var m = c.market   || 'Non spécifié'; marketCounts[m]   = (marketCounts[m]   || 0) + 1;
                 var t = c.typology || 'Non spécifié'; typologyCounts[t] = (typologyCounts[t] || 0) + 1;
                 var p = c.po       || 'Non spécifié'; poCounts[p]       = (poCounts[p]       || 0) + 1;
+                // #24 — répartition par univers de besoin (une campagne peut en avoir plusieurs)
+                var ubs = Array.isArray(c.ubs) ? c.ubs : [];
+                if (ubs.length === 0) { ubCounts['Non spécifié'] = (ubCounts['Non spécifié'] || 0) + 1; }
+                else { ubs.forEach(function(u) { if (u) ubCounts[u] = (ubCounts[u] || 0) + 1; }); }
                 if (c.channels && Array.isArray(c.channels)) {
                     c.channels.forEach(function(ch) {
                         var n = normalizeCanal(ch.content);
@@ -887,6 +895,7 @@
             displayBreakdown('typologyBreakdown', typologyCounts);
             displayBreakdown('channelBreakdown',  channelCounts);
             displayBreakdown('poBreakdown',       poCounts);
+            displayBreakdown('ubBreakdown',       ubCounts);
             _monthCampaigns = campaigns;
             _canalCampaigns = campaigns;
             buildYearSelector('yearSelectorMonth', refYearMonth, function() { displayMonthChart(_monthCampaigns); });
