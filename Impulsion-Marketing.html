@@ -97,7 +97,7 @@
                 <div class="header-right">
                     <div class="header-search">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        <input type="text" id="campaign-search" placeholder="Rechercher une campagne, un PO…">
+                        <input type="text" id="campaign-search" placeholder="Rechercher : nom, PO, code projet/action, réf com/paracom…">
                     </div>
                     <button id="btn-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
@@ -469,10 +469,16 @@
 
             function match(c) {
                 if (query) {
-                    var ok = c.name.toLowerCase().includes(query)
-                        || (c.data.description || '').toLowerCase().includes(query)
-                        || (c.data.po || '').toLowerCase().includes(query);
-                    if (!ok) return false;
+                    // #27 — recherche multi-champs (nom, PO, description, marché,
+                    // segments, univers, campagne liée, canaux + codes Projet/Action/
+                    // Com/Réf Paracom) via le blob pré-indexé. Repli sur nom/desc/PO
+                    // pour les index antérieurs (sans blob).
+                    var hay = c._search
+                        || (c.name + ' ' + (c.data.description || '') + ' ' + (c.data.po || '')).toLowerCase();
+                    var terms = query.split(/\s+/).filter(Boolean);
+                    for (var ti = 0; ti < terms.length; ti++) {
+                        if (hay.indexOf(terms[ti]) === -1) return false;
+                    }
                 }
                 if (filterEtape) {
                     var stepLabel = wfModule.getCurrentStepLabel(c.data) || '';
@@ -552,6 +558,8 @@
                     name: name,
                     lastModified: m.mod || 0,
                     done: m.done === true,   // complétion pré-calculée à l'indexation (channelSteps dispo)
+                    // #27 — blob de recherche pré-agrégé (références canaux + champs campagne)
+                    _search: m.srch || '',
                     data: {
                         po:          m.po || '',
                         description: m.desc || '',

@@ -267,3 +267,28 @@ test('juridique requise — un BAT déjà commencé (submitted) n’est PAS re-v
   workflow.initWorkflow(data);
   assert.equal(ch0(data).ebf_bat, 'submitted', 'le travail EBF en cours est préservé');
 });
+
+// ─────────────────────────────────────────────────────────
+// RECHERCHE MULTI-CHAMPS / PAR RÉFÉRENCES (#27)
+// ─────────────────────────────────────────────────────────
+test('buildSearchBlob agrège codes canaux + champs campagne (minuscule)', () => {
+  const data = {
+    id: 'Campagne Été', po: 'Alice', description: 'Promo fibre',
+    market: 'Particuliers', typology: 'Acquisition',
+    segments: ['Jeunes', 'Urbains'], ubs: ['Mobilité'], campagneLiee: 'REF-2025-001',
+    channels: [
+      { deliverableName: 'Email', content: 'MAIL', emailObject: 'Offre spéciale',
+        codeCom: 'COM-123', refParacom: 'PARA-XYZ', codeProjet: 'PROJ-789', codeAction: 'ACT-456' }
+    ]
+  };
+  const blob = workflow.buildSearchBlob(data);
+  // tout est présent et en minuscule
+  ['campagne été','alice','promo fibre','particuliers','acquisition','jeunes','urbains',
+   'mobilité','ref-2025-001','email','offre spéciale','com-123','para-xyz','proj-789','act-456']
+    .forEach(t => assert.ok(blob.includes(t), 'blob doit contenir : ' + t));
+});
+
+test('buildSearchBlob — un terme absent n’est pas trouvé', () => {
+  const blob = workflow.buildSearchBlob({ id: 'X', po: 'Bob', channels: [] });
+  assert.ok(!blob.includes('proj-789'));
+});

@@ -2738,6 +2738,30 @@ window.ImpulsionMarketing.workflow = (function () {
     return Object.assign({}, DEFAULT_CHANNEL_STEPS, firstCs, globalSteps);
   }
 
+  // #27 — Agrège tous les champs cherchables (références canaux + champs
+  // campagne) en une chaîne minuscule, pour la recherche du tableau de bord.
+  function buildSearchBlob(campaignData) {
+    var parts = [];
+    function add(v) {
+      if (!v) return;
+      if (Array.isArray(v)) { v.forEach(add); return; }
+      parts.push(String(v));
+    }
+    add(campaignData.id);
+    add(campaignData.po);
+    add(campaignData.description);
+    add(campaignData.market);
+    add(campaignData.typology);
+    add(campaignData.segments);
+    add(campaignData.ubs);
+    add(campaignData.campagneLiee);
+    (campaignData.channels || []).forEach(function (c) {
+      add(c.deliverableName); add(c.content); add(c.emailObject);
+      add(c.codeCom); add(c.refParacom); add(c.codeProjet); add(c.codeAction);
+    });
+    return parts.join(' ').toLowerCase();
+  }
+
   function extractIndexEntry(campaignData) {
     initWorkflow(campaignData);
     var volumeAlert = false;
@@ -2771,7 +2795,8 @@ window.ImpulsionMarketing.workflow = (function () {
       done:        isCompleted(campaignData),
       actif:       campaignData.actif !== false,
       volumeAlert: volumeAlert,
-      requiredTeams: campaignData.requiredTeams || null
+      requiredTeams: campaignData.requiredTeams || null,
+      srch:        buildSearchBlob(campaignData)
     };
   }
 
@@ -2868,6 +2893,7 @@ window.ImpulsionMarketing.workflow = (function () {
     GLOBAL_STEP_IDS:          GLOBAL_STEP_IDS,
     isTeamRequired:           isTeamRequired,
     isChannelCompleted:       isChannelCompleted,
+    buildSearchBlob:          buildSearchBlob,
     initWorkflow:             initWorkflow,
     advanceStep:              advanceStep,
     advanceChannelStep:       advanceChannelStep,

@@ -2195,6 +2195,33 @@
     // ─────────────────────────────────────────────
     // CHARGEMENT DÉPÔTS PAR CANAL
     // ─────────────────────────────────────────────
+    // #27 — Recherche par références. Les codes (Code Com, Réf Paracom, Code
+    // Projet, Code Action) sont saisis dans les dépôts EBF/Data ; on les recopie
+    // sur le canal de la campagne pour qu'ils alimentent l'index et deviennent
+    // cherchables depuis le tableau de bord. Renvoie true si une valeur a changé.
+    function mirrorChannelCodes(idx, depot) {
+        if (!depot || !currentCampaignData || !currentCampaignData.channels) return false;
+        var ch = currentCampaignData.channels[idx];
+        if (!ch) return false;
+        var changed = false;
+        ['codeCom', 'refParacom', 'codeProjet', 'codeAction'].forEach(function(k) {
+            var v = (depot[k] || '').toString().trim();
+            if (v && ch[k] !== v) { ch[k] = v; changed = true; }
+        });
+        return changed;
+    }
+    // Persistance différée (backfill à l'ouverture) : ne sauvegarde qu'une fois,
+    // en silence, si l'ouverture d'une campagne a complété des codes manquants.
+    var _codesPersistTimer = null;
+    function persistMirroredCodes() {
+        if (_codesPersistTimer) return;
+        _codesPersistTimer = setTimeout(function() {
+            _codesPersistTimer = null;
+            workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                .catch(function(e) { console.warn('Indexation des codes échouée (non bloquant) :', e && e.message); });
+        }, 1000);
+    }
+
     function loadDepotForChannel(campaignName, idx, ch) {
         if (!currentRootHandle || !ch) return;
         var folder = sanitizeName(ch.deliverableName || ('canal_' + idx));
@@ -2235,6 +2262,7 @@
                 loadedDepots[idx].ebf = d;
                 fillEbfForm(idx, d);
                 renderEbfReadonly(idx, d);
+                if (mirrorChannelCodes(idx, d)) persistMirroredCodes();
                 if (d.pdfBatSavedName) loadBatImagePreview(idx, folder, d.pdfBatSavedName);
             })
             .catch(function() {
@@ -2247,6 +2275,7 @@
                 loadedDepots[idx].data = d;
                 fillDataForm(idx, d);
                 renderDataReadonly(idx, d);
+                if (mirrorChannelCodes(idx, d)) persistMirroredCodes();
             })
             .catch(function() {
                 var el = document.getElementById('data-empty-' + idx);
@@ -2441,6 +2470,7 @@
                             }
                         }
                         // v2 : avancement direct du canal
+                        mirrorChannelCodes(idx, depot); // #27 : indexer les codes saisis
                         workflow.advanceChannelStep(currentCampaignData, idx, stepId, 'submitted');
                         workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                             .then(function() { refreshCurrentPage(); });
@@ -2555,6 +2585,7 @@
                 var depot  = collectDataDepot(idx, stepId);
                 depot.status = isMep ? 'completed' : 'submitted';
                 var btnLabel = isMep ? '🚀 Confirmer MEP de ce canal' : '📤 Soumettre ce canal';
+                mirrorChannelCodes(idx, depot); // #27 : indexer les codes saisis (Code Projet/Action)
                 // Sauvegarder le volumeCible saisi par Data dans campagne.json
                 if (!isMep) {
                     var volInput = document.getElementById('data-volume-' + idx);
