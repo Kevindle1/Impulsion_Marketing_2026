@@ -2644,6 +2644,31 @@
                     .catch(function(err) { enableBtn(btnEbfMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + err.message, 'error'); });
             });
         }
+
+        // ── Com : validation juridique par canal ──
+        document.querySelectorAll('.btn-juridique-validate-canal').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                disableBtn(btn, 'Validation...');
+                workflow.advanceChannelStep(currentCampaignData, channelIdx, 'com_juridique', 'validated');
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btn, '✅ Valider juridiquement'); notify('Erreur : ' + err.message, 'error'); });
+            });
+        });
+        document.querySelectorAll('.btn-juridique-refuse-canal').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                var reasonEl = document.getElementById('juri-refuse-reason-' + channelIdx);
+                var reason = reasonEl ? reasonEl.value.trim() : '';
+                if (!reason) { notify('Merci d\'indiquer le motif du refus juridique.', 'warning'); if (reasonEl) reasonEl.focus(); return; }
+                disableBtn(btn, 'Envoi...');
+                workflow.refuseChannelJuridique(currentCampaignData, channelIdx, reason);
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btn, '❌ Refuser (retour Com)'); notify('Erreur : ' + err.message, 'error'); });
+            });
+        });
     }
 
     // ─────────────────────────────────────────────
@@ -2753,31 +2778,6 @@
         document.querySelectorAll('.btn-goto-channel').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 navigateTo(parseInt(btn.getAttribute('data-idx'), 10));
-            });
-        });
-
-        // ── Com : validation juridique par canal ──
-        document.querySelectorAll('.btn-juridique-validate-canal').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
-                disableBtn(btn, 'Validation...');
-                workflow.advanceChannelStep(currentCampaignData, channelIdx, 'com_juridique', 'validated');
-                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
-                    .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '✅ Valider juridiquement'); notify('Erreur : ' + err.message, 'error'); });
-            });
-        });
-        document.querySelectorAll('.btn-juridique-refuse-canal').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
-                var reasonEl = document.getElementById('juri-refuse-reason-' + channelIdx);
-                var reason = reasonEl ? reasonEl.value.trim() : '';
-                if (!reason) { notify('Merci d\'indiquer le motif du refus juridique.', 'warning'); if (reasonEl) reasonEl.focus(); return; }
-                disableBtn(btn, 'Envoi...');
-                workflow.refuseChannelJuridique(currentCampaignData, channelIdx, reason);
-                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
-                    .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '❌ Refuser (retour Com)'); notify('Erreur : ' + err.message, 'error'); });
             });
         });
 
