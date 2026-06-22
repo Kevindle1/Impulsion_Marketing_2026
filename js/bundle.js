@@ -1649,14 +1649,22 @@ window.ImpulsionMarketing.directoryStorage = (function() {
   }
 
   /**
-   * Récupère le handle avec vérification complète
+   * Récupère le handle avec vérification (NON destructive, sans demande de permission).
+   *
+   * IMPORTANT : on n'appelle JAMAIS requestPermission ici, car cette fonction est
+   * surtout invoquée au chargement des pages (sans clic) — or requestPermission exige
+   * un "user activation". On se contente d'interroger l'état (queryPermission) :
+   *  - 'granted'  → succès, handle utilisable directement
+   *  - 'prompt'/'denied' → le dossier est mémorisé, il faut juste redemander la
+   *    permission via un clic (statut 'needs_permission') — PAS de re-sélection.
+   *  - queryPermission qui échoue → dossier réellement inaccessible ('invalid_handle').
+   * On ne supprime PLUS le handle mémorisé sur un simple souci de permission.
    * @param {string} mode - 'read' ou 'readwrite'
    * @returns {Promise<Object>}
    */
   function getRootHandleWithCheck(mode) {
     mode = mode || 'readwrite';
 
-    // Charger le handle depuis IndexedDB
     return loadRootHandle()
       .then(function(handle) {
         if (!handle) {
@@ -1667,37 +1675,30 @@ window.ImpulsionMarketing.directoryStorage = (function() {
           };
         }
 
-        // Vérifier que le handle est toujours valide
-        return isHandleValid(handle)
-          .then(function(isValid) {
-            if (!isValid) {
-              return clearRootHandle().then(function() {
-                return {
-                  handle: null,
-                  status: 'invalid_handle',
-                  message: 'Le dossier précédemment sélectionné n\'est plus accessible. Veuillez retourner à l\'accueil pour charger le dossier.'
-                };
-              });
+        return handle.queryPermission({ mode: mode })
+          .then(function(perm) {
+            if (perm === 'granted') {
+              cachedHandle = handle;
+              return {
+                handle: handle,
+                status: 'success',
+                message: 'Dossier "' + handle.name + '" prêt à être utilisé'
+              };
             }
-
-            // Vérifier les permissions
-            return checkPermission(handle, mode)
-              .then(function(hasPermission) {
-                if (!hasPermission) {
-                  return {
-                    handle: null,
-                    status: 'no_permission',
-                    message: 'Les permissions d\'accès au dossier ont été refusées. Veuillez retourner à l\'accueil pour recharger le dossier.'
-                  };
-                }
-
-                // Tout est OK
-                return {
-                  handle: handle,
-                  status: 'success',
-                  message: 'Dossier "' + handle.name + '" prêt à être utilisé'
-                };
-              });
+            // Permission à redemander (nouveau démarrage de session) — handle conservé.
+            return {
+              handle: null,
+              status: 'needs_permission',
+              message: 'Cliquez sur « Se connecter » pour réautoriser l\'accès au dossier "' + handle.name + '".'
+            };
+          })
+          .catch(function() {
+            // queryPermission échoue : le dossier n'existe plus / a été déplacé.
+            return {
+              handle: null,
+              status: 'invalid_handle',
+              message: 'Le dossier précédemment sélectionné n\'est plus accessible. Veuillez le recharger depuis l\'accueil.'
+            };
           });
       })
       .catch(function(error) {
@@ -1708,6 +1709,36 @@ window.ImpulsionMarketing.directoryStorage = (function() {
           message: 'Erreur: ' + error.message
         };
       });
+  }
+
+  /**
+   * Reconnexion rapide au dossier mémorisé : redemande la permission (un clic suffit),
+   * SANS rouvrir le sélecteur de dossier. À appeler depuis un gestionnaire de clic.
+   *
+   * La chaîne est volontairement très courte (handle préchargé en cache) pour préserver
+   * le "user activation" du clic — sinon requestPermission échouerait et forcerait une
+   * re-sélection complète.
+   * @param {string} mode - 'read' ou 'readwrite'
+   * @returns {Promise<Object>} { handle, status: 'success'|'no_handle'|'no_permission' }
+   */
+  function reconnect(mode) {
+    mode = mode || 'readwrite';
+    return loadRootHandle().then(function(handle) {
+      if (!handle) {
+        return { handle: null, status: 'no_handle' };
+      }
+      return handle.requestPermission({ mode: mode })
+        .then(function(perm) {
+          if (perm === 'granted') {
+            cachedHandle = handle;
+            return { handle: handle, status: 'success' };
+          }
+          return { handle: null, status: 'no_permission' };
+        })
+        .catch(function(err) {
+          return { handle: null, status: 'no_permission', message: err && err.message };
+        });
+    });
   }
 
   /**
@@ -1791,6 +1822,11 @@ window.ImpulsionMarketing.directoryStorage = (function() {
     });
   }
 
+  // Préchauffage : on charge le handle mémorisé en cache dès le démarrage du module,
+  // pour qu'une reconnexion (clic) puisse appeler requestPermission sans attente
+  // (préserve le "user activation"). Échec silencieux (cas normal : aucun dossier).
+  loadRootHandle().catch(function() {});
+
   // API Publique
   return {
     initDB: initDB,
@@ -1799,6 +1835,7 @@ window.ImpulsionMarketing.directoryStorage = (function() {
     checkPermission: checkPermission,
     isHandleValid: isHandleValid,
     getRootHandleWithCheck: getRootHandleWithCheck,
+    reconnect: reconnect,
     clearRootHandle: clearRootHandle,
     getRootInfo: getRootInfo,
     promptAndSaveDirectory: promptAndSaveDirectory

@@ -315,16 +315,18 @@
                     });
             });
 
-            // Recharge le handle mémorisé (avec redemande de permission) ;
-            // n'ouvre le sélecteur de dossier que si nécessaire (1re fois / dossier déplacé).
+            // Reconnexion au dossier mémorisé : on tente d'abord une simple redemande de
+            // permission (un clic, sans re-sélection). On garde la chaîne TRÈS courte ici
+            // (reconnect appelle requestPermission quasi-immédiatement) pour ne pas perdre
+            // le "user activation" du clic. On n'ouvre le sélecteur complet que si aucun
+            // dossier n'est mémorisé ou si la permission est refusée.
             function connectFolder() {
-                return directoryStorage.getRootInfo().then(function (info) {
-                    if (info) {
-                        return directoryStorage.getRootHandleWithCheck().then(function (result) {
-                            if (result.status === 'success') return true;
-                            return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
-                        });
+                return directoryStorage.reconnect().then(function (res) {
+                    if (res.status === 'success') return true;
+                    if (res.status === 'no_handle') {
+                        return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
                     }
+                    // Permission refusée : proposer quand même la re-sélection complète.
                     return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
                 });
             }
