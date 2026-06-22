@@ -3558,8 +3558,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
     var panelStyle = 'display:none;position:absolute;top:48px;right:0;width:340px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
     return ''
       + '<div class="header-left">'
-      + '<h2 class="page-title">' + esc(opts.title || '') + '</h2>'
-      + (opts.subtitle ? '<p class="page-subtitle">' + esc(opts.subtitle) + '</p>' : '')
+      + '<div class="crumb">Accueil&nbsp;·&nbsp;<b>' + esc(opts.title || '') + '</b></div>'
       + '</div>'
       + '<div class="header-right">'
       + '<div class="header-search">' + SVG.search

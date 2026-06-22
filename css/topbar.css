@@ -3,6 +3,10 @@
    dashboard-layout.css ; ce fichier ajoute les contrôles (recherche, boutons,
    avatar) pour qu'ils soient identiques sur toutes les pages. */
 
+/* Fil d'Ariane à gauche (identique au tableau de bord) */
+.crumb { font-size: 13px; color: var(--muted-2, #8b988f); font-weight: 600; }
+.crumb b { color: var(--ink, #0c1a14); font-weight: 750; }
+
 .header-search {
     display: flex;
     align-items: center;

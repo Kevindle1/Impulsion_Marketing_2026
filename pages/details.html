@@ -710,8 +710,8 @@
     // ─────────────────────────────────────────────
     function initDetailsUI(name, data) {
         document.getElementById('loading').style.display = 'none';
-        var _sub = document.querySelector('header.top-header p.page-subtitle');
-        if (_sub) _sub.textContent = name;
+        var _crumb = document.querySelector('header.top-header .crumb b');
+        if (_crumb) _crumb.textContent = name;
         currentCampaignName = name;
         var editBtn        = document.getElementById('editButton');
         var dupBtn         = document.getElementById('duplicateButton');

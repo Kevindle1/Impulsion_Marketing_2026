@@ -1350,10 +1350,8 @@
                     state.editCampaignName = editCampaignName;
 
                     // Changer le titre et le texte du bouton
-                    var pageTitle = document.querySelector("h2.page-title");
+                    var pageTitle = document.querySelector(".crumb b");
                     if (pageTitle) pageTitle.textContent = "Modifier une campagne";
-                    var pageSubtitle = document.querySelector("p.page-subtitle");
-                    if (pageSubtitle) pageSubtitle.textContent = "Modification de la campagne";
                     document.title = "Modifier une campagne — Historique des Campagnes";
                     $("#btnSubmit").textContent = "Modifier la campagne";
 
@@ -1375,10 +1373,8 @@
                     }
                 } else if (duplicateCampaignName) {
                     // Mode duplication : pré-remplir mais créer un nouveau dossier
-                    var pageTitle2 = document.querySelector("h2.page-title");
+                    var pageTitle2 = document.querySelector(".crumb b");
                     if (pageTitle2) pageTitle2.textContent = "Dupliquer une campagne";
-                    var pageSubtitle2 = document.querySelector("p.page-subtitle");
-                    if (pageSubtitle2) pageSubtitle2.textContent = "Copie de la campagne — modifier le nom avant de valider";
                     document.title = "Dupliquer une campagne — Historique des Campagnes";
                     $("#btnSubmit").textContent = "Créer la copie";
 
