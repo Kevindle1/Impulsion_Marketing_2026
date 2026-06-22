@@ -197,6 +197,11 @@
         var _currentRootHandle = null;
         var _searchTimer     = null;
         var ALLMINE_PAGE_SIZE = 20;
+        // ── Auto-rafraîchissement du tableau de bord ──
+        var AUTO_REFRESH_MS  = 30000;  // 30 s
+        var _autoRefreshTimer = null;
+        var _autoRefreshing   = false;
+        var _lastIndexSig     = '';
 
         var users = window.ImpulsionMarketing.users;
 
@@ -222,6 +227,7 @@
                     if (result.status === 'success') {
                         loadMyCampaigns();
                         loadAndShowWhatsNew();
+                        startAutoRefresh();
                     } else {
                         // Dossier indisponible (permission/handle) → retour au login
                         window.location.replace('login.html');
@@ -430,6 +436,8 @@
                         var count = Object.keys((index && index.campaigns) || {}).length;
                         btn.disabled = false;
                         btn.innerHTML = REBUILD_BTN_HTML;
+                        _lastIndexSig = computeIndexSig(index);
+                        updateRefreshLabel();
                         errors.showNotification('Index reconstruit — ' + count + ' campagnes indexées', 'success');
                         loadMyCampaigns();
                     })
@@ -562,7 +570,7 @@
         /**
          * Filtre, trie et rend les campagnes (partagé entre les deux chemins de chargement)
          */
-        function processAndRender(all, currentUser, workflowModule) {
+        function processAndRender(all, currentUser, workflowModule, silent) {
             // Exclut les campagnes terminées : on s'appuie sur le flag `done` de l'index
             // (calculé avec les channelSteps), avec repli sur isCompleted si données complètes.
             var active = all.filter(function(c) {
@@ -613,7 +621,7 @@
             }
             myTurn.sort(byUrgence);
             allMine.sort(byUrgence);
-            renderMyCampaigns(myTurn, allMine, currentUser);
+            renderMyCampaigns(myTurn, allMine, currentUser, silent);
         }
 
         /**
@@ -666,6 +674,7 @@
                         if (cachedIndex) {
                             // Rendu immédiat depuis le cache
                             processAndRender(indexToEntries(cachedIndex), currentUser, workflowModule);
+                            _lastIndexSig = computeIndexSig(cachedIndex);
                             checkAllPublicationDates(rootHandle, cachedIndex);
                             // Revalider silencieusement depuis V:// (met à jour le cache pour la prochaine visite).
                             // Échec non bloquant : le rendu depuis le cache reste affiché.
@@ -677,6 +686,7 @@
                             fetchIndexFromNetwork(rootHandle, workflowModule)
                                 .then(function(idx) {
                                     processAndRender(indexToEntries(idx), currentUser, workflowModule);
+                                    _lastIndexSig = computeIndexSig(idx);
                                     checkAllPublicationDates(rootHandle, idx);
                                 })
                                 .catch(function(error) {
@@ -690,6 +700,63 @@
                     console.debug('Chargement des campagnes échoué :', error && error.message);
                     showFolderError();
                 });
+        }
+
+        // ── Auto-rafraîchissement (toutes les 30 s) ──────────────────────────
+        // Relit _index.json + les notifications, et ne re-rend QUE si quelque chose a
+        // changé (signature). Silencieux (préserve recherche/pagination), en pause quand
+        // l'onglet est en arrière-plan. Le tableau de bord n'a pas de formulaire de saisie
+        // (la création/édition se fait sur d'autres pages), donc aucun risque d'écraser une
+        // saisie en cours.
+        function computeIndexSig(index) {
+            if (!index || !index.campaigns) return '';
+            var keys = Object.keys(index.campaigns).sort();
+            var parts = [];
+            for (var i = 0; i < keys.length; i++) {
+                var m = index.campaigns[keys[i]] || {};
+                parts.push(keys[i] + ':' + (m.mod || 0) + ':' + (m.done ? 1 : 0) + ':' + (m.actif !== false ? 1 : 0));
+            }
+            return parts.join('|');
+        }
+
+        function updateRefreshLabel() {
+            var btn = document.getElementById('btn-rebuild-index');
+            if (!btn) return;
+            var lbl = btn.querySelector('.icon-btn-label');
+            if (lbl) {
+                var d = new Date();
+                lbl.textContent = 'À jour · ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+            }
+            btn.title = 'Données actualisées automatiquement (toutes les 30 s). Cliquez pour forcer une actualisation complète.';
+        }
+
+        function autoRefreshTick() {
+            if (document.hidden || !_currentRootHandle || _autoRefreshing) return;
+            var workflowModule = window.ImpulsionMarketing.workflow;
+            var currentUser    = window.ImpulsionMarketing.users.getCurrentUser();
+            _autoRefreshing = true;
+            fetchIndexFromNetwork(_currentRootHandle, workflowModule)
+                .then(function(idx) {
+                    var sig = computeIndexSig(idx);
+                    if (sig !== _lastIndexSig) {
+                        _lastIndexSig = sig;
+                        processAndRender(indexToEntries(idx), currentUser, workflowModule, true); // silencieux
+                    }
+                    loadNotifications(_currentRootHandle, currentUser);
+                    updateRefreshLabel();
+                })
+                .catch(function(err) { console.debug('Auto-rafraîchissement échoué :', err && err.message); })
+                .then(function() { _autoRefreshing = false; });
+        }
+
+        function startAutoRefresh() {
+            if (_autoRefreshTimer) return;
+            _autoRefreshTimer = setInterval(autoRefreshTick, AUTO_REFRESH_MS);
+            // Au retour sur l'onglet, rafraîchir tout de suite (sans attendre 30 s).
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) autoRefreshTick();
+            });
+            updateRefreshLabel();
         }
 
         // Affiché quand le dossier chargé ne contient pas de dossier « Campagnes »
@@ -772,7 +839,7 @@
                 .catch(function(e) { console.warn('checkAllPublicationDates failed:', e); });
         }
 
-        function renderMyCampaigns(myTurn, allMine, currentUser) {
+        function renderMyCampaigns(myTurn, allMine, currentUser, silent) {
             var workflowModule = window.ImpulsionMarketing.workflow;
             var allMineSection = document.getElementById('allmine-section');
             var allMineList    = document.getElementById('allmine-list');
@@ -792,16 +859,20 @@
             // Stocker pour la recherche / pagination
             _myTurn = myTurn;
             _allMine = allMine;
-            _displayedCount = ALLMINE_PAGE_SIZE;
+            // En mode silencieux (auto-rafraîchissement), on préserve la pagination et
+            // la recherche en cours pour ne pas perturber l'utilisateur.
+            if (!silent) _displayedCount = ALLMINE_PAGE_SIZE;
 
             // KPIs
             renderKpis(myTurn, allMine);
 
             // Montrer la barre d'outils
             document.getElementById('dashboard-toolbar').style.display = 'flex';
-            // Réinitialiser la recherche à chaque rechargement
-            var searchInput = document.getElementById('campaign-search');
-            if (searchInput) searchInput.value = '';
+            // Réinitialiser la recherche uniquement lors d'un (re)chargement complet.
+            if (!silent) {
+                var searchInput = document.getElementById('campaign-search');
+                if (searchInput) searchInput.value = '';
+            }
 
             renderFiltered();
         }
