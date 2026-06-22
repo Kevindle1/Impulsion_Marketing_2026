@@ -361,3 +361,46 @@ test('getAvailableActions — manager Data non encore affecté : action d\'affec
   assert.ok(actions.some(a => a.step.id === 'manager_affectation'),
     'le manager Data non affecté doit garder l\'action manager_affectation');
 });
+
+// ─────────────────────────────────────────────────────────
+// getChannelProgress : progression par canal (cartes multi-canal du tableau de bord)
+test('getChannelProgress — un canal, démarrage à 0 % puis progression', () => {
+  const data = makeCampaign(['Com', 'EBF', 'Data']);
+  workflow.initWorkflow(data);
+  let p = workflow.getChannelProgress(data)[0];
+  assert.equal(p.pct, 0);
+  assert.equal(p.done, false);
+  // On valide les premières étapes du canal 0
+  const cs = data.workflow.channelSteps[0];
+  cs.com_maquette = 'validated';
+  cs.po_validation_maquette = 'validated';
+  p = workflow.getChannelProgress(data)[0];
+  assert.ok(p.pct > 0 && p.pct < 100, 'progression partielle attendue, obtenu ' + p.pct);
+  assert.equal(p.done, false);
+});
+
+test('getChannelProgress — étape de dépôt validée par le PO compte comme faite', () => {
+  const data = makeCampaign(['Com']); // canal Com seul → maquette + validation
+  workflow.initWorkflow(data);
+  const cs = data.workflow.channelSteps[0];
+  // La maquette est "submitted" mais la validation PO est acquise → doit compter comme faite
+  cs.com_maquette = 'submitted';
+  cs.po_validation_maquette = 'validated';
+  const p = workflow.getChannelProgress(data)[0];
+  assert.equal(p.done, true, 'canal Com terminé après validation maquette');
+  assert.equal(p.pct, 100);
+});
+
+test('getChannelProgress — plusieurs canaux indépendants', () => {
+  const data = makeCampaign(['Com', 'EBF', 'Data'], [
+    { deliverableName: 'Mail', content: 'MAIL' },
+    { deliverableName: 'SMS', content: 'SMS' }
+  ]);
+  workflow.initWorkflow(data);
+  // On fait avancer uniquement le canal 0
+  data.workflow.channelSteps[0].com_maquette = 'validated';
+  data.workflow.channelSteps[0].po_validation_maquette = 'validated';
+  const arr = workflow.getChannelProgress(data);
+  assert.equal(arr.length, 2);
+  assert.ok(arr[0].pct > arr[1].pct, 'le canal 0 doit être plus avancé que le canal 1');
+});

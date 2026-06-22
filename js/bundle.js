@@ -2558,6 +2558,85 @@ window.ImpulsionMarketing.workflow = (function () {
     return 'En cours';
   }
 
+  // ─────────────────────────────────────────────────────────
+  // PROGRESSION PAR CANAL (cartes du tableau de bord — option multi-canal)
+  // ─────────────────────────────────────────────────────────
+  var _STEP_LABEL = {};
+  STEPS.forEach(function (s) { _STEP_LABEL[s.id] = s.label; });
+
+  // Étapes pertinentes pour un canal selon les équipes requises et le type (LP).
+  // Reproduit la visibilité des zones de la fiche canal.
+  function _channelStepIds(requiredTeams, channelType, juridiqueReq) {
+    var reqCom  = isTeamRequired(requiredTeams, 'Com');
+    var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
+    var reqData = isTeamRequired(requiredTeams, 'Data');
+    var isLP    = channelType === 'LP';
+    var ids = [];
+    if (reqCom) { ids.push('com_maquette', 'po_validation_maquette'); if (juridiqueReq) ids.push('com_juridique'); }
+    if (reqEbf) { ids.push('ebf_bat', 'po_validation_bat'); }
+    if (reqData && !isLP) { ids.push('data_ciblage', 'po_validation_ciblage'); }
+    if (reqEbf && reqData && !isLP) { ids.push('data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod'); }
+    else if (reqEbf && isLP) { ids.push('ebf_test_prod', 'po_validation_test_prod'); }
+    if (reqData && !isLP) ids.push('data_mise_en_prod');
+    if (isLP && reqEbf) ids.push('ebf_mise_en_prod');
+    return ids;
+  }
+
+  // Une étape de dépôt est "faite" dès que sa validation PO associée est acquise.
+  var _DEPOT_VALIDATION = {
+    com_maquette: 'po_validation_maquette', ebf_bat: 'po_validation_bat',
+    data_ciblage: 'po_validation_ciblage', data_lancement_test: 'po_validation_test_prod',
+    ebf_test_prod: 'po_validation_test_prod'
+  };
+  function _stepColorKey(id) {
+    if (/validation/.test(id)) return 'valid';
+    if (/maquette|juridique/.test(id)) return 'maq';
+    return 'prod'; // bat, ciblage, lancement, test, mise_en_prod
+  }
+
+  /**
+   * Progression par canal : pour chaque canal, où en est-il.
+   * Retourne [{ name, content, label, key, pct, done }]. Stocké dans l'index pour
+   * que le tableau de bord affiche le détail par canal sans relire les campagne.json.
+   */
+  function getChannelProgress(campaignData) {
+    initWorkflow(campaignData);
+    var cs = campaignData.workflow.channelSteps || {};
+    var jur = juridiqueRequired(campaignData);
+    var channels = campaignData.channels || [];
+    return channels.map(function (ch, i) {
+      var steps = cs[i] || {};
+      var type  = ch && ch.type;
+      var done  = isChannelCompleted(steps, campaignData.requiredTeams, type, jur);
+      var ids   = _channelStepIds(campaignData.requiredTeams, type, jur);
+      function eff(id) {
+        var raw = steps[id] || 'locked';
+        var v = _DEPOT_VALIDATION[id];
+        if (raw === 'submitted' && v && (steps[v] === 'validated' || steps[v] === 'completed')) return 'completed';
+        return raw;
+      }
+      var doneCount = 0, total = ids.length, label = '', key = 'maq';
+      for (var k = 0; k < ids.length; k++) {
+        var stt = eff(ids[k]);
+        if (stt === 'validated' || stt === 'completed') { doneCount++; continue; }
+        if (!label) {
+          var lbl = _STEP_LABEL[ids[k]] || ids[k];
+          if (stt === 'submitted')               { label = 'En validation : ' + lbl; key = 'valid'; }
+          else if (stt === 'revision_requested') { label = 'Révision : ' + lbl;       key = 'urgent'; }
+          else                                   { label = lbl;                        key = _stepColorKey(ids[k]); }
+        }
+      }
+      var pct = done ? 100 : (total ? Math.round(doneCount / total * 100) : 0);
+      if (done) { label = 'Terminé'; key = 'done'; }
+      else if (!label) { label = 'En cours'; }
+      return {
+        name:    (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (i + 1)),
+        content: (ch && ch.content) || '',
+        label: label, key: key, pct: pct, done: done
+      };
+    });
+  }
+
   /**
    * Retourne la liste des étapes disponibles pour un utilisateur sur une campagne
    * Agrège toutes les étapes actives de tous les canaux
@@ -2867,6 +2946,7 @@ window.ImpulsionMarketing.workflow = (function () {
       actif:       campaignData.actif !== false,
       volumeAlert: volumeAlert,
       requiredTeams: campaignData.requiredTeams || null,
+      chprog:      getChannelProgress(campaignData),
       srch:        buildSearchBlob(campaignData)
     };
   }
@@ -2978,6 +3058,7 @@ window.ImpulsionMarketing.workflow = (function () {
     recalcChannelUnlocks:     recalcChannelUnlocks,
     isCompleted:              isCompleted,
     getCurrentStepLabel:      getCurrentStepLabel,
+    getChannelProgress:       getChannelProgress,
     saveCampaignWorkflow:     saveCampaignWorkflow,
     captureBaseline:          captureBaseline,
     threeWayMerge:            threeWayMerge,
