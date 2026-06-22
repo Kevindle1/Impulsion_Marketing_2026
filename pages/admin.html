@@ -70,9 +70,19 @@
         .save-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
         /* Barre d'enregistrement collante en bas du panneau */
         .save-bar.sticky { position: sticky; bottom: 0; background: linear-gradient(180deg, transparent, var(--bg, #f6f8f7) 40%); padding: 12px 0 4px; margin-top: 4px; z-index: 5; }
-        .inc-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
-        .inc-item.done { opacity: .6; }
+        .inc-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; transition: border-color .15s; }
+        .inc-item.done { background: #fbfdfc; border-color: var(--green-100, #cceBdd); }
         .inc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+        .inc-status { margin-left: auto; font-size: 11px; font-weight: 800; padding: 3px 11px; border-radius: 999px; white-space: nowrap; }
+        .inc-status.open { background: var(--amber-50); color: #9a6b00; }
+        .inc-status.done { background: var(--green-50); color: var(--green-600); }
+        /* Sous-onglets (À traiter / Traités) */
+        .sub-tabs { display: inline-flex; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 5px; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
+        .sub-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: none; background: transparent; border-radius: 8px; font-size: 13.5px; font-weight: 700; color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
+        .sub-tab:hover { background: var(--line-2); color: var(--ink); }
+        .sub-tab.active { background: var(--primary); color: #fff; }
+        .sub-tab-count { font-size: 11px; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
+        .sub-tab.active .sub-tab-count { background: rgba(255,255,255,.25); color: #fff; }
         .inc-type { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
         .inc-type.incident { background: var(--red-50); color: var(--red); }
         .inc-type.amelioration { background: var(--amber-50); color: #9a6b00; }
@@ -449,43 +459,67 @@
             return v || '';
         }
 
+        // Sous-vue active des signalements : 'open' (à traiter) | 'done' (traités)
+        var incView = 'open';
+
+        // Markup d'une carte de signalement (réutilisé par les deux sous-vues).
+        function incidentCardHtml(it) {
+            var i = incidents.indexOf(it);
+            var done = it.statut === 'traité';
+            var rep = it.reponse;
+            var selVal = rep ? rep.statut : 'resolu';
+            var optsHtml = REPONSE_STATUTS.map(function (o) {
+                return '<option value="' + o.value + '"' + (o.value === selVal ? ' selected' : '') + '>' + o.label + '</option>';
+            }).join('');
+            var h = '<div class="inc-item' + (done ? ' done' : '') + '">'
+                + '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
+                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + '</span>'
+                + '<span class="inc-status ' + (done ? 'done' : 'open') + '">' + (done ? '✅ Traité' : '🟠 À traiter') + '</span></div>'
+                + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
+            if (rep && rep.texte) {
+                h += '<div class="inc-reponse-saved">↳ <strong>' + esc(statutReponseLabel(rep.statut)) + '</strong> — ' + esc(rep.texte)
+                    + '<div class="inc-reponse-meta">par ' + esc(rep.par || '?') + ' · ' + esc((rep.date || '').slice(0, 10)) + ' · auteur notifié</div></div>';
+            }
+            h += '<div class="inc-reply">'
+                + '<textarea class="inc-reply-text" data-rep="' + i + '" rows="2" placeholder="Réponse à l\'auteur : ce que vous avez fait…">' + esc(rep ? rep.texte : '') + '</textarea>'
+                + '<div class="inc-reply-row"><select class="inc-reply-statut" data-reps="' + i + '">' + optsHtml + '</select>'
+                + '<button class="btn-reply" data-reply="' + i + '">💬 Répondre &amp; notifier</button></div>'
+                + '</div>'
+                + '<div class="save-bar" style="margin-top:10px;">'
+                + '<button class="btn btn-secondary" data-toggle="' + i + '">' + (done ? '↩ Rouvrir' : '✅ Marquer traité') + '</button>'
+                + '<button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div>'
+                + '</div>';
+            return h;
+        }
+
         function renderIncidents() {
             updateNavCounts();
             var c = document.getElementById('incidents-container');
-            if (!incidents.length) { c.innerHTML = '<div class="admin-card"><div class="empty-hint">Aucun signalement pour l\'instant. 🎉</div></div>'; return; }
-            var open = incidents.filter(function (i) { return i.statut !== 'traité'; }).length;
-            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Signalements</h3>'
-                + '<span class="count-pill">' + incidents.length + ' au total</span>'
-                + (open ? '<span class="count-pill" style="background:var(--red-50);color:var(--red);">' + open + ' ouvert' + (open > 1 ? 's' : '') + '</span>' : '')
+            var openCount = incidents.filter(function (i) { return i.statut !== 'traité'; }).length;
+            var doneCount = incidents.length - openCount;
+
+            // Sous-onglets : À traiter / Traités
+            var html = '<div class="sub-tabs">'
+                + '<button class="sub-tab' + (incView === 'open' ? ' active' : '') + '" data-incview="open">🟠 À traiter <span class="sub-tab-count">' + openCount + '</span></button>'
+                + '<button class="sub-tab' + (incView === 'done' ? ' active' : '') + '" data-incview="done">✅ Traités <span class="sub-tab-count">' + doneCount + '</span></button>'
                 + '</div>';
-            incidents.slice().reverse().forEach(function (it) {
-                var i = incidents.indexOf(it);
-                var done = it.statut === 'traité';
-                var rep = it.reponse;
-                var selVal = rep ? rep.statut : 'resolu';
-                var optsHtml = REPONSE_STATUTS.map(function (o) {
-                    return '<option value="' + o.value + '"' + (o.value === selVal ? ' selected' : '') + '>' + o.label + '</option>';
-                }).join('');
-                html += '<div class="inc-item' + (done ? ' done' : '') + '">'
-                    + '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
-                    + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + '</span></div>'
-                    + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
-                if (rep && rep.texte) {
-                    html += '<div class="inc-reponse-saved">↳ <strong>' + esc(statutReponseLabel(rep.statut)) + '</strong> — ' + esc(rep.texte)
-                        + '<div class="inc-reponse-meta">par ' + esc(rep.par || '?') + ' · ' + esc((rep.date || '').slice(0, 10)) + ' · auteur notifié</div></div>';
-                }
-                html += '<div class="inc-reply">'
-                    + '<textarea class="inc-reply-text" data-rep="' + i + '" rows="2" placeholder="Réponse à l\'auteur : ce que vous avez fait…">' + esc(rep ? rep.texte : '') + '</textarea>'
-                    + '<div class="inc-reply-row"><select class="inc-reply-statut" data-reps="' + i + '">' + optsHtml + '</select>'
-                    + '<button class="btn-reply" data-reply="' + i + '">💬 Répondre &amp; notifier</button></div>'
-                    + '</div>'
-                    + '<div class="save-bar" style="margin-top:10px;">'
-                    + '<button class="btn btn-secondary" data-toggle="' + i + '">' + (done ? '↩ Rouvrir' : '✅ Marquer traité') + '</button>'
-                    + '<button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div>'
-                    + '</div>';
-            });
-            html += '</div>';
+
+            var wantDone = incView === 'done';
+            var list = incidents.filter(function (it) { return (it.statut === 'traité') === wantDone; });
+
+            if (!list.length) {
+                html += '<div class="admin-card"><div class="empty-hint">'
+                    + (wantDone ? 'Aucun signalement traité pour l’instant.' : 'Aucun signalement à traiter. 🎉')
+                    + '</div></div>';
+            } else {
+                html += '<div class="admin-card"><div class="admin-card-title"><h3>' + (wantDone ? 'Signalements traités' : 'À traiter') + '</h3>'
+                    + '<span class="count-pill">' + list.length + '</span></div>';
+                list.slice().reverse().forEach(function (it) { html += incidentCardHtml(it); });
+                html += '</div>';
+            }
             c.innerHTML = html;
+
+            c.querySelectorAll('[data-incview]').forEach(function (b) { b.addEventListener('click', function () { incView = b.getAttribute('data-incview'); renderIncidents(); }); });
             c.querySelectorAll('[data-toggle]').forEach(function (b) { b.addEventListener('click', function () { var i = +b.getAttribute('data-toggle'); incidents[i].statut = incidents[i].statut === 'traité' ? 'nouveau' : 'traité'; saveIncidents(); }); });
             c.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
             c.querySelectorAll('[data-reply]').forEach(function (b) { b.addEventListener('click', function () { respondToIncident(+b.getAttribute('data-reply'), b); }); });
