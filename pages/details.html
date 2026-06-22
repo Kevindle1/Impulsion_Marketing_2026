@@ -1315,6 +1315,7 @@
         if (editable) {
             h += '<div class="actor-form">';
             h += '<div class="form-row"><label>Date de mise en production effective</label><input type="date" id="data-mepdate-' + idx + '" class="form-control"></div>';
+            h += '<div class="form-row"><label>Date du premier envoi</label><input type="date" id="data-mepfirstsend-' + idx + '" class="form-control"></div>';
             h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="data-mepcomment-' + idx + '" class="form-control" placeholder="Ex : routage déclenché à 9h00"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
@@ -1957,6 +1958,7 @@
             campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
             step: 'data_mise_en_prod',
             mepDate:    (document.getElementById('data-mepdate-'    + idx) || {}).value || '',
+            mepFirstSend: (document.getElementById('data-mepfirstsend-' + idx) || {}).value || '',
             mepComment: (document.getElementById('data-mepcomment-' + idx) || {}).value || '',
             depositDate: new Date().toISOString()
         };
@@ -2209,8 +2211,9 @@
         var el = document.getElementById('data-mep-readonly-' + idx);
         if (!el || !d) return;
         var h = '<div class="depot-readonly-grid">';
-        if (d.mepDate)    h += '<div class="depot-readonly-item"><strong>Date MEP</strong>' + security.escapeHtml(d.mepDate) + '</div>';
-        if (d.mepComment) h += '<div class="depot-readonly-item"><strong>Commentaire</strong>' + security.escapeHtml(d.mepComment) + '</div>';
+        if (d.mepDate)      h += '<div class="depot-readonly-item"><strong>Date MEP</strong>' + security.escapeHtml(d.mepDate) + '</div>';
+        if (d.mepFirstSend) h += '<div class="depot-readonly-item"><strong>Date du premier envoi</strong>' + security.escapeHtml(d.mepFirstSend) + '</div>';
+        if (d.mepComment)   h += '<div class="depot-readonly-item"><strong>Commentaire</strong>' + security.escapeHtml(d.mepComment) + '</div>';
         h += '</div>';
         el.innerHTML = h;
         el.style.display = 'block';
