@@ -895,12 +895,18 @@ window.ImpulsionMarketing.workflow = (function () {
     add(campaignData.description);
     add(campaignData.market);
     add(campaignData.typology);
+    add(campaignData.recurrence);
     add(campaignData.segments);
     add(campaignData.ubs);
     add(campaignData.campagneLiee);
+    add(campaignData.targetProducts);
+    add(campaignData.targetProduct);
+    add(campaignData.prospectSource);
     (campaignData.channels || []).forEach(function (c) {
       add(c.deliverableName); add(c.content); add(c.emailObject);
-      add(c.codeCom); add(c.refParacom); add(c.codeProjet); add(c.codeAction);
+      add(c.comType); add(c.comTypology); add(c.targetingCriteria);
+      add(c.codeCom); add(c.refParacom); add(c.codeProjet); add(c.codeAction); add(c.codeMK);
+      add(c.urlTicTac); add(c.urlComStore); add(c.urlsComStore); add(c.urlLccx);
     });
     return parts.join(' ').toLowerCase();
   }

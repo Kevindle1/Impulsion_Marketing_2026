@@ -2310,7 +2310,7 @@
         var ch = currentCampaignData.channels[idx];
         if (!ch) return false;
         var changed = false;
-        ['codeCom', 'refParacom', 'codeProjet', 'codeAction'].forEach(function(k) {
+        ['codeCom', 'refParacom', 'codeProjet', 'codeAction', 'codeMK'].forEach(function(k) {
             var v = (depot[k] || '').toString().trim();
             if (v && ch[k] !== v) { ch[k] = v; changed = true; }
         });

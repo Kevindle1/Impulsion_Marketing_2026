@@ -459,10 +459,10 @@
                 if (query) {
                     // #27 — recherche multi-champs (nom, PO, description, marché,
                     // segments, univers, campagne liée, canaux + codes Projet/Action/
-                    // Com/Réf Paracom) via le blob pré-indexé. Repli sur nom/desc/PO
-                    // pour les index antérieurs (sans blob).
-                    var hay = c._search
-                        || (c.name + ' ' + (c.data.description || '') + ' ' + (c.data.po || '')).toLowerCase();
+                    // MK/Com/Réf Paracom, URLs…) via le blob pré-indexé. On y ajoute
+                    // toujours le nom/desc/PO pour que la recherche marche même si l'index
+                    // n'a pas encore le blob (à reconstruire une fois).
+                    var hay = ((c._search || '') + ' ' + c.name + ' ' + (c.data.description || '') + ' ' + (c.data.po || '')).toLowerCase();
                     var terms = query.split(/\s+/).filter(Boolean);
                     for (var ti = 0; ti < terms.length; ti++) {
                         if (hay.indexOf(terms[ti]) === -1) return false;

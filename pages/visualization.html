@@ -97,7 +97,7 @@
                 <!-- Section de recherche et filtres -->
         <section class="panel search-section">
             <div class="search-bar">
-                <input type="text" id="search-input" placeholder="Rechercher une campagne..." />
+                <input type="text" id="search-input" placeholder="Rechercher : nom, PO, code projet/action/MK, réf com/paracom, URL, segment…" />
             </div>
 
             <div class="filters-row">
@@ -724,16 +724,21 @@
             var canalFilter = document.getElementById('filter-canal').value;
             var typeFilter  = document.getElementById('filter-type').value;
 
-            filteredCampaigns = allCampaigns.filter(function(campaign) {
-                var matchesSearch = campaign.name.toLowerCase().includes(searchTerm) ||
-                    (campaign.data.id && campaign.data.id.toLowerCase().includes(searchTerm)) ||
-                    (campaign.data.productUrl && campaign.data.productUrl.toLowerCase().includes(searchTerm));
+            var wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var terms = searchTerm.split(/\s+/).filter(Boolean);
 
-                if (!matchesSearch && campaign.data.channels) {
-                    matchesSearch = campaign.data.channels.some(function(ch) {
-                        return (ch.urlTicTac   && ch.urlTicTac.toLowerCase().includes(searchTerm)) ||
-                               (ch.urlComStore && ch.urlComStore.toLowerCase().includes(searchTerm));
-                    });
+            filteredCampaigns = allCampaigns.filter(function(campaign) {
+                // Recherche complète : on cherche dans un « blob » agrégé (nom, PO, description,
+                // marché, typologie, segments, univers, produits, campagne liée + par canal :
+                // libellé, contenu, objet, type, ciblage, codes Projet/Action/MK/Com, réf
+                // Paracom, URLs…). Calculé une fois par campagne puis mémorisé.
+                var matchesSearch = true;
+                if (terms.length) {
+                    if (!campaign._blob) {
+                        var blob = (wfMod && wfMod.buildSearchBlob) ? wfMod.buildSearchBlob(campaign.data || {}) : '';
+                        campaign._blob = (blob + ' ' + (campaign.name || '') + ' ' + (campaign.data && campaign.data.productUrl || '')).toLowerCase();
+                    }
+                    matchesSearch = terms.every(function(t) { return campaign._blob.indexOf(t) !== -1; });
                 }
 
                 var matchesUB = !ubFilter || (campaign.data.ubs && campaign.data.ubs.includes(ubFilter));
