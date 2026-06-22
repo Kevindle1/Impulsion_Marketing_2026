@@ -10,6 +10,7 @@
         <link rel="stylesheet" href="../css/theme.css">
         <link rel="stylesheet" href="../css/components.css">
         <link rel="stylesheet" href="../css/dashboard-layout.css">
+        <link rel="stylesheet" href="../css/topbar.css">
 
         <!-- Styles CSS pour l'application -->
         <style>
@@ -872,12 +873,7 @@
             </aside>
 
             <div class="main-container">
-                <header class="top-header">
-                    <div class="header-left">
-                        <h2 class="page-title">Créer une campagne</h2>
-                        <p class="page-subtitle">Interface de saisie — Historique des Campagnes</p>
-                    </div>
-                </header>
+                <header class="top-header" id="app-topbar"></header>
 
                 <main class="content">
             <section class="panel">
@@ -1259,6 +1255,7 @@
 
                 <!-- Scripts standalone pour le système centralisé -->
         <script src="../js/bundle.js"></script>
+        <script>window.ImpulsionMarketing.topbar.mount({ title: 'Créer une campagne', subtitle: 'Interface de saisie — Historique des Campagnes' });</script>
 
         <script>
             // Garde de session : sans identité (choisie au login), retour à l'écran de connexion

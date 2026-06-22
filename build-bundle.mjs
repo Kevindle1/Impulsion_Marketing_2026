@@ -27,6 +27,7 @@ const MODULES = [
   'help-standalone.js',
   'incident-standalone.js',
   'admin-standalone.js',
+  'topbar-standalone.js',
 ];
 
 const HEADER =

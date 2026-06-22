@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
     <style>
         /* ── Reset & Base ── */
         body {
@@ -618,15 +619,7 @@
 
         <!-- Main -->
         <div class="main-container">
-            <header class="top-header">
-                <div class="header-left">
-                    <h2 class="page-title">Comité Éditorial</h2>
-                    <span style="font-size:12px;color:var(--muted);margin-left:12px;">Planning des zones site web</span>
-                </div>
-                <div class="header-right" style="display:flex;align-items:center;gap:12px;">
-                    <span id="user-label" style="font-size:12px;color:var(--muted);font-weight:500;"></span>
-                </div>
-            </header>
+            <header class="top-header" id="app-topbar"></header>
 
             <div class="ce-page">
                 <!-- Connect banner -->
@@ -710,6 +703,7 @@
     </div>
 
     <script src="../js/bundle.js"></script>
+    <script>window.ImpulsionMarketing.topbar.mount({ title: 'Comité Éditorial', subtitle: 'Planning des zones site web' });</script>
     <script>
         // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
         (function () {
@@ -797,7 +791,8 @@
         if (um && um.getCurrentUser) {
             state.currentUser = um.getCurrentUser();
             if (state.currentUser) {
-                $('user-label').textContent = state.currentUser.name;
+                var _ul = $('user-label');
+                if (_ul) _ul.textContent = state.currentUser.name;
             }
         }
 

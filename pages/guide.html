@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
     <style>
         /* Le contenu défile dans #guide-scroll (pas la fenêtre) → ancrage du sommaire fiable */
         html, body { height: 100%; overflow: hidden; }
@@ -234,12 +235,7 @@
     </aside>
 
     <div class="main-container">
-        <header class="top-header">
-            <div class="header-left">
-                <h2 class="page-title">Guide utilisateur</h2>
-                <p class="page-subtitle">Comment utiliser Impulsion Marketing</p>
-            </div>
-        </header>
+        <header class="top-header" id="app-topbar"></header>
 
         <div id="guide-scroll" style="flex:1;overflow-y:auto;background:var(--line-2);">
             <div id="guide-loading">Chargement du guide...</div>
@@ -253,6 +249,7 @@
 </div>
 
 <script src="../js/bundle.js"></script>
+<script>window.ImpulsionMarketing.topbar.mount({ title: 'Guide utilisateur', subtitle: 'Comment utiliser Impulsion Marketing' });</script>
 <script>
     // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
     (function () {

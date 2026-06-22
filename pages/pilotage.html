@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
     <style>
         body {
             background: linear-gradient(135deg, var(--line-2) 0%, var(--line) 100%);
@@ -312,13 +313,7 @@
         </aside>
 
         <div class="main-container">
-            <header class="top-header">
-                <div class="header-left">
-                    <h2 class="page-title">Pilotage des Campagnes</h2>
-                    <p class="page-subtitle">Vue d'ensemble et indicateurs par service</p>
-                </div>
-                <div class="header-right"></div>
-            </header>
+            <header class="top-header" id="app-topbar"></header>
 
             <main class="content">
                 <div class="dashboard-container">
@@ -514,6 +509,7 @@
     </div>
 
     <script src="../js/bundle.js"></script>
+    <script>window.ImpulsionMarketing.topbar.mount({ title: 'Pilotage des Campagnes', subtitle: 'Vue d\'ensemble et indicateurs par service' });</script>
     <script>
         // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
         (function () {

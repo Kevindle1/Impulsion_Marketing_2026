@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
     <style>
         .back-button {
             display: inline-flex;
@@ -90,12 +91,7 @@
         </aside>
 
         <div class="main-container">
-            <header class="top-header">
-                <div class="header-left">
-                    <h2 class="page-title">Toutes les Campagnes</h2>
-                    <p class="page-subtitle">Vue d'ensemble de toutes les campagnes</p>
-                </div>
-            </header>
+            <header class="top-header" id="app-topbar"></header>
 
             <main class="content">
                 <!-- Section de recherche et filtres -->
@@ -157,6 +153,7 @@
 
     <!-- Scripts JavaScript -->
     <script src="../js/bundle.js"></script>
+    <script>window.ImpulsionMarketing.topbar.mount({ title: 'Campagnes', subtitle: 'Toutes les campagnes' });</script>
 
     <script>
         // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
@@ -299,6 +296,10 @@
                 return (v && KPI_LABELS[v]) ? v : null;
             } catch (e) { return null; }
         })();
+        // Terme de recherche transmis par la barre du haut (?q=) des autres pages.
+        var initialQuery = (function() {
+            try { return (new URLSearchParams(window.location.search).get('q') || '').trim(); } catch (e) { return ''; }
+        })();
 
         // Réplique du calcul d'échéance du tableau de bord (urgence = J-7 ou dépassé).
         function computeDelay(launchDate) {
@@ -359,7 +360,10 @@
         // Affichage initial : si un filtre KPI est actif (ouvert depuis le dashboard),
         // on passe par le pipeline de filtrage ; sinon on affiche tout.
         function initialDisplay() {
-            if (kpiFilter) { currentPage = 0; filterCampaigns(); return; }
+            // Pré-remplit la recherche si un terme a été transmis via ?q=
+            var si = document.getElementById('search-input');
+            if (initialQuery && si && !si.value) si.value = initialQuery;
+            if (kpiFilter || (si && si.value)) { currentPage = 0; filterCampaigns(); return; }
             filteredCampaigns = allCampaigns.slice();
             sortAndDisplayCampaigns();
         }

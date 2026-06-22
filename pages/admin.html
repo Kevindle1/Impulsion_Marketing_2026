@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
     <style>
         /* ── Layout « Réglages » : sous-menu latéral + panneau ── */
         .admin-shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
@@ -127,12 +128,7 @@
     </aside>
 
     <div class="main-container">
-        <header class="top-header">
-            <div class="header-left">
-                <h2 class="page-title">Administration</h2>
-                <p class="page-subtitle">Données fixes & signalements</p>
-            </div>
-        </header>
+        <header class="top-header" id="app-topbar"></header>
         <main class="content">
             <div class="admin-shell">
                 <nav class="admin-nav" id="admin-nav" aria-label="Sections d'administration">
@@ -174,6 +170,7 @@
 </div>
 
 <script src="../js/bundle.js"></script>
+<script>window.ImpulsionMarketing.topbar.mount({ title: 'Administration', subtitle: 'Données fixes & signalements' });</script>
 <script>
     // Garde : identité requise + droit d'accès admin
     (function () {

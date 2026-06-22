@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
     <style>
         /* ── Infos campagne : sections & grilles ── */
         .detail-section {
@@ -334,19 +335,14 @@
     </aside>
 
     <div class="main-container">
-        <header class="top-header">
-            <div class="header-left">
-                <h2 class="page-title">Détails de la campagne</h2>
-                <p class="page-subtitle" id="campaign-subtitle">Informations détaillées</p>
-            </div>
-            <div class="header-right">
-                <a href="visualization.html" class="btn secondary back-button">← Retour à la liste</a>
-                <button id="editButton" class="btn primary back-button" style="display:none;" onclick="editCampaign()">✏️ Modifier</button>
-                <button id="duplicateButton" class="btn secondary back-button" style="display:none;" onclick="duplicateCampaign()">📋 Dupliquer</button>
-                <button id="toggleActifButton" class="btn secondary back-button" style="display:none;" onclick="toggleCampaignActif()"></button>
-                <button id="deleteCampaignButton" class="btn secondary back-button" style="display:none;color:var(--red);" onclick="deleteCampaign()">🗑️ Supprimer</button>
-            </div>
-        </header>
+        <header class="top-header" id="app-topbar"></header>
+        <div class="details-actionbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 28px 0;">
+            <a href="visualization.html" class="btn secondary back-button">← Retour à la liste</a>
+            <button id="editButton" class="btn primary back-button" style="display:none;" onclick="editCampaign()">✏️ Modifier</button>
+            <button id="duplicateButton" class="btn secondary back-button" style="display:none;" onclick="duplicateCampaign()">📋 Dupliquer</button>
+            <button id="toggleActifButton" class="btn secondary back-button" style="display:none;" onclick="toggleCampaignActif()"></button>
+            <button id="deleteCampaignButton" class="btn secondary back-button" style="display:none;color:var(--red);" onclick="deleteCampaign()">🗑️ Supprimer</button>
+        </div>
 
         <div class="details-shell">
             <nav class="details-sidenav" id="details-sidenav"></nav>
@@ -359,6 +355,7 @@
 </div>
 
 <script src="../js/bundle.js"></script>
+<script>window.ImpulsionMarketing.topbar.mount({ title: 'Détails de la campagne', subtitle: 'Informations détaillées' });</script>
 <script src="../js/suivi-xlsx.js"></script>
 <script>
     // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
@@ -704,7 +701,8 @@
     // ─────────────────────────────────────────────
     function initDetailsUI(name, data) {
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('campaign-subtitle').textContent = name;
+        var _sub = document.querySelector('header.top-header p.page-subtitle');
+        if (_sub) _sub.textContent = name;
         currentCampaignName = name;
         var editBtn        = document.getElementById('editButton');
         var dupBtn         = document.getElementById('duplicateButton');

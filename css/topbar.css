@@ -1,0 +1,68 @@
+/* topbar.css — styles du composant d'en-tête partagé (barre du haut commune).
+   Le layout .top-header / .header-left / .page-title / .header-right vient de
+   dashboard-layout.css ; ce fichier ajoute les contrôles (recherche, boutons,
+   avatar) pour qu'ils soient identiques sur toutes les pages. */
+
+.header-search {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: var(--line-2, #f0f4f1);
+    border: 1px solid var(--line, #eaefec);
+    border-radius: 12px;
+    padding: 9px 13px;
+    width: 300px;
+    color: var(--muted-2, #8b988f);
+}
+.header-search input {
+    border: 0;
+    background: none;
+    outline: 0;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--ink, #0c1a14);
+    width: 100%;
+}
+.header-search:focus-within {
+    border-color: var(--primary, #00875A);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--line, #eaefec);
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--muted, #56655e);
+    position: relative;
+    cursor: pointer;
+}
+.icon-btn:hover { background: var(--line-2, #f0f4f1); color: var(--ink, #0c1a14); }
+.icon-btn:disabled { opacity: .6; cursor: default; }
+.icon-btn--text { width: auto; padding: 0 14px; font-family: inherit; font-size: 13px; font-weight: 650; }
+.icon-btn--text svg { flex-shrink: 0; }
+
+.top-av {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--primary, #00875A);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .header-search { display: none; }
+    .icon-btn--text .icon-btn-label { display: none; }
+    .icon-btn--text { width: 40px; padding: 0; }
+}
