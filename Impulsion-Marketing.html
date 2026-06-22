@@ -99,6 +99,10 @@
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         <input type="text" id="campaign-search" placeholder="Rechercher : nom, PO, code projet/action, réf com/paracom…">
                     </div>
+                    <button id="btn-rebuild-index" class="icon-btn icon-btn--text" title="Rafraîchir : reconstruire l'index des campagnes">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                        <span class="icon-btn-label">Rafraîchir</span>
+                    </button>
                     <button id="btn-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
                         <span id="whatsnew-dot" style="display:none;position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:var(--primary,#00875A);border-radius:50%;border:2px solid #fff;"></span>
@@ -139,15 +143,11 @@
                 <!-- KPIs -->
                 <div class="kpi-row" id="kpi-row" style="display:none;"></div>
 
-                <!-- Filtre + reconstruire index -->
+                <!-- Filtre par étape -->
                 <div class="dashboard-toolbar" id="dashboard-toolbar" style="display:none;">
                     <select id="filter-etape" class="filter-select" title="Filtrer par étape">
                         <option value="">Toutes les étapes</option>
                     </select>
-                    <button class="btn btn-secondary btn-rebuild" id="btn-rebuild-index" title="Reconstruire l'index si des campagnes sont manquantes ou désynchronisées">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                        Reconstruire l'index
-                    </button>
                 </div>
 
                 <!-- Campagnes à produire -->
@@ -442,9 +442,10 @@
                     errors.showNotification('Chargez d\'abord le dossier racine', 'error');
                     return;
                 }
+                var REBUILD_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
                 btn.disabled = true;
-                btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reconstruction…';
-                var REBUILD_BTN_HTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> Reconstruire l\'index';
+                btn.innerHTML = REBUILD_ICON + '<span class="icon-btn-label">Rafraîchissement…</span>';
+                var REBUILD_BTN_HTML = REBUILD_ICON + '<span class="icon-btn-label">Rafraîchir</span>';
                 window.ImpulsionMarketing.workflow.buildFullIndex(_currentRootHandle)
                     .then(function(index) {
                         var count = Object.keys((index && index.campaigns) || {}).length;
@@ -1577,8 +1578,11 @@
         .header-search { display: flex; align-items: center; gap: 9px; background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 9px 13px; width: 300px; color: var(--muted-2, #8b988f); }
         .header-search input { border: 0; background: none; outline: 0; font-family: inherit; font-size: 13px; color: var(--ink, #0c1a14); width: 100%; }
         .header-search:focus-within { border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12); }
-        .icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line, #eaefec); background: #fff; display: flex; align-items: center; justify-content: center; color: var(--muted, #56655e); position: relative; cursor: pointer; }
+        .icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--line, #eaefec); background: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--muted, #56655e); position: relative; cursor: pointer; }
         .icon-btn:hover { background: var(--line-2, #f0f4f1); color: var(--ink, #0c1a14); }
+        .icon-btn--text { width: auto; padding: 0 14px; font-family: inherit; font-size: 13px; font-weight: 650; }
+        .icon-btn--text svg { flex-shrink: 0; }
+        .icon-btn:disabled { opacity: .6; cursor: default; }
         .top-av { width: 40px; height: 40px; border-radius: 50%; background: var(--primary, #00875A); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
 
         /* ── KPIs ── */
@@ -1918,6 +1922,8 @@
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
             .dash-hero { flex-direction: column; align-items: flex-start; gap: 14px; }
             .header-search { display: none; }
+            .icon-btn--text .icon-btn-label { display: none; }
+            .icon-btn--text { width: 40px; padding: 0; }
         }
         @media (max-width: 1280px) {
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
