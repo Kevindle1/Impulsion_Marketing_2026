@@ -2678,6 +2678,18 @@
             btnSubmitData.addEventListener('click', function() {
                 var stepId = btnSubmitData.getAttribute('data-step');
                 var isMep  = stepId === 'data_mise_en_prod';
+                // Ciblage : exiger au moins un champ rempli avant de soumettre.
+                if (!isMep) {
+                    var ciblageInputs = ['data-volume-', 'data-codeproj-', 'data-codeaction-', 'data-codemk-', 'data-chemin-', 'data-urlechantillon-'];
+                    var anyFilled = ciblageInputs.some(function(p) {
+                        var el = document.getElementById(p + idx);
+                        return el && String(el.value || '').trim() !== '';
+                    });
+                    if (!anyFilled) {
+                        errors.showNotification('Renseignez au moins un champ avant de soumettre le ciblage.', 'warning');
+                        return;
+                    }
+                }
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataDepot(idx, stepId);
                 depot.status = isMep ? 'completed' : 'submitted';
