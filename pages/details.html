@@ -193,6 +193,8 @@
         .wf-step--link:hover .wf-label { color: var(--primary, #00875A); text-decoration: underline; }
         @keyframes wfFlash { 0% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } 25% { box-shadow: 0 0 0 4px rgba(0,135,90,.28); } 100% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } }
         .wf-flash { animation: wfFlash 1.6s ease; }
+        .wf-chan-date { font-size: 12px; color: var(--muted, #56655e); margin: -2px 0 12px; }
+        .wf-chan-date strong { color: var(--ink, #0c1a14); font-weight: 700; }
         .wf-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 11px; color: var(--muted, #56655e); }
         .wf-legend span { display: inline-flex; align-items: center; gap: 6px; }
         .wf-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
@@ -1611,6 +1613,7 @@
                     }
                 }
                 html += '<div class="wf-block"><div class="wf-head"><span class="wf-title">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</span><span class="wf-badge ' + badgeCls + '">' + security.escapeHtml(badge) + '</span></div>';
+                html += '<div class="wf-chan-date">📅 Date de réception client demandée : <strong>' + security.escapeHtml(ch.sendDate || 'non renseignée') + '</strong></div>';
                 html += wfStepper(channelStepDefs, function(step) { return chCompleted ? 'completed' : channelStepStatus(cs, step.id); }, ci);
                 html += '</div>';
             });
