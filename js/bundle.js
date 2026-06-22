@@ -3564,8 +3564,6 @@ window.ImpulsionMarketing.adminConfig = (function () {
       + '<div class="header-right">'
       + '<div class="header-search">' + SVG.search
       + '<input type="text" id="topbar-search" placeholder="Rechercher : nom, PO, code projet/action, réf com/paracom…"></div>'
-      + '<button id="topbar-refresh" class="icon-btn icon-btn--text" title="Rafraîchir : reconstruire l’index des campagnes">'
-      + SVG.refresh + '<span class="icon-btn-label">Rafraîchir</span></button>'
       + '<button id="topbar-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">'
       + SVG.gift + '<span id="topbar-whatsnew-dot" style="' + dotStyle + '"></span></button>'
       + '<div style="position:relative;">'
@@ -3577,26 +3575,35 @@ window.ImpulsionMarketing.adminConfig = (function () {
       + '<button id="topbar-notif-mark-all" style="display:none;background:none;border:none;color:var(--primary,#00875A);font-size:12px;font-weight:700;cursor:pointer;padding:0;white-space:nowrap;">Tout marquer comme lu</button>'
       + '</div><div id="topbar-notif-list" style="padding:8px 0;"></div></div>'
       + '</div>'
-      + '<span id="topbar-avatar" class="top-av" title="">?</span>'
-      + '<button id="topbar-logout" class="icon-btn" title="Se déconnecter" aria-label="Se déconnecter">' + SVG.logout + '</button>'
+      + '<button id="topbar-refresh" class="icon-btn icon-btn--text" title="Rafraîchir : reconstruire l’index des campagnes">'
+      + SVG.refresh + '<span class="icon-btn-label">Rafraîchir</span></button>'
       + '</div>';
   }
 
-  // ── Utilisateur (avatar) + déconnexion ──
-  function wireUser() {
-    var roleColors = { superadmin: '#0f766e', marketing: '#16a34a', com: '#0d6efd', ebf: '#fd7e14', data: '#6f42c1' };
-    var u = currentUser(); var av = $('topbar-avatar');
-    if (u && av) {
-      var parts = u.name.trim().split(/\s+/);
-      av.textContent = parts.map(function (p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
-      av.style.background = roleColors[u.role] || '#64748b';
-      av.title = u.name + (u.roleLabel ? (' · ' + u.roleLabel) : '');
-    }
-    var lo = $('topbar-logout');
-    if (lo) lo.addEventListener('click', function () {
-      try { localStorage.removeItem('im_current_user'); } catch (e) {}
-      window.location.href = loginHref();
-    });
+  // ── Bloc utilisateur en bas de la barre de navigation (avatar + nom + équipe + déconnexion) ──
+  var ROLE_COLORS = { superadmin: '#0f766e', marketing: '#16a34a', com: '#0d6efd', ebf: '#fd7e14', data: '#6f42c1' };
+  function logout() {
+    try { localStorage.removeItem('im_current_user'); } catch (e) {}
+    window.location.href = loginHref();
+  }
+  function mountSidebarUser() {
+    var side = document.querySelector('.sidebar');
+    if (!side || side.querySelector('.sidebar-user')) return;
+    var u = currentUser();
+    var name = u ? u.name : 'Utilisateur';
+    var parts = name.trim().split(/\s+/);
+    var initials = parts.map(function (p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
+    var team = u ? (u.roleLabel || u.role || '') : '';
+    var block = document.createElement('div');
+    block.className = 'sidebar-user';
+    block.innerHTML =
+      '<div class="sidebar-user-av" style="background:' + (ROLE_COLORS[u && u.role] || '#64748b') + ';">' + esc(initials) + '</div>'
+      + '<div class="sidebar-user-info"><div class="sidebar-user-name">' + esc(name) + '</div>'
+      + '<div class="sidebar-user-team">' + esc(team) + '</div></div>'
+      + '<button class="sidebar-user-logout" title="Se déconnecter" aria-label="Se déconnecter">' + SVG.logout + '</button>';
+    side.appendChild(block);
+    var lo = block.querySelector('.sidebar-user-logout');
+    if (lo) lo.addEventListener('click', logout);
   }
 
   // ── Recherche globale → page Campagnes filtrée (?q=) ──
@@ -3885,12 +3892,12 @@ window.ImpulsionMarketing.adminConfig = (function () {
     if (!host) return;
     if (!host.classList.contains('top-header')) host.classList.add('top-header');
     host.innerHTML = headerHtml(opts);
-    wireUser();
     wireSearch();
     wireRefresh();
     wireWhatsNew();
     wireNotifications();
+    mountSidebarUser();
   }
 
-  IM.topbar = { mount: mount };
+  IM.topbar = { mount: mount, mountSidebarUser: mountSidebarUser };
 })();

@@ -78,6 +78,39 @@ body {
 .sidebar-nav { padding: 6px 12px 24px; flex: 1; }
 .nav-section { margin-bottom: 2px; }
 
+/* Bloc utilisateur en bas de la barre de navigation (avatar + nom + équipe + déconnexion) */
+.sidebar-user {
+    margin: 8px 12px 14px;
+    padding: 11px 12px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    border-radius: 14px;
+    background: var(--line-2, #f0f4f1);
+    border: 1px solid var(--line, #eaefec);
+}
+.sidebar-user-av {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 13px; flex-shrink: 0;
+}
+.sidebar-user-info { flex: 1; min-width: 0; }
+.sidebar-user-name {
+    font-size: 13.5px; font-weight: 700; color: var(--ink, #0c1a14);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-user-team {
+    font-size: 11.5px; color: var(--muted, #56655e); margin-top: 1px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-user-logout {
+    width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+    border: 1px solid var(--line, #eaefec); background: #fff; color: var(--muted, #56655e);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.sidebar-user-logout:hover { background: var(--red-50, #fdecec); color: var(--red, #e2001a); border-color: var(--red, #e2001a); }
+
 .nav-section-title {
     display: block;
     padding: 14px 12px 6px;
