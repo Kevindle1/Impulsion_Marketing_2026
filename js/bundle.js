@@ -3937,7 +3937,11 @@ window.ImpulsionMarketing.adminConfig = (function () {
       'campagne_inactive': '🔴 Campagne à débrancher',
       'publication_fin': '📅 Fin de publication site web',
       'mention': '💬 Mention dans une discussion',
-      'signalement_reponse': '🔔 Réponse à votre signalement'
+      'signalement_reponse': '🔔 Réponse à votre signalement',
+      'workflow_a_faire': '▶️ À toi de jouer',
+      'workflow_a_valider': '🕓 À valider',
+      'workflow_revision': '🔄 Révision demandée',
+      'workflow_info': '📣 Campagne'
     };
     var html = '';
     mine.forEach(function (n) {
