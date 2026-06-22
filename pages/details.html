@@ -2857,16 +2857,30 @@
                     var vals = collectChecked('assign-cb-' + userRole);
                     if (!vals.length) { notify('Veuillez sélectionner au moins une personne.', 'warning'); return; }
                     currentCampaignData.workflow.assignments[userRole] = vals;
-                    var a = currentCampaignData.workflow.assignments;
-                    var allAssigned = true;
-                    if (reqTeamsArr.indexOf('com')  !== -1 && (!a.com  || !a.com.length))  allAssigned = false;
-                    if (reqTeamsArr.indexOf('ebf')  !== -1 && (!a.ebf  || !a.ebf.length))  allAssigned = false;
-                    if (reqTeamsArr.indexOf('data') !== -1 && (!a.data || !a.data.length)) allAssigned = false;
-                    if (allAssigned) workflow.advanceStep(currentCampaignData, 'manager_affectation', 'validated');
                 }
                 disableBtn(btnAssign, 'Enregistrement...');
                 workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData)
-                    .then(function() { refreshCurrentPage(); })
+                    .then(function() {
+                        // Après la sauvegarde, currentCampaignData reflète la fusion disque : il
+                        // contient donc les affectations faites par les AUTRES managers. On revérifie
+                        // ici si l'équipe est complète et, le cas échéant, on valide automatiquement
+                        // l'étape d'affectation (ce qui évite de devoir passer par le manager général).
+                        var a = (currentCampaignData.workflow && currentCampaignData.workflow.assignments) || {};
+                        var steps = (currentCampaignData.workflow && currentCampaignData.workflow.steps) || {};
+                        function teamOK(key) { return reqTeamsArr.indexOf(key) === -1 || !!(a[key] && a[key].length); }
+                        var complete = teamOK('com') && teamOK('ebf') && teamOK('data');
+                        var notValidated = steps.manager_affectation !== 'validated' && steps.manager_affectation !== 'completed';
+                        if (complete && notValidated) {
+                            if (!a.manager) a.manager = (users.getCurrentUser() || {}).name || '';
+                            workflow.advanceStep(currentCampaignData, 'manager_affectation', 'validated');
+                            return workflow.saveCampaignWorkflow(currentRootHandle, name, currentCampaignData).then(function() {
+                                errors.showNotification('Affectation complète — étape validée ✅', 'success', 2400);
+                                refreshCurrentPage();
+                            });
+                        }
+                        if (!isGeneral) errors.showNotification(complete ? 'Affectation enregistrée.' : 'Affectation enregistrée — en attente des autres équipes.', 'success', 2400);
+                        refreshCurrentPage();
+                    })
                     .catch(function(err) {
                         enableBtn(btnAssign, (btnAssign.getAttribute('data-general') === 'true') ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation');
                         notify('Erreur : ' + err.message, 'error');
