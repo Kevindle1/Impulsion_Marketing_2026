@@ -186,6 +186,13 @@
         .wf-label { font-size: 10.5px; font-weight: 600; color: var(--muted-2, #8b988f); margin-top: 8px; text-align: center; line-height: 1.25; max-width: 86px; }
         .wf-step.done .wf-label, .wf-step.current .wf-label, .wf-step.submitted .wf-label, .wf-step.revision .wf-label { color: var(--ink, #0c1a14); }
         .wf-step.current .wf-label { font-weight: 700; }
+        /* Étapes cliquables (timeline par canal) → ouvrent le bloc correspondant */
+        .wf-step--link { cursor: pointer; }
+        .wf-step--link:hover .wf-node { border-color: var(--primary, #00875A); color: var(--primary, #00875A); box-shadow: 0 0 0 4px var(--green-50, #e8f6ef); }
+        .wf-step--link.done:hover .wf-node { color: #fff; }
+        .wf-step--link:hover .wf-label { color: var(--primary, #00875A); text-decoration: underline; }
+        @keyframes wfFlash { 0% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } 25% { box-shadow: 0 0 0 4px rgba(0,135,90,.28); } 100% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } }
+        .wf-flash { animation: wfFlash 1.6s ease; }
         .wf-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; font-size: 11px; color: var(--muted, #56655e); }
         .wf-legend span { display: inline-flex; align-items: center; gap: 6px; }
         .wf-legend i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
@@ -781,6 +788,40 @@
             loadDepotForChannel(currentCampaignName, idx, currentCampaignData.channels[idx]);
         }
         panel.scrollTop = 0;
+    }
+
+    // Clic sur une étape de la timeline d'un canal → ouvre le canal et défile vers son bloc.
+    // Les blocs de validation PO sont imbriqués dans la section de leur étape source ;
+    // on cible donc l'ancre de cette section.
+    var STEP_ANCHOR = {
+        com_maquette:            'com-work-section',
+        po_validation_maquette:  'com-work-section',
+        com_juridique:           'com-juridique-section-',   // + index canal
+        ebf_bat:                 'ebf-work-section',
+        po_validation_bat:       'ebf-work-section',
+        data_ciblage:            'data-work-section',
+        po_validation_ciblage:   'data-work-section',
+        data_lancement_test:     'data-testlaunch-section',
+        ebf_test_prod:           'ebf-testprod-section',
+        po_validation_test_prod: 'ebf-testprod-section',
+        data_mise_en_prod:       'data-mep-section',
+        ebf_mise_en_prod:        'ebf-mep-section-'           // + index canal
+    };
+    function stepAnchorId(stepId, ci) {
+        var base = STEP_ANCHOR[stepId];
+        if (!base) return null;
+        return (stepId === 'com_juridique' || stepId === 'ebf_mise_en_prod') ? (base + ci) : base;
+    }
+    function gotoChannelStep(ci, stepId) {
+        navigateTo(ci);
+        var anchorId = stepAnchorId(stepId, ci);
+        requestAnimationFrame(function() {
+            var el = anchorId ? document.getElementById(anchorId) : null;
+            if (!el) return;
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            el.classList.add('wf-flash');
+            setTimeout(function() { el.classList.remove('wf-flash'); }, 1600);
+        });
     }
 
     // ─────────────────────────────────────────────
@@ -1499,13 +1540,17 @@
             if (s === 'pending') return 'current';
             return 'locked';
         }
-        function wfStepper(stepDefs, getStatus) {
+        function wfStepper(stepDefs, getStatus, chIdx) {
+            var linkable = (chIdx !== undefined && chIdx !== null);
             var h = '<div class="wf-stepper">';
             stepDefs.forEach(function(step, i) {
                 var st = getStatus(step, i);
                 var cls = wfStateClass(st);
                 var content = (cls === 'done') ? '✓' : String(i + 1);
-                h += '<div class="wf-step ' + cls + '"><div class="wf-node" title="' + security.escapeHtml(step.label) + '">' + content + '</div><div class="wf-label">' + security.escapeHtml(step.label) + '</div></div>';
+                var classAttr = 'wf-step ' + cls + (linkable ? ' wf-step--link' : '');
+                var dataAttr = linkable ? (' data-ch="' + chIdx + '" data-step="' + security.escapeHtml(step.id) + '"') : '';
+                var titleTxt = security.escapeHtml(step.label) + (linkable ? ' — cliquer pour ouvrir le bloc' : '');
+                h += '<div class="' + classAttr + '"' + dataAttr + '><div class="wf-node" title="' + titleTxt + '">' + content + '</div><div class="wf-label">' + security.escapeHtml(step.label) + '</div></div>';
             });
             h += '</div>';
             return h;
@@ -1566,7 +1611,7 @@
                     }
                 }
                 html += '<div class="wf-block"><div class="wf-head"><span class="wf-title">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</span><span class="wf-badge ' + badgeCls + '">' + security.escapeHtml(badge) + '</span></div>';
-                html += wfStepper(channelStepDefs, function(step) { return chCompleted ? 'completed' : channelStepStatus(cs, step.id); });
+                html += wfStepper(channelStepDefs, function(step) { return chCompleted ? 'completed' : channelStepStatus(cs, step.id); }, ci);
                 html += '</div>';
             });
         }
@@ -2755,6 +2800,19 @@
     // EVENTS : PAGE INFO (global)
     // ─────────────────────────────────────────────
     function setupGlobalEvents(name, data) {
+        // ── Clic sur une étape de la timeline d'un canal → ouvrir le bloc correspondant ──
+        var wfSection = document.getElementById('workflow-section');
+        if (wfSection) {
+            wfSection.addEventListener('click', function(e) {
+                var stepEl = e.target.closest && e.target.closest('.wf-step--link');
+                if (!stepEl) return;
+                var ci = parseInt(stepEl.getAttribute('data-ch'), 10);
+                var stepId = stepEl.getAttribute('data-step');
+                if (isNaN(ci) || !stepId) return;
+                gotoChannelStep(ci, stepId);
+            });
+        }
+
         // ── Manager : affectation ──
         var btnAssign = document.getElementById('btn-validate-assignment');
         if (btnAssign) {
