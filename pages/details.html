@@ -1218,7 +1218,7 @@
             h += '<div class="form-row"><label>Nombre de CTA</label><input type="number" id="ebf-numcta-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="ebf-cta-urls-' + idx + '"></div>';
             h += '<p style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
-            h += '<div class="form-row"><label>Fichier BAT (PDF ou image)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
+            h += '<div class="form-row"><label>Fichier BAT (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '">📤 Déposer et soumettre</button>';
@@ -1265,7 +1265,7 @@
 
         if (editable) {
             h += '<div class="actor-form">';
-            h += '<div class="form-row"><label>Fichier test en production (image ou PDF)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
+            h += '<div class="form-row"><label>Fichier test en production (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">📤 Déposer et soumettre</button>';
@@ -2177,8 +2177,17 @@
         var url = URL.createObjectURL(file);
         var isImg = (file.type || '').indexOf('image/') === 0;
         var isPdf = (file.type === 'application/pdf') || /\.pdf$/i.test(file.name || '');
+        var isHtml = (file.type === 'text/html') || /\.html?$/i.test(file.name || '');
         if (isImg) {
             el.innerHTML = '<img src="' + url + '" alt="Aperçu ' + label + '" title="Cliquer pour agrandir" onclick="openLightbox(this.src)" style="max-width:100%;max-height:340px;border-radius:6px;border:1px solid var(--line);margin-top:4px;cursor:zoom-in;">';
+        } else if (isHtml) {
+            // Aperçu HTML : rendu dans une iframe pour que les liens du BAT soient cliquables.
+            // Bac à sable : pas de scripts, mais les liens (target=_blank) peuvent ouvrir un onglet.
+            el.innerHTML =
+                '<div style="margin-top:4px;border:1px solid var(--line);border-radius:6px;overflow:hidden;">'
+                + '<iframe src="' + url + '" sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox" style="width:100%;height:420px;border:none;display:block;background:#fff;"></iframe></div>'
+                + '<div style="margin-top:6px;display:flex;gap:10px;align-items:center;">'
+                + '<a href="' + url + '" target="_blank" rel="noopener" style="color:var(--primary);font-size:12px;">↗ Ouvrir dans un onglet</a></div>';
         } else if (isPdf) {
             el.innerHTML =
                 '<div style="margin-top:4px;border:1px solid var(--line);border-radius:6px;overflow:hidden;">'
