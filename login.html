@@ -292,6 +292,23 @@
             teamSelect.addEventListener('change', function () { clearError(); populateNames(teamSelect.value); updatePreview(); });
             nameSelect.addEventListener('change', function () { clearError(); updateButtonState(); updatePreview(); });
 
+            // Les utilisateurs peuvent avoir été modifiés dans l'Administration (_config.json).
+            // Une fois la config chargée, on rafraîchit la liste des noms du service sélectionné.
+            var _acReady = directoryStorage && window.ImpulsionMarketing.adminConfig && window.ImpulsionMarketing.adminConfig.ready;
+            if (_acReady) {
+                _acReady.then(function () {
+                    if (!teamSelect.value) return;
+                    var keep = nameSelect.value;
+                    populateNames(teamSelect.value);
+                    if (keep) {
+                        nameSelect.value = keep;
+                        if (nameSelect.value !== keep) nameSelect.value = '';
+                    }
+                    updateButtonState();
+                    updatePreview();
+                });
+            }
+
             btnConnect.addEventListener('click', function () {
                 var name = nameSelect.value;
                 if (!name) { showError('Veuillez sélectionner votre nom.'); return; }

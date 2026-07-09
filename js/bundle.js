@@ -3613,14 +3613,23 @@ window.ImpulsionMarketing.adminConfig = (function () {
     section.appendChild(a);
   }
 
+  // Recharge _config.json depuis le dossier et l'applique (utilisable par les pages
+  // une fois le dossier de travail réellement disponible). Renvoie une promesse.
+  function reload() {
+    return ensureSeed().then(function (cfg) { applyConfig(cfg); return cfg; }).catch(function () { return {}; });
+  }
+
   function init() {
-    // Pas de menu (écran de connexion) → rien à appliquer, on débloque quand même.
-    if (!document.querySelector('.sidebar-nav')) { _readyResolve(); return; }
-    // ensureSeed lit le fichier (ou le crée s'il manque) puis on applique la config.
-    ensureSeed()
-      .then(function (cfg) { applyConfig(cfg); })
+    // On charge et applique la config sur TOUTES les pages (y compris l'écran de
+    // connexion, qui n'a pas de menu latéral) afin que les listes/utilisateurs
+    // configurés dans l'Administration soient répercutés partout.
+    reload()
       .catch(function () {})
-      .then(function () { injectAdminLink(); _readyResolve(); });
+      .then(function () {
+        // Le lien « Administration » n'est ajouté que s'il y a un menu latéral.
+        if (document.querySelector('.sidebar-nav')) injectAdminLink();
+        _readyResolve();
+      });
   }
 
   if (document.readyState === 'loading') {
@@ -3630,7 +3639,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
   }
 
   return {
-    load: load, save: save, applyConfig: applyConfig, ensureSeed: ensureSeed,
+    load: load, save: save, applyConfig: applyConfig, ensureSeed: ensureSeed, reload: reload,
     ready: ready, LIST_MAP: LIST_MAP, flattenSegments: flattenSegments
   };
 })();

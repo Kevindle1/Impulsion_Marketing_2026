@@ -488,8 +488,11 @@
                     if (result.status !== 'success') { showError(result.message); return; }
                     loadAllCampaigns();
                     setupEventListeners();
-                    populateFilters();
                     renderKpiChip();
+                    // Le dossier est disponible : on (re)charge la config avant de peupler
+                    // les filtres (univers, canaux, types) depuis les listes de l'Administration.
+                    var _ac = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig;
+                    ((_ac && _ac.reload) ? _ac.reload() : Promise.resolve()).then(populateFilters);
                 })
                 .catch(function(error) { showError('Erreur : ' + error.message); });
         }
