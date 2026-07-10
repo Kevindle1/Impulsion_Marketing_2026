@@ -58,7 +58,7 @@
         .actor-section--revision { border-left-color: var(--red, #E2001A); }
         .actor-section--revision h3 { color: var(--red, #E2001A); }
         .badge-revision { display: inline-block; background: var(--red-50, #fdeaec); color: var(--red, #E2001A); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 8px; text-transform: none; letter-spacing: 0; border: 1px solid #fecaca; }
-        .revision-alert { background: var(--red-50, #fdeaec); border: 1px solid #fecaca; border-radius: 12px; padding: 11px 14px; margin-bottom: 14px; font-size: 13px; color: var(--red, #E2001A); }
+        .revision-alert { background: var(--red-50, #fdeaec); border: 1px solid #fecaca; border-radius: 12px; padding: 11px 14px; margin-bottom: 14px; font-size: 13px; color: var(--red, #E2001A); white-space: pre-wrap; word-break: break-word; }
 
         /* ── Actor section header ── */
         .actor-section h3 {
@@ -2085,6 +2085,23 @@
         var emptyEl = document.getElementById('com-empty-' + idx);
         if (emptyEl) emptyEl.style.display = 'none';
     }
+    // Affiche les liens CTA saisis lors du dépôt BAT, cliquables.
+    // Visible dans le détail com (partie BAT/test) et juste au-dessus du bloc
+    // de validation BAT du PO.
+    function buildCtaLinksBlock(ctaUrls) {
+        if (!ctaUrls || !ctaUrls.length) return '';
+        var links = ctaUrls.filter(function(u) { return u && String(u).trim(); });
+        if (!links.length) return '';
+        var h = '<div style="margin-top:10px;">';
+        h += '<div style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">Liens CTA</div>';
+        h += '<ul style="margin:0;padding-left:18px;font-size:13px;">';
+        links.forEach(function(u, i) {
+            var safe = security.escapeHtml(u);
+            h += '<li style="margin-bottom:4px;"><a href="' + safe + '" target="_blank" rel="noopener" style="color:var(--blue);word-break:break-all;">' + safe + '</a></li>';
+        });
+        h += '</ul></div>';
+        return h;
+    }
     function renderEbfReadonly(idx, d) {
         var el = document.getElementById('ebf-readonly-' + idx);
         if (!el || !d) return;
@@ -2095,6 +2112,7 @@
         if (d.numCta) h += '<div class="depot-readonly-item"><strong>CTA</strong>' + d.numCta + '</div>';
         if (d.pdfBatFileName) h += '<div class="depot-readonly-item"><strong>Fichier BAT</strong>' + security.escapeHtml(d.pdfBatFileName) + '</div>';
         h += '</div>';
+        h += buildCtaLinksBlock(d.ctaUrls);
         el.innerHTML = h;
         el.style.display = 'block';
         var emptyEl = document.getElementById('ebf-empty-' + idx);
