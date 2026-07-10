@@ -2436,9 +2436,14 @@ window.ImpulsionMarketing.workflow = (function () {
 
     for (var si = 3; si < STEPS.length; si++) { // index 0,1,2 = étapes globales
       var stepId = STEPS[si].id;
+      var vId = _DEPOT_VALIDATION[stepId];
       for (var ci = 0; ci < numChannels; ci++) {
         if (!cs[ci]) continue;
         var status = cs[ci][stepId];
+        // Fusion dépôt→validation : une étape de dépôt reste 'submitted' après
+        // que le PO a validé l'étape de validation associée. On la considère
+        // alors terminée (sinon on affiche « En validation : … » à tort).
+        if (status === 'submitted' && vId && (cs[ci][vId] === 'validated' || cs[ci][vId] === 'completed')) continue;
         if (status === 'pending' || status === 'submitted' || status === 'revision_requested') {
           if (status === 'submitted')          return 'En validation : ' + STEPS[si].label;
           if (status === 'revision_requested') return 'Révision : ' + STEPS[si].label;

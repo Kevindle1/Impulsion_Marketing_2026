@@ -899,9 +899,30 @@
             return security.escapeHtml(primary + extra + market);
         }
 
-        // Statut + progression approximative (proxy de l'étape courante, l'index ne porte pas le détail par canal)
+        // Statut + progression approximative (proxy de l'étape courante).
+        // L'index ne stocke que les étapes du canal 0 : à la reconstruction, ce
+        // canal est répliqué sur tous les autres (migrateToChannelSteps). Un
+        // getCurrentStepLabel calculé sur ces données affiche donc « Terminée »
+        // dès que le canal 0 est terminé, même si d'autres canaux sont en cours.
+        // On s'appuie donc sur les données pré-calculées de l'index : le flag
+        // `done` (complétion réelle, tous canaux) et `chprog` (progression par
+        // canal réelle) — sauf pour les phases globales (affectation / kick-off)
+        // que chprog ne représente pas.
         function stepStatus(c) {
             var label = (window.ImpulsionMarketing.workflow.getCurrentStepLabel(c.data) || '').trim();
+            var isGlobalPhase = /affect|kick|attente/i.test(label);
+            if (!isGlobalPhase && Array.isArray(c.chprog) && c.chprog.length) {
+                if (c.done === true) {
+                    label = 'Terminée';
+                } else {
+                    var pending = c.chprog.filter(function(cp) { return !cp.done; });
+                    if (pending.length) {
+                        // Statut global = canal le moins avancé.
+                        pending.sort(function(a, b) { return (a.pct || 0) - (b.pct || 0); });
+                        label = pending[0].label || label;
+                    }
+                }
+            }
             var L = label.toLowerCase();
             var pct = 50, key = 'prod', text = label || 'En cours';
             if (/termin/.test(L))              { pct = 100; key = 'prod';   text = 'Terminée'; }

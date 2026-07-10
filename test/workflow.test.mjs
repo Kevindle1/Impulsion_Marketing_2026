@@ -140,6 +140,23 @@ test('getCurrentStepLabel — libellés d’état clés', () => {
   assert.equal(workflow.getCurrentStepLabel(done), 'Terminée');
 });
 
+test('getCurrentStepLabel — dépôt « submitted » validé par le PO n’affiche plus « En validation »', () => {
+  // Un canal Com+EBF : le BAT est déposé (submitted) mais le PO l’a déjà validé.
+  // L’étape de dépôt reste "submitted" (fusion dépôt→validation) : le libellé
+  // ne doit PAS rester bloqué sur « En validation : Réalisation BAT ».
+  const data = makeCampaign(['Com', 'EBF']);
+  workflow.initWorkflow(data);
+  const cs = data.workflow.channelSteps[0];
+  cs.com_maquette = 'validated';
+  cs.po_validation_maquette = 'validated';
+  cs.com_juridique = 'validated';
+  cs.ebf_bat = 'submitted';
+  cs.po_validation_bat = 'validated';
+  const label = workflow.getCurrentStepLabel(data);
+  assert.ok(!/en validation\s*:\s*réalisation bat/i.test(label),
+    'ne doit pas rester « En validation : Réalisation BAT » après validation PO');
+});
+
 // ─────────────────────────────────────────────────────────
 // FUSION 3-WAY (sauvegarde concurrente — dossier partagé)
 // ─────────────────────────────────────────────────────────
