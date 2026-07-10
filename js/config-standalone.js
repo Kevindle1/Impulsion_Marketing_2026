@@ -14,6 +14,21 @@ window.ImpulsionMarketing.config = (function() {
   'use strict';
 
   // ========================================
+  // Données pilotées par _config.json (SOURCE UNIQUE)
+  // ========================================
+  // Aucune donnée métier n'est codée en dur ici. Les listes ci-dessous sont
+  // hydratées depuis le cache local du dernier _config.json chargé (rempli par
+  // adminConfig), puis rafraîchies depuis le fichier V:// via adminConfig.reload().
+  var _cfgCache = {};
+  try { _cfgCache = JSON.parse(localStorage.getItem('im_config_cache') || '{}') || {}; } catch (e) { _cfgCache = {}; }
+  function _arr(k) { return Array.isArray(_cfgCache[k]) ? _cfgCache[k].slice() : []; }
+  function _flattenSeg(groups) {
+    var out = [];
+    (groups || []).forEach(function (g) { (g && g.items || []).forEach(function (it) { if (it && it.value) out.push(it.value); }); });
+    return out;
+  }
+
+  // ========================================
   // Configuration Générale
   // ========================================
 
@@ -43,109 +58,24 @@ window.ImpulsionMarketing.config = (function() {
   // Segments
   // ========================================
 
-  const SEGMENTS = [
-    "Jeunes Actif 18-25ans",
-    "Etudiant",
-    "Actif",
-    "GP",
-    "Senior",
-    "BP",
-    "Sociétaire",
-    "Intermédiaire Tradi",
-    "Intermédiaire Dynamique",
-    "Patri Dynamique",
-    "Patri Tradi",
-    "Jeunes 0-11 ans",
-    "Jeunes 12-17 ans",
-    "Pro - PLS",
-    "Pro - Commerçants",
-    "Pro - Artisans",
-    "Pro - Micro entrepreneurs",
-    "Associations",
-    "Entreprises",
-    "Agri - Managers",
-    "Agris",
-    "Agris - JA",
-    "PP Majeur",
-    "Jeunes 18-30ans",
-    "Mineurs"
-  ];
+  // Liste à plat (dérivée des groupes) — utilisée par les filtres.
+  const SEGMENTS = _flattenSeg(_cfgCache.segmentsGroups);
 
   // Segments organisés par groupe (Particuliers / Pro / Agri) avec libellé d'affichage.
-  // Source de vérité pour le formulaire de création ; SEGMENTS (à plat) en est dérivé
-  // et reste utilisé par les filtres. Éditable via l'espace Administration.
-  const SEGMENTS_GROUPS = [
-    { group: "Particuliers", items: [
-      { value: "Actif", label: "Actif" },
-      { value: "Etudiant", label: "Etudiant" },
-      { value: "GP", label: "GP" },
-      { value: "Senior", label: "Senior" },
-      { value: "BP", label: "BP" },
-      { value: "Sociétaire", label: "Sociétaire" },
-      { value: "Patri Tradi", label: "Patri Tradi" },
-      { value: "Patri Dynamique", label: "Patri Dynamique" },
-      { value: "Intermédiaire Tradi", label: "Interméd. Tradi" },
-      { value: "Intermédiaire Dynamique", label: "Interméd. Dynamique" },
-      { value: "PP Majeur", label: "PP Majeur" },
-      { value: "Jeunes Actif 18-25ans", label: "Jeunes 18-25 ans" },
-      { value: "Jeunes 18-30ans", label: "Jeunes 18-30 ans" },
-      { value: "Jeunes 12-17 ans", label: "Jeunes 12-17 ans" },
-      { value: "Jeunes 0-11 ans", label: "Jeunes 0-11 ans" },
-      { value: "Mineurs", label: "Mineurs" }
-    ] },
-    { group: "Pro", items: [
-      { value: "Pro - PLS", label: "Pro - PLS" },
-      { value: "Pro - Commerçants", label: "Pro - Commerçants" },
-      { value: "Pro - Artisans", label: "Pro - Artisans" },
-      { value: "Pro - Micro entrepreneurs", label: "Pro - Micro-entrepreneurs" },
-      { value: "Associations", label: "Associations" },
-      { value: "Entreprises", label: "Entreprises" }
-    ] },
-    { group: "Agri", items: [
-      { value: "Agri - Managers", label: "Agri - Managers" },
-      { value: "Agris", label: "Agris" },
-      { value: "Agris - JA", label: "Agris - JA" }
-    ] }
-  ];
+  // Source : _config.json (clé segmentsGroups), éditable via l'espace Administration.
+  const SEGMENTS_GROUPS = Array.isArray(_cfgCache.segmentsGroups) ? JSON.parse(JSON.stringify(_cfgCache.segmentsGroups)) : [];
 
   // ========================================
   // Univers de Besoins (UBs)
   // ========================================
 
-  const UNIVERS_BESOINS = [
-    "Epargne / Collecte",
-    "Crédits",
-    "Assurances",
-    "Conquête",
-    "BAQ",
-    "Immobilier",
-    "Spécialisés",
-    "Monétique"
-  ];
+  const UNIVERS_BESOINS = _arr('universBesoins');
 
   // ========================================
   // Canaux de Communication
   // ========================================
 
-  const CANAUX = [
-    "LP",
-    "MAIL",
-    "COURRIER",
-    "SMS",
-    "MDC",
-    "PUSH / NOTIF MA BANQUE",
-    "PERSO MA BANQUE",
-    "Zone de Gauche ( synthese des comptes)",
-    "Bandeau Hero",
-    "ZAC HOME PAGE",
-    "E-message",
-    "Zone de droite ( synthese des comptes)",
-    "Article",
-    "Newsletter",
-    "ZAC",
-    "Menu Burger",
-    "MAIL + E-MESSAGE"
-  ];
+  const CANAUX = _arr('canaux');
 
   // ========================================
   // Types de Communication
@@ -153,63 +83,37 @@ window.ImpulsionMarketing.config = (function() {
 
   // Nature de la communication. Le périmètre Caisse/Natio est porté séparément
   // par le champ « Typologie de communication » (Création Caisse / Reprise Natio).
-  const TYPES_COM = [
-    "Commerciales",
-    "Gestion",
-    "Réglementaire"
-  ];
+  const TYPES_COM = _arr('typesCom');
 
   // ========================================
   // Typologies de Campagne
   // ========================================
 
-  const TYPOLOGIES = [
-    "PR",
-    "Campagne"
-  ];
+  const TYPOLOGIES = _arr('typologies');
 
   // ========================================
   // Produits (liste de référence, configurable en Administration)
   // ========================================
 
-  const PRODUITS = [];
+  const PRODUITS = _arr('produits');
 
   // ========================================
   // Marchés
   // ========================================
 
-  const MARCHES = [
-    "Particuliers",
-    "Spécialisés",
-    "Tous"
-  ];
+  const MARCHES = _arr('marches');
 
   // ========================================
   // Récurrences
   // ========================================
 
-  const RECURRENCES = [
-    "One shot",
-    "hebdomadaire",
-    "Mensuel",
-    "trimestriel",
-    "Annuelle"
-  ];
+  const RECURRENCES = _arr('recurrences');
 
   // ========================================
   // Numéros de Lot
   // ========================================
 
-  const LOTS = [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "Création"
-  ];
+  const LOTS = _arr('lots');
 
   // ========================================
   // Valeurs Oui/Non

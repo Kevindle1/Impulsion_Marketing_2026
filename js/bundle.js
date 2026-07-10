@@ -18,6 +18,21 @@ window.ImpulsionMarketing.config = (function() {
   'use strict';
 
   // ========================================
+  // Données pilotées par _config.json (SOURCE UNIQUE)
+  // ========================================
+  // Aucune donnée métier n'est codée en dur ici. Les listes ci-dessous sont
+  // hydratées depuis le cache local du dernier _config.json chargé (rempli par
+  // adminConfig), puis rafraîchies depuis le fichier V:// via adminConfig.reload().
+  var _cfgCache = {};
+  try { _cfgCache = JSON.parse(localStorage.getItem('im_config_cache') || '{}') || {}; } catch (e) { _cfgCache = {}; }
+  function _arr(k) { return Array.isArray(_cfgCache[k]) ? _cfgCache[k].slice() : []; }
+  function _flattenSeg(groups) {
+    var out = [];
+    (groups || []).forEach(function (g) { (g && g.items || []).forEach(function (it) { if (it && it.value) out.push(it.value); }); });
+    return out;
+  }
+
+  // ========================================
   // Configuration Générale
   // ========================================
 
@@ -47,109 +62,24 @@ window.ImpulsionMarketing.config = (function() {
   // Segments
   // ========================================
 
-  const SEGMENTS = [
-    "Jeunes Actif 18-25ans",
-    "Etudiant",
-    "Actif",
-    "GP",
-    "Senior",
-    "BP",
-    "Sociétaire",
-    "Intermédiaire Tradi",
-    "Intermédiaire Dynamique",
-    "Patri Dynamique",
-    "Patri Tradi",
-    "Jeunes 0-11 ans",
-    "Jeunes 12-17 ans",
-    "Pro - PLS",
-    "Pro - Commerçants",
-    "Pro - Artisans",
-    "Pro - Micro entrepreneurs",
-    "Associations",
-    "Entreprises",
-    "Agri - Managers",
-    "Agris",
-    "Agris - JA",
-    "PP Majeur",
-    "Jeunes 18-30ans",
-    "Mineurs"
-  ];
+  // Liste à plat (dérivée des groupes) — utilisée par les filtres.
+  const SEGMENTS = _flattenSeg(_cfgCache.segmentsGroups);
 
   // Segments organisés par groupe (Particuliers / Pro / Agri) avec libellé d'affichage.
-  // Source de vérité pour le formulaire de création ; SEGMENTS (à plat) en est dérivé
-  // et reste utilisé par les filtres. Éditable via l'espace Administration.
-  const SEGMENTS_GROUPS = [
-    { group: "Particuliers", items: [
-      { value: "Actif", label: "Actif" },
-      { value: "Etudiant", label: "Etudiant" },
-      { value: "GP", label: "GP" },
-      { value: "Senior", label: "Senior" },
-      { value: "BP", label: "BP" },
-      { value: "Sociétaire", label: "Sociétaire" },
-      { value: "Patri Tradi", label: "Patri Tradi" },
-      { value: "Patri Dynamique", label: "Patri Dynamique" },
-      { value: "Intermédiaire Tradi", label: "Interméd. Tradi" },
-      { value: "Intermédiaire Dynamique", label: "Interméd. Dynamique" },
-      { value: "PP Majeur", label: "PP Majeur" },
-      { value: "Jeunes Actif 18-25ans", label: "Jeunes 18-25 ans" },
-      { value: "Jeunes 18-30ans", label: "Jeunes 18-30 ans" },
-      { value: "Jeunes 12-17 ans", label: "Jeunes 12-17 ans" },
-      { value: "Jeunes 0-11 ans", label: "Jeunes 0-11 ans" },
-      { value: "Mineurs", label: "Mineurs" }
-    ] },
-    { group: "Pro", items: [
-      { value: "Pro - PLS", label: "Pro - PLS" },
-      { value: "Pro - Commerçants", label: "Pro - Commerçants" },
-      { value: "Pro - Artisans", label: "Pro - Artisans" },
-      { value: "Pro - Micro entrepreneurs", label: "Pro - Micro-entrepreneurs" },
-      { value: "Associations", label: "Associations" },
-      { value: "Entreprises", label: "Entreprises" }
-    ] },
-    { group: "Agri", items: [
-      { value: "Agri - Managers", label: "Agri - Managers" },
-      { value: "Agris", label: "Agris" },
-      { value: "Agris - JA", label: "Agris - JA" }
-    ] }
-  ];
+  // Source : _config.json (clé segmentsGroups), éditable via l'espace Administration.
+  const SEGMENTS_GROUPS = Array.isArray(_cfgCache.segmentsGroups) ? JSON.parse(JSON.stringify(_cfgCache.segmentsGroups)) : [];
 
   // ========================================
   // Univers de Besoins (UBs)
   // ========================================
 
-  const UNIVERS_BESOINS = [
-    "Epargne / Collecte",
-    "Crédits",
-    "Assurances",
-    "Conquête",
-    "BAQ",
-    "Immobilier",
-    "Spécialisés",
-    "Monétique"
-  ];
+  const UNIVERS_BESOINS = _arr('universBesoins');
 
   // ========================================
   // Canaux de Communication
   // ========================================
 
-  const CANAUX = [
-    "LP",
-    "MAIL",
-    "COURRIER",
-    "SMS",
-    "MDC",
-    "PUSH / NOTIF MA BANQUE",
-    "PERSO MA BANQUE",
-    "Zone de Gauche ( synthese des comptes)",
-    "Bandeau Hero",
-    "ZAC HOME PAGE",
-    "E-message",
-    "Zone de droite ( synthese des comptes)",
-    "Article",
-    "Newsletter",
-    "ZAC",
-    "Menu Burger",
-    "MAIL + E-MESSAGE"
-  ];
+  const CANAUX = _arr('canaux');
 
   // ========================================
   // Types de Communication
@@ -157,63 +87,37 @@ window.ImpulsionMarketing.config = (function() {
 
   // Nature de la communication. Le périmètre Caisse/Natio est porté séparément
   // par le champ « Typologie de communication » (Création Caisse / Reprise Natio).
-  const TYPES_COM = [
-    "Commerciales",
-    "Gestion",
-    "Réglementaire"
-  ];
+  const TYPES_COM = _arr('typesCom');
 
   // ========================================
   // Typologies de Campagne
   // ========================================
 
-  const TYPOLOGIES = [
-    "PR",
-    "Campagne"
-  ];
+  const TYPOLOGIES = _arr('typologies');
 
   // ========================================
   // Produits (liste de référence, configurable en Administration)
   // ========================================
 
-  const PRODUITS = [];
+  const PRODUITS = _arr('produits');
 
   // ========================================
   // Marchés
   // ========================================
 
-  const MARCHES = [
-    "Particuliers",
-    "Spécialisés",
-    "Tous"
-  ];
+  const MARCHES = _arr('marches');
 
   // ========================================
   // Récurrences
   // ========================================
 
-  const RECURRENCES = [
-    "One shot",
-    "hebdomadaire",
-    "Mensuel",
-    "trimestriel",
-    "Annuelle"
-  ];
+  const RECURRENCES = _arr('recurrences');
 
   // ========================================
   // Numéros de Lot
   // ========================================
 
-  const LOTS = [
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "Création"
-  ];
+  const LOTS = _arr('lots');
 
   // ========================================
   // Valeurs Oui/Non
@@ -1853,50 +1757,16 @@ window.ImpulsionMarketing.users = (function () {
 
   var STORAGE_KEY = 'im_current_user';
 
-  var USERS = [
-    // Super Admin — accès total à toutes les fonctionnalités
-    { name: 'Olivier', role: 'superadmin', roleLabel: 'Super Admin', isSuperAdmin: true, isManager: true },
-    // Marketing — Sébastien L est responsable Marketing (manager de son service)
-    { name: 'Sébastien Langlois', role: 'marketing', roleLabel: 'Resp. Marketing', isManager: true },
-    { name: 'Agnès grapin',       role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Caroline Legrand',   role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Charlene Garrigues', role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Georges Duchet',     role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Julie Sarramiac',    role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Nicolas Martel',     role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Nicolas Palomba',    role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Adrien Lechevalier', role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Guillaume Jaillon',  role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Cecile Devillard',   role: 'marketing', roleLabel: 'Marketing' },
+  // La liste des personnes vit dans _config.json (source unique). Aucun utilisateur
+  // n'est codé en dur : on hydrate depuis le cache local du dernier _config.json chargé
+  // (rempli par adminConfig), puis applyUsers() la rafraîchit depuis le fichier V://.
+  var USERS = (function () {
+    try {
+      var c = JSON.parse(localStorage.getItem('im_config_cache') || '{}') || {};
+      return Array.isArray(c.users) ? c.users.map(function (u) { return Object.assign({}, u); }) : [];
+    } catch (e) { return []; }
+  })();
 
-    // Com — Marlène est aussi responsable Com (manager de son service)
-    { name: 'Marlène Le Rue',     role: 'com', roleLabel: 'Resp. Com', isManager: true },
-    { name: 'Camille Breteche',   role: 'com', roleLabel: 'Com' },
-    { name: 'Celia Terzi',        role: 'com', roleLabel: 'Com' },
-    { name: 'Clara Tigier',       role: 'com', roleLabel: 'Com' },
-    { name: 'Clothilde Portal',   role: 'com', roleLabel: 'Com' },
-    { name: 'Cyrielle Blanc',     role: 'com', roleLabel: 'Com' },
-    { name: 'Dorian Fedrigo',     role: 'com', roleLabel: 'Com' },
-    { name: 'Julie Riviere',      role: 'com', roleLabel: 'Com' },
-    { name: 'Melissa Pontery',    role: 'com', roleLabel: 'Com' },
-    // EBF — Laurent M est aussi responsable EBF (manager de son service)
-    { name: 'Laurent Minier',     role: 'ebf', roleLabel: 'Resp. EBF', isManager: true },
-    { name: 'Benjamin Aribaud',   role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Benjamin Le',        role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Kévin Dolie',        role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Marc Favre',         role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Sébastien Rouanet',  role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Sébastien Siguenza', role: 'ebf', roleLabel: 'EBF' },
-    // Data — Dimitri est aussi responsable Data (manager de son service)
-    { name: 'Dimitri Garcia',     role: 'data', roleLabel: 'Resp. Data', isManager: true },
-    { name: 'Alain Marchois',     role: 'data', roleLabel: 'Data' },
-    { name: 'Aurélien Dubroue',   role: 'data', roleLabel: 'Data' },
-    { name: 'Ghaya Zarrouk',      role: 'data', roleLabel: 'Data' },
-    { name: 'Marie-Jo Bonadei',   role: 'data', roleLabel: 'Data' },
-    { name: 'Vincent Breque',     role: 'data', roleLabel: 'Data' },
-  ];
-
-  // Copie de la liste d'origine (sert de valeurs par défaut / d'amorçage du _config.json)
   var DEFAULT_USERS = USERS.map(function (u) { return Object.assign({}, u); });
 
   // Remplace la liste des utilisateurs EN PLACE (la référence USERS reste valable
@@ -3500,7 +3370,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     typologies: 'TYPOLOGIES',
     marches: 'MARCHES',
     recurrences: 'RECURRENCES',
-    lots: 'LOTS'
+    lots: 'LOTS',
+    produits: 'PRODUITS'
   };
 
   // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).
@@ -3530,6 +3401,18 @@ window.ImpulsionMarketing.adminConfig = (function () {
     });
   }
 
+  // Cache local (localStorage) du dernier _config.json chargé. Sert à hydrater
+  // instantanément les modules config/users sur toutes les pages (y compris l'écran
+  // de connexion, avant même l'accès au dossier V://). Ce n'est PAS une donnée en dur :
+  // c'est un miroir de _config.json.
+  var CACHE_KEY = 'im_config_cache';
+  function cacheConfig(cfg) {
+    try { if (cfg && Object.keys(cfg).length) localStorage.setItem(CACHE_KEY, JSON.stringify(cfg)); } catch (e) {}
+  }
+  function readCache() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+
   function load() {
     return rootHandle().then(function (root) {
       return root.getFileHandle(CONFIG_FILE, { create: false })
@@ -3544,37 +3427,21 @@ window.ImpulsionMarketing.adminConfig = (function () {
     return rootHandle().then(function (root) {
       return root.getFileHandle(CONFIG_FILE, { create: true }).then(function (fh) {
         return fh.createWritable().then(function (w) {
-          return w.write(JSON.stringify(cfg, null, 2)).then(function () { return w.close(); });
+          return w.write(JSON.stringify(cfg, null, 2)).then(function () { cacheConfig(cfg); return w.close(); });
         });
       });
     });
   }
 
-  // Amorçage : crée _config.json avec les valeurs par défaut s'il n'existe pas encore,
-  // afin que le fichier soit présent d'emblée sur le dossier racine V:// (point B).
-  // N'écrase jamais un fichier existant. Renvoie la config (lue ou amorcée).
+  // Lecture de _config.json (SOURCE UNIQUE). On NE réamorce PLUS depuis le code
+  // (il n'y a plus de données en dur) : le fichier _config.json est livré avec l'app.
+  // S'il est momentanément inaccessible (dossier pas encore autorisé), on se rabat sur
+  // le cache local du dernier _config.json connu — jamais sur des valeurs codées en dur.
   function ensureSeed() {
-    return rootHandle().then(function (root) {
-      return root.getFileHandle(CONFIG_FILE, { create: false })
-        .then(function (fh) { return fh.getFile(); })
-        .then(function (f) { return f.text(); })
-        .then(function (txt) { var c = {}; try { c = JSON.parse(txt) || {}; } catch (e) { c = {}; } return c; })
-        .catch(function () {
-          // Fichier absent → on l'amorce avec les valeurs par défaut.
-          var seed = {};
-          if (IM.users && Array.isArray(IM.users.DEFAULT_USERS)) seed.users = IM.users.DEFAULT_USERS;
-          if (IM.config) {
-            Object.keys(LIST_MAP).forEach(function (k) {
-              var arr = IM.config[LIST_MAP[k]];
-              if (Array.isArray(arr)) seed[k] = arr.slice();
-            });
-            if (Array.isArray(IM.config.SEGMENTS_GROUPS)) {
-              seed.segmentsGroups = JSON.parse(JSON.stringify(IM.config.SEGMENTS_GROUPS));
-            }
-          }
-          return save(seed).then(function () { return seed; }).catch(function () { return {}; });
-        });
-    }).catch(function () { return {}; });
+    return load().then(function (cfg) {
+      if (cfg && Object.keys(cfg).length) { cacheConfig(cfg); return cfg; }
+      return readCache();
+    }).catch(function () { return readCache(); });
   }
 
   // Applique la config aux listes en mémoire (en place, pour ne pas casser les références).

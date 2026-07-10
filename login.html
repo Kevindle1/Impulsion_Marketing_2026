@@ -277,7 +277,14 @@
                 updateButtonState();
             }
 
-            function updateButtonState() { btnConnect.disabled = !nameSelect.value; }
+            function hasUsers() { return !!(users.USERS && users.USERS.length); }
+            function updateButtonState() {
+                // Premier lancement : aucun utilisateur chargé (le _config.json n'a pas encore
+                // été lu). Le bouton sert alors à connecter le dossier pour le charger.
+                if (!hasUsers()) { btnConnect.disabled = false; btnConnect.textContent = 'Connecter le dossier'; return; }
+                btnConnect.textContent = 'Se connecter';
+                btnConnect.disabled = !nameSelect.value;
+            }
 
             // Pré-remplir si un utilisateur est déjà connu
             var current = users.getCurrentUser();
@@ -310,6 +317,29 @@
             }
 
             btnConnect.addEventListener('click', function () {
+                // Premier lancement : aucun utilisateur chargé → on connecte d'abord le dossier
+                // pour lire _config.json, puis on repeuple la liste (sans se connecter tout de suite).
+                if (!hasUsers()) {
+                    clearError();
+                    btnConnect.disabled = true;
+                    btnConnect.textContent = 'Chargement…';
+                    directoryStorage.promptAndSaveDirectory()
+                        .then(function () {
+                            var ac = window.ImpulsionMarketing.adminConfig;
+                            return (ac && ac.reload) ? ac.reload() : null;
+                        })
+                        .then(function () {
+                            if (teamSelect.value) populateNames(teamSelect.value);
+                            updatePreview();
+                            if (!hasUsers()) showError('Aucun utilisateur dans _config.json. Vérifiez le fichier de configuration à la racine du dossier de travail.');
+                        })
+                        .catch(function (e) {
+                            var msg = (e && e.message) ? e.message : 'Erreur inconnue';
+                            if (!/annul/i.test(msg)) showError('Impossible de charger la configuration : ' + msg);
+                        })
+                        .then(function () { updateButtonState(); });
+                    return;
+                }
                 var name = nameSelect.value;
                 if (!name) { showError('Veuillez sélectionner votre nom.'); return; }
                 clearError();

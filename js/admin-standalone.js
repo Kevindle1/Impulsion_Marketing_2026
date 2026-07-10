@@ -21,7 +21,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     typologies: 'TYPOLOGIES',
     marches: 'MARCHES',
     recurrences: 'RECURRENCES',
-    lots: 'LOTS'
+    lots: 'LOTS',
+    produits: 'PRODUITS'
   };
 
   // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).
@@ -51,6 +52,18 @@ window.ImpulsionMarketing.adminConfig = (function () {
     });
   }
 
+  // Cache local (localStorage) du dernier _config.json chargé. Sert à hydrater
+  // instantanément les modules config/users sur toutes les pages (y compris l'écran
+  // de connexion, avant même l'accès au dossier V://). Ce n'est PAS une donnée en dur :
+  // c'est un miroir de _config.json.
+  var CACHE_KEY = 'im_config_cache';
+  function cacheConfig(cfg) {
+    try { if (cfg && Object.keys(cfg).length) localStorage.setItem(CACHE_KEY, JSON.stringify(cfg)); } catch (e) {}
+  }
+  function readCache() {
+    try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}') || {}; } catch (e) { return {}; }
+  }
+
   function load() {
     return rootHandle().then(function (root) {
       return root.getFileHandle(CONFIG_FILE, { create: false })
@@ -65,37 +78,21 @@ window.ImpulsionMarketing.adminConfig = (function () {
     return rootHandle().then(function (root) {
       return root.getFileHandle(CONFIG_FILE, { create: true }).then(function (fh) {
         return fh.createWritable().then(function (w) {
-          return w.write(JSON.stringify(cfg, null, 2)).then(function () { return w.close(); });
+          return w.write(JSON.stringify(cfg, null, 2)).then(function () { cacheConfig(cfg); return w.close(); });
         });
       });
     });
   }
 
-  // Amorçage : crée _config.json avec les valeurs par défaut s'il n'existe pas encore,
-  // afin que le fichier soit présent d'emblée sur le dossier racine V:// (point B).
-  // N'écrase jamais un fichier existant. Renvoie la config (lue ou amorcée).
+  // Lecture de _config.json (SOURCE UNIQUE). On NE réamorce PLUS depuis le code
+  // (il n'y a plus de données en dur) : le fichier _config.json est livré avec l'app.
+  // S'il est momentanément inaccessible (dossier pas encore autorisé), on se rabat sur
+  // le cache local du dernier _config.json connu — jamais sur des valeurs codées en dur.
   function ensureSeed() {
-    return rootHandle().then(function (root) {
-      return root.getFileHandle(CONFIG_FILE, { create: false })
-        .then(function (fh) { return fh.getFile(); })
-        .then(function (f) { return f.text(); })
-        .then(function (txt) { var c = {}; try { c = JSON.parse(txt) || {}; } catch (e) { c = {}; } return c; })
-        .catch(function () {
-          // Fichier absent → on l'amorce avec les valeurs par défaut.
-          var seed = {};
-          if (IM.users && Array.isArray(IM.users.DEFAULT_USERS)) seed.users = IM.users.DEFAULT_USERS;
-          if (IM.config) {
-            Object.keys(LIST_MAP).forEach(function (k) {
-              var arr = IM.config[LIST_MAP[k]];
-              if (Array.isArray(arr)) seed[k] = arr.slice();
-            });
-            if (Array.isArray(IM.config.SEGMENTS_GROUPS)) {
-              seed.segmentsGroups = JSON.parse(JSON.stringify(IM.config.SEGMENTS_GROUPS));
-            }
-          }
-          return save(seed).then(function () { return seed; }).catch(function () { return {}; });
-        });
-    }).catch(function () { return {}; });
+    return load().then(function (cfg) {
+      if (cfg && Object.keys(cfg).length) { cacheConfig(cfg); return cfg; }
+      return readCache();
+    }).catch(function () { return readCache(); });
   }
 
   // Applique la config aux listes en mémoire (en place, pour ne pas casser les références).

@@ -10,50 +10,16 @@ window.ImpulsionMarketing.users = (function () {
 
   var STORAGE_KEY = 'im_current_user';
 
-  var USERS = [
-    // Super Admin — accès total à toutes les fonctionnalités
-    { name: 'Olivier', role: 'superadmin', roleLabel: 'Super Admin', isSuperAdmin: true, isManager: true },
-    // Marketing — Sébastien L est responsable Marketing (manager de son service)
-    { name: 'Sébastien Langlois', role: 'marketing', roleLabel: 'Resp. Marketing', isManager: true },
-    { name: 'Agnès grapin',       role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Caroline Legrand',   role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Charlene Garrigues', role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Georges Duchet',     role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Julie Sarramiac',    role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Nicolas Martel',     role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Nicolas Palomba',    role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Adrien Lechevalier', role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Guillaume Jaillon',  role: 'marketing', roleLabel: 'Marketing' },
-    { name: 'Cecile Devillard',   role: 'marketing', roleLabel: 'Marketing' },
+  // La liste des personnes vit dans _config.json (source unique). Aucun utilisateur
+  // n'est codé en dur : on hydrate depuis le cache local du dernier _config.json chargé
+  // (rempli par adminConfig), puis applyUsers() la rafraîchit depuis le fichier V://.
+  var USERS = (function () {
+    try {
+      var c = JSON.parse(localStorage.getItem('im_config_cache') || '{}') || {};
+      return Array.isArray(c.users) ? c.users.map(function (u) { return Object.assign({}, u); }) : [];
+    } catch (e) { return []; }
+  })();
 
-    // Com — Marlène est aussi responsable Com (manager de son service)
-    { name: 'Marlène Le Rue',     role: 'com', roleLabel: 'Resp. Com', isManager: true },
-    { name: 'Camille Breteche',   role: 'com', roleLabel: 'Com' },
-    { name: 'Celia Terzi',        role: 'com', roleLabel: 'Com' },
-    { name: 'Clara Tigier',       role: 'com', roleLabel: 'Com' },
-    { name: 'Clothilde Portal',   role: 'com', roleLabel: 'Com' },
-    { name: 'Cyrielle Blanc',     role: 'com', roleLabel: 'Com' },
-    { name: 'Dorian Fedrigo',     role: 'com', roleLabel: 'Com' },
-    { name: 'Julie Riviere',      role: 'com', roleLabel: 'Com' },
-    { name: 'Melissa Pontery',    role: 'com', roleLabel: 'Com' },
-    // EBF — Laurent M est aussi responsable EBF (manager de son service)
-    { name: 'Laurent Minier',     role: 'ebf', roleLabel: 'Resp. EBF', isManager: true },
-    { name: 'Benjamin Aribaud',   role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Benjamin Le',        role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Kévin Dolie',        role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Marc Favre',         role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Sébastien Rouanet',  role: 'ebf', roleLabel: 'EBF' },
-    { name: 'Sébastien Siguenza', role: 'ebf', roleLabel: 'EBF' },
-    // Data — Dimitri est aussi responsable Data (manager de son service)
-    { name: 'Dimitri Garcia',     role: 'data', roleLabel: 'Resp. Data', isManager: true },
-    { name: 'Alain Marchois',     role: 'data', roleLabel: 'Data' },
-    { name: 'Aurélien Dubroue',   role: 'data', roleLabel: 'Data' },
-    { name: 'Ghaya Zarrouk',      role: 'data', roleLabel: 'Data' },
-    { name: 'Marie-Jo Bonadei',   role: 'data', roleLabel: 'Data' },
-    { name: 'Vincent Breque',     role: 'data', roleLabel: 'Data' },
-  ];
-
-  // Copie de la liste d'origine (sert de valeurs par défaut / d'amorçage du _config.json)
   var DEFAULT_USERS = USERS.map(function (u) { return Object.assign({}, u); });
 
   // Remplace la liste des utilisateurs EN PLACE (la référence USERS reste valable

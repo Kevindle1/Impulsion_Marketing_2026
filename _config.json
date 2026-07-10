@@ -1,0 +1,358 @@
+{
+  "users": [
+    {
+      "name": "Olivier",
+      "role": "superadmin",
+      "roleLabel": "Super Admin",
+      "isSuperAdmin": true,
+      "isManager": true
+    },
+    {
+      "name": "Sébastien Langlois",
+      "role": "marketing",
+      "roleLabel": "Resp. Marketing",
+      "isManager": true
+    },
+    {
+      "name": "Agnès grapin",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Caroline Legrand",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Charlene Garrigues",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Georges Duchet",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Julie Sarramiac",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Nicolas Martel",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Nicolas Palomba",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Adrien Lechevalier",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Guillaume Jaillon",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Cecile Devillard",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Marlène Le Rue",
+      "role": "com",
+      "roleLabel": "Resp. Com",
+      "isManager": true
+    },
+    {
+      "name": "Camille Breteche",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Celia Terzi",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Clara Tigier",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Clothilde Portal",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Cyrielle Blanc",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Dorian Fedrigo",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Julie Riviere",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Melissa Pontery",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Laurent Minier",
+      "role": "ebf",
+      "roleLabel": "Resp. EBF",
+      "isManager": true
+    },
+    {
+      "name": "Benjamin Aribaud",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Benjamin Le",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Kévin Dolie",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Marc Favre",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Sébastien Rouanet",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Sébastien Siguenza",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Dimitri Garcia",
+      "role": "data",
+      "roleLabel": "Resp. Data",
+      "isManager": true
+    },
+    {
+      "name": "Alain Marchois",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Aurélien Dubroue",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Ghaya Zarrouk",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Marie-Jo Bonadei",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Vincent Breque",
+      "role": "data",
+      "roleLabel": "Data"
+    }
+  ],
+  "canaux": [
+    "LP",
+    "MAIL",
+    "COURRIER",
+    "SMS",
+    "MDC",
+    "PUSH / NOTIF MA BANQUE",
+    "PERSO MA BANQUE",
+    "Zone de Gauche ( synthese des comptes)",
+    "Bandeau Hero",
+    "ZAC HOME PAGE",
+    "E-message",
+    "Zone de droite ( synthese des comptes)",
+    "Article",
+    "Newsletter",
+    "ZAC",
+    "Menu Burger",
+    "MAIL + E-MESSAGE"
+  ],
+  "universBesoins": [
+    "Epargne / Collecte",
+    "Crédits",
+    "Assurances",
+    "Conquête",
+    "BAQ",
+    "Immobilier",
+    "Spécialisés",
+    "Monétique"
+  ],
+  "typesCom": [
+    "Commerciales",
+    "Gestion",
+    "Réglementaire"
+  ],
+  "typologies": [
+    "PR",
+    "Campagne"
+  ],
+  "marches": [
+    "Particuliers",
+    "Spécialisés",
+    "Tous"
+  ],
+  "recurrences": [
+    "One shot",
+    "hebdomadaire",
+    "Mensuel",
+    "trimestriel",
+    "Annuelle"
+  ],
+  "lots": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "Création"
+  ],
+  "produits": [],
+  "segmentsGroups": [
+    {
+      "group": "Particuliers",
+      "items": [
+        {
+          "value": "Actif",
+          "label": "Actif"
+        },
+        {
+          "value": "Etudiant",
+          "label": "Etudiant"
+        },
+        {
+          "value": "GP",
+          "label": "GP"
+        },
+        {
+          "value": "Senior",
+          "label": "Senior"
+        },
+        {
+          "value": "BP",
+          "label": "BP"
+        },
+        {
+          "value": "Sociétaire",
+          "label": "Sociétaire"
+        },
+        {
+          "value": "Patri Tradi",
+          "label": "Patri Tradi"
+        },
+        {
+          "value": "Patri Dynamique",
+          "label": "Patri Dynamique"
+        },
+        {
+          "value": "Intermédiaire Tradi",
+          "label": "Interméd. Tradi"
+        },
+        {
+          "value": "Intermédiaire Dynamique",
+          "label": "Interméd. Dynamique"
+        },
+        {
+          "value": "PP Majeur",
+          "label": "PP Majeur"
+        },
+        {
+          "value": "Jeunes Actif 18-25ans",
+          "label": "Jeunes 18-25 ans"
+        },
+        {
+          "value": "Jeunes 18-30ans",
+          "label": "Jeunes 18-30 ans"
+        },
+        {
+          "value": "Jeunes 12-17 ans",
+          "label": "Jeunes 12-17 ans"
+        },
+        {
+          "value": "Jeunes 0-11 ans",
+          "label": "Jeunes 0-11 ans"
+        },
+        {
+          "value": "Mineurs",
+          "label": "Mineurs"
+        }
+      ]
+    },
+    {
+      "group": "Pro",
+      "items": [
+        {
+          "value": "Pro - PLS",
+          "label": "Pro - PLS"
+        },
+        {
+          "value": "Pro - Commerçants",
+          "label": "Pro - Commerçants"
+        },
+        {
+          "value": "Pro - Artisans",
+          "label": "Pro - Artisans"
+        },
+        {
+          "value": "Pro - Micro entrepreneurs",
+          "label": "Pro - Micro-entrepreneurs"
+        },
+        {
+          "value": "Associations",
+          "label": "Associations"
+        },
+        {
+          "value": "Entreprises",
+          "label": "Entreprises"
+        }
+      ]
+    },
+    {
+      "group": "Agri",
+      "items": [
+        {
+          "value": "Agri - Managers",
+          "label": "Agri - Managers"
+        },
+        {
+          "value": "Agris",
+          "label": "Agris"
+        },
+        {
+          "value": "Agris - JA",
+          "label": "Agris - JA"
+        }
+      ]
+    }
+  ]
+}
