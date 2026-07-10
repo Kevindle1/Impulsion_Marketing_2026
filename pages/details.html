@@ -1482,6 +1482,11 @@
         var h = '<div style="background:var(--blue-50);border:1px solid var(--blue);border-radius:8px;padding:12px 14px;margin-top:12px;">';
         h += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
         h += '<span style="font-size:13px;font-weight:600;color:var(--blue);">📤 En attente de votre validation</span>';
+        h += '</div>';
+        // Conteneur rempli après le chargement asynchrone du dépôt (ex. liens CTA
+        // du BAT à valider). Placé à l'intérieur du cadre de validation du PO.
+        h += '<div id="po-extra-' + uid + '"></div>';
+        h += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
         if (needsImage) {
             h += '</div>';
             h += '<div style="margin-top:10px;margin-bottom:8px;">';
@@ -2115,6 +2120,9 @@
         h += buildCtaLinksBlock(d.ctaUrls);
         el.innerHTML = h;
         el.style.display = 'block';
+        // Rappel des liens CTA à l'intérieur même du cadre de validation BAT du PO.
+        var poExtra = document.getElementById('po-extra-po_validation_bat-' + idx);
+        if (poExtra) poExtra.innerHTML = buildCtaLinksBlock(d.ctaUrls);
         var emptyEl = document.getElementById('ebf-empty-' + idx);
         if (emptyEl) emptyEl.style.display = 'none';
     }
