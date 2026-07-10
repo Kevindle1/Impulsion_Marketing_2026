@@ -22,7 +22,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     marches: 'MARCHES',
     recurrences: 'RECURRENCES',
     lots: 'LOTS',
-    produits: 'PRODUITS'
+    produits: 'PRODUITS',
+    comTypologies: 'COM_TYPOLOGIES'
   };
 
   // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).
@@ -126,6 +127,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
     assignInPlace(IM.config.WEB_ZONES, cfg.webZones);
     assignInPlace(IM.config.WHATSNEW_BADGES, cfg.whatsnewBadges);
     assignInPlace(IM.config.BILAN, cfg.bilan);
+    assignInPlace(IM.config.NOTIFICATION_LABELS, cfg.notificationLabels);
     if (Array.isArray(cfg.reponseStatuts) && cfg.reponseStatuts.length && Array.isArray(IM.config.REPONSE_STATUTS)) {
       spliceInPlace(IM.config.REPONSE_STATUTS, cfg.reponseStatuts);
     }

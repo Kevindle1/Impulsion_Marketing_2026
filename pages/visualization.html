@@ -284,11 +284,12 @@
 
         // ── Filtre « catégorie KPI » (ouvert depuis une carte du tableau de bord) ──
         // Valeurs possibles dans l'URL ?filter= : encours | aproduire | validation | urgent
+        function urgentDays() { var s = window.ImpulsionMarketing.config.APP_SETTINGS || {}; return (typeof s.urgentThresholdDays === 'number') ? s.urgentThresholdDays : 7; }
         var KPI_LABELS = {
             encours:    'Campagnes en cours',
             aproduire:  'À produire (mon tour)',
             validation: 'En attente de validation',
-            urgent:     'Échéance < 7 jours'
+            urgent:     'Échéance < ' + urgentDays() + ' jours'
         };
         var kpiFilter = (function() {
             try {
@@ -350,7 +351,7 @@
                 case 'urgent': {
                     if (!isActif || completed) return false;
                     var d = computeDelay(data.launchDate);
-                    return d && d.diff <= 7 && userInvolved(data);
+                    return d && d.diff <= urgentDays() && userInvolved(data);
                 }
                 default:
                     return true;

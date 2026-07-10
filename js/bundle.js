@@ -128,6 +128,8 @@ window.ImpulsionMarketing.config = (function() {
   const REPONSE_STATUTS  = Array.isArray(_cfgCache.reponseStatuts) ? _cfgCache.reponseStatuts.slice() : [];
   const WHATSNEW_BADGES  = (_cfgCache.whatsnewBadges && typeof _cfgCache.whatsnewBadges === 'object') ? _cfgCache.whatsnewBadges : {};
   const BILAN            = (_cfgCache.bilan && typeof _cfgCache.bilan === 'object') ? _cfgCache.bilan : {};
+  const COM_TYPOLOGIES   = _arr('comTypologies');
+  const NOTIFICATION_LABELS = (_cfgCache.notificationLabels && typeof _cfgCache.notificationLabels === 'object') ? _cfgCache.notificationLabels : {};
 
   // ========================================
   // Valeurs Oui/Non
@@ -310,6 +312,8 @@ window.ImpulsionMarketing.config = (function() {
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,
     BILAN: BILAN,
+    COM_TYPOLOGIES: COM_TYPOLOGIES,
+    NOTIFICATION_LABELS: NOTIFICATION_LABELS,
     OUI_NON: OUI_NON,
     NUM_SEGMENTS_RANGE: NUM_SEGMENTS_RANGE,
     NUM_UBS_RANGE: NUM_UBS_RANGE,
@@ -3392,7 +3396,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     marches: 'MARCHES',
     recurrences: 'RECURRENCES',
     lots: 'LOTS',
-    produits: 'PRODUITS'
+    produits: 'PRODUITS',
+    comTypologies: 'COM_TYPOLOGIES'
   };
 
   // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).
@@ -3496,6 +3501,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
     assignInPlace(IM.config.WEB_ZONES, cfg.webZones);
     assignInPlace(IM.config.WHATSNEW_BADGES, cfg.whatsnewBadges);
     assignInPlace(IM.config.BILAN, cfg.bilan);
+    assignInPlace(IM.config.NOTIFICATION_LABELS, cfg.notificationLabels);
     if (Array.isArray(cfg.reponseStatuts) && cfg.reponseStatuts.length && Array.isArray(IM.config.REPONSE_STATUTS)) {
       spliceInPlace(IM.config.REPONSE_STATUTS, cfg.reponseStatuts);
     }
@@ -3856,19 +3862,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
       list.innerHTML = '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">Aucune notification</div>';
       return;
     }
-    var typeLabels = {
-      'zone_conflit_attente': '⚠️ Conflit zone site web',
-      'zone_approuvee': '✅ Zone approuvée',
-      'zone_refusee': '❌ Zone refusée',
-      'campagne_inactive': '🔴 Campagne à débrancher',
-      'publication_fin': '📅 Fin de publication site web',
-      'mention': '💬 Mention dans une discussion',
-      'signalement_reponse': '🔔 Réponse à votre signalement',
-      'workflow_a_faire': '▶️ À toi de jouer',
-      'workflow_a_valider': '🕓 À valider',
-      'workflow_revision': '🔄 Révision demandée',
-      'workflow_info': '📣 Campagne'
-    };
+    var typeLabels = (IM.config && IM.config.NOTIFICATION_LABELS) || {};
     var html = '';
     mine.forEach(function (n) {
       var label = typeLabels[n.type] || '🔔 Notification';

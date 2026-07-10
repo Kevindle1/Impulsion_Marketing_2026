@@ -917,14 +917,22 @@
             return { label: label, pct: pct, key: key, text: text };
         }
 
+        function urgencyDays() {
+            var s = window.ImpulsionMarketing.config.APP_SETTINGS || {};
+            return {
+                near: (typeof s.urgentThresholdDays === 'number') ? s.urgentThresholdDays : 7,
+                soon: (typeof s.dueSoonDays === 'number') ? s.dueSoonDays : 2
+            };
+        }
         function computeDelay(launchDate) {
             if (!launchDate) return null;
             var today = new Date(); today.setHours(0, 0, 0, 0);
             var launch = new Date(launchDate); launch.setHours(0, 0, 0, 0);
             var diff = Math.round((launch - today) / 86400000);
+            var u = urgencyDays();
             if (diff === 0) return { diff: 0, text: "Aujourd'hui", urgent: true };
             if (diff < 0)   return { diff: diff, text: 'J+' + Math.abs(diff) + ' (dépassé)', urgent: true };
-            if (diff <= 7)  return { diff: diff, text: 'Dans ' + diff + ' j', urgent: diff <= 2 };
+            if (diff <= u.near) return { diff: diff, text: 'Dans ' + diff + ' j', urgent: diff <= u.soon };
             return { diff: diff, text: 'Dans ' + diff + ' j', urgent: false };
         }
 
@@ -1007,15 +1015,16 @@
                 var L = (window.ImpulsionMarketing.workflow.getCurrentStepLabel(c.data) || '').toLowerCase();
                 return /validation|valider/.test(L);
             }).length;
+            var _uNear = urgencyDays().near;
             var urgent = allMine.filter(function (c) {
                 var d = computeDelay(c.data.launchDate);
-                return c.isActif !== false && d && d.diff <= 7;
+                return c.isActif !== false && d && d.diff <= _uNear;
             }).length;
             var cards = [
                 { ic: 'g', svg: '<path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/>', num: allMine.length, cap: 'Campagnes en cours', link: 'encours' },
                 { ic: 'b', svg: '<path d="M5 12l5 5L20 7"/>', num: myTurn.length, cap: 'À produire (mon tour)', link: 'aproduire' },
                 { ic: 'a', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', num: aValider, cap: 'En attente de validation', link: 'validation' },
-                { ic: 'r', svg: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', num: urgent, cap: 'Échéance < 7 jours', delta: urgent > 0 ? 'r' : '', link: 'urgent' }
+                { ic: 'r', svg: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', num: urgent, cap: 'Échéance < ' + _uNear + ' jours', delta: urgent > 0 ? 'r' : '', link: 'urgent' }
             ];
             var h = '';
             cards.forEach(function (k) {
@@ -1153,19 +1162,7 @@
                 return;
             }
 
-            var typeLabels = {
-                'zone_conflit_attente': '⚠️ Conflit zone site web',
-                'zone_approuvee':       '✅ Zone approuvée',
-                'zone_refusee':         '❌ Zone refusée',
-                'campagne_inactive':    '🔴 Campagne à débrancher',
-                'publication_fin':      '📅 Fin de publication site web',
-                'mention':              '💬 Mention dans une discussion',
-                'signalement_reponse':  '🔔 Réponse à votre signalement',
-                'workflow_a_faire':     '▶️ À toi de jouer',
-                'workflow_a_valider':   '🕓 À valider',
-                'workflow_revision':    '🔄 Révision demandée',
-                'workflow_info':        '📣 Campagne'
-            };
+            var typeLabels = window.ImpulsionMarketing.config.NOTIFICATION_LABELS || {};
             var html = '';
             mine.forEach(function(n) {
                 var label = typeLabels[n.type] || '🔔 Notification';

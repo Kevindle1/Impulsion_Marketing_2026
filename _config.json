@@ -358,7 +358,9 @@
   "settings": {
     "galleryUrl": "https://e.ca-toulouse31.fr/images/index.php",
     "defaultRootPath": "V:/Impulsion Marketing/Historique des Campagnes",
-    "volumeAlertThreshold": 100000
+    "volumeAlertThreshold": 100000,
+    "urgentThresholdDays": 7,
+    "dueSoonDays": 2
   },
   "roleColors": {
     "po": "#7C3AED",
@@ -495,5 +497,22 @@
       "Tx_Desabonnement",
       "Tx_Reussite"
     ]
+  },
+  "comTypologies": [
+    "Création Caisse",
+    "Reprise Natio"
+  ],
+  "notificationLabels": {
+    "zone_conflit_attente": "⚠️ Conflit zone site web",
+    "zone_approuvee": "✅ Zone approuvée",
+    "zone_refusee": "❌ Zone refusée",
+    "campagne_inactive": "🔴 Campagne à débrancher",
+    "publication_fin": "📅 Fin de publication site web",
+    "mention": "💬 Mention dans une discussion",
+    "signalement_reponse": "🔔 Réponse à votre signalement",
+    "workflow_a_faire": "▶️ À toi de jouer",
+    "workflow_a_valider": "🕓 À valider",
+    "workflow_revision": "🔄 Révision demandée",
+    "workflow_info": "📣 Campagne"
   }
 }

@@ -244,9 +244,10 @@
             { key: 'typologies',     label: 'Typologies',                  icon: '🏷️', desc: 'Typologies de campagne.', ph: 'Ex : PR, Campagne' },
             { key: 'marches',        label: 'Marchés',                     icon: '🌍', desc: 'Marchés cibles.', ph: 'Ex : Particuliers…' },
             { key: 'recurrences',    label: 'Récurrences',                 icon: '🔁', desc: 'Rythmes de récurrence.', ph: 'Ex : Mensuel, One shot…' },
-            { key: 'lots',           label: 'Numéros de lot',              icon: '🔢', desc: 'Numéros de lot disponibles.', ph: 'Ex : 1, 2, Création' }
+            { key: 'lots',           label: 'Numéros de lot',              icon: '🔢', desc: 'Numéros de lot disponibles.', ph: 'Ex : 1, 2, Création' },
+            { key: 'comTypologies',  label: 'Typologies de communication', icon: '🗂️', desc: 'Ex : Création Caisse, Reprise Natio. « Reprise Natio » déclenche les champs site web.', ph: 'Ex : Création Caisse' }
         ];
-        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS' };
+        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS', comTypologies: 'COM_TYPOLOGIES' };
 
         // ── Génère une page (nav + section) par liste de choix ──
         // Chaque liste devient une page autonome, au même niveau que Segments / Équipes.
@@ -904,7 +905,9 @@
             var html = '<div class="admin-card"><div class="admin-card-title"><h3>Réglages</h3></div>';
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">URL de la Galerie</label><input class="admin-input" id="set-gallery" style="width:100%;" placeholder="https://…" value="' + esc(s.galleryUrl || '') + '"></div>';
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Chemin par défaut du dossier</label><input class="admin-input" id="set-path" style="width:100%;" value="' + esc(s.defaultRootPath || '') + '"></div>';
-            html += '<div class="form-row"><label class="admin-label">Seuil d\'alerte volume</label><input type="number" min="0" class="admin-input" id="set-volume" value="' + (typeof s.volumeAlertThreshold === 'number' ? s.volumeAlertThreshold : '') + '"></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Seuil d\'alerte volume</label><input type="number" min="0" class="admin-input" id="set-volume" value="' + (typeof s.volumeAlertThreshold === 'number' ? s.volumeAlertThreshold : '') + '"></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Échéance « proche » (jours)</label><input type="number" min="0" class="admin-input" id="set-urgent" value="' + (typeof s.urgentThresholdDays === 'number' ? s.urgentThresholdDays : 7) + '"></div>';
+            html += '<div class="form-row"><label class="admin-label">Échéance « urgente / rouge » (jours)</label><input type="number" min="0" class="admin-input" id="set-soon" value="' + (typeof s.dueSoonDays === 'number' ? s.dueSoonDays : 2) + '"></div>';
             html += '</div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Couleurs des rôles</h3></div><div style="display:flex;flex-wrap:wrap;gap:18px;">';
             roles.forEach(function (r) {
@@ -918,7 +921,9 @@
                 var settings = {
                     galleryUrl: (document.getElementById('set-gallery').value || '').trim(),
                     defaultRootPath: (document.getElementById('set-path').value || '').trim(),
-                    volumeAlertThreshold: parseInt(document.getElementById('set-volume').value, 10) || 0
+                    volumeAlertThreshold: parseInt(document.getElementById('set-volume').value, 10) || 0,
+                    urgentThresholdDays: parseInt(document.getElementById('set-urgent').value, 10) || 0,
+                    dueSoonDays: parseInt(document.getElementById('set-soon').value, 10) || 0
                 };
                 var roleColors = {};
                 cont.querySelectorAll('[data-rolecolor]').forEach(function (inp) { roleColors[inp.getAttribute('data-rolecolor')] = inp.value; });

@@ -962,28 +962,18 @@
                             <label for="typology">Typologie :</label>
                             <select id="typology" required>
                                 <option value="">Choisir...</option>
-                                <option value="PR">PR</option>
-                                <option value="Campagne">Campagne</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="market">Marché :</label>
                             <select id="market" required>
                                 <option value="">Choisir...</option>
-                                <option value="Particuliers">Particuliers</option>
-                                <option value="Spécialisés">Spécialisés</option>
-                                <option value="Tous">Tous</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label for="recurrence">Récurrence :</label>
                             <select id="recurrence" required>
                                 <option value="">Choisir...</option>
-                                <option value="One shot">One shot</option>
-                                <option value="hebdomadaire">hebdomadaire</option>
-                                <option value="Mensuel">Mensuel</option>
-                                <option value="Annuelle">Annuelle</option>
-                                <option value="trimestriel">trimestriel</option>
                             </select>
                         </div> 
 <div class="form-group">
@@ -1181,14 +1171,6 @@
                             <label for="lotNumber">Numéro de Lot :</label>
                             <select id="lotNumber">
                                 <option value="">Choisir...</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                                <option value="5">5</option>
-                                <option value="6">6</option>
-                                <option value="7">7</option>
-                                <option value="Création">Création</option>
                             </select>
                         </div>
 
@@ -1537,9 +1519,9 @@
                                 const emailField = $(`#emailObject${idx}`);
                                 if (emailField) emailField.value = channel.emailObject;
                             }
-                            // comTypology: check if value is a valid radio option, default to "Création Caisse" if not
-                            const validTypologies = ["Création Caisse", "Reprise Natio"];
-                            const comTypologyValue = validTypologies.includes(channel.comTypology) ? channel.comTypology : "Création Caisse";
+                            // comTypology : liste pilotée par _config.json (comTypologies) ; défaut = 1re option.
+                            const validTypologies = window.ImpulsionMarketing.config.COM_TYPOLOGIES || [];
+                            const comTypologyValue = validTypologies.includes(channel.comTypology) ? channel.comTypology : (validTypologies[0] || "");
                             const typologyRadio = document.querySelector(`input[name="comTypology${idx}"][value="${comTypologyValue}"]`);
                             if (typologyRadio) {
                                 typologyRadio.checked = true;
@@ -2170,8 +2152,7 @@
                         <div class="form-group">
                             <label>Typologie de communication:</label>
                             <div class="radio-group">
-                                <label><input type="radio" name="comTypology${i}" value="Création Caisse" required> Création Caisse</label>
-                                <label><input type="radio" name="comTypology${i}" value="Reprise Natio"> Reprise Natio</label>
+                                ${(window.ImpulsionMarketing.config.COM_TYPOLOGIES || []).map(function(t, ti){ var v = String(t).replace(/"/g,'&quot;'); return '<label><input type="radio" name="comTypology' + i + '" value="' + v + '"' + (ti === 0 ? ' required' : '') + '> ' + v + '</label>'; }).join('')}
                             </div>
                         </div>
                         <div class="conditional-field" id="siteWebFields${i}" style="display:none;background:var(--green-50);border:1px solid var(--green-100);border-radius:6px;padding:10px 12px;margin-top:4px;">

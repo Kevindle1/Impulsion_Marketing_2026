@@ -297,19 +297,7 @@
       list.innerHTML = '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">Aucune notification</div>';
       return;
     }
-    var typeLabels = {
-      'zone_conflit_attente': '⚠️ Conflit zone site web',
-      'zone_approuvee': '✅ Zone approuvée',
-      'zone_refusee': '❌ Zone refusée',
-      'campagne_inactive': '🔴 Campagne à débrancher',
-      'publication_fin': '📅 Fin de publication site web',
-      'mention': '💬 Mention dans une discussion',
-      'signalement_reponse': '🔔 Réponse à votre signalement',
-      'workflow_a_faire': '▶️ À toi de jouer',
-      'workflow_a_valider': '🕓 À valider',
-      'workflow_revision': '🔄 Révision demandée',
-      'workflow_info': '📣 Campagne'
-    };
+    var typeLabels = (IM.config && IM.config.NOTIFICATION_LABELS) || {};
     var html = '';
     mine.forEach(function (n) {
       var label = typeLabels[n.type] || '🔔 Notification';

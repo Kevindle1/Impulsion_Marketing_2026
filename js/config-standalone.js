@@ -124,6 +124,8 @@ window.ImpulsionMarketing.config = (function() {
   const REPONSE_STATUTS  = Array.isArray(_cfgCache.reponseStatuts) ? _cfgCache.reponseStatuts.slice() : [];
   const WHATSNEW_BADGES  = (_cfgCache.whatsnewBadges && typeof _cfgCache.whatsnewBadges === 'object') ? _cfgCache.whatsnewBadges : {};
   const BILAN            = (_cfgCache.bilan && typeof _cfgCache.bilan === 'object') ? _cfgCache.bilan : {};
+  const COM_TYPOLOGIES   = _arr('comTypologies');
+  const NOTIFICATION_LABELS = (_cfgCache.notificationLabels && typeof _cfgCache.notificationLabels === 'object') ? _cfgCache.notificationLabels : {};
 
   // ========================================
   // Valeurs Oui/Non
@@ -306,6 +308,8 @@ window.ImpulsionMarketing.config = (function() {
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,
     BILAN: BILAN,
+    COM_TYPOLOGIES: COM_TYPOLOGIES,
+    NOTIFICATION_LABELS: NOTIFICATION_LABELS,
     OUI_NON: OUI_NON,
     NUM_SEGMENTS_RANGE: NUM_SEGMENTS_RANGE,
     NUM_UBS_RANGE: NUM_UBS_RANGE,
