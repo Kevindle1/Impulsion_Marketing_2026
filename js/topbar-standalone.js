@@ -68,7 +68,8 @@
   }
 
   // ── Bloc utilisateur en bas de la barre de navigation (avatar + nom + équipe + déconnexion) ──
-  var ROLE_COLORS = { superadmin: '#0f766e', marketing: '#16a34a', com: '#0d6efd', ebf: '#fd7e14', data: '#6f42c1' };
+  // Couleurs de rôle : source unique = _config.json (config.ROLE_COLORS).
+  var ROLE_COLORS = (IM.config && IM.config.ROLE_COLORS) || {};
   function logout() {
     try { localStorage.removeItem('im_current_user'); } catch (e) {}
     window.location.href = loginHref();
@@ -175,11 +176,7 @@
   }
   function renderWhatsNewModal(entries, markIds) {
     if (!entries || !entries.length) return;
-    var badge = {
-      'new': { icon: '🆕', label: 'Nouveau', color: '#16a34a' },
-      'fix': { icon: '🛠️', label: 'Correction', color: '#0d6efd' },
-      'improve': { icon: '✨', label: 'Amélioration', color: '#7c3aed' }
-    };
+    var badge = (IM.config && IM.config.WHATSNEW_BADGES) || {};
     var body = '';
     entries.forEach(function (e) {
       var b = badge[e.type] || badge.improve;

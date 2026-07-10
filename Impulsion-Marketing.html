@@ -294,11 +294,7 @@
         function renderWhatsNewModal(entries, markIds) {
             if (!entries || !entries.length) return;
             var esc = (security && security.escapeHtml) ? security.escapeHtml : function (s) { return String(s == null ? '' : s); };
-            var badge = {
-                'new':     { icon: '🆕', label: 'Nouveau', color: '#16a34a' },
-                'fix':     { icon: '🛠️', label: 'Correction', color: '#0d6efd' },
-                'improve': { icon: '✨', label: 'Amélioration', color: '#7c3aed' }
-            };
+            var badge = window.ImpulsionMarketing.config.WHATSNEW_BADGES || {};
             var body = '';
             entries.forEach(function (e) {
                 var b = badge[e.type] || badge.improve;
@@ -879,7 +875,8 @@
         }
 
         // ── Helpers de carte ──
-        var ROLE_COLORS = { po: '#7C3AED', marketing: '#7C3AED', com: '#2563EB', ebf: '#E8A100', data: '#00875A', superadmin: '#0f766e' };
+        // Couleurs de rôle : source unique = _config.json (config.ROLE_COLORS).
+        var ROLE_COLORS = window.ImpulsionMarketing.config.ROLE_COLORS || {};
 
         function initialsOf(name) {
             return name.trim().split(/\s+/).map(function (p) { return p[0]; }).join('').toUpperCase().slice(0, 2);

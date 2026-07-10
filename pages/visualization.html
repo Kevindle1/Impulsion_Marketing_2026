@@ -787,7 +787,7 @@
         // AFFICHAGE AVEC PAGINATION
         // =====================================================================
         // ── Helpers cartes riches ──
-        var VC_ROLE = { po:'#7C3AED', marketing:'#7C3AED', com:'#2563EB', ebf:'#E8A100', data:'#00875A', superadmin:'#0f766e' };
+        var VC_ROLE = window.ImpulsionMarketing.config.ROLE_COLORS || {};
         function vcInitials(n){ return n.trim().split(/\s+/).map(function(p){return p[0];}).join('').toUpperCase().slice(0,2); }
         function vcChannel(data){ var chs=data.channels||[]; var c=(chs[0]&&(chs[0].content||chs[0].deliverableName)||'').toUpperCase();
             if(c.indexOf('SMS')>=0)return{cls:'sms',label:'SMS'}; if(c.indexOf('PUSH')>=0||c.indexOf('NOTIF')>=0)return{cls:'push',label:'PSH'};

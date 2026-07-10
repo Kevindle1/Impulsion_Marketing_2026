@@ -868,7 +868,11 @@ window.ImpulsionMarketing.workflow = (function () {
   // INDEX DE CAMPAGNES (_index.json dans Campagnes/)
   // ─────────────────────────────────────────────────────────
 
-  var VOLUME_ALERT_SEUIL = 100000;
+  // Seuil d'alerte volume : piloté par _config.json (settings.volumeAlertThreshold).
+  function volumeAlertSeuil() {
+    var s = window.ImpulsionMarketing && window.ImpulsionMarketing.config && window.ImpulsionMarketing.config.APP_SETTINGS;
+    return (s && typeof s.volumeAlertThreshold === 'number') ? s.volumeAlertThreshold : 100000;
+  }
 
   /**
    * Construit un objet steps synthétique pour la rétrocompatibilité de l'index
@@ -916,7 +920,7 @@ window.ImpulsionMarketing.workflow = (function () {
     var volumeAlert = false;
     if (campaignData.channels && campaignData.channels.length > 0) {
       for (var i = 0; i < campaignData.channels.length; i++) {
-        if ((campaignData.channels[i].volumeCible || 0) > VOLUME_ALERT_SEUIL) {
+        if ((campaignData.channels[i].volumeCible || 0) > volumeAlertSeuil()) {
           volumeAlert = true;
           break;
         }

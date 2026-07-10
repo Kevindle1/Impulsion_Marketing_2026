@@ -34,7 +34,7 @@ window.ImpulsionMarketing.config = (function() {
 
   const APP_NAME = 'Interface Impulsion Marketing';
   const APP_VERSION = '2.0.0';
-  const DEFAULT_ROOT_PATH = 'V:/Impulsion Marketing/Historique des Campagnes';
+  const DEFAULT_ROOT_PATH = (_cfgCache.settings && _cfgCache.settings.defaultRootPath) || '';
   const GABARIT_MODEL_PATH = 'Gabarit Model';
 
   // ========================================
@@ -114,6 +114,16 @@ window.ImpulsionMarketing.config = (function() {
   // ========================================
 
   const LOTS = _arr('lots');
+
+  // ========================================
+  // Autres données pilotées par _config.json (objets/listes mutés en place par adminConfig)
+  // ========================================
+  const APP_SETTINGS     = (_cfgCache.settings && typeof _cfgCache.settings === 'object') ? _cfgCache.settings : {};
+  const ROLE_COLORS      = (_cfgCache.roleColors && typeof _cfgCache.roleColors === 'object') ? _cfgCache.roleColors : {};
+  const WEB_ZONES        = (_cfgCache.webZones && typeof _cfgCache.webZones === 'object') ? _cfgCache.webZones : { zones: [], bpOnlyZones: [], zonesMulti: {} };
+  const REPONSE_STATUTS  = Array.isArray(_cfgCache.reponseStatuts) ? _cfgCache.reponseStatuts.slice() : [];
+  const WHATSNEW_BADGES  = (_cfgCache.whatsnewBadges && typeof _cfgCache.whatsnewBadges === 'object') ? _cfgCache.whatsnewBadges : {};
+  const BILAN            = (_cfgCache.bilan && typeof _cfgCache.bilan === 'object') ? _cfgCache.bilan : {};
 
   // ========================================
   // Valeurs Oui/Non
@@ -289,6 +299,13 @@ window.ImpulsionMarketing.config = (function() {
     MARCHES: MARCHES,
     RECURRENCES: RECURRENCES,
     LOTS: LOTS,
+    // Données pilotées par _config.json
+    APP_SETTINGS: APP_SETTINGS,
+    ROLE_COLORS: ROLE_COLORS,
+    WEB_ZONES: WEB_ZONES,
+    REPONSE_STATUTS: REPONSE_STATUTS,
+    WHATSNEW_BADGES: WHATSNEW_BADGES,
+    BILAN: BILAN,
     OUI_NON: OUI_NON,
     NUM_SEGMENTS_RANGE: NUM_SEGMENTS_RANGE,
     NUM_UBS_RANGE: NUM_UBS_RANGE,

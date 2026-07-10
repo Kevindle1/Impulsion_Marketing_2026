@@ -38,7 +38,7 @@ window.ImpulsionMarketing.config = (function() {
 
   const APP_NAME = 'Interface Impulsion Marketing';
   const APP_VERSION = '2.0.0';
-  const DEFAULT_ROOT_PATH = 'V:/Impulsion Marketing/Historique des Campagnes';
+  const DEFAULT_ROOT_PATH = (_cfgCache.settings && _cfgCache.settings.defaultRootPath) || '';
   const GABARIT_MODEL_PATH = 'Gabarit Model';
 
   // ========================================
@@ -118,6 +118,16 @@ window.ImpulsionMarketing.config = (function() {
   // ========================================
 
   const LOTS = _arr('lots');
+
+  // ========================================
+  // Autres données pilotées par _config.json (objets/listes mutés en place par adminConfig)
+  // ========================================
+  const APP_SETTINGS     = (_cfgCache.settings && typeof _cfgCache.settings === 'object') ? _cfgCache.settings : {};
+  const ROLE_COLORS      = (_cfgCache.roleColors && typeof _cfgCache.roleColors === 'object') ? _cfgCache.roleColors : {};
+  const WEB_ZONES        = (_cfgCache.webZones && typeof _cfgCache.webZones === 'object') ? _cfgCache.webZones : { zones: [], bpOnlyZones: [], zonesMulti: {} };
+  const REPONSE_STATUTS  = Array.isArray(_cfgCache.reponseStatuts) ? _cfgCache.reponseStatuts.slice() : [];
+  const WHATSNEW_BADGES  = (_cfgCache.whatsnewBadges && typeof _cfgCache.whatsnewBadges === 'object') ? _cfgCache.whatsnewBadges : {};
+  const BILAN            = (_cfgCache.bilan && typeof _cfgCache.bilan === 'object') ? _cfgCache.bilan : {};
 
   // ========================================
   // Valeurs Oui/Non
@@ -293,6 +303,13 @@ window.ImpulsionMarketing.config = (function() {
     MARCHES: MARCHES,
     RECURRENCES: RECURRENCES,
     LOTS: LOTS,
+    // Données pilotées par _config.json
+    APP_SETTINGS: APP_SETTINGS,
+    ROLE_COLORS: ROLE_COLORS,
+    WEB_ZONES: WEB_ZONES,
+    REPONSE_STATUTS: REPONSE_STATUTS,
+    WHATSNEW_BADGES: WHATSNEW_BADGES,
+    BILAN: BILAN,
     OUI_NON: OUI_NON,
     NUM_SEGMENTS_RANGE: NUM_SEGMENTS_RANGE,
     NUM_UBS_RANGE: NUM_UBS_RANGE,
@@ -2745,7 +2762,11 @@ window.ImpulsionMarketing.workflow = (function () {
   // INDEX DE CAMPAGNES (_index.json dans Campagnes/)
   // ─────────────────────────────────────────────────────────
 
-  var VOLUME_ALERT_SEUIL = 100000;
+  // Seuil d'alerte volume : piloté par _config.json (settings.volumeAlertThreshold).
+  function volumeAlertSeuil() {
+    var s = window.ImpulsionMarketing && window.ImpulsionMarketing.config && window.ImpulsionMarketing.config.APP_SETTINGS;
+    return (s && typeof s.volumeAlertThreshold === 'number') ? s.volumeAlertThreshold : 100000;
+  }
 
   /**
    * Construit un objet steps synthétique pour la rétrocompatibilité de l'index
@@ -2793,7 +2814,7 @@ window.ImpulsionMarketing.workflow = (function () {
     var volumeAlert = false;
     if (campaignData.channels && campaignData.channels.length > 0) {
       for (var i = 0; i < campaignData.channels.length; i++) {
-        if ((campaignData.channels[i].volumeCible || 0) > VOLUME_ALERT_SEUIL) {
+        if ((campaignData.channels[i].volumeCible || 0) > volumeAlertSeuil()) {
           volumeAlert = true;
           break;
         }
@@ -3380,6 +3401,13 @@ window.ImpulsionMarketing.adminConfig = (function () {
     target.splice.apply(target, [0, target.length].concat(source));
   }
 
+  // Remplace le contenu d'un objet EN PLACE (conserve la référence partagée).
+  function assignInPlace(target, source) {
+    if (!target || typeof target !== 'object' || !source || typeof source !== 'object') return;
+    Object.keys(target).forEach(function (k) { delete target[k]; });
+    Object.keys(source).forEach(function (k) { target[k] = source[k]; });
+  }
+
   // Reconstruit la liste à plat SEGMENTS depuis la structure groupée.
   function flattenSegments(groups) {
     var out = [];
@@ -3462,6 +3490,15 @@ window.ImpulsionMarketing.adminConfig = (function () {
       spliceInPlace(IM.config.SEGMENTS_GROUPS, cfg.segmentsGroups);
       if (Array.isArray(IM.config.SEGMENTS)) spliceInPlace(IM.config.SEGMENTS, flattenSegments(cfg.segmentsGroups));
     }
+    // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
+    assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
+    assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);
+    assignInPlace(IM.config.WEB_ZONES, cfg.webZones);
+    assignInPlace(IM.config.WHATSNEW_BADGES, cfg.whatsnewBadges);
+    assignInPlace(IM.config.BILAN, cfg.bilan);
+    if (Array.isArray(cfg.reponseStatuts) && cfg.reponseStatuts.length && Array.isArray(IM.config.REPONSE_STATUTS)) {
+      spliceInPlace(IM.config.REPONSE_STATUTS, cfg.reponseStatuts);
+    }
   }
 
   function injectAdminLink() {
@@ -3486,6 +3523,15 @@ window.ImpulsionMarketing.adminConfig = (function () {
     return ensureSeed().then(function (cfg) { applyConfig(cfg); return cfg; }).catch(function () { return {}; });
   }
 
+  // Applique l'URL de la Galerie (settings.galleryUrl) aux liens du menu — évite de
+  // coder l'URL en dur dans chaque page.
+  function applyGalleryLink() {
+    var url = IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.galleryUrl;
+    if (!url) return;
+    var links = document.querySelectorAll('a.nav-link[href*="ca-toulouse31"], a.nav-link[data-gallery]');
+    Array.prototype.forEach.call(links, function (a) { a.href = url; });
+  }
+
   function init() {
     // On charge et applique la config sur TOUTES les pages (y compris l'écran de
     // connexion, qui n'a pas de menu latéral) afin que les listes/utilisateurs
@@ -3495,6 +3541,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
       .then(function () {
         // Le lien « Administration » n'est ajouté que s'il y a un menu latéral.
         if (document.querySelector('.sidebar-nav')) injectAdminLink();
+        applyGalleryLink();
         _readyResolve();
       });
   }
@@ -3580,7 +3627,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
   }
 
   // ── Bloc utilisateur en bas de la barre de navigation (avatar + nom + équipe + déconnexion) ──
-  var ROLE_COLORS = { superadmin: '#0f766e', marketing: '#16a34a', com: '#0d6efd', ebf: '#fd7e14', data: '#6f42c1' };
+  // Couleurs de rôle : source unique = _config.json (config.ROLE_COLORS).
+  var ROLE_COLORS = (IM.config && IM.config.ROLE_COLORS) || {};
   function logout() {
     try { localStorage.removeItem('im_current_user'); } catch (e) {}
     window.location.href = loginHref();
@@ -3687,11 +3735,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
   }
   function renderWhatsNewModal(entries, markIds) {
     if (!entries || !entries.length) return;
-    var badge = {
-      'new': { icon: '🆕', label: 'Nouveau', color: '#16a34a' },
-      'fix': { icon: '🛠️', label: 'Correction', color: '#0d6efd' },
-      'improve': { icon: '✨', label: 'Amélioration', color: '#7c3aed' }
-    };
+    var badge = (IM.config && IM.config.WHATSNEW_BADGES) || {};
     var body = '';
     entries.forEach(function (e) {
       var b = badge[e.type] || badge.improve;

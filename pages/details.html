@@ -1007,7 +1007,7 @@
         html += '<div class="detail-item"><span class="detail-label">Type de Com</span><span class="detail-value">' + security.escapeHtml(ch.comType || '-') + '</span></div>';
         html += '<div class="detail-item"><span class="detail-label">Critère ciblage</span><span class="detail-value">' + security.escapeHtml(ch.targetingCriteria || '-') + '</span></div>';
         if (ch.emailObject) html += '<div class="detail-item"><span class="detail-label">Objet de l\'email</span><span class="detail-value">' + security.escapeHtml(ch.emailObject) + '</span></div>';
-        if (ch.volumeCible) html += '<div class="detail-item"><span class="detail-label">Volume cible</span><span class="detail-value">' + ch.volumeCible.toLocaleString('fr-FR') + (ch.volumeCible > 100000 ? ' ⚠️' : '') + '</span></div>';
+        if (ch.volumeCible) html += '<div class="detail-item"><span class="detail-label">Volume cible</span><span class="detail-value">' + ch.volumeCible.toLocaleString('fr-FR') + (ch.volumeCible > (window.ImpulsionMarketing.config.APP_SETTINGS.volumeAlertThreshold || 100000) ? ' ⚠️' : '') + '</span></div>';
         if (ch.comTypology) html += '<div class="detail-item"><span class="detail-label">Typologie Com</span><span class="detail-value">' + security.escapeHtml(ch.comTypology) + '</span></div>';
         if (ch.urlTicTac)   html += '<div class="detail-item"><span class="detail-label">URL TicTac</span><span class="detail-value"><a href="' + security.escapeHtml(ch.urlTicTac) + '" target="_blank">Ouvrir</a></span></div>';
         if (ch.urlLccx)     html += '<div class="detail-item"><span class="detail-label">Lien LCCX</span><span class="detail-value"><a href="' + security.escapeHtml(ch.urlLccx) + '" target="_blank">Ouvrir</a></span></div>';
@@ -1318,7 +1318,7 @@
         if (editable) {
             h += '<div class="actor-form">';
             if (isCiblage) {
-                h += '<div class="form-row"><label>Volume cible <small style="font-weight:normal;color:var(--muted);">(nb de destinataires — alerte si &gt; 100 000)</small></label><input type="number" id="data-volume-' + idx + '" class="form-control" min="0" placeholder="Ex : 50000" value="' + (ch.volumeCible || '') + '"></div>';
+                h += '<div class="form-row"><label>Volume cible <small style="font-weight:normal;color:var(--muted);">(nb de destinataires — alerte si &gt; ' + ((window.ImpulsionMarketing.config.APP_SETTINGS.volumeAlertThreshold || 100000).toLocaleString('fr-FR')) + ')</small></label><input type="number" id="data-volume-' + idx + '" class="form-control" min="0" placeholder="Ex : 50000" value="' + (ch.volumeCible || '') + '"></div>';
                 h += '<div class="form-row"><label>Code Projet</label><input type="text" id="data-codeproj-' + idx + '" class="form-control"></div>';
                 h += '<div class="form-row"><label>Code Action</label><input type="text" id="data-codeaction-' + idx + '" class="form-control"></div>';
                 h += '<div class="form-row"><label>Code MK</label><input type="text" id="data-codemk-' + idx + '" class="form-control"></div>';
@@ -3186,14 +3186,17 @@
     // Le fichier « Suivi MDC-MKD_12mois_*.xlsx » le plus récent est lu dans le dossier
     // « Données/Suivi » de l'espace de travail. On relie chaque canal aux lignes du suivi
     // via codeAction (dépôt Data = ID_ACTION) et codeCom (dépôt EBF = code_communication).
-    var SUIVI_FOLDER = 'Suivi';
-    var SUIVI_SHEET = 'détail-tous';
+    // Mapping du fichier de suivi (.xlsx) — piloté par _config.json (clé bilan),
+    // avec repli sur les valeurs actuelles si la config n'est pas encore chargée.
+    var _BILAN_CFG = (window.ImpulsionMarketing.config.BILAN && Object.keys(window.ImpulsionMarketing.config.BILAN).length) ? window.ImpulsionMarketing.config.BILAN : {};
+    var SUIVI_FOLDER = _BILAN_CFG.suiviFolder || 'Suivi';
+    var SUIVI_SHEET = _BILAN_CFG.suiviSheet || 'détail-tous';
     var _suiviIndex = null;
     var _bilanResults = null;   // résultats par canal (cache pour graphiques / comparaison)
     var _bilanState = null;     // { campaignName, channels, results, idx }
     var _bilanCompareSeries = null; // série de comparaison (autre campagne)
-    var BILAN_IDENT = ['Canal', 'ID_ACTION', 'code_communication', 'CAMPAGNE', 'ACTION'];
-    var BILAN_KPIS = [
+    var BILAN_IDENT = _BILAN_CFG.ident || ['Canal', 'ID_ACTION', 'code_communication', 'CAMPAGNE', 'ACTION'];
+    var BILAN_KPIS = _BILAN_CFG.kpis || [
         { k: 'Nb_Envois', label: 'Envois', pct: false },
         { k: 'Nb_communications', label: 'Comm.', pct: false },
         { k: 'Nb_MDC_Actifs', label: 'MDC actifs', pct: false },
@@ -3204,7 +3207,7 @@
         { k: 'Nb_leads', label: 'Leads', pct: false }
     ];
     // Indicateurs tracés en graphiques.
-    var BILAN_CHART_RATES = ['Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
+    var BILAN_CHART_RATES = _BILAN_CFG.chartRates || ['Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
 
     function bilanClean(v) { v = (v == null ? '' : String(v)).trim(); return (v === '.' || v === '') ? '' : v; }
     // Un canal peut porter plusieurs codes saisis « A / B / C » (ou , ; retour-ligne).

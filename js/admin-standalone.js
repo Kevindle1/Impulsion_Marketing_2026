@@ -31,6 +31,13 @@ window.ImpulsionMarketing.adminConfig = (function () {
     target.splice.apply(target, [0, target.length].concat(source));
   }
 
+  // Remplace le contenu d'un objet EN PLACE (conserve la référence partagée).
+  function assignInPlace(target, source) {
+    if (!target || typeof target !== 'object' || !source || typeof source !== 'object') return;
+    Object.keys(target).forEach(function (k) { delete target[k]; });
+    Object.keys(source).forEach(function (k) { target[k] = source[k]; });
+  }
+
   // Reconstruit la liste à plat SEGMENTS depuis la structure groupée.
   function flattenSegments(groups) {
     var out = [];
@@ -113,6 +120,15 @@ window.ImpulsionMarketing.adminConfig = (function () {
       spliceInPlace(IM.config.SEGMENTS_GROUPS, cfg.segmentsGroups);
       if (Array.isArray(IM.config.SEGMENTS)) spliceInPlace(IM.config.SEGMENTS, flattenSegments(cfg.segmentsGroups));
     }
+    // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
+    assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
+    assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);
+    assignInPlace(IM.config.WEB_ZONES, cfg.webZones);
+    assignInPlace(IM.config.WHATSNEW_BADGES, cfg.whatsnewBadges);
+    assignInPlace(IM.config.BILAN, cfg.bilan);
+    if (Array.isArray(cfg.reponseStatuts) && cfg.reponseStatuts.length && Array.isArray(IM.config.REPONSE_STATUTS)) {
+      spliceInPlace(IM.config.REPONSE_STATUTS, cfg.reponseStatuts);
+    }
   }
 
   function injectAdminLink() {
@@ -137,6 +153,15 @@ window.ImpulsionMarketing.adminConfig = (function () {
     return ensureSeed().then(function (cfg) { applyConfig(cfg); return cfg; }).catch(function () { return {}; });
   }
 
+  // Applique l'URL de la Galerie (settings.galleryUrl) aux liens du menu — évite de
+  // coder l'URL en dur dans chaque page.
+  function applyGalleryLink() {
+    var url = IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.galleryUrl;
+    if (!url) return;
+    var links = document.querySelectorAll('a.nav-link[href*="ca-toulouse31"], a.nav-link[data-gallery]');
+    Array.prototype.forEach.call(links, function (a) { a.href = url; });
+  }
+
   function init() {
     // On charge et applique la config sur TOUTES les pages (y compris l'écran de
     // connexion, qui n'a pas de menu latéral) afin que les listes/utilisateurs
@@ -146,6 +171,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
       .then(function () {
         // Le lien « Administration » n'est ajouté que s'il y a un menu latéral.
         if (document.querySelector('.sidebar-nav')) injectAdminLink();
+        applyGalleryLink();
         _readyResolve();
       });
   }

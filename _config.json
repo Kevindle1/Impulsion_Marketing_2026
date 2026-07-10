@@ -354,5 +354,146 @@
         }
       ]
     }
-  ]
+  ],
+  "settings": {
+    "galleryUrl": "https://e.ca-toulouse31.fr/images/index.php",
+    "defaultRootPath": "V:/Impulsion Marketing/Historique des Campagnes",
+    "volumeAlertThreshold": 100000
+  },
+  "roleColors": {
+    "po": "#7C3AED",
+    "superadmin": "#0F766E",
+    "marketing": "#7C3AED",
+    "com": "#2563EB",
+    "ebf": "#E8A100",
+    "data": "#00875A"
+  },
+  "webZones": {
+    "zones": [
+      "Zone de Gauche ( synthese des comptes)",
+      "Zone de Gauche ( Authentification)",
+      "Bandeau Hero",
+      "ZAC HOME PAGE Gauche",
+      "ZAC HOME PAGE Droite",
+      "Zone de droite ( synthese des comptes)",
+      "ZAC",
+      "Menu Burger"
+    ],
+    "bpOnlyZones": [
+      "ZAC"
+    ],
+    "zonesMulti": {
+      "Menu Burger": [
+        "Compte et carte",
+        "Epargne",
+        "Assurance",
+        "Crédit"
+      ],
+      "Zone de Gauche ( Authentification)": [
+        "Emplacement 1",
+        "Emplacement 2",
+        "Emplacement 3",
+        "Emplacement 4",
+        "Emplacement 5"
+      ]
+    }
+  },
+  "reponseStatuts": [
+    {
+      "value": "resolu",
+      "label": "✅ Résolu",
+      "incStatut": "traité"
+    },
+    {
+      "value": "pris_compte",
+      "label": "🕒 Pris en compte (bientôt)",
+      "incStatut": "en cours"
+    },
+    {
+      "value": "rejete",
+      "label": "❌ Ne sera pas traité",
+      "incStatut": "traité"
+    },
+    {
+      "value": "autre",
+      "label": "💬 Autre / info",
+      "incStatut": "en cours"
+    }
+  ],
+  "whatsnewBadges": {
+    "new": {
+      "icon": "🆕",
+      "label": "Nouveau",
+      "color": "#16a34a"
+    },
+    "fix": {
+      "icon": "🛠️",
+      "label": "Correction",
+      "color": "#0d6efd"
+    },
+    "improve": {
+      "icon": "✨",
+      "label": "Amélioration",
+      "color": "#7c3aed"
+    }
+  },
+  "bilan": {
+    "suiviFolder": "Suivi",
+    "suiviSheet": "détail-tous",
+    "ident": [
+      "Canal",
+      "ID_ACTION",
+      "code_communication",
+      "CAMPAGNE",
+      "ACTION"
+    ],
+    "kpis": [
+      {
+        "k": "Nb_Envois",
+        "label": "Envois",
+        "pct": false
+      },
+      {
+        "k": "Nb_communications",
+        "label": "Comm.",
+        "pct": false
+      },
+      {
+        "k": "Nb_MDC_Actifs",
+        "label": "MDC actifs",
+        "pct": false
+      },
+      {
+        "k": "Tx_Ouvreurs",
+        "label": "Tx ouv.",
+        "pct": true
+      },
+      {
+        "k": "Tx_Cliqueurs",
+        "label": "Tx clic",
+        "pct": true
+      },
+      {
+        "k": "Tx_Desabonnement",
+        "label": "Tx désab.",
+        "pct": true
+      },
+      {
+        "k": "Tx_Reussite",
+        "label": "Tx réussite",
+        "pct": true
+      },
+      {
+        "k": "Nb_leads",
+        "label": "Leads",
+        "pct": false
+      }
+    ],
+    "chartRates": [
+      "Tx_Ouvreurs",
+      "Tx_Cliqueurs",
+      "Tx_Desabonnement",
+      "Tx_Reussite"
+    ]
+  }
 }

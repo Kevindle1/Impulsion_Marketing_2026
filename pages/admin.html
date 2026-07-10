@@ -198,7 +198,7 @@
             return (isManager && role !== 'superadmin') ? ('Resp. ' + base) : base;
         }
         // Couleur d'avatar par rôle + initiales (refonte UX des personnes)
-        var ROLE_COLOR = { marketing: '#7C3AED', com: '#2563EB', ebf: '#E8A100', data: '#00875A', superadmin: '#0F766E' };
+        var ROLE_COLOR = IM.config.ROLE_COLORS || {};
         function initials(n) { return String(n || '').trim().split(/\s+/).map(function (p) { return p[0] || ''; }).join('').toUpperCase().slice(0, 2); }
 
         var people = [];          // copie éditable des personnes
@@ -445,12 +445,7 @@
         // ── SIGNALEMENTS ──
         // Statuts de réponse proposés quand on traite un signalement.
         // `incStatut` = statut appliqué au signalement (les non-« traité » restent « ouverts »).
-        var REPONSE_STATUTS = [
-            { value: 'resolu',      label: '✅ Résolu',                  incStatut: 'traité' },
-            { value: 'pris_compte', label: '🕒 Pris en compte (bientôt)', incStatut: 'en cours' },
-            { value: 'rejete',      label: '❌ Ne sera pas traité',      incStatut: 'traité' },
-            { value: 'autre',       label: '💬 Autre / info',            incStatut: 'en cours' }
-        ];
+        var REPONSE_STATUTS = IM.config.REPONSE_STATUTS;
         function statutReponseLabel(v) {
             for (var k = 0; k < REPONSE_STATUTS.length; k++) if (REPONSE_STATUTS[k].value === v) return REPONSE_STATUTS[k].label;
             return v || '';
@@ -609,11 +604,7 @@
         // title, type, text, audience:[noms] (vide = tout le monde), seenBy:[noms] }.
         var WHATSNEW_FILE = '_whatsnew.json';
         var whatsNewList = [];
-        var WN_BADGE = {
-            'new':     { icon: '🆕', label: 'Nouveau', color: '#16a34a' },
-            'fix':     { icon: '🛠️', label: 'Correction', color: '#0d6efd' },
-            'improve': { icon: '✨', label: 'Amélioration', color: '#7c3aed' }
-        };
+        var WN_BADGE = IM.config.WHATSNEW_BADGES;
 
         function readWhatsNewFile() {
             return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
