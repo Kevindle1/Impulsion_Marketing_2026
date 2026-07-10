@@ -136,6 +136,8 @@
                         <span class="admin-nav-title">Paramétrage</span>
                         <button class="admin-nav-item active" data-tab="people"><span class="admin-nav-ic">👥</span><span class="admin-nav-label">Équipes &amp; personnes</span></button>
                         <button class="admin-nav-item" data-tab="segments"><span class="admin-nav-ic">🎯</span><span class="admin-nav-label">Segments</span></button>
+                        <button class="admin-nav-item" data-tab="settings"><span class="admin-nav-ic">⚙️</span><span class="admin-nav-label">Paramètres généraux</span></button>
+                        <button class="admin-nav-item" data-tab="webzones"><span class="admin-nav-ic">🌐</span><span class="admin-nav-label">Zones site web</span></button>
                         <!-- Les pages de listes de choix sont injectées ici par le script -->
                     </div>
                     <div class="admin-nav-group">
@@ -153,6 +155,14 @@
                     <section class="admin-section" id="tab-segments">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🎯</div><div><h2>Segments</h2><p>Segments cibles, organisés par groupe (Particuliers / Pro / Agri).</p></div></div>
                         <div id="segments-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-settings">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">⚙️</div><div><h2>Paramètres généraux</h2><p>Réglages globaux : galerie, dossier, seuil d'alerte, couleurs des rôles.</p></div></div>
+                        <div id="settings-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-webzones">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🌐</div><div><h2>Zones site web</h2><p>Zones du planning du Comité éditorial et leurs sous-lignes.</p></div></div>
+                        <div id="webzones-container"></div>
                     </section>
                     <!-- Les pages de listes de choix sont injectées ici par le script -->
                     <section class="admin-section" id="tab-incidents">
@@ -204,6 +214,7 @@
         var people = [];          // copie éditable des personnes
         var lists = {};           // { canaux:[], universBesoins:[], … } copies éditables
         var segmentsGroups = [];  // copie éditable des segments groupés
+        var webZonesState = { zones: [], bpOnlyZones: [], zonesMulti: {} }; // copie éditable des zones site web
         var incidents = [];
 
         // Listes de choix simples éditables (clé _config.json → libellé + clé IM.config)
@@ -735,8 +746,95 @@
             });
             segmentsGroups = (config && Array.isArray(config.SEGMENTS_GROUPS))
                 ? JSON.parse(JSON.stringify(config.SEGMENTS_GROUPS)) : [];
+            var wz = (config && config.WEB_ZONES && typeof config.WEB_ZONES === 'object') ? config.WEB_ZONES : {};
+            webZonesState = {
+                zones: Array.isArray(wz.zones) ? wz.zones.slice() : [],
+                bpOnlyZones: Array.isArray(wz.bpOnlyZones) ? wz.bpOnlyZones.slice() : [],
+                zonesMulti: (wz.zonesMulti && typeof wz.zonesMulti === 'object') ? JSON.parse(JSON.stringify(wz.zonesMulti)) : {}
+            };
         }
-        function renderAll() { renderPeople(); renderLists(); renderSegments(); }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); }
+
+        // ── PARAMÈTRES GÉNÉRAUX ──
+        function renderSettings() {
+            var cont = document.getElementById('settings-container');
+            if (!cont) return;
+            var s = config.APP_SETTINGS || {};
+            var rc = config.ROLE_COLORS || {};
+            var roles = [['po', 'PO / Marketing'], ['marketing', 'Marketing'], ['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data'], ['superadmin', 'Super Admin']];
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Réglages</h3></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">URL de la Galerie</label><input class="admin-input" id="set-gallery" style="width:100%;" placeholder="https://…" value="' + esc(s.galleryUrl || '') + '"></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Chemin par défaut du dossier</label><input class="admin-input" id="set-path" style="width:100%;" value="' + esc(s.defaultRootPath || '') + '"></div>';
+            html += '<div class="form-row"><label class="admin-label">Seuil d\'alerte volume</label><input type="number" min="0" class="admin-input" id="set-volume" value="' + (typeof s.volumeAlertThreshold === 'number' ? s.volumeAlertThreshold : '') + '"></div>';
+            html += '</div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Couleurs des rôles</h3></div><div style="display:flex;flex-wrap:wrap;gap:18px;">';
+            roles.forEach(function (r) {
+                html += '<label style="display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--muted);">' + esc(r[1])
+                    + '<input type="color" data-rolecolor="' + r[0] + '" value="' + (rc[r[0]] || '#64748b') + '" style="width:60px;height:36px;border:1px solid var(--line);border-radius:8px;cursor:pointer;padding:2px;"></label>';
+            });
+            html += '</div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-settings">💾 Enregistrer les paramètres</button></div>';
+            cont.innerHTML = html;
+            document.getElementById('save-settings').addEventListener('click', function () {
+                var settings = {
+                    galleryUrl: (document.getElementById('set-gallery').value || '').trim(),
+                    defaultRootPath: (document.getElementById('set-path').value || '').trim(),
+                    volumeAlertThreshold: parseInt(document.getElementById('set-volume').value, 10) || 0
+                };
+                var roleColors = {};
+                cont.querySelectorAll('[data-rolecolor]').forEach(function (inp) { roleColors[inp.getAttribute('data-rolecolor')] = inp.value; });
+                saveConfig({ settings: settings, roleColors: roleColors }, 'Paramètres enregistrés.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ settings: settings, roleColors: roleColors });
+                });
+            });
+        }
+
+        // ── ZONES SITE WEB ──
+        function renderWebZones() {
+            var cont = document.getElementById('webzones-container');
+            if (!cont) return;
+            var st = webZonesState;
+            function chips(arr, delAttr) {
+                if (!arr.length) return '<div class="empty-hint">Aucune valeur.</div>';
+                return '<div class="chips-wrap">' + arr.map(function (v, i) {
+                    return '<span class="chip">' + esc(v) + '<button type="button" title="Supprimer" data-' + delAttr + '="' + i + '">✕</button></span>';
+                }).join('') + '</div>';
+            }
+            var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>Ces zones alimentent le planning du <strong>Comité éditorial</strong>. Évitez de renommer/supprimer une zone déjà utilisée.</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Zones</h3><span class="count-pill">' + st.zones.length + '</span></div>' + chips(st.zones, 'delzone')
+                + '<div class="add-row"><input class="admin-input" id="add-zone" placeholder="Nouvelle zone…" style="flex:1;min-width:220px;"><button class="btn btn-primary" id="addbtn-zone">+ Ajouter</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Zones réservées à la Banque Privée</h3></div>' + chips(st.bpOnlyZones, 'delbp')
+                + '<div class="add-row"><input class="admin-input" id="add-bp" placeholder="Zone BP…" style="flex:1;min-width:220px;"><button class="btn btn-primary" id="addbtn-bp">+ Ajouter</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Sous-lignes par zone</h3></div>';
+            html += '<div class="empty-hint" style="padding-top:0;">Sous-éléments (ex. Menu Burger) séparés par des virgules.</div>';
+            Object.keys(st.zonesMulti).forEach(function (z) {
+                html += '<div class="form-row" style="margin-top:10px;"><label class="admin-label">' + esc(z) + '</label><input class="admin-input" data-multi="' + esc(z) + '" style="width:100%;" value="' + esc((st.zonesMulti[z] || []).join(', ')) + '"></div>';
+            });
+            html += '</div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-webzones">💾 Enregistrer les zones</button></div>';
+            cont.innerHTML = html;
+
+            function addTo(inputId, arr) {
+                var el = document.getElementById(inputId); var v = (el.value || '').trim();
+                if (v && arr.indexOf(v) === -1) arr.push(v);
+                renderWebZones();
+            }
+            document.getElementById('addbtn-zone').addEventListener('click', function () { addTo('add-zone', st.zones); });
+            document.getElementById('addbtn-bp').addEventListener('click', function () { addTo('add-bp', st.bpOnlyZones); });
+            cont.querySelectorAll('[data-delzone]').forEach(function (b) { b.addEventListener('click', function () { st.zones.splice(+b.getAttribute('data-delzone'), 1); renderWebZones(); }); });
+            cont.querySelectorAll('[data-delbp]').forEach(function (b) { b.addEventListener('click', function () { st.bpOnlyZones.splice(+b.getAttribute('data-delbp'), 1); renderWebZones(); }); });
+            document.getElementById('save-webzones').addEventListener('click', function () {
+                // Relecture des sous-lignes
+                cont.querySelectorAll('[data-multi]').forEach(function (inp) {
+                    var z = inp.getAttribute('data-multi');
+                    st.zonesMulti[z] = (inp.value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+                });
+                var payload = { zones: st.zones.slice(), bpOnlyZones: st.bpOnlyZones.slice(), zonesMulti: JSON.parse(JSON.stringify(st.zonesMulti)) };
+                saveConfig({ webZones: payload }, 'Zones site web enregistrées.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ webZones: payload });
+                });
+            });
+        }
 
         // On attend le signal "ready" de admin-standalone (config déjà appliquée / amorcée).
         var ready = (adminConfig && adminConfig.ready) ? adminConfig.ready : Promise.resolve();
