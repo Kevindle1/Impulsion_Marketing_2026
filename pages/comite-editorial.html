@@ -720,33 +720,10 @@
     }
 
     // ── Constants ──────────────────────────────────────────────────────────────
-    var WEB_ZONES = [
-        "Zone de Gauche ( synthese des comptes)",
-        "Zone de Gauche ( Authentification)",
-        "Bandeau Hero",
-        "ZAC HOME PAGE Gauche",
-        "ZAC HOME PAGE Droite",
-        "Zone de droite ( synthese des comptes)",
-        "ZAC",
-        "Menu Burger"
-    ];
-    // Zones disponibles uniquement en BP (pas de ligne Particuliers dans le Gantt)
-    var BP_ONLY_ZONES = ["ZAC"];
-    var MARCHES = [
-        { value: 'part', label: 'Particuliers' },
-        { value: 'bp',   label: 'BP' }
-    ];
-    var UNIVERS_MENU_BURGER = [
-        'Compte et carte', 'Epargne', 'Assurance', 'Crédit'
-    ];
-    var ZONE_AUTH_SLOTS = [
-        'Emplacement 1', 'Emplacement 2', 'Emplacement 3', 'Emplacement 4', 'Emplacement 5'
-    ];
-    // Zones avec sous-lignes (comme Menu Burger)
-    var ZONES_MULTI = {
-        'Menu Burger': UNIVERS_MENU_BURGER,
-        'Zone de Gauche ( Authentification)': ZONE_AUTH_SLOTS
-    };
+    // Zones site web — pilotées par _config.json (clé webZones). On garde la référence
+    // stable de l'objet config (muté en place par adminConfig) et on lit ses propriétés
+    // au moment du rendu : _WZ.zones, _WZ.bpOnlyZones, _WZ.zonesMulti.
+    var _WZ = window.ImpulsionMarketing.config.WEB_ZONES;
     var MARCHES = [
         { value: 'part', label: 'Particuliers' },
         { value: 'bp',   label: 'Banque Privée' },
@@ -898,6 +875,12 @@
     // ── Load campaigns ─────────────────────────────────────────────────────────
     async function loadAndRender() {
         if (!state.campaignsFolder) return;
+        // Le dossier est disponible : on (re)charge _config.json pour être sûr d'avoir
+        // les zones site web configurées avant de construire le planning.
+        try {
+            var ac = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig;
+            if (ac && ac.reload) await ac.reload();
+        } catch (e) {}
         state.campaigns = [];
         state.colorMap = {};
         state.colorIdx = 0;
@@ -978,7 +961,7 @@
                 var swStatus = sw.status || 'confirmed';
                 if (filterStatus && filterStatus !== swStatus && !(filterStatus === 'confirmed' && !sw.status)) return;
                 if (!swMatchesMarche(sw, state.activeMarche)) return;
-                var univers = ZONES_MULTI[sw.zone] ? (sw.univers || '') : '';
+                var univers = _WZ.zonesMulti[sw.zone] ? (sw.univers || '') : '';
                 var key = sw.zone + '|' + (sw.marche || 'part') + '|' + univers;
                 if (!entries[key]) entries[key] = [];
                 entries[key].push({ campaign: cp, channel: ch, siteWeb: sw });
@@ -1219,8 +1202,8 @@
         $('detail-zone-badge').textContent = campName;
 
         // Build zone options (filtre BP-only si marché ≠ bp)
-        var zoneOptions = WEB_ZONES.filter(function(z) {
-            if (BP_ONLY_ZONES.indexOf(z) !== -1 && (sw.marche || 'part') !== 'bp') return false;
+        var zoneOptions = _WZ.zones.filter(function(z) {
+            if (_WZ.bpOnlyZones.indexOf(z) !== -1 && (sw.marche || 'part') !== 'bp') return false;
             return true;
         });
 
@@ -1241,12 +1224,12 @@
         html += '</div>';
 
         // Emplacement/Univers pour zones multi
-        if (ZONES_MULTI[sw.zone]) {
+        if (_WZ.zonesMulti[sw.zone]) {
             var slotLabel = sw.zone === 'Menu Burger' ? 'Univers' : 'Emplacement';
             html += '<div class="form-field">';
             html += '<label class="form-label">' + slotLabel + '</label>';
             html += '<select id="repos-univers" class="form-input">';
-            ZONES_MULTI[sw.zone].forEach(function(u) {
+            _WZ.zonesMulti[sw.zone].forEach(function(u) {
                 html += '<option value="' + escHtml(u) + '"' + (u === sw.univers ? ' selected' : '') + '>' + escHtml(u) + '</option>';
             });
             html += '</select>';
@@ -1440,13 +1423,13 @@
 
     function buildRows(filterMarche) {
         var rows = [];
-        WEB_ZONES.forEach(function(zone) {
+        _WZ.zones.forEach(function(zone) {
             MARCHES.forEach(function(m) {
                 if (filterMarche && m.value !== filterMarche) return;
                 // Zones BP uniquement : pas de ligne Particuliers
-                if (BP_ONLY_ZONES.indexOf(zone) !== -1 && m.value !== 'bp') return;
-                if (ZONES_MULTI[zone]) {
-                    ZONES_MULTI[zone].forEach(function(u) {
+                if (_WZ.bpOnlyZones.indexOf(zone) !== -1 && m.value !== 'bp') return;
+                if (_WZ.zonesMulti[zone]) {
+                    _WZ.zonesMulti[zone].forEach(function(u) {
                         rows.push({ zone: zone, marche: m.value, univers: u });
                     });
                 } else {
@@ -1498,7 +1481,7 @@
                 var other = ch.siteWeb;
                 if (other.zone !== sw.zone) return;
                 if (!swMatchesMarche(other, state.activeMarche) || !swMatchesMarche(sw, state.activeMarche)) return;
-                var sameUnivers = ZONES_MULTI[sw.zone]
+                var sameUnivers = _WZ.zonesMulti[sw.zone]
                     ? (other.univers || '') === (sw.univers || '')
                     : true;
                 if (!sameUnivers) return;
