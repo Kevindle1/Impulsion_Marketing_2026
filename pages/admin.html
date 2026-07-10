@@ -138,12 +138,15 @@
                         <button class="admin-nav-item" data-tab="segments"><span class="admin-nav-ic">🎯</span><span class="admin-nav-label">Segments</span></button>
                         <button class="admin-nav-item" data-tab="settings"><span class="admin-nav-ic">⚙️</span><span class="admin-nav-label">Paramètres généraux</span></button>
                         <button class="admin-nav-item" data-tab="webzones"><span class="admin-nav-ic">🌐</span><span class="admin-nav-label">Zones site web</span></button>
+                        <button class="admin-nav-item" data-tab="bilan"><span class="admin-nav-ic">📊</span><span class="admin-nav-label">Bilan (suivi .xlsx)</span></button>
                         <!-- Les pages de listes de choix sont injectées ici par le script -->
                     </div>
                     <div class="admin-nav-group">
                         <span class="admin-nav-title">Support &amp; annonces</span>
                         <button class="admin-nav-item" data-tab="incidents"><span class="admin-nav-ic">🐞</span><span class="admin-nav-label">Signalements</span><span class="admin-nav-count" id="nav-count-incidents" style="display:none;">0</span></button>
+                        <button class="admin-nav-item" data-tab="statuts"><span class="admin-nav-ic">💬</span><span class="admin-nav-label">Statuts de réponse</span></button>
                         <button class="admin-nav-item" data-tab="whatsnew"><span class="admin-nav-ic">📣</span><span class="admin-nav-label">Quoi de neuf</span></button>
+                        <button class="admin-nav-item" data-tab="badges"><span class="admin-nav-ic">🏷️</span><span class="admin-nav-label">Badges Quoi de neuf</span></button>
                     </div>
                 </nav>
 
@@ -163,6 +166,18 @@
                     <section class="admin-section" id="tab-webzones">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🌐</div><div><h2>Zones site web</h2><p>Zones du planning du Comité éditorial et leurs sous-lignes.</p></div></div>
                         <div id="webzones-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-bilan">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">📊</div><div><h2>Bilan (suivi .xlsx)</h2><p>Correspondance des colonnes et indicateurs du fichier de suivi.</p></div></div>
+                        <div id="bilan-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-statuts">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">💬</div><div><h2>Statuts de réponse</h2><p>Choix proposés lorsqu'on répond à un signalement.</p></div></div>
+                        <div id="statuts-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-badges">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🏷️</div><div><h2>Badges « Quoi de neuf »</h2><p>Types d'annonces et leur apparence.</p></div></div>
+                        <div id="badges-container"></div>
                     </section>
                     <!-- Les pages de listes de choix sont injectées ici par le script -->
                     <section class="admin-section" id="tab-incidents">
@@ -215,6 +230,9 @@
         var lists = {};           // { canaux:[], universBesoins:[], … } copies éditables
         var segmentsGroups = [];  // copie éditable des segments groupés
         var webZonesState = { zones: [], bpOnlyZones: [], zonesMulti: {} }; // copie éditable des zones site web
+        var reponseStatutsState = [];   // copie éditable des statuts de réponse
+        var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
+        var bilanCfgState = {};         // copie éditable du mapping bilan
         var incidents = [];
 
         // Listes de choix simples éditables (clé _config.json → libellé + clé IM.config)
@@ -752,8 +770,129 @@
                 bpOnlyZones: Array.isArray(wz.bpOnlyZones) ? wz.bpOnlyZones.slice() : [],
                 zonesMulti: (wz.zonesMulti && typeof wz.zonesMulti === 'object') ? JSON.parse(JSON.stringify(wz.zonesMulti)) : {}
             };
+            reponseStatutsState = (config && Array.isArray(config.REPONSE_STATUTS)) ? JSON.parse(JSON.stringify(config.REPONSE_STATUTS)) : [];
+            whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
+            bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
         }
-        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); }
+
+        // Chips réutilisables (liste éditable de chaînes).
+        function chipsHtml(arr, delAttr) {
+            if (!arr || !arr.length) return '<div class="empty-hint">Aucune valeur.</div>';
+            return '<div class="chips-wrap">' + arr.map(function (v, i) {
+                return '<span class="chip">' + esc(v) + '<button type="button" title="Supprimer" data-' + delAttr + '="' + i + '">✕</button></span>';
+            }).join('') + '</div>';
+        }
+
+        // ── STATUTS DE RÉPONSE AUX SIGNALEMENTS ──
+        function renderReponseStatuts() {
+            var cont = document.getElementById('statuts-container');
+            if (!cont) return;
+            var st = reponseStatutsState;
+            var incOpts = ['nouveau', 'en cours', 'traité'];
+            var html = '<div class="admin-note"><span class="admin-note-ic">💬</span><div>Choix proposés au traitement d\'un signalement. Le statut « traité » ferme le signalement ; les autres le laissent ouvert.</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Statuts</h3><span class="count-pill">' + st.length + '</span></div>';
+            st.forEach(function (s, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;">'
+                    + '<input class="admin-input" data-sv="' + i + '" value="' + esc(s.value || '') + '" placeholder="clé" style="width:130px;">'
+                    + '<input class="admin-input" data-sl="' + i + '" value="' + esc(s.label || '') + '" placeholder="Libellé affiché" style="flex:1;min-width:170px;">'
+                    + '<select class="admin-select" data-si="' + i + '">' + incOpts.map(function (o) { return '<option value="' + o + '"' + (s.incStatut === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>'
+                    + '<button class="icon-del" data-dels="' + i + '">🗑</button></div>';
+            });
+            html += '<div class="add-row"><button class="btn btn-secondary" id="add-statut">+ Ajouter un statut</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-statuts">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-sv]').forEach(function (inp) { var i = +inp.getAttribute('data-sv'); inp.addEventListener('input', function () { st[i].value = inp.value; }); });
+            cont.querySelectorAll('[data-sl]').forEach(function (inp) { var i = +inp.getAttribute('data-sl'); inp.addEventListener('input', function () { st[i].label = inp.value; }); });
+            cont.querySelectorAll('[data-si]').forEach(function (sel) { var i = +sel.getAttribute('data-si'); sel.addEventListener('change', function () { st[i].incStatut = sel.value; }); });
+            cont.querySelectorAll('[data-dels]').forEach(function (b) { b.addEventListener('click', function () { st.splice(+b.getAttribute('data-dels'), 1); renderReponseStatuts(); }); });
+            document.getElementById('add-statut').addEventListener('click', function () { st.push({ value: '', label: '', incStatut: 'en cours' }); renderReponseStatuts(); });
+            document.getElementById('save-statuts').addEventListener('click', function () {
+                var clean = st.filter(function (s) { return (s.value || '').trim(); }).map(function (s) { return { value: s.value.trim(), label: (s.label || '').trim(), incStatut: s.incStatut || 'en cours' }; });
+                saveConfig({ reponseStatuts: clean }, 'Statuts enregistrés.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ reponseStatuts: clean }); reponseStatutsState = JSON.parse(JSON.stringify(clean)); renderReponseStatuts(); });
+            });
+        }
+
+        // ── BADGES « QUOI DE NEUF » ──
+        function renderBadges() {
+            var cont = document.getElementById('badges-container');
+            if (!cont) return;
+            var b = whatsnewBadgesState;
+            var keys = [['new', 'Nouveau'], ['fix', 'Correction'], ['improve', 'Amélioration']];
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Types d\'annonce</h3></div>';
+            keys.forEach(function (k) {
+                var v = b[k[0]] || {};
+                html += '<div class="person-row" style="flex-wrap:wrap;"><span class="person-name" style="flex:0 0 120px;">' + esc(k[1]) + '</span>'
+                    + '<input class="admin-input" data-bicon="' + k[0] + '" value="' + esc(v.icon || '') + '" placeholder="icône" style="width:70px;">'
+                    + '<input class="admin-input" data-blabel="' + k[0] + '" value="' + esc(v.label || '') + '" placeholder="libellé" style="flex:1;min-width:150px;">'
+                    + '<input type="color" data-bcolor="' + k[0] + '" value="' + (v.color || '#16a34a') + '" style="width:56px;height:34px;border:1px solid var(--line);border-radius:8px;padding:2px;cursor:pointer;">'
+                    + '</div>';
+            });
+            html += '</div><div class="save-bar sticky"><button class="btn btn-primary" id="save-badges">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            document.getElementById('save-badges').addEventListener('click', function () {
+                var out = {};
+                keys.forEach(function (k) {
+                    out[k[0]] = {
+                        icon: (cont.querySelector('[data-bicon="' + k[0] + '"]').value || '').trim(),
+                        label: (cont.querySelector('[data-blabel="' + k[0] + '"]').value || '').trim(),
+                        color: cont.querySelector('[data-bcolor="' + k[0] + '"]').value
+                    };
+                });
+                saveConfig({ whatsnewBadges: out }, 'Badges enregistrés.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ whatsnewBadges: out }); whatsnewBadgesState = out; });
+            });
+        }
+
+        // ── BILAN (mapping du fichier de suivi .xlsx) ──
+        function renderBilanCfg() {
+            var cont = document.getElementById('bilan-container');
+            if (!cont) return;
+            var bc = bilanCfgState;
+            if (!Array.isArray(bc.ident)) bc.ident = [];
+            if (!Array.isArray(bc.kpis)) bc.kpis = [];
+            if (!Array.isArray(bc.chartRates)) bc.chartRates = [];
+            function syncKpis() {
+                cont.querySelectorAll('[data-kk]').forEach(function (inp) { var i = +inp.getAttribute('data-kk'); if (bc.kpis[i]) bc.kpis[i].k = inp.value; });
+                cont.querySelectorAll('[data-klabel]').forEach(function (inp) { var i = +inp.getAttribute('data-klabel'); if (bc.kpis[i]) bc.kpis[i].label = inp.value; });
+                cont.querySelectorAll('[data-kpct]').forEach(function (cb) { var i = +cb.getAttribute('data-kpct'); if (bc.kpis[i]) bc.kpis[i].pct = cb.checked; });
+            }
+            var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>Doit correspondre aux <strong>colonnes du fichier de suivi .xlsx</strong>. À ne modifier que si le format du fichier change.</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Fichier</h3></div>'
+                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Dossier</label><input class="admin-input" id="bilan-folder" value="' + esc(bc.suiviFolder || '') + '"></div>'
+                + '<div class="form-row"><label class="admin-label">Nom de l\'onglet</label><input class="admin-input" id="bilan-sheet" value="' + esc(bc.suiviSheet || '') + '"></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Colonnes d\'identification</h3></div>' + chipsHtml(bc.ident, 'delident')
+                + '<div class="add-row"><input class="admin-input" id="add-ident" placeholder="Nom de colonne…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-ident">+ Ajouter</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs (KPIs)</h3><span class="count-pill">' + bc.kpis.length + '</span></div>';
+            bc.kpis.forEach(function (kp, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;">'
+                    + '<input class="admin-input" data-kk="' + i + '" value="' + esc(kp.k || '') + '" placeholder="colonne (clé)" style="width:180px;">'
+                    + '<input class="admin-input" data-klabel="' + i + '" value="' + esc(kp.label || '') + '" placeholder="libellé" style="flex:1;min-width:120px;">'
+                    + '<label class="toggle-label"><input type="checkbox" data-kpct="' + i + '"' + (kp.pct ? ' checked' : '') + '> %</label>'
+                    + '<button class="icon-del" data-delkpi="' + i + '">🗑</button></div>';
+            });
+            html += '<div class="add-row"><button class="btn btn-secondary" id="add-kpi">+ Ajouter un indicateur</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs tracés (graphiques)</h3></div>' + chipsHtml(bc.chartRates, 'delchart')
+                + '<div class="add-row"><input class="admin-input" id="add-chart" placeholder="clé d\'indicateur…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-chart">+ Ajouter</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-bilan">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            document.getElementById('addbtn-ident').addEventListener('click', function () { var el = document.getElementById('add-ident'); var v = (el.value || '').trim(); if (v && bc.ident.indexOf(v) === -1) bc.ident.push(v); syncKpis(); renderBilanCfg(); });
+            document.getElementById('addbtn-chart').addEventListener('click', function () { var el = document.getElementById('add-chart'); var v = (el.value || '').trim(); if (v && bc.chartRates.indexOf(v) === -1) bc.chartRates.push(v); syncKpis(); renderBilanCfg(); });
+            cont.querySelectorAll('[data-delident]').forEach(function (b) { b.addEventListener('click', function () { bc.ident.splice(+b.getAttribute('data-delident'), 1); syncKpis(); renderBilanCfg(); }); });
+            cont.querySelectorAll('[data-delchart]').forEach(function (b) { b.addEventListener('click', function () { bc.chartRates.splice(+b.getAttribute('data-delchart'), 1); syncKpis(); renderBilanCfg(); }); });
+            cont.querySelectorAll('[data-delkpi]').forEach(function (b) { b.addEventListener('click', function () { syncKpis(); bc.kpis.splice(+b.getAttribute('data-delkpi'), 1); renderBilanCfg(); }); });
+            document.getElementById('add-kpi').addEventListener('click', function () { syncKpis(); bc.kpis.push({ k: '', label: '', pct: false }); renderBilanCfg(); });
+            document.getElementById('save-bilan').addEventListener('click', function () {
+                syncKpis();
+                var out = {
+                    suiviFolder: (document.getElementById('bilan-folder').value || '').trim(),
+                    suiviSheet: (document.getElementById('bilan-sheet').value || '').trim(),
+                    ident: bc.ident.slice(),
+                    kpis: bc.kpis.filter(function (k) { return (k.k || '').trim(); }).map(function (k) { return { k: k.k.trim(), label: (k.label || '').trim(), pct: !!k.pct }; }),
+                    chartRates: bc.chartRates.slice()
+                };
+                saveConfig({ bilan: out }, 'Bilan enregistré.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ bilan: out }); bilanCfgState = JSON.parse(JSON.stringify(out)); renderBilanCfg(); });
+            });
+        }
 
         // ── PARAMÈTRES GÉNÉRAUX ──
         function renderSettings() {
