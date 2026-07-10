@@ -490,10 +490,10 @@
                     loadAllCampaigns();
                     setupEventListeners();
                     renderKpiChip();
-                    // Le dossier est disponible : on (re)charge la config avant de peupler
-                    // les filtres (univers, canaux, types) depuis les listes de l'Administration.
+                    populateFilters();   // immédiat, depuis la config hydratée (cache)
+                    // Rafraîchit la config depuis V:// EN ARRIÈRE-PLAN, puis re-remplit les filtres.
                     var _ac = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig;
-                    ((_ac && _ac.reload) ? _ac.reload() : Promise.resolve()).then(populateFilters);
+                    if (_ac && _ac.reload) _ac.reload().then(populateFilters).catch(function () {});
                 })
                 .catch(function(error) { showError('Erreur : ' + error.message); });
         }
@@ -537,18 +537,19 @@
         }
 
         function populateFilters() {
-            var ubSelect = document.getElementById('filter-ub');
-            config.UNIVERS_BESOINS.forEach(function(ub) {
-                var o = document.createElement('option'); o.value = ub; o.textContent = ub; ubSelect.appendChild(o);
-            });
-            var canalSelect = document.getElementById('filter-canal');
-            config.CANAUX.forEach(function(canal) {
-                var o = document.createElement('option'); o.value = canal; o.textContent = canal; canalSelect.appendChild(o);
-            });
-            var typeSelect = document.getElementById('filter-type');
-            config.TYPES_COM.forEach(function(type) {
-                var o = document.createElement('option'); o.value = type; o.textContent = type; typeSelect.appendChild(o);
-            });
+            // Idempotent : on ne garde que l'option « Tous » puis on (re)remplit depuis la config.
+            function fill(id, items) {
+                var sel = document.getElementById(id);
+                if (!sel) return;
+                var keep = sel.value;
+                var ph = sel.querySelector('option[value=""]');
+                sel.innerHTML = ph ? ph.outerHTML : '<option value="">Tous</option>';
+                (items || []).forEach(function(v) { var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+                if (keep) sel.value = keep;
+            }
+            fill('filter-ub', config.UNIVERS_BESOINS);
+            fill('filter-canal', config.CANAUX);
+            fill('filter-type', config.TYPES_COM);
         }
 
         // =====================================================================

@@ -2871,18 +2871,12 @@
                 // Vérifier le dossier puis, le cas échéant, charger la campagne à éditer.
                 checkFolder().then(async () => {
                     if (state.campaignsFolder) {
-                        // Le dossier est maintenant disponible : on (re)charge _config.json
-                        // pour être sûr d'avoir les listes/segments configurés dans l'Admin,
-                        // AVANT de construire les menus (évite la course au DOMContentLoaded).
-                        try {
-                            var ac = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig;
-                            if (ac && ac.reload) await ac.reload();
-                        } catch (e) {}
                         await loadProductsFromCsv();   // produits prêts avant le pré-remplissage
                         checkEditMode();
                         populateCampaignDatalist();
-                        // (Re)construit les listes depuis la config à jour, sauf en édition
-                        // ou si l'utilisateur a déjà renseigné quelque chose.
+                        // Construit les listes depuis la config DÉJÀ hydratée (cache local) —
+                        // instantané, sans lecture V:// bloquante. Le rafraîchissement depuis
+                        // V:// se fait en arrière-plan (bloc adminReady ci-dessous).
                         if (!(state.editMode || state.editCampaignData)) {
                             var touched = document.querySelector('.ub-cb:checked, .segment-cb:checked')
                                 || ['typology', 'market', 'recurrence', 'lotNumber'].some(function (id) {

@@ -875,11 +875,13 @@
     // ── Load campaigns ─────────────────────────────────────────────────────────
     async function loadAndRender() {
         if (!state.campaignsFolder) return;
-        // Le dossier est disponible : on (re)charge _config.json pour être sûr d'avoir
-        // les zones site web configurées avant de construire le planning.
+        // Les zones sont normalement déjà hydratées depuis le cache (instantané). On ne
+        // fait une lecture V:// bloquante que si elles sont vides (tout premier lancement).
         try {
             var ac = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig;
-            if (ac && ac.reload) await ac.reload();
+            var wzEmpty = !((window.ImpulsionMarketing.config.WEB_ZONES || {}).zones || []).length;
+            if (ac && ac.reload && wzEmpty) await ac.reload();
+            else if (ac && ac.reload) ac.reload();
         } catch (e) {}
         state.campaigns = [];
         state.colorMap = {};
