@@ -379,6 +379,24 @@ test('getAvailableActions — manager Data non encore affecté : action d\'affec
     'le manager Data non affecté doit garder l\'action manager_affectation');
 });
 
+test('getAvailableActions — canaux indépendants : un canal terminé n\'efface pas l\'action de l\'autre', () => {
+  const data = makeCampaign(['EBF'], [{ deliverableName: 'Mail' }, { deliverableName: 'SMS' }]);
+  workflow.initWorkflow(data);
+  data.workflow.steps.manager_affectation = 'validated';
+  data.workflow.steps.po_kickoff = 'validated';
+  data.workflow.assignments.ebf = ['Agent EBF'];
+  workflow.initWorkflow(data); // recalcule les déverrouillages par canal
+  // Canal 0 : BAT déposé puis validé par le PO → terminé.
+  data.workflow.channelSteps[0].ebf_bat = 'submitted';
+  data.workflow.channelSteps[0].po_validation_bat = 'validated';
+  // Canal 1 : BAT encore à produire.
+  data.workflow.channelSteps[1].ebf_bat = 'pending';
+  const ebf = { name: 'Agent EBF', role: 'ebf' };
+  const actions = workflow.getAvailableActions(ebf, data);
+  assert.ok(actions.some(a => a.step.id === 'ebf_bat'),
+    'tant qu\'un canal a un BAT à produire, l\'action ebf_bat doit rester disponible');
+});
+
 // ─────────────────────────────────────────────────────────
 // getChannelProgress : progression par canal (cartes multi-canal du tableau de bord)
 test('getChannelProgress — un canal, démarrage à 0 % puis progression', () => {

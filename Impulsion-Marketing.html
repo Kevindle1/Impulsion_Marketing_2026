@@ -556,6 +556,12 @@
                         volumeAlert: m.volumeAlert === true,
                         workflow: {
                             steps:            m.steps || {},
+                            // Étapes réelles par canal (si l'index les porte) : permet à
+                            // getAvailableActions de voir chaque canal indépendamment.
+                            // Sans elles, la reconstruction réplique le canal 0 sur tous
+                            // les canaux et une campagne partiellement produite sortait
+                            // à tort de « à produire ».
+                            channelSteps:     m.csteps || undefined,
                             assignments:      m.asn   || { manager: '', com: '', ebf: '', data: '' },
                             revisionComments: {}
                         }

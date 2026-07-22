@@ -2848,6 +2848,10 @@ window.ImpulsionMarketing.workflow = (function () {
       mod:         Date.now(),
       asn:         Object.assign({}, campaignData.workflow.assignments),
       steps:       getEffectiveStepsForIndex(campaignData),
+      // Étapes réelles par canal : indispensables pour que le tableau de bord
+      // sache, canal par canal, ce qu'il reste à produire (« à produire ») —
+      // `steps` ci-dessus ne résume que le canal 0.
+      csteps:      campaignData.workflow.channelSteps || null,
       done:        isCompleted(campaignData),
       actif:       campaignData.actif !== false,
       volumeAlert: volumeAlert,
