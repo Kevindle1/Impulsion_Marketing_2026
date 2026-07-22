@@ -1034,6 +1034,13 @@
             });
             html += '</span></div>';
         }
+        // Codes saisis dans les dépôts (EBF/Data) puis recopiés sur le canal :
+        // on les restitue aussi dans l'en-tête général du canal.
+        if (ch.codeCom)    html += '<div class="detail-item"><span class="detail-label">Code Com</span><span class="detail-value">' + security.escapeHtml(ch.codeCom) + '</span></div>';
+        if (ch.refParacom) html += '<div class="detail-item"><span class="detail-label">Réf Paracom</span><span class="detail-value">' + security.escapeHtml(ch.refParacom) + '</span></div>';
+        if (ch.codeProjet) html += '<div class="detail-item"><span class="detail-label">Code Projet</span><span class="detail-value">' + security.escapeHtml(ch.codeProjet) + '</span></div>';
+        if (ch.codeAction) html += '<div class="detail-item"><span class="detail-label">Code Action</span><span class="detail-value">' + security.escapeHtml(ch.codeAction) + '</span></div>';
+        if (ch.codeMK)     html += '<div class="detail-item"><span class="detail-label">Code MK</span><span class="detail-value">' + security.escapeHtml(ch.codeMK) + '</span></div>';
         html += '</div></div>';
 
         var _isSuperAdmin  = currentUser && currentUser.isSuperAdmin;
@@ -2121,27 +2128,36 @@
         if (d.numImages) h += '<div class="depot-readonly-item"><strong>Images</strong>' + d.numImages + '</div>';
         if (d.pdfFileName) h += '<div class="depot-readonly-item"><strong>Fichier</strong>' + security.escapeHtml(d.pdfFileName) + '</div>';
         h += '</div>';
+        // Liens des images saisis (auparavant seul le nombre était affiché).
+        h += buildLinksBlock('Liens des images', d.imageUrls);
         el.innerHTML = h;
         el.style.display = 'block';
+        // Rappel des liens des images dans le cadre de validation maquette du PO.
+        var poExtra = document.getElementById('po-extra-po_validation_maquette-' + idx);
+        if (poExtra) poExtra.innerHTML = buildLinksBlock('Liens des images', d.imageUrls);
         var emptyEl = document.getElementById('com-empty-' + idx);
         if (emptyEl) emptyEl.style.display = 'none';
     }
-    // Affiche les liens CTA saisis lors du dépôt BAT, cliquables.
-    // Visible dans le détail com (partie BAT/test) et juste au-dessus du bloc
-    // de validation BAT du PO.
-    function buildCtaLinksBlock(ctaUrls) {
-        if (!ctaUrls || !ctaUrls.length) return '';
-        var links = ctaUrls.filter(function(u) { return u && String(u).trim(); });
+    // Affiche une liste de liens saisis (CTA, images…), cliquables. Ignore les
+    // entrées vides. Rendu générique réutilisé partout où l'on doit restituer
+    // les URL saisies dans un dépôt.
+    function buildLinksBlock(title, urls) {
+        if (!urls || !urls.length) return '';
+        var links = urls.filter(function(u) { return u && String(u).trim(); });
         if (!links.length) return '';
         var h = '<div style="margin-top:10px;">';
-        h += '<div style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">Liens CTA</div>';
+        h += '<div style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">' + security.escapeHtml(title) + '</div>';
         h += '<ul style="margin:0;padding-left:18px;font-size:13px;">';
-        links.forEach(function(u, i) {
+        links.forEach(function(u) {
             var safe = security.escapeHtml(u);
             h += '<li style="margin-bottom:4px;"><a href="' + safe + '" target="_blank" rel="noopener" style="color:var(--blue);word-break:break-all;">' + safe + '</a></li>';
         });
         h += '</ul></div>';
         return h;
+    }
+    // Liens CTA saisis au dépôt BAT (rétro-compat : appelé aussi pour le cadre PO).
+    function buildCtaLinksBlock(ctaUrls) {
+        return buildLinksBlock('Liens CTA', ctaUrls);
     }
     function renderEbfReadonly(idx, d) {
         var el = document.getElementById('ebf-readonly-' + idx);
