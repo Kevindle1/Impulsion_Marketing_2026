@@ -1480,8 +1480,16 @@
                     const numChannels = data.channels.length;
                     document.querySelector(`input[name="numChannels"][value="${numChannels}"]`).checked = true;
                     generateChannelFields(numChannels);
-                    setTimeout(() => {
-                        data.channels.forEach((channel, i) => {
+                    restoreChannelFields(data.channels);
+                }
+            }
+
+            // Ré-affecte les valeurs des canaux dans les champs du formulaire.
+            // Réutilisé au pré-remplissage (édition) ET au changement du nombre de
+            // canaux, afin de préserver les canaux déjà saisis (sans les effacer).
+            function restoreChannelFields(channels) {
+                setTimeout(() => {
+                        channels.forEach((channel, i) => {
                             const idx = i + 1;
                             if (channel.deliverableName) $(`#deliverableName${idx}`).value = channel.deliverableName;
                             // channelContent: if stored value doesn't match any option, add it as a custom option
@@ -1583,7 +1591,45 @@
                             }
                         });
                     }, 100);
+            }
+
+            // Lit les canaux actuellement saisis dans le formulaire (DOM courant),
+            // pour pouvoir les restaurer après régénération des champs. Auto-détecte
+            // le nombre de canaux présents.
+            function collectChannelsFromForm() {
+                var channels = [];
+                for (var i = 1; document.getElementById('deliverableName' + i); i++) {
+                    channels.push({
+                        deliverableName: ($(`#deliverableName${i}`) || {}).value || '',
+                        content: ($(`#channelContent${i}`) || {}).value || '',
+                        sendDate: ($(`#sendDate${i}`) || {}).value || '',
+                        comType: ($(`#comType${i}`) || {}).value || '',
+                        targetingCriteria: ($(`#targetingCriteria${i}`) || {}).value || '',
+                        emailObject: ($(`#emailObject${i}`) || {}).value || '',
+                        comTypology: (document.querySelector(`input[name="comTypology${i}"]:checked`) || {}).value || '',
+                        urlTicTac: ($(`#urlTicTac${i}`) || {}).value || '',
+                        urlLccx: ($(`#urlLccx${i}`) || {}).value || '',
+                        urlsComStore: (function() {
+                            var inputs = document.querySelectorAll(`.urlComStore-input-${i}`);
+                            var urls = [];
+                            inputs.forEach(function(inp) { if (inp.value.trim()) urls.push(inp.value.trim()); });
+                            return urls;
+                        })(),
+                        siteWeb: (function() {
+                            var sf = document.getElementById(`siteWebFields${i}`);
+                            if (!sf || sf.style.display === 'none') return null;
+                            return {
+                                zone: ($(`#channelContent${i}`) || {}).value || '',
+                                marches: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); var res = []; cbs.forEach(function(cb) { res.push(cb.value); }); return res.length ? res : ['part']; })(),
+                                marche: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); return cbs.length ? cbs[0].value : 'part'; })(),
+                                univers: ($(`#siteWebUnivers${i}`) || {}).value || null,
+                                dateDebut: ($(`#siteWebDateDebut${i}`) || {}).value || '',
+                                dateFin: ($(`#siteWebDateFin${i}`) || {}).value || ''
+                            };
+                        })()
+                    });
                 }
+                return channels;
             }
 
             // Peuple la liste de personnes selon l'équipe PO sélectionnée
@@ -1641,7 +1687,13 @@
             // Gestion des champs dynamiques
             document.querySelectorAll('input[name="numChannels"]').forEach(radio => {
                 radio.addEventListener("change", (e) => {
-                    generateChannelFields(parseInt(e.target.value));
+                    const newCount = parseInt(e.target.value);
+                    // Préserver les canaux déjà saisis : on capture l'état courant
+                    // avant de régénérer les champs, puis on le réapplique. Ajouter
+                    // un canal n'efface donc plus les canaux existants.
+                    const existing = collectChannelsFromForm();
+                    generateChannelFields(newCount);
+                    if (existing.length) restoreChannelFields(existing.slice(0, newCount));
                 });
             });
 
