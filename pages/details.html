@@ -1218,7 +1218,7 @@
             h += '<div class="form-row"><label>Nombre de CTA</label><input type="number" id="ebf-numcta-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="ebf-cta-urls-' + idx + '"></div>';
             h += '<p style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
-            h += '<div class="form-row"><label>Fichier BAT (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html"></div>';
+            h += '<div class="form-row"><label>Fichier BAT (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le fichier <strong>.html ET ses images</strong> (Ctrl/⌘ + clic). Les images seront intégrées au BAT.</small></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '">📤 Déposer et soumettre</button>';
@@ -1265,7 +1265,7 @@
 
         if (editable) {
             h += '<div class="actor-form">';
-            h += '<div class="form-row"><label>Fichier test en production (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html"></div>';
+            h += '<div class="form-row"><label>Fichier test en production (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le fichier <strong>.html ET ses images</strong> (Ctrl/⌘ + clic). Les images seront intégrées.</small></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">📤 Déposer et soumettre</button>';
@@ -1999,7 +1999,7 @@
             codeCom: (document.getElementById('ebf-codecom-' + idx) || {}).value || '',
             refParacom: (document.getElementById('ebf-refpara-' + idx) || {}).value || '',
             numCta: numCta, ctaUrls: ctaUrls,
-            pdfBatFileName: pdfBatEl && pdfBatEl.files[0] ? pdfBatEl.files[0].name : '',
+            pdfBatFileName: _primaryEbfFileName(pdfBatEl && pdfBatEl.files),
             depositDate: new Date().toISOString()
         };
     }
@@ -2010,7 +2010,7 @@
         return {
             campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
             step: 'ebf_test_prod',
-            pdfTestProdFileName: pdfEl && pdfEl.files[0] ? pdfEl.files[0].name : '',
+            pdfTestProdFileName: _primaryEbfFileName(pdfEl && pdfEl.files),
             depositDate: new Date().toISOString()
         };
     }
@@ -2224,6 +2224,83 @@
         } else {
             el.innerHTML = '<a href="' + url + '" target="_blank" style="color:var(--primary);font-size:13px;display:inline-block;margin-top:4px;">📄 Ouvrir le fichier ' + label + '</a>';
         }
+    }
+
+    // ── Dépôt d'un mail HTML autonome (BAT / test prod) ────────────────────
+    // Un mail HTML référence ses images par chemin relatif (ex. images/logo.png),
+    // dans un dossier voisin. Comme l'aperçu se fait via une URL blob: (sans base
+    // relative) et qu'on ne stocke que le fichier HTML, ces images seraient
+    // manquantes. On lit donc les images sélectionnées et on les intègre dans le
+    // HTML sous forme de data: URIs → un fichier HTML autonome, complet.
+    function fileToDataUrl(file) {
+        return new Promise(function(resolve, reject) {
+            var r = new FileReader();
+            r.onload = function() { resolve(r.result); };
+            r.onerror = function() { reject(r.error || new Error('lecture impossible')); };
+            r.readAsDataURL(file);
+        });
+    }
+    // Nom de fichier seul, en minuscules, sans dossier ni query/hash.
+    function _assetBase(path) {
+        return String(path || '').split(/[\\/]/).pop().split('?')[0].split('#')[0].toLowerCase();
+    }
+    // Renvoie le nom du fichier « principal » d'une sélection : le .html s'il
+    // existe (cas mail HTML + images), sinon le premier fichier.
+    function _primaryEbfFileName(files) {
+        var arr = Array.prototype.slice.call(files || []);
+        if (!arr.length) return '';
+        var htmlF = arr.filter(function(f) { return /\.html?$/i.test(f.name || '') || f.type === 'text/html'; })[0];
+        return (htmlF || arr[0]).name;
+    }
+    // Construit un Blob HTML autonome : remplace les références d'images
+    // relatives (src/href/background, CSS url(), srcset) par des data: URIs.
+    function buildSelfContainedHtml(htmlFile, assetFiles) {
+        return Promise.all((assetFiles || []).map(function(f) {
+            return fileToDataUrl(f).then(function(durl) { return { name: _assetBase(f.name), durl: durl }; });
+        })).then(function(entries) {
+            var byName = {};
+            entries.forEach(function(e) { byName[e.name] = e.durl; });
+            function keepAbsolute(v) { return /^(https?:|data:|cid:|mailto:|tel:|#)/i.test(v); }
+            return htmlFile.text().then(function(html) {
+                html = html.replace(/(src|href|background)\s*=\s*(["'])([^"']+)\2/gi, function(m, attr, q, val) {
+                    if (keepAbsolute(val)) return m;
+                    var d = byName[_assetBase(val)];
+                    return d ? (attr + '=' + q + d + q) : m;
+                });
+                html = html.replace(/url\(\s*(["']?)([^)"']+)\1\s*\)/gi, function(m, q, val) {
+                    if (keepAbsolute(val)) return m;
+                    var d = byName[_assetBase(val)];
+                    return d ? ('url(' + q + d + q + ')') : m;
+                });
+                html = html.replace(/srcset\s*=\s*(["'])([^"']+)\1/gi, function(m, q, val) {
+                    var parts = val.split(',').map(function(p) {
+                        var seg = p.trim().split(/\s+/);
+                        if (seg[0] && !keepAbsolute(seg[0])) {
+                            var d = byName[_assetBase(seg[0])];
+                            if (d) seg[0] = d;
+                        }
+                        return seg.join(' ');
+                    });
+                    return 'srcset=' + q + parts.join(', ') + q;
+                });
+                return new Blob([html], { type: 'text/html' });
+            });
+        });
+    }
+    // Prépare le fichier EBF à enregistrer (BAT / test prod).
+    // HTML (+ images) → HTML autonome (.html). Sinon → le fichier tel quel.
+    // Renvoie Promise<{blob, ext} | null>.
+    function prepareEbfDepotFile(fileList) {
+        var files = Array.prototype.slice.call(fileList || []);
+        if (!files.length) return Promise.resolve(null);
+        var htmlFile = files.filter(function(f) { return /\.html?$/i.test(f.name || '') || f.type === 'text/html'; })[0];
+        if (htmlFile) {
+            var assets = files.filter(function(f) { return f !== htmlFile; });
+            return buildSelfContainedHtml(htmlFile, assets).then(function(blob) { return { blob: blob, ext: 'html' }; });
+        }
+        var single = files[0];
+        var ext = (single.name.split('.').pop() || 'bin').toLowerCase();
+        return Promise.resolve({ blob: single, ext: ext });
     }
 
     function loadComFilePreview(idx, folder, filename) {
@@ -2545,71 +2622,50 @@
                 var folder      = getChannelFolder(idx);
                 var depotFile   = isTestProd ? 'depotebf_test.json' : 'depotebf.json';
                 var btnLabel    = '📤 Soumettre ce canal';
-                var depot;
-                var batFileToSave = null;
-                var testProdFileToSave = null;
-                if (isTestProd) {
-                    depot = collectEbfTestProdDepot(idx);
-                    depot.status = 'submitted';
-                    var pdfTpEl = document.getElementById('ebf-pdf-testprod-' + idx);
-                    testProdFileToSave = pdfTpEl && pdfTpEl.files[0];
-                    if (testProdFileToSave) {
-                        var tpExt = testProdFileToSave.name.split('.').pop().toLowerCase();
-                        depot.pdfTestProdSavedName = 'testprod_canal_' + idx + '.' + tpExt;
-                    }
-                } else {
-                    depot = collectEbfDepot(idx);
-                    depot.status = 'submitted';
-                    var pdfBatEl = document.getElementById('ebf-pdf-bat-' + idx);
-                    batFileToSave = pdfBatEl && pdfBatEl.files[0];
-                    if (batFileToSave) {
-                        var ext = batFileToSave.name.split('.').pop().toLowerCase();
-                        depot.pdfBatSavedName = 'bat_canal_' + idx + '.' + ext;
-                    }
-                }
+                var inputEl     = document.getElementById((isTestProd ? 'ebf-pdf-testprod-' : 'ebf-pdf-bat-') + idx);
                 disableBtn(btn, 'Envoi...');
-                saveDepotFile(currentCampaignName, folder, depotFile, depot)
-                    .then(function() {
+                // Prépare le fichier : pour un mail HTML, les images sélectionnées
+                // sont intégrées en data: URIs pour obtenir un HTML autonome.
+                prepareEbfDepotFile(inputEl && inputEl.files).then(function(prepared) {
+                    var depot = isTestProd ? collectEbfTestProdDepot(idx) : collectEbfDepot(idx);
+                    depot.status = 'submitted';
+                    var savedName = null;
+                    if (prepared) {
+                        savedName = (isTestProd ? 'testprod_canal_' : 'bat_canal_') + idx + '.' + prepared.ext;
+                        if (isTestProd) depot.pdfTestProdSavedName = savedName;
+                        else            depot.pdfBatSavedName = savedName;
+                    }
+                    return saveDepotFile(currentCampaignName, folder, depotFile, depot).then(function() {
                         loadedDepots[idx] = loadedDepots[idx] || {};
-                        if (isTestProd) {
-                            loadedDepots[idx].ebftest = depot;
-                            renderEbfTestProdReadonly(idx, depot);
-                            if (testProdFileToSave && depot.pdfTestProdSavedName) {
-                                currentRootHandle.getDirectoryHandle('Campagnes')
-                                    .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
-                                    .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
-                                    .then(function(d) { return d.getFileHandle(depot.pdfTestProdSavedName, {create:true}); })
-                                    .then(function(fh) { return fh.createWritable(); })
-                                    .then(function(w) { return testProdFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
-                                    .catch(function(err) {
-                                        console.error('Échec de l\'enregistrement du fichier test prod :', err);
-                                        errors.showNotification('Le fichier test prod n\'a pas pu être enregistré : ' + err.message, 'error');
-                                    });
-                            }
-                        } else {
-                            loadedDepots[idx].ebf = depot;
-                            if (batFileToSave && depot.pdfBatSavedName) {
-                                currentRootHandle.getDirectoryHandle('Campagnes')
-                                    .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
-                                    .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
-                                    .then(function(d) { return d.getFileHandle(depot.pdfBatSavedName, {create:true}); })
-                                    .then(function(fh) { return fh.createWritable(); })
-                                    .then(function(w) { return batFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
-                                    .catch(function(err) {
-                                        console.error('Échec de l\'enregistrement du fichier BAT :', err);
-                                        errors.showNotification('Le fichier BAT n\'a pas pu être enregistré : ' + err.message, 'error');
-                                    });
-                            }
+                        if (isTestProd) { loadedDepots[idx].ebftest = depot; renderEbfTestProdReadonly(idx, depot); }
+                        else            { loadedDepots[idx].ebf = depot; renderEbfReadonly(idx, depot); }
+                        var writePromise = Promise.resolve();
+                        if (prepared && savedName) {
+                            writePromise = currentRootHandle.getDirectoryHandle('Campagnes')
+                                .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+                                .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
+                                .then(function(d) { return d.getFileHandle(savedName, {create:true}); })
+                                .then(function(fh) { return fh.createWritable(); })
+                                .then(function(w) { return prepared.blob.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
+                                .catch(function(err) {
+                                    console.error('Échec de l\'enregistrement du fichier EBF :', err);
+                                    errors.showNotification('Le fichier n\'a pas pu être enregistré : ' + err.message, 'error');
+                                });
                         }
                         // v2 : avancement direct du canal
                         mirrorChannelCodes(idx, depot); // #27 : indexer les codes saisis
                         workflow.advanceChannelStep(currentCampaignData, idx, stepId, 'submitted');
-                        workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                        return writePromise
+                            .then(function() { return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData); })
                             .then(function() { refreshCurrentPage(); });
-                        enableBtn(btn, btnLabel);
-                        errors.showNotification('Canal soumis !', 'success', 2000);
-                    })
-                    .catch(function(err) { enableBtn(btn, btnLabel); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    });
+                }).then(function() {
+                    enableBtn(btn, btnLabel);
+                    errors.showNotification('Canal soumis !', 'success', 2000);
+                }).catch(function(err) {
+                    enableBtn(btn, btnLabel);
+                    errors.showNotification('Erreur : ' + (err && err.message), 'error');
+                });
             });
         });
 
