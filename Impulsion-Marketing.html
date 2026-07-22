@@ -608,11 +608,15 @@
                 }
 
                 var isActif = c.data.actif !== false;
+                // On propage chprog / done / _search issus de l'index : buildCard
+                // (barres par canal + statut) et la recherche s'appuient dessus.
+                // Sans eux, l'indicateur de la tâche retombait sur un calcul
+                // générique et était incohérent d'une campagne à l'autre.
                 if (isMyTurn && isActif) {
-                    myTurn.push({ name: c.name, data: c.data, lastModified: c.lastModified, actions: actions });
+                    myTurn.push({ name: c.name, data: c.data, lastModified: c.lastModified, actions: actions, chprog: c.chprog, done: c.done, isActif: isActif, _search: c._search });
                 }
                 if (rel) {
-                    allMine.push({ name: c.name, data: c.data, lastModified: c.lastModified, isMyTurn: isMyTurn && isActif, isActif: isActif });
+                    allMine.push({ name: c.name, data: c.data, lastModified: c.lastModified, isMyTurn: isMyTurn && isActif, isActif: isActif, chprog: c.chprog, done: c.done, _search: c._search });
                 }
             });
 
