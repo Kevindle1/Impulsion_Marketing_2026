@@ -289,6 +289,15 @@
         .discussion-form textarea { width: 100%; padding: 11px 13px; border: 1px solid var(--line, #eaefec); border-radius: 12px; font-family: inherit; font-size: 13.5px; color: var(--ink, #0c1a14); resize: vertical; min-height: 80px; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
         .discussion-form textarea:focus { outline: none; border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
         .discussion-form-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+        /* ── Éditeur de texte enrichi (demande de modification) ── */
+        .rich-editor { border: 1px solid var(--amber, #E8A100); border-radius: 6px; overflow: hidden; background: #fff; }
+        .rich-toolbar { display: flex; gap: 3px; padding: 4px 6px; background: var(--line-2, #f0f4f1); border-bottom: 1px solid var(--line, #eaefec); flex-wrap: wrap; }
+        .rich-tb-btn { background: none; border: 1px solid transparent; border-radius: 4px; min-width: 27px; height: 24px; font-size: 13px; cursor: pointer; color: #444; line-height: 1; padding: 0 6px; }
+        .rich-tb-btn:hover { background: #fff; border-color: var(--line, #eaefec); }
+        .rich-input { min-height: 70px; padding: 8px 10px; font-size: 13px; font-family: inherit; color: var(--ink, #0c1a14); outline: none; line-height: 1.5; }
+        .rich-input:empty:before { content: attr(data-placeholder); color: var(--muted-2, #8b988f); }
+        .rich-input ul, .rich-input ol { margin: 4px 0; padding-left: 22px; }
+        .revision-alert ul, .revision-alert ol { margin: 4px 0 4px 18px; padding-left: 0; }
     </style>
 </head>
 <body>
@@ -1126,7 +1135,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emCom = teamEditMode(data, 'com');
         if (_emCom) {
             h += buildReassignBlock('com', users.getUsersByRole('com'), getAssignees(data.workflow.assignments, 'com'), _emCom);
@@ -1218,7 +1227,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation de la maquette Com.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emEbf = teamEditMode(data, 'ebf');
         if (_emEbf) {
             h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
@@ -1275,7 +1284,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du BAT et du ciblage.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emEbf = teamEditMode(data, 'ebf');
         if (_emEbf) {
             h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
@@ -1329,7 +1338,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emData = teamEditMode(data, 'data');
         if (_emData) {
             h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'), _emData);
@@ -1444,7 +1453,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emData = teamEditMode(data, 'data');
         if (_emData) {
             h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'), _emData);
@@ -1547,7 +1556,7 @@
         h += '</div></div>';
         if (canRevise) {
             h += '<div id="revision-form-ch-' + uid + '" style="display:none;margin-top:10px;">';
-            h += '<textarea id="revision-comment-ch-' + uid + '" rows="3" placeholder="Décrivez la modification demandée..." style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--amber);border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;"></textarea>';
+            h += buildRichEditor('revision-comment-ch-' + uid, 'Décrivez la modification demandée...');
             h += '<button class="btn-po-send-revision-ch" data-step="' + poStepId + '"' + chAttr + ' data-source="' + sourceStepId + '" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">📤 Envoyer la demande</button>';
             h += '</div>';
         }
@@ -2159,6 +2168,96 @@
     function buildCtaLinksBlock(ctaUrls) {
         return buildLinksBlock('Liens CTA', ctaUrls);
     }
+
+    // ── Éditeur de texte enrichi (demande de modification) ──────────────────
+    // Gras / italique / souligné / listes / retours à la ligne. Le contenu est
+    // stocké en HTML et re-nettoyé à l'affichage (liste blanche de balises).
+    function _safeInlineStyle(style) {
+        if (!style) return '';
+        var allow = /^(font-weight|font-style|text-decoration|text-decoration-line)$/i;
+        var kept = [];
+        String(style).split(';').forEach(function(p) {
+            var i = p.indexOf(':'); if (i < 0) return;
+            var k = p.slice(0, i).trim().toLowerCase();
+            var v = p.slice(i + 1).trim();
+            if (!allow.test(k)) return;
+            if (/expression|url\(|javascript:|[<>]/i.test(v)) return;
+            kept.push(k + ':' + v);
+        });
+        return kept.join(';');
+    }
+    // Nettoie un HTML enrichi selon une liste blanche stricte de balises/attributs.
+    // Tout le reste est réduit à son texte (échappé). Sûr contre l'injection.
+    function sanitizeRichHtml(html) {
+        if (html == null) return '';
+        var str = String(html);
+        if (str.indexOf('<') === -1) return security.escapeHtml(str); // texte simple
+        var ALLOWED = { B:1, STRONG:1, I:1, EM:1, U:1, BR:1, P:1, DIV:1, UL:1, OL:1, LI:1, SPAN:1, A:1 };
+        var doc;
+        try { doc = new DOMParser().parseFromString(str, 'text/html'); }
+        catch (e) { return security.escapeHtml(str); }
+        function clean(node) {
+            var out = '';
+            Array.prototype.forEach.call(node.childNodes, function(child) {
+                if (child.nodeType === 3) { out += security.escapeHtml(child.nodeValue); return; }
+                if (child.nodeType !== 1) return;
+                var tag = child.tagName;
+                if (tag === 'BR') { out += '<br>'; return; }
+                if (!ALLOWED[tag]) { out += clean(child); return; }
+                var lower = tag.toLowerCase();
+                var attrs = '';
+                if (tag === 'A') {
+                    var href = child.getAttribute('href') || '';
+                    if (/^https?:\/\//i.test(href)) attrs += ' href="' + security.escapeHtml(href) + '" target="_blank" rel="noopener"';
+                }
+                var style = _safeInlineStyle(child.getAttribute('style'));
+                if (style) attrs += ' style="' + security.escapeHtml(style) + '"';
+                out += '<' + lower + attrs + '>' + clean(child) + '</' + lower + '>';
+            });
+            return out;
+        }
+        return clean(doc.body);
+    }
+    // Génère un éditeur enrichi (barre d'outils + zone éditable).
+    function buildRichEditor(id, placeholder) {
+        var h = '<div class="rich-editor">';
+        h += '<div class="rich-toolbar">';
+        h += '<button type="button" class="rich-tb-btn" data-cmd="bold" title="Gras" style="font-weight:800;">G</button>';
+        h += '<button type="button" class="rich-tb-btn" data-cmd="italic" title="Italique" style="font-style:italic;">I</button>';
+        h += '<button type="button" class="rich-tb-btn" data-cmd="underline" title="Souligné" style="text-decoration:underline;">S</button>';
+        h += '<button type="button" class="rich-tb-btn" data-cmd="insertUnorderedList" title="Liste à puces">•</button>';
+        h += '<button type="button" class="rich-tb-btn" data-cmd="insertOrderedList" title="Liste numérotée">1.</button>';
+        h += '<button type="button" class="rich-tb-btn" data-cmd="removeFormat" title="Effacer la mise en forme">✕</button>';
+        h += '</div>';
+        h += '<div id="' + id + '" class="rich-input" contenteditable="true" data-placeholder="' + security.escapeHtml(placeholder || '') + '"></div>';
+        h += '</div>';
+        return h;
+    }
+    // Lit un champ enrichi : renvoie { html (nettoyé), text (brut, pour vérifier
+    // le vide) }. Compatible avec un ancien <textarea> le cas échéant.
+    function readRichField(el) {
+        if (!el) return { html: '', text: '' };
+        if (el.isContentEditable) {
+            return {
+                html: sanitizeRichHtml(el.innerHTML),
+                text: (el.textContent || '').replace(/ /g, ' ').trim()
+            };
+        }
+        var v = (el.value || '').trim();
+        return { html: v, text: v };
+    }
+    // Barre d'outils : délégation unique (survit aux re-rendus). On agit au
+    // mousedown pour ne pas perdre la sélection dans la zone éditable.
+    document.addEventListener('mousedown', function(e) {
+        var btn = e.target && e.target.closest && e.target.closest('.rich-tb-btn');
+        if (!btn) return;
+        e.preventDefault();
+        var wrap = btn.closest('.rich-editor');
+        var editor = wrap && wrap.querySelector('.rich-input');
+        if (!editor) return;
+        editor.focus();
+        try { document.execCommand(btn.getAttribute('data-cmd'), false, null); } catch (_) {}
+    });
     function renderEbfReadonly(idx, d) {
         var el = document.getElementById('ebf-readonly-' + idx);
         if (!el || !d) return;
@@ -2805,8 +2904,9 @@
                 var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
                 var uid = stepId + '-' + channelIdx;
                 var commentEl = document.getElementById('revision-comment-ch-' + uid);
-                var comment = commentEl ? commentEl.value.trim() : '';
-                if (!comment) { notify('Veuillez décrire la modification demandée.', 'warning'); return; }
+                var field = readRichField(commentEl);
+                if (!field.text) { notify('Veuillez décrire la modification demandée.', 'warning'); return; }
+                var comment = field.html;
                 disableBtn(btn, 'Envoi...');
                 workflow.requestChannelRevision(currentCampaignData, stepId, sourceId, channelIdx, comment);
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
