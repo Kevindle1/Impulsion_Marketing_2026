@@ -972,6 +972,21 @@
         var arr = getAssignees(assignments, role);
         return arr.length ? arr.map(function(n){ return security.escapeHtml(n); }).join(', ') : '';
     }
+    // Détermine qui peut modifier l'équipe affectée à un rôle, et dans quelle mesure :
+    //  'full' : un manager de ce service, le manager général (marketing) ou un
+    //           super-admin → ajout / retrait libre de toute l'équipe.
+    //  'add'  : un membre lui-même affecté à ce rôle → peut ajouter un renfort de
+    //           son équipe (congés / remplacement) et se retirer, sans toucher aux
+    //           autres personnes déjà affectées.
+    //  null   : lecture seule.
+    function teamEditMode(data, role) {
+        var u = users && users.getCurrentUser();
+        if (!u) return null;
+        if (u.isSuperAdmin) return 'full';
+        if (u.isManager && (u.role === 'marketing' || u.role === role)) return 'full';
+        if (getAssignees(data.workflow.assignments, role).indexOf(u.name) !== -1) return 'add';
+        return null;
+    }
 
     // Vérifie si une équipe est requise (délègue au module workflow)
     function isTeamRequired(data, team) {
@@ -1105,8 +1120,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
-        if (users && users.isCurrentUserTeamManager('com')) {
-            h += buildReassignBlock('com', users.getUsersByRole('com'), getAssignees(data.workflow.assignments, 'com'));
+        var _emCom = teamEditMode(data, 'com');
+        if (_emCom) {
+            h += buildReassignBlock('com', users.getUsersByRole('com'), getAssignees(data.workflow.assignments, 'com'), _emCom);
         } else if (!editable) {
             var _comDisp = assigneesDisplay(data.workflow.assignments, 'com');
             if (_comDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Responsable(s) Com : <strong>' + _comDisp + '</strong></p>';
@@ -1196,8 +1212,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
-        if (users && users.isCurrentUserTeamManager('ebf')) {
-            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
+        var _emEbf = teamEditMode(data, 'ebf');
+        if (_emEbf) {
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
         } else if (!editable) {
             var _ebfDisp = assigneesDisplay(data.workflow.assignments, 'ebf');
             if (_ebfDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp + '</strong></p>';
@@ -1252,8 +1269,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
-        if (users && users.isCurrentUserTeamManager('ebf')) {
-            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
+        var _emEbf = teamEditMode(data, 'ebf');
+        if (_emEbf) {
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
         } else if (!editable) {
             var _ebfDisp2 = assigneesDisplay(data.workflow.assignments, 'ebf');
             if (_ebfDisp2) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp2 + '</strong></p>';
@@ -1305,8 +1323,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
-        if (users && users.isCurrentUserTeamManager('data')) {
-            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'));
+        var _emData = teamEditMode(data, 'data');
+        if (_emData) {
+            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'), _emData);
         } else if (!editable) {
             var _datDisp = assigneesDisplay(data.workflow.assignments, 'data');
             if (_datDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Data assigné(s) : <strong>' + _datDisp + '</strong></p>';
@@ -1380,8 +1399,9 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
             h += '</div>'; return h;
         }
-        if (users && users.isCurrentUserTeamManager('ebf')) {
-            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'));
+        var _emEbf = teamEditMode(data, 'ebf');
+        if (_emEbf) {
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
         } else if (!editable) {
             var _ebfDispMep = assigneesDisplay(data.workflow.assignments, 'ebf');
             if (_ebfDispMep) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDispMep + '</strong></p>';
@@ -1418,8 +1438,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + security.escapeHtml(revisionComment) + '</div>';
-        if (users && users.isCurrentUserTeamManager('data')) {
-            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'));
+        var _emData = teamEditMode(data, 'data');
+        if (_emData) {
+            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'), _emData);
         } else if (!editable) {
             var _datDispLt = assigneesDisplay(data.workflow.assignments, 'data');
             if (_datDispLt) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Data assigné(s) : <strong>' + _datDispLt + '</strong></p>';
@@ -1444,7 +1465,12 @@
     // role             : 'com' | 'ebf' | 'data'
     // teamUsers        : liste des utilisateurs de ce rôle
     // currentAssignees : tableau de noms (peut être vide ou string legacy)
-    function buildReassignBlock(role, teamUsers, currentAssignees) {
+    // mode : 'full' (manager → ajout/retrait libre) | 'add' (membre affecté →
+    // ajoute un renfort et peut se retirer, sans toucher aux autres).
+    function buildReassignBlock(role, teamUsers, currentAssignees, mode) {
+        mode = mode || 'full';
+        var restricted = (mode === 'add');
+        var selfName = (users && users.getCurrentUser() || {}).name || '';
         var labels = { com: 'Com assigné(e)s', ebf: 'EBF assigné(s)', data: 'Data assigné(s)' };
         var label = labels[role] || (role + ' assigné(s)');
         var cur = Array.isArray(currentAssignees) ? currentAssignees : (currentAssignees ? [currentAssignees] : []);
@@ -1454,15 +1480,24 @@
         } else {
             h += '<span style="font-size:13px;color:var(--muted-2);font-style:italic;">' + label + ' : non assigné</span>';
         }
-        h += '<button class="btn-team-reassign" data-role="' + role + '" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Modifier</button>';
+        var btnLabel = restricted ? '➕ Ajouter un renfort / me retirer' : '✏️ Modifier';
+        h += '<button class="btn-team-reassign" data-role="' + role + '" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">' + btnLabel + '</button>';
         h += '</div>';
         h += '<div id="reassign-form-' + role + '" style="display:none;background:var(--line-2);border-radius:6px;padding:10px 12px;margin-bottom:12px;">';
+        if (restricted) {
+            h += '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;">Ajoutez un renfort de votre équipe (congés, remplacement). Vous pouvez vous retirer. Les autres personnes déjà affectées ne sont modifiables que par un manager.</div>';
+        }
         h += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
         teamUsers.forEach(function(u) {
-            var checked = cur.indexOf(u.name) !== -1 ? ' checked' : '';
-            h += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;">';
-            h += '<input type="checkbox" class="reassign-cb-' + role + '" value="' + security.escapeHtml(u.name) + '"' + checked + '> ';
-            h += security.escapeHtml(u.name) + '</label>';
+            var isAssigned = cur.indexOf(u.name) !== -1;
+            var checked = isAssigned ? ' checked' : '';
+            // Mode restreint : les autres personnes déjà affectées sont verrouillées
+            // (ni retrait ni décochage) ; soi-même reste décochable.
+            var locked = restricted && isAssigned && u.name !== selfName;
+            var disabledAttr = locked ? ' disabled' : '';
+            h += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:' + (locked ? 'not-allowed' : 'pointer') + ';' + (locked ? 'opacity:0.65;' : '') + '">';
+            h += '<input type="checkbox" class="reassign-cb-' + role + '" value="' + security.escapeHtml(u.name) + '"' + checked + disabledAttr + '> ';
+            h += security.escapeHtml(u.name) + (u.name === selfName ? ' <span style="font-size:11px;color:var(--muted-2);">(moi)</span>' : '') + '</label>';
         });
         h += '</div>';
         h += '<button class="btn-team-reassign-save" data-role="' + role + '" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
@@ -1638,7 +1673,8 @@
             html += '<div style="background:var(--line-2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
             html += '<strong>Équipes affectées :</strong> ';
             var parts = [];
-            if (assignments.manager)                parts.push('Manager : ' + security.escapeHtml(assignments.manager));
+            // Le manager qui a fait l'affectation n'est pas affiché comme
+            // « affecté » à la tâche : seules les équipes réellement affectées le sont.
             if (assigneesDisplay(assignments,'com')) parts.push('Com : ' + assigneesDisplay(assignments,'com'));
             if (assigneesDisplay(assignments,'ebf')) parts.push('EBF : ' + assigneesDisplay(assignments,'ebf'));
             if (assigneesDisplay(assignments,'data'))parts.push('Data : ' + assigneesDisplay(assignments,'data'));
