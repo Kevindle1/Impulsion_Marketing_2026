@@ -1246,6 +1246,11 @@
             h += '<div class="form-row"><label>Webmaster / Resp. EBF</label><select id="ebf-webmaster-' + idx + '" class="form-control"><option value="">-- Choisir --</option>';
             ebfUsers.forEach(function(u) { h += '<option value="' + security.escapeHtml(u.name) + '">' + security.escapeHtml(u.name) + '</option>'; });
             h += '</select></div>';
+            // Objet de l'email : saisi à la réalisation du BAT (mail uniquement),
+            // remonté ensuite dans la validation BAT du PO et sur la fiche canal.
+            if (['MAIL', 'MAIL + E-MESSAGE'].indexOf((ch && ch.content) || '') !== -1) {
+                h += '<div class="form-row"><label>Objet de l\'email</label><input type="text" id="ebf-emailobject-' + idx + '" class="form-control" placeholder="Ex : Découvrez notre offre exclusive..."></div>';
+            }
             h += '<div class="form-row"><label>Code Com</label><input type="text" id="ebf-codecom-' + idx + '" class="form-control"></div>';
             h += '<div class="form-row"><label>Ref Paracom <small style="font-weight:normal">(max 32 car.)</small></label><input type="text" id="ebf-refpara-' + idx + '" maxlength="32" class="form-control"></div>';
             h += '<div class="form-row"><label>Nombre de CTA</label><input type="number" id="ebf-numcta-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
@@ -2048,6 +2053,7 @@
         return {
             campaign: currentCampaignName, channel: ch ? ch.deliverableName : '', channelIndex: idx,
             webmaster: (document.getElementById('ebf-webmaster-' + idx) || {}).value || '',
+            emailObject: (document.getElementById('ebf-emailobject-' + idx) || {}).value || '',
             codeCom: (document.getElementById('ebf-codecom-' + idx) || {}).value || '',
             refParacom: (document.getElementById('ebf-refpara-' + idx) || {}).value || '',
             numCta: numCta, ctaUrls: ctaUrls,
@@ -2116,6 +2122,7 @@
         setVal('ebf-webmaster-' + idx, d.webmaster);
         setVal('ebf-codecom-' + idx, d.codeCom);
         setVal('ebf-refpara-' + idx, d.refParacom);
+        setVal('ebf-emailobject-' + idx, d.emailObject);
         setVal('ebf-numcta-' + idx, d.numCta || 0);
         updateEbfCtaUrls(idx, d.numCta || 0, d.ctaUrls);
     }
@@ -2262,6 +2269,7 @@
         var el = document.getElementById('ebf-readonly-' + idx);
         if (!el || !d) return;
         var h = '<div class="depot-readonly-grid">';
+        if (d.emailObject) h += '<div class="depot-readonly-item"><strong>Objet de l\'email</strong>' + security.escapeHtml(d.emailObject) + '</div>';
         if (d.webmaster) h += '<div class="depot-readonly-item"><strong>Webmaster</strong>' + security.escapeHtml(d.webmaster) + '</div>';
         if (d.codeCom) h += '<div class="depot-readonly-item"><strong>Code Com</strong>' + security.escapeHtml(d.codeCom) + '</div>';
         if (d.refParacom) h += '<div class="depot-readonly-item"><strong>Ref Paracom</strong>' + security.escapeHtml(d.refParacom) + '</div>';
@@ -2271,9 +2279,14 @@
         h += buildCtaLinksBlock(d.ctaUrls);
         el.innerHTML = h;
         el.style.display = 'block';
-        // Rappel des liens CTA à l'intérieur même du cadre de validation BAT du PO.
+        // Rappel de l'objet de l'email + des liens CTA dans le cadre de validation BAT du PO.
         var poExtra = document.getElementById('po-extra-po_validation_bat-' + idx);
-        if (poExtra) poExtra.innerHTML = buildCtaLinksBlock(d.ctaUrls);
+        if (poExtra) {
+            var pe = '';
+            if (d.emailObject) pe += '<div style="margin-top:10px;"><div style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;">Objet de l\'email</div><div style="font-size:13px;">' + security.escapeHtml(d.emailObject) + '</div></div>';
+            pe += buildCtaLinksBlock(d.ctaUrls);
+            poExtra.innerHTML = pe;
+        }
         var emptyEl = document.getElementById('ebf-empty-' + idx);
         if (emptyEl) emptyEl.style.display = 'none';
     }
@@ -2670,7 +2683,7 @@
         var ch = currentCampaignData.channels[idx];
         if (!ch) return false;
         var changed = false;
-        ['codeCom', 'refParacom', 'codeProjet', 'codeAction', 'codeMK'].forEach(function(k) {
+        ['codeCom', 'refParacom', 'codeProjet', 'codeAction', 'codeMK', 'emailObject'].forEach(function(k) {
             var v = (depot[k] || '').toString().trim();
             if (v && ch[k] !== v) { ch[k] = v; changed = true; }
         });

@@ -2197,10 +2197,6 @@
                             <label for="targetingCriteria${i}">Critére ciblage :</label>
                             <input type="text" id="targetingCriteria${i}" required>
                         </div>
-                        <div class="form-group" id="emailObjectGroup${i}" style="display:none;">
-                            <label for="emailObject${i}">Objet de l'email :</label>
-                            <input type="text" id="emailObject${i}" placeholder="Ex : Découvrez notre offre exclusive...">
-                        </div>
                         <div class="form-group">
                             <label>Typologie de communication:</label>
                             <div class="radio-group">
@@ -2579,7 +2575,10 @@
                         sendDate: $(`#sendDate${i}`).value,
                         comType: $(`#comType${i}`).value,
                         targetingCriteria: $(`#targetingCriteria${i}`).value,
-                        emailObject: $(`#emailObject${i}`) ? $(`#emailObject${i}`).value : '',
+                        // L'objet de l'email n'est plus saisi à la création : il l'est à
+                        // l'étape « Réalisation BAT ». En édition, on préserve la valeur
+                        // déjà enregistrée sur le canal existant.
+                        emailObject: (state.editCampaignData && (state.editCampaignData.channels || [])[i - 1] && (state.editCampaignData.channels || [])[i - 1].emailObject) || '',
                         comTypology: document.querySelector(`input[name="comTypology${i}"]:checked`)?.value,
                         urlTicTac: $(`#urlTicTac${i}`) ? $(`#urlTicTac${i}`).value : '',
                         urlLccx: $(`#urlLccx${i}`) ? $(`#urlLccx${i}`).value : '',
@@ -2709,7 +2708,10 @@
                         sendDate: $(`#sendDate${i}`).value,
                         comType: $(`#comType${i}`).value,
                         targetingCriteria: $(`#targetingCriteria${i}`).value,
-                        emailObject: $(`#emailObject${i}`) ? $(`#emailObject${i}`).value : '',
+                        // L'objet de l'email n'est plus saisi à la création : il l'est à
+                        // l'étape « Réalisation BAT ». En édition, on préserve la valeur
+                        // déjà enregistrée sur le canal existant.
+                        emailObject: (state.editCampaignData && (state.editCampaignData.channels || [])[i - 1] && (state.editCampaignData.channels || [])[i - 1].emailObject) || '',
                         comTypology: document.querySelector(`input[name="comTypology${i}"]:checked`)?.value,
                         urlTicTac: $(`#urlTicTac${i}`) ? $(`#urlTicTac${i}`).value : '',
                         urlLccx: $(`#urlLccx${i}`) ? $(`#urlLccx${i}`).value : '',
