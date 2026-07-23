@@ -1251,7 +1251,7 @@
             h += '<div class="form-row"><label>Nombre de CTA</label><input type="number" id="ebf-numcta-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="ebf-cta-urls-' + idx + '"></div>';
             h += '<p style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
-            h += '<div class="form-row"><label>Fichier BAT (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le fichier <strong>.html ET ses images</strong> (Ctrl/⌘ + clic). Les images seront intégrées au BAT.</small></div>';
+            h += '<div class="form-row"><label>Fichier BAT (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées au BAT.</small></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '">📤 Déposer et soumettre</button>';
@@ -1299,7 +1299,7 @@
 
         if (editable) {
             h += '<div class="actor-form">';
-            h += '<div class="form-row"><label>Fichier test en production (PDF, image ou HTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le fichier <strong>.html ET ses images</strong> (Ctrl/⌘ + clic). Les images seront intégrées.</small></div>';
+            h += '<div class="form-row"><label>Fichier test en production (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées.</small></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">📤 Déposer et soumettre</button>';
@@ -2441,9 +2441,115 @@
     // Prépare le fichier EBF à enregistrer (BAT / test prod).
     // HTML (+ images) → HTML autonome (.html). Sinon → le fichier tel quel.
     // Renvoie Promise<{blob, ext} | null>.
+    // ── MHTML (archive web mono-fichier) → HTML autonome ──────────────────
+    // Un .mht/.mhtml embarque le HTML + ses images (MIME multipart/related).
+    // Chrome ne l'affiche pas dans une iframe via blob: ; on le convertit donc
+    // en HTML autonome (images intégrées en data: URIs), prévisualisable.
+    function _qpToBytes(input) {
+        var s = String(input).replace(/=\r?\n/g, '');
+        var bytes = [];
+        for (var i = 0; i < s.length; i++) {
+            if (s[i] === '=' && /^[0-9A-Fa-f]{2}$/.test(s.substr(i + 1, 2))) {
+                bytes.push(parseInt(s.substr(i + 1, 2), 16)); i += 2;
+            } else {
+                bytes.push(s.charCodeAt(i) & 0xFF);
+            }
+        }
+        return new Uint8Array(bytes);
+    }
+    function _b64ToBytes(b64) {
+        var bin = atob(String(b64).replace(/\s+/g, ''));
+        var arr = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return arr;
+    }
+    // Encodage base64 par blocs (évite la limite d'arguments de String.fromCharCode).
+    function _bytesToBase64(bytes) {
+        var CHUNK = 0x8000, bin = '';
+        for (var i = 0; i < bytes.length; i += CHUNK) {
+            bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+        }
+        return btoa(bin);
+    }
+    // Octets d'une partie MIME selon son encodage.
+    function _partBytes(p) {
+        if (p.cte === 'base64') return _b64ToBytes(p.body);
+        if (p.cte === 'quoted-printable') return _qpToBytes(p.body);
+        var arr = new Uint8Array(p.body.length); // 7bit / 8bit / binary
+        for (var i = 0; i < p.body.length; i++) arr[i] = p.body.charCodeAt(i) & 0xFF;
+        return arr;
+    }
+    function _mhtmlParts(text) {
+        var sep = text.indexOf('\r\n\r\n'); var nl = 4;
+        if (sep === -1) { sep = text.indexOf('\n\n'); nl = 2; }
+        if (sep === -1) return null;
+        var header = text.slice(0, sep);
+        var body = text.slice(sep + nl);
+        var m = /boundary="?([^";\r\n]+)"?/i.exec(header);
+        if (!m) return null;
+        var parts = [];
+        body.split('--' + m[1]).forEach(function(chunk) {
+            chunk = chunk.replace(/^\r?\n/, '');
+            if (!chunk || chunk.slice(0, 2) === '--') return; // séparateur de fin
+            var s2 = chunk.indexOf('\r\n\r\n'); var nl2 = 4;
+            if (s2 === -1) { s2 = chunk.indexOf('\n\n'); nl2 = 2; }
+            if (s2 === -1) return;
+            var ph = chunk.slice(0, s2);
+            var pbody = chunk.slice(s2 + nl2).replace(/\r?\n$/, '');
+            parts.push({
+                ctype: (((/Content-Type:\s*([^;\r\n]+)/i.exec(ph) || [])[1]) || '').trim().toLowerCase(),
+                cte:   (((/Content-Transfer-Encoding:\s*([^\r\n]+)/i.exec(ph) || [])[1]) || '').trim().toLowerCase(),
+                cloc:  (((/Content-Location:\s*([^\r\n]+)/i.exec(ph) || [])[1]) || '').trim(),
+                cid:   (((/Content-ID:\s*<?([^>\r\n]+)>?/i.exec(ph) || [])[1]) || '').trim(),
+                body:  pbody
+            });
+        });
+        return parts;
+    }
+    function _replaceUrlAll(str, find, repl) {
+        if (!find) return str;
+        [find, find.replace(/&/g, '&amp;')].forEach(function(v) { if (v) str = str.split(v).join(repl); });
+        return str;
+    }
+    function mhtmlToHtml(text) {
+        var parts = _mhtmlParts(text);
+        if (!parts || !parts.length) return null;
+        var htmlPart = parts.filter(function(p) { return p.ctype.indexOf('text/html') === 0; })[0];
+        if (!htmlPart) return null;
+        var htmlBytes = (htmlPart.cte === 'quoted-printable') ? _qpToBytes(htmlPart.body)
+                      : (htmlPart.cte === 'base64')           ? _b64ToBytes(htmlPart.body)
+                      : null;
+        var html;
+        try { html = htmlBytes ? new TextDecoder('utf-8').decode(htmlBytes) : htmlPart.body; }
+        catch (e) { html = htmlPart.body; }
+        parts.forEach(function(p) {
+            if (p === htmlPart) return;
+            if (p.ctype.indexOf('image/') !== 0 && p.ctype.indexOf('text/css') !== 0) return;
+            var b64 = (p.cte === 'base64') ? p.body.replace(/\s+/g, '') : _bytesToBase64(_partBytes(p));
+            var dataUri = 'data:' + (p.ctype || 'application/octet-stream') + ';base64,' + b64;
+            if (p.cloc) html = _replaceUrlAll(html, p.cloc, dataUri);
+            if (p.cid)  html = _replaceUrlAll(html, 'cid:' + p.cid, dataUri);
+        });
+        return html;
+    }
+
     function prepareEbfDepotFile(fileList) {
         var files = Array.prototype.slice.call(fileList || []);
         if (!files.length) return Promise.resolve(null);
+        // MHTML : archive mono-fichier → conversion en HTML autonome.
+        var mhtmlFile = files.filter(function(f) {
+            return /\.mht(ml)?$/i.test(f.name || '') || /message\/rfc822|multipart\/related/i.test(f.type || '');
+        })[0];
+        if (mhtmlFile) {
+            return mhtmlFile.text().then(function(txt) {
+                var html = mhtmlToHtml(txt);
+                if (html == null) { // parsing impossible : on garde le fichier brut
+                    var ext0 = (mhtmlFile.name.split('.').pop() || 'mhtml').toLowerCase();
+                    return { blob: mhtmlFile, ext: ext0 };
+                }
+                return { blob: new Blob([html], { type: 'text/html' }), ext: 'html' };
+            });
+        }
         var htmlFile = files.filter(function(f) { return /\.html?$/i.test(f.name || '') || f.type === 'text/html'; })[0];
         if (htmlFile) {
             var assets = files.filter(function(f) { return f !== htmlFile; });
