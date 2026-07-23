@@ -2176,6 +2176,35 @@
         return buildLinksBlock('Liens CTA', ctaUrls);
     }
 
+    // Contrainte URL des dépôts : renvoie le premier champ URL renseigné mais
+    // invalide (hors http/https) dans un conteneur, sinon null. Ignore les
+    // champs masqués.
+    function firstInvalidUrl(scopeEl) {
+        if (!scopeEl) return null;
+        var inputs = scopeEl.querySelectorAll('input[type="url"]');
+        for (var i = 0; i < inputs.length; i++) {
+            if (inputs[i].offsetParent === null) continue; // champ masqué
+            var v = (inputs[i].value || '').trim();
+            if (!v) { inputs[i].style.borderColor = ''; continue; }
+            var ok = /^https?:\/\/.+/i.test(v);
+            if (ok) { try { new URL(v); } catch (e) { ok = false; } }
+            if (!ok) return inputs[i];
+            inputs[i].style.borderColor = '';
+        }
+        return null;
+    }
+    // Bloque la soumission d'un dépôt si une URL est invalide (met en évidence).
+    function depotUrlGuard(btn) {
+        var bad = firstInvalidUrl(btn && btn.closest('.actor-section'));
+        if (bad) {
+            bad.style.borderColor = 'var(--red)';
+            bad.focus();
+            errors.showNotification('Une URL renseignée est invalide : elle doit commencer par http:// ou https://.', 'warning');
+            return false;
+        }
+        return true;
+    }
+
     // ── Éditeur de texte enrichi (demande de modification) ──────────────────
     // Gras / italique / souligné / listes / retours à la ligne. Le contenu est
     // stocké en HTML et re-nettoyé à l'affichage (liste blanche de balises).
@@ -2847,6 +2876,7 @@
         var btnSubmitCom = document.querySelector('.btn-submit-canal-com[data-ch="' + idx + '"]');
         if (btnSubmitCom) {
             btnSubmitCom.addEventListener('click', function() {
+                if (!depotUrlGuard(btnSubmitCom)) return;
                 var folder = getChannelFolder(idx);
                 var depot  = collectComDepot(idx);
                 depot.status = 'submitted';
@@ -2887,6 +2917,7 @@
         // ── Submit EBF (BAT ou Test Prod) ──
         document.querySelectorAll('.btn-submit-canal-ebf[data-ch="' + idx + '"]').forEach(function(btn) {
             btn.addEventListener('click', function() {
+                if (!depotUrlGuard(btn)) return;
                 var stepId      = btn.getAttribute('data-step') || 'ebf_bat';
                 var isTestProd  = stepId === 'ebf_test_prod';
                 var folder      = getChannelFolder(idx);
@@ -3038,6 +3069,7 @@
         var btnSubmitData = document.querySelector('.btn-submit-canal-data[data-ch="' + idx + '"]');
         if (btnSubmitData) {
             btnSubmitData.addEventListener('click', function() {
+                if (!depotUrlGuard(btnSubmitData)) return;
                 var stepId = btnSubmitData.getAttribute('data-step');
                 var isMep  = stepId === 'data_mise_en_prod';
                 // Ciblage : exiger au moins un champ rempli avant de soumettre.

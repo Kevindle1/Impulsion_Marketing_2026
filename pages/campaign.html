@@ -1830,19 +1830,24 @@
                     }
                 }
 
-                // Contrainte URL : « URL fiche produit », si renseignée, doit être
-                // une adresse http(s) valide.
-                var productUrlEl = currentFormStep.querySelector('#productUrl');
-                if (productUrlEl && productUrlEl.value.trim()) {
-                    var _pu = productUrlEl.value.trim();
-                    var _puOk = /^https?:\/\/.+/i.test(_pu);
-                    if (_puOk) { try { new URL(_pu); } catch (e) { _puOk = false; } }
-                    if (!_puOk) {
-                        productUrlEl.style.borderColor = 'var(--red)';
-                        notify('L\'URL de la fiche produit doit être une adresse valide (commençant par http:// ou https://).', 'warning');
+                // Contrainte URL : tout champ URL renseigné (fiche produit, TicTac,
+                // LCCX, ComStore…) doit être une adresse http(s) valide. On ignore
+                // les champs masqués (groupes conditionnels non applicables).
+                var urlFields = currentFormStep.querySelectorAll('input[type="url"]');
+                for (var _u = 0; _u < urlFields.length; _u++) {
+                    var _uf = urlFields[_u];
+                    if (_uf.offsetParent === null) continue; // champ masqué
+                    var _uv = (_uf.value || '').trim();
+                    if (!_uv) { _uf.style.borderColor = ''; continue; }
+                    var _uok = /^https?:\/\/.+/i.test(_uv);
+                    if (_uok) { try { new URL(_uv); } catch (e) { _uok = false; } }
+                    if (!_uok) {
+                        _uf.style.borderColor = 'var(--red)';
+                        _uf.focus();
+                        notify('Une URL renseignée est invalide : elle doit commencer par http:// ou https://.', 'warning');
                         return false;
                     }
-                    productUrlEl.style.borderColor = '';
+                    _uf.style.borderColor = '';
                 }
 
                 if (!allValid) {
