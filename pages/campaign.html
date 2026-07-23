@@ -1830,6 +1830,21 @@
                     }
                 }
 
+                // Contrainte URL : « URL fiche produit », si renseignée, doit être
+                // une adresse http(s) valide.
+                var productUrlEl = currentFormStep.querySelector('#productUrl');
+                if (productUrlEl && productUrlEl.value.trim()) {
+                    var _pu = productUrlEl.value.trim();
+                    var _puOk = /^https?:\/\/.+/i.test(_pu);
+                    if (_puOk) { try { new URL(_pu); } catch (e) { _puOk = false; } }
+                    if (!_puOk) {
+                        productUrlEl.style.borderColor = 'var(--red)';
+                        notify('L\'URL de la fiche produit doit être une adresse valide (commençant par http:// ou https://).', 'warning');
+                        return false;
+                    }
+                    productUrlEl.style.borderColor = '';
+                }
+
                 if (!allValid) {
                     notify('Veuillez remplir tous les champs obligatoires', 'warning');
                 }
