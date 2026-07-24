@@ -1850,6 +1850,28 @@
                     _uf.style.borderColor = '';
                 }
 
+                // Nom de livrable unique : deux canaux ne peuvent pas porter le même
+                // nom (sinon leurs dépôts se télescopent dans le même dossier).
+                var nameEls = currentFormStep.querySelectorAll('input[id^="deliverableName"]');
+                if (nameEls.length > 1) {
+                    var _seen = {};
+                    for (var _n = 0; _n < nameEls.length; _n++) {
+                        nameEls[_n].style.borderColor = '';
+                    }
+                    for (var _n2 = 0; _n2 < nameEls.length; _n2++) {
+                        var _nv = (nameEls[_n2].value || '').trim().toLowerCase();
+                        if (!_nv) continue;
+                        if (_seen[_nv]) {
+                            nameEls[_n2].style.borderColor = 'var(--red)';
+                            _seen[_nv].style.borderColor = 'var(--red)';
+                            nameEls[_n2].focus();
+                            notify('Deux canaux portent le même nom de livrable (« ' + nameEls[_n2].value.trim() + ' »). Donnez un nom unique à chaque canal.', 'warning');
+                            return false;
+                        }
+                        _seen[_nv] = nameEls[_n2];
+                    }
+                }
+
                 if (!allValid) {
                     notify('Veuillez remplir tous les champs obligatoires', 'warning');
                 }
