@@ -948,10 +948,10 @@
             else if (/révision|revision/.test(L)) { pct = 35; key = 'urgent'; text = 'Révision'; }
             else if (/validation|valider/.test(L)){ pct = 55; key = 'valid';  text = 'À valider'; }
             else if (/maquette/.test(L))       { pct = 28;  key = 'maq';    text = 'Maquette'; }
-            else if (/ciblage/.test(L))        { pct = 45;  key = 'prod';   text = 'En production'; }
-            else if (/bat/.test(L))            { pct = 52;  key = 'prod';   text = 'En production'; }
-            else if (/test/.test(L))           { pct = 80;  key = 'prod';   text = 'En production'; }
-            else if (/mise en prod|mep/.test(L)){ pct = 95; key = 'prod';   text = 'En production'; }
+            else if (/ciblage/.test(L))        { pct = 45;  key = 'prod';   text = 'En Fabrication'; }
+            else if (/bat/.test(L))            { pct = 52;  key = 'prod';   text = 'En Fabrication'; }
+            else if (/test/.test(L))           { pct = 80;  key = 'prod';   text = 'En Fabrication'; }
+            else if (/mise en prod|mep/.test(L)){ pct = 95; key = 'prod';   text = 'En Fabrication'; }
             return { label: label, pct: pct, key: key, text: text };
         }
 

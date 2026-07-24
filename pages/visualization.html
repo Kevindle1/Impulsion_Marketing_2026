@@ -122,6 +122,20 @@
                     </select>
                 </div>
 
+                <div class="filter-group">
+                    <label for="filter-etat">État :</label>
+                    <select id="filter-etat">
+                        <option value="">Tous</option>
+                        <option value="Affectation">Affectation</option>
+                        <option value="Kick-off">Kick-off</option>
+                        <option value="Maquette">Maquette</option>
+                        <option value="En Fabrication">En Fabrication</option>
+                        <option value="À valider">À valider</option>
+                        <option value="Révision">Révision</option>
+                        <option value="Terminée">Terminée</option>
+                    </select>
+                </div>
+
                 <button id="reset-filters-btn" class="btn secondary small">Réinitialiser</button>
                 <button id="toggle-my-campaigns" class="btn secondary small" title="Afficher uniquement mes campagnes">👤 Mes campagnes</button>
             </div>
@@ -505,12 +519,15 @@
             document.getElementById('filter-ub').addEventListener('change',    function() { currentPage = 0; filterCampaigns(); });
             document.getElementById('filter-canal').addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
             document.getElementById('filter-type').addEventListener('change',  function() { currentPage = 0; filterCampaigns(); });
+            var _etatEl = document.getElementById('filter-etat');
+            if (_etatEl) _etatEl.addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
             document.getElementById('sort-select').addEventListener('change',  function() { currentPage = 0; sortAndDisplayCampaigns(); });
             document.getElementById('reset-filters-btn').addEventListener('click', function() {
                 document.getElementById('search-input').value = '';
                 document.getElementById('filter-ub').value = '';
                 document.getElementById('filter-canal').value = '';
                 document.getElementById('filter-type').value = '';
+                if (document.getElementById('filter-etat')) document.getElementById('filter-etat').value = '';
                 if (kpiFilter) {
                     kpiFilter = null;
                     try {
@@ -728,6 +745,7 @@
             var ubFilter    = document.getElementById('filter-ub').value;
             var canalFilter = document.getElementById('filter-canal').value;
             var typeFilter  = document.getElementById('filter-type').value;
+            var etatFilter  = (document.getElementById('filter-etat') || {}).value || '';
 
             var wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
             var terms = searchTerm.split(/\s+/).filter(Boolean);
@@ -764,7 +782,9 @@
 
                 var matchesKpi = matchesKpiCategory(campaign);
 
-                return matchesSearch && matchesUB && matchesCanal && matchesType && matchesUser && matchesKpi;
+                var matchesEtat = !etatFilter || (vcStatus(campaign.data, wfMod).text === etatFilter);
+
+                return matchesSearch && matchesUB && matchesCanal && matchesType && matchesUser && matchesKpi && matchesEtat;
             });
 
             currentPage = 0;
@@ -799,7 +819,7 @@
             var L=label.toLowerCase(); var pct=50,key='prod',text=label||'En cours';
             if(/affect/.test(L)){pct=10;key='maq';text='Affectation';} else if(/kick/.test(L)){pct=18;key='maq';text='Kick-off';}
             else if(/révision|revision/.test(L)){pct=35;key='urgent';text='Révision';} else if(/validation|valider/.test(L)){pct=55;key='valid';text='À valider';}
-            else if(/maquette/.test(L)){pct=28;key='maq';text='Maquette';} else if(/ciblage|bat|test|mise en prod|mep/.test(L)){pct=70;key='prod';text='En production';}
+            else if(/maquette/.test(L)){pct=28;key='maq';text='Maquette';} else if(/ciblage|bat|test|mise en prod|mep/.test(L)){pct=70;key='prod';text='En Fabrication';}
             return{label:label,text:text,key:key,pct:pct}; }
         function vcAvatars(data){ var seen={},people=[]; function add(n,r){ if(!n||seen[n])return; seen[n]=1; people.push({name:n,role:r}); }
             add(data.po,'po'); var asn=(data.workflow&&data.workflow.assignments)||{}; ['com','ebf','data'].forEach(function(r){ var v=asn[r]; if(Array.isArray(v))v.forEach(function(x){add(x,r);}); else add(v,r); });
