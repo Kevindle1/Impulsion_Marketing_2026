@@ -999,12 +999,16 @@
     //           son équipe (congés / remplacement) et se retirer, sans toucher aux
     //           autres personnes déjà affectées.
     //  null   : lecture seule.
-    function teamEditMode(data, role) {
+    function teamEditMode(data, role, idx) {
         var u = users && users.getCurrentUser();
         if (!u) return null;
         if (u.isSuperAdmin) return 'full';
         if (u.isManager && (u.role === 'marketing' || u.role === role)) return 'full';
-        if (getAssignees(data.workflow.assignments, role).indexOf(u.name) !== -1) return 'add';
+        // Membre affecté (équipe campagne OU renfort de ce canal) → mode renfort.
+        var eff = (idx !== undefined && workflow.channelAssignees)
+            ? workflow.channelAssignees(data, idx, role)
+            : getAssignees(data.workflow.assignments, role);
+        if (eff.indexOf(u.name) !== -1) return 'add';
         return null;
     }
 
@@ -1107,9 +1111,10 @@
         html += '</div></div>';
 
         var _isSuperAdmin  = currentUser && currentUser.isSuperAdmin;
-        var isAssignedCom  = _isSuperAdmin || (currentUser && getAssignees(assignments, 'com').indexOf(currentUser.name)  !== -1);
-        var isAssignedEbf  = _isSuperAdmin || (currentUser && getAssignees(assignments, 'ebf').indexOf(currentUser.name)  !== -1);
-        var isAssignedData = _isSuperAdmin || (currentUser && getAssignees(assignments, 'data').indexOf(currentUser.name) !== -1);
+        // Assignés effectifs de CE canal = équipe campagne + renfort du canal.
+        var isAssignedCom  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'com').indexOf(currentUser.name)  !== -1);
+        var isAssignedEbf  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'ebf').indexOf(currentUser.name)  !== -1);
+        var isAssignedData = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'data').indexOf(currentUser.name) !== -1);
 
         var reqCom  = isTeamRequired(data, 'Com');
         var reqEbf  = isTeamRequired(data, 'EBF');
@@ -1196,9 +1201,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
-        var _emCom = teamEditMode(data, 'com');
+        var _emCom = teamEditMode(data, 'com', idx);
         if (_emCom) {
-            h += buildReassignBlock('com', users.getUsersByRole('com'), getAssignees(data.workflow.assignments, 'com'), _emCom);
+            h += buildReassignBlock('com', users.getUsersByRole('com'), data, idx, _emCom);
         } else if (!editable) {
             var _comDisp = assigneesDisplay(data.workflow.assignments, 'com');
             if (_comDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Responsable(s) Com : <strong>' + _comDisp + '</strong></p>';
@@ -1288,9 +1293,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
-        var _emEbf = teamEditMode(data, 'ebf');
+        var _emEbf = teamEditMode(data, 'ebf', idx);
         if (_emEbf) {
-            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), data, idx, _emEbf);
         } else if (!editable) {
             var _ebfDisp = assigneesDisplay(data.workflow.assignments, 'ebf');
             if (_ebfDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp + '</strong></p>';
@@ -1350,9 +1355,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
-        var _emEbf = teamEditMode(data, 'ebf');
+        var _emEbf = teamEditMode(data, 'ebf', idx);
         if (_emEbf) {
-            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), data, idx, _emEbf);
         } else if (!editable) {
             var _ebfDisp2 = assigneesDisplay(data.workflow.assignments, 'ebf');
             if (_ebfDisp2) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp2 + '</strong></p>';
@@ -1404,9 +1409,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
-        var _emData = teamEditMode(data, 'data');
+        var _emData = teamEditMode(data, 'data', idx);
         if (_emData) {
-            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'), _emData);
+            h += buildReassignBlock('data', users.getUsersByRole('data'), data, idx, _emData);
         } else if (!editable) {
             var _datDisp = assigneesDisplay(data.workflow.assignments, 'data');
             if (_datDisp) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Data assigné(s) : <strong>' + _datDisp + '</strong></p>';
@@ -1480,9 +1485,9 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
             h += '</div>'; return h;
         }
-        var _emEbf = teamEditMode(data, 'ebf');
+        var _emEbf = teamEditMode(data, 'ebf', idx);
         if (_emEbf) {
-            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), getAssignees(data.workflow.assignments, 'ebf'), _emEbf);
+            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), data, idx, _emEbf);
         } else if (!editable) {
             var _ebfDispMep = assigneesDisplay(data.workflow.assignments, 'ebf');
             if (_ebfDispMep) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDispMep + '</strong></p>';
@@ -1519,9 +1524,9 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
-        var _emData = teamEditMode(data, 'data');
+        var _emData = teamEditMode(data, 'data', idx);
         if (_emData) {
-            h += buildReassignBlock('data', users.getUsersByRole('data'), getAssignees(data.workflow.assignments, 'data'), _emData);
+            h += buildReassignBlock('data', users.getUsersByRole('data'), data, idx, _emData);
         } else if (!editable) {
             var _datDispLt = assigneesDisplay(data.workflow.assignments, 'data');
             if (_datDispLt) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Data assigné(s) : <strong>' + _datDispLt + '</strong></p>';
@@ -1548,40 +1553,55 @@
     // currentAssignees : tableau de noms (peut être vide ou string legacy)
     // mode : 'full' (manager → ajout/retrait libre) | 'add' (membre affecté →
     // ajoute un renfort et peut se retirer, sans toucher aux autres).
-    function buildReassignBlock(role, teamUsers, currentAssignees, mode) {
+    // Renforts propres à un canal (channelAssignments), en tableau.
+    function _channelExtra(data, role, idx) {
+        var ca = data.workflow && data.workflow.channelAssignments;
+        if (ca && ca[idx] && ca[idx][role]) return Array.isArray(ca[idx][role]) ? ca[idx][role] : [ca[idx][role]];
+        return [];
+    }
+    // Bloc de gestion d'équipe d'un canal : équipe de base (campagne, éditable par
+    // les managers) + renfort propre à CE canal (ajout ciblé sans propagation).
+    // mode : 'full' (managers → base + renfort) | 'add' (membre → renfort de ce canal).
+    function buildReassignBlock(role, teamUsers, data, idx, mode) {
         mode = mode || 'full';
         var restricted = (mode === 'add');
         var selfName = (users && users.getCurrentUser() || {}).name || '';
-        var labels = { com: 'Com assigné(e)s', ebf: 'EBF assigné(s)', data: 'Data assigné(s)' };
-        var label = labels[role] || (role + ' assigné(s)');
-        var cur = Array.isArray(currentAssignees) ? currentAssignees : (currentAssignees ? [currentAssignees] : []);
+        var labels = { com: 'Com', ebf: 'EBF', data: 'Data' };
+        var roleLbl = labels[role] || role;
+        var base  = getAssignees(data.workflow.assignments, role);
+        var extra = _channelExtra(data, role, idx);
+        var eff   = base.concat(extra.filter(function(n) { return base.indexOf(n) === -1; }));
+        var uid   = role + '-' + idx;
         var h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">';
-        if (cur.length) {
-            h += '<span style="font-size:13px;color:var(--muted);">' + label + ' : <strong>' + cur.map(security.escapeHtml).join(', ') + '</strong></span>';
-        } else {
-            h += '<span style="font-size:13px;color:var(--muted-2);font-style:italic;">' + label + ' : non assigné</span>';
-        }
-        var btnLabel = restricted ? '➕ Ajouter un renfort / me retirer' : '✏️ Modifier';
-        h += '<button class="btn-team-reassign" data-role="' + role + '" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">' + btnLabel + '</button>';
+        h += '<span style="font-size:13px;color:var(--muted);">' + roleLbl + ' assigné(s) : <strong>' + (eff.length ? eff.map(security.escapeHtml).join(', ') : 'non assigné') + '</strong></span>';
+        h += '<button class="btn-team-reassign" data-role="' + role + '" data-ch="' + idx + '" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">👥 Gérer l\'équipe</button>';
         h += '</div>';
-        h += '<div id="reassign-form-' + role + '" style="display:none;background:var(--line-2);border-radius:6px;padding:10px 12px;margin-bottom:12px;">';
-        if (restricted) {
-            h += '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.5;">Ajoutez un renfort de votre équipe (congés, remplacement). Vous pouvez vous retirer. Les autres personnes déjà affectées ne sont modifiables que par un manager.</div>';
+        h += '<div id="reassign-form-' + uid + '" style="display:none;background:var(--line-2);border-radius:6px;padding:10px 12px;margin-bottom:12px;">';
+        // Partie 1 : équipe de la campagne (managers uniquement)
+        if (!restricted) {
+            h += '<div style="font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">Équipe de la campagne <span style="font-weight:400;text-transform:none;">(tous les canaux)</span></div>';
+            h += '<div style="max-height:110px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:10px;">';
+            teamUsers.forEach(function(u) {
+                var checked = base.indexOf(u.name) !== -1 ? ' checked' : '';
+                h += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" class="reassign-cb-camp-' + uid + '" value="' + security.escapeHtml(u.name) + '"' + checked + '> ' + security.escapeHtml(u.name) + '</label>';
+            });
+            h += '</div>';
         }
-        h += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
+        // Partie 2 : renfort sur CE canal
+        h += '<div style="font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px;">Renfort sur ce canal <span style="font-weight:400;text-transform:none;">(uniquement)</span></div>';
+        if (restricted) h += '<div style="font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.5;">Ajoutez un renfort de votre équipe (congés, remplacement) sur ce canal. Vous pouvez vous retirer. Les autres renforts ne sont modifiables que par un manager.</div>';
+        h += '<div style="max-height:110px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
         teamUsers.forEach(function(u) {
-            var isAssigned = cur.indexOf(u.name) !== -1;
-            var checked = isAssigned ? ' checked' : '';
-            // Mode restreint : les autres personnes déjà affectées sont verrouillées
-            // (ni retrait ni décochage) ; soi-même reste décochable.
-            var locked = restricted && isAssigned && u.name !== selfName;
-            var disabledAttr = locked ? ' disabled' : '';
-            h += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:' + (locked ? 'not-allowed' : 'pointer') + ';' + (locked ? 'opacity:0.65;' : '') + '">';
-            h += '<input type="checkbox" class="reassign-cb-' + role + '" value="' + security.escapeHtml(u.name) + '"' + checked + disabledAttr + '> ';
-            h += security.escapeHtml(u.name) + (u.name === selfName ? ' <span style="font-size:11px;color:var(--muted-2);">(moi)</span>' : '') + '</label>';
+            var inBase  = base.indexOf(u.name) !== -1;
+            var inExtra = extra.indexOf(u.name) !== -1;
+            var checked = inExtra ? ' checked' : '';
+            // Déjà dans l'équipe campagne → présent sur tous les canaux, renfort inutile.
+            var locked = inBase || (restricted && inExtra && u.name !== selfName);
+            var dis = locked ? ' disabled' : '';
+            h += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:' + (locked ? 'not-allowed' : 'pointer') + ';' + (locked ? 'opacity:0.6;' : '') + '"><input type="checkbox" class="reassign-cb-ch-' + uid + '" value="' + security.escapeHtml(u.name) + '"' + checked + dis + '> ' + security.escapeHtml(u.name) + (inBase ? ' <span style="font-size:11px;color:var(--muted-2);">(équipe campagne)</span>' : (u.name === selfName ? ' <span style="font-size:11px;color:var(--muted-2);">(moi)</span>' : '')) + '</label>';
         });
         h += '</div>';
-        h += '<button class="btn-team-reassign-save" data-role="' + role + '" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
+        h += '<button class="btn-team-reassign-save" data-role="' + role + '" data-ch="' + idx + '" data-mode="' + mode + '" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
         h += '</div>';
         return h;
     }
@@ -3030,21 +3050,34 @@
             });
         });
 
-        // ── Manager : réaffectation équipe (items 16 & 17) ──
+        // ── Gestion d'équipe : équipe campagne (managers) + renfort par canal ──
         document.querySelectorAll('.btn-team-reassign').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                var role = btn.getAttribute('data-role');
-                var formEl = document.getElementById('reassign-form-' + role);
+                var uid = btn.getAttribute('data-role') + '-' + btn.getAttribute('data-ch');
+                var formEl = document.getElementById('reassign-form-' + uid);
                 if (formEl) formEl.style.display = formEl.style.display === 'none' ? 'block' : 'none';
             });
         });
         document.querySelectorAll('.btn-team-reassign-save').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                var role = btn.getAttribute('data-role');
-                var newAssignees = Array.from(document.querySelectorAll('.reassign-cb-' + role + ':checked')).map(function(cb){ return cb.value; });
-                if (!newAssignees.length) { notify('Veuillez choisir au moins un membre de l\'équipe.', 'warning'); return; }
+                var role  = btn.getAttribute('data-role');
+                var chIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                var mode  = btn.getAttribute('data-mode') || 'full';
+                var uid   = role + '-' + chIdx;
+                var wf    = currentCampaignData.workflow;
+                // Équipe campagne (managers) : cases cochées → assignments[role].
+                if (mode !== 'add') {
+                    wf.assignments[role] = Array.from(document.querySelectorAll('.reassign-cb-camp-' + uid + ':checked')).map(function(cb){ return cb.value; });
+                }
+                // Renfort de ce canal : cases cochées, hors membres de l'équipe campagne.
+                var base = getAssignees(wf.assignments, role);
+                var extra = Array.from(document.querySelectorAll('.reassign-cb-ch-' + uid + ':checked'))
+                    .map(function(cb){ return cb.value; })
+                    .filter(function(n){ return base.indexOf(n) === -1; });
+                if (!wf.channelAssignments) wf.channelAssignments = {};
+                if (!wf.channelAssignments[chIdx]) wf.channelAssignments[chIdx] = {};
+                wf.channelAssignments[chIdx][role] = extra;
                 disableBtn(btn, 'Enregistrement...');
-                currentCampaignData.workflow.assignments[role] = newAssignees;
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
                     .catch(function(err) { enableBtn(btn, '💾 Enregistrer'); notify('Erreur : ' + err.message, 'error'); });
@@ -3523,34 +3556,39 @@
 
     // Notif pour une transition d'étape de CANAL → { type, recipients, message, channel } | null
     function buildChannelNotif(data, idx, stepId, status) {
-        var a = (data.workflow && data.workflow.assignments) || {};
         var ch = (data.channels && data.channels[idx]) || {};
         var chName = ch.deliverableName || ch.content || ('Canal ' + (idx + 1));
+        // Destinataires effectifs de CE canal (équipe campagne + renfort du canal).
+        function mk(role) {
+            var list = workflow.channelAssignees(data, idx, role);
+            if (!list.length) list = users.USERS.filter(function(u) { return u.role === role && u.isManager; }).map(function(u) { return u.name; });
+            return list.slice();
+        }
         // Dépôt soumis → le PO a quelque chose à valider
         if (status === 'submitted' && _DEPOT_LABELS[stepId]) {
             return { type: 'workflow_a_valider', recipients: _poOf(data), message: _DEPOT_LABELS[stepId] + ' déposé — à valider.', channel: chName };
         }
         // Data lance le test → l'EBF dépose le test en production
         if (status === 'submitted' && stepId === 'data_lancement_test') {
-            return { type: 'workflow_a_faire', recipients: _assigneesForRole(a, 'ebf'), message: 'Test lancé — à toi de déposer le test en production.', channel: chName };
+            return { type: 'workflow_a_faire', recipients: mk('ebf'), message: 'Test lancé — à toi de déposer le test en production.', channel: chName };
         }
         // Validation PO → c'est au tour de l'équipe suivante
         if (status === 'validated') {
-            if (stepId === 'po_validation_maquette') return { type: 'workflow_a_faire', recipients: _assigneesForRole(a, 'ebf'),  message: 'Maquette validée — à toi de réaliser le BAT.', channel: chName };
-            if (stepId === 'po_validation_bat')      return { type: 'workflow_a_faire', recipients: _assigneesForRole(a, 'data'), message: 'BAT validé — à toi de réaliser le ciblage.', channel: chName };
-            if (stepId === 'po_validation_ciblage')  return { type: 'workflow_a_faire', recipients: _assigneesForRole(a, 'data'), message: 'Ciblage validé — à toi de lancer le test.', channel: chName };
-            if (stepId === 'po_validation_test_prod')return { type: 'workflow_a_faire', recipients: _assigneesForRole(a, 'data'), message: 'Test validé — à toi de mettre en production.', channel: chName };
+            if (stepId === 'po_validation_maquette') return { type: 'workflow_a_faire', recipients: mk('ebf'),  message: 'Maquette validée — à toi de réaliser le BAT.', channel: chName };
+            if (stepId === 'po_validation_bat')      return { type: 'workflow_a_faire', recipients: mk('data'), message: 'BAT validé — à toi de réaliser le ciblage.', channel: chName };
+            if (stepId === 'po_validation_ciblage')  return { type: 'workflow_a_faire', recipients: mk('data'), message: 'Ciblage validé — à toi de lancer le test.', channel: chName };
+            if (stepId === 'po_validation_test_prod')return { type: 'workflow_a_faire', recipients: mk('data'), message: 'Test validé — à toi de mettre en production.', channel: chName };
         }
         // MEP effectuée → info au PO + équipes
         if (status === 'completed' && (stepId === 'data_mise_en_prod' || stepId === 'ebf_mise_en_prod')) {
-            var rec = _poOf(data).concat(_assigneesForRole(a, 'com'), _assigneesForRole(a, 'ebf'), _assigneesForRole(a, 'data'));
+            var rec = _poOf(data).concat(mk('com'), mk('ebf'), mk('data'));
             return { type: 'workflow_info', recipients: rec, message: 'Mise en production effectuée 🚀', channel: chName };
         }
         // Révision demandée → l'équipe qui a produit le livrable
         if (status === 'revision_requested') {
             var roleByStep = { com_maquette: 'com', ebf_bat: 'ebf', data_ciblage: 'data', ebf_test_prod: 'ebf', data_lancement_test: 'data' };
             var r = roleByStep[stepId];
-            if (r) return { type: 'workflow_revision', recipients: _assigneesForRole(a, r), message: 'Révision demandée sur « ' + (_DEPOT_LABELS[stepId] || stepId) + ' ».', channel: chName };
+            if (r) return { type: 'workflow_revision', recipients: mk(r), message: 'Révision demandée sur « ' + (_DEPOT_LABELS[stepId] || stepId) + ' ».', channel: chName };
         }
         return null;
     }

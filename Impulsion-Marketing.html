@@ -563,6 +563,7 @@
                             // à tort de « à produire ».
                             channelSteps:     m.csteps || undefined,
                             assignments:      m.asn   || { manager: '', com: '', ebf: '', data: '' },
+                            channelAssignments: m.casn || undefined,
                             revisionComments: {}
                         }
                     }
@@ -595,14 +596,20 @@
                     } else if (c.data.po === currentUser.name) {
                         rel = true;
                     } else {
+                        var inAsn = function(val) {
+                            if (!val) return false;
+                            if (Array.isArray(val)) return val.indexOf(currentUser.name) !== -1;
+                            return val === currentUser.name;
+                        };
                         var asn = c.data.workflow && c.data.workflow.assignments;
-                        if (asn) {
-                            var inAsn = function(val) {
-                                if (!val) return false;
-                                if (Array.isArray(val)) return val.indexOf(currentUser.name) !== -1;
-                                return val === currentUser.name;
-                            };
-                            if (inAsn(asn.com) || inAsn(asn.ebf) || inAsn(asn.data)) rel = true;
+                        if (asn && (inAsn(asn.com) || inAsn(asn.ebf) || inAsn(asn.data))) rel = true;
+                        // Renforts par canal : un renfort voit aussi la campagne dans « Mes campagnes ».
+                        var casn = c.data.workflow && c.data.workflow.channelAssignments;
+                        if (!rel && casn) {
+                            Object.keys(casn).forEach(function(k) {
+                                var cc = casn[k] || {};
+                                if (inAsn(cc.com) || inAsn(cc.ebf) || inAsn(cc.data)) rel = true;
+                            });
                         }
                     }
                 }

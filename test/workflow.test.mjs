@@ -389,6 +389,31 @@ test('getAvailableActions — manager Data non encore affecté : action d\'affec
     'le manager Data non affecté doit garder l\'action manager_affectation');
 });
 
+test('channelAssignees — renfort par canal additif, sans propagation (L2 #15)', () => {
+  const data = makeCampaign(['EBF'], [{ deliverableName: 'Mail' }, { deliverableName: 'SMS' }]);
+  workflow.initWorkflow(data);
+  data.workflow.assignments.ebf = ['Base EBF'];
+  data.workflow.channelAssignments = { 0: { ebf: ['Renfort Canal0'] } };
+  // Canal 0 : base + renfort ; canal 1 : base seule (pas de propagation)
+  assert.deepEqual(workflow.channelAssignees(data, 0, 'ebf').sort(), ['Base EBF', 'Renfort Canal0'].sort());
+  assert.deepEqual(workflow.channelAssignees(data, 1, 'ebf'), ['Base EBF']);
+});
+
+test('getAvailableActions — renfort canal : action visible sur son canal seulement', () => {
+  const data = makeCampaign(['EBF'], [{ deliverableName: 'Mail' }, { deliverableName: 'SMS' }]);
+  workflow.initWorkflow(data);
+  data.workflow.steps.manager_affectation = 'validated';
+  data.workflow.steps.po_kickoff = 'validated';
+  data.workflow.assignments.ebf = ['Base EBF'];
+  data.workflow.channelAssignments = { 0: { ebf: ['Renfort'] } };
+  workflow.initWorkflow(data);
+  data.workflow.channelSteps[0].ebf_bat = 'pending';
+  data.workflow.channelSteps[1].ebf_bat = 'pending';
+  const renfort = { name: 'Renfort', role: 'ebf' };
+  assert.ok(workflow.getAvailableActions(renfort, data).some(a => a.step.id === 'ebf_bat'),
+    'le renfort du canal 0 doit avoir l\'action ebf_bat');
+});
+
 test('getAvailableActions — canaux indépendants : un canal terminé n\'efface pas l\'action de l\'autre', () => {
   const data = makeCampaign(['EBF'], [{ deliverableName: 'Mail' }, { deliverableName: 'SMS' }]);
   workflow.initWorkflow(data);

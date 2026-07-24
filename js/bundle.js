@@ -2615,6 +2615,22 @@ window.ImpulsionMarketing.workflow = (function () {
     return arr.length > 0;
   }
 
+  // Assignés EFFECTIFS d'un rôle sur un canal donné = équipe de base (campagne)
+  // + renforts propres à ce canal (channelAssignments). Additif : un renfort
+  // ajouté sur un canal n'affecte pas les autres canaux (L2 #15).
+  function _asArr(v) { return Array.isArray(v) ? v : (v ? [v] : []); }
+  function channelAssignees(campaignData, channelIdx, role) {
+    var wf = campaignData.workflow || {};
+    var base = _asArr((wf.assignments || {})[role]);
+    var extra = [];
+    if (wf.channelAssignments && wf.channelAssignments[channelIdx]) {
+      extra = _asArr(wf.channelAssignments[channelIdx][role]);
+    }
+    var seen = {}, out = [];
+    base.concat(extra).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; out.push(n); } });
+    return out;
+  }
+
   function getAvailableActions(currentUser, campaignData) {
     if (!currentUser || !campaignData) return [];
     initWorkflow(campaignData);
@@ -2656,9 +2672,8 @@ window.ImpulsionMarketing.workflow = (function () {
         if (step.actor === 'po') {
           actorMatch = currentUser.name === campaignData.po;
         } else {
-          var assigned = assignments[step.actor];
-          var assignedArr = Array.isArray(assigned) ? assigned : (assigned ? [assigned] : []);
-          actorMatch = assignedArr.indexOf(currentUser.name) !== -1;
+          // Assignés effectifs de CE canal (base campagne + renfort du canal).
+          actorMatch = channelAssignees(campaignData, ci, step.actor).indexOf(currentUser.name) !== -1;
         }
         if (actorMatch) {
           seenSteps[step.id] = true;
@@ -2900,6 +2915,7 @@ window.ImpulsionMarketing.workflow = (function () {
       chs:         chs,
       mod:         Date.now(),
       asn:         Object.assign({}, campaignData.workflow.assignments),
+      casn:        campaignData.workflow.channelAssignments || null,
       steps:       getEffectiveStepsForIndex(campaignData),
       // Étapes réelles par canal : indispensables pour que le tableau de bord
       // sache, canal par canal, ce qu'il reste à produire (« à produire ») —
@@ -3014,6 +3030,7 @@ window.ImpulsionMarketing.workflow = (function () {
     requestRevision:          requestRevision,
     requestChannelRevision:   requestChannelRevision,
     reopenChannelStep:        reopenChannelStep,
+    channelAssignees:         channelAssignees,
     initChannelValidations:   initChannelValidations,
     validateChannelStep:      validateChannelStep,
     refuseChannelJuridique:   refuseChannelJuridique,
