@@ -1945,9 +1945,28 @@
         var el = document.getElementById(id);
         if (el && val !== undefined && val !== null) el.value = val;
     }
+    // Nombre de canaux d'une campagne qui aboutiraient au même nom de dossier.
+    function _sameFolderCount(channels, idx) {
+        var arr = channels || [];
+        var target = sanitizeName((arr[idx] && arr[idx].deliverableName) || ('canal_' + idx));
+        var n = 0;
+        for (var i = 0; i < arr.length; i++) {
+            if (sanitizeName((arr[i] && arr[i].deliverableName) || ('canal_' + i)) === target) n++;
+        }
+        return n;
+    }
+    // Dossier de stockage des dépôts d'un canal.
+    // - Nom de livrable UNIQUE dans la campagne → nom simple (rétrocompatible
+    //   avec les dépôts existants).
+    // - Nom de livrable DUPLIQUÉ → suffixe « __c<index> » pour isoler chaque
+    //   canal (sinon le BAT d'un canal écrasait celui de l'autre canal homonyme).
+    function folderForChannel(channels, idx) {
+        var arr = channels || [];
+        var base = sanitizeName((arr[idx] && arr[idx].deliverableName) || ('canal_' + idx));
+        return _sameFolderCount(arr, idx) > 1 ? (base + '__c' + idx) : base;
+    }
     function getChannelFolder(idx) {
-        var ch = (currentCampaignData.channels || [])[idx];
-        return sanitizeName(ch ? ch.deliverableName : ('canal_' + idx));
+        return folderForChannel(currentCampaignData.channels || [], idx);
     }
 
     function updateChannelStatusUI(prefix, idx, status) {
@@ -2732,7 +2751,7 @@
 
     function loadDepotForChannel(campaignName, idx, ch) {
         if (!currentRootHandle || !ch) return;
-        var folder = sanitizeName(ch.deliverableName || ('canal_' + idx));
+        var folder = getChannelFolder(idx);
 
         if (loadedDepots[idx]) {
             var cache = loadedDepots[idx];
@@ -3900,8 +3919,8 @@
     }
     // Lignes (normalisées) d'un canal de campagne quelconque : live depuis le fichier,
     // sinon repli sur l'archive bilan.json de cette campagne.
-    function resolveChannelRows(campName, ch, chIdx) {
-        var folder = sanitizeName(ch.deliverableName || ('canal_' + chIdx));
+    function resolveChannelRows(campName, channels, chIdx) {
+        var folder = folderForChannel(channels || [], chIdx);
         return Promise.all([
             readDepotFile(campName, folder, 'depotdata.json').catch(function () { return null; }),
             readDepotFile(campName, folder, 'depotebf.json').catch(function () { return null; })
@@ -3915,7 +3934,7 @@
     function resolveExternalChannelBilan(campName, chIdx) {
         return loadCampaignChannels(campName).then(function (channels) {
             var ch = channels[chIdx]; if (!ch) return null;
-            return resolveChannelRows(campName, ch, chIdx).then(function (rows) {
+            return resolveChannelRows(campName, channels, chIdx).then(function (rows) {
                 if (!rows.length) return null;
                 return { name: campName + ' · ' + (ch.deliverableName || ('Canal ' + (chIdx + 1))), color: '#111827', agg: bilanAggregate(rows), rows: rows };
             });
