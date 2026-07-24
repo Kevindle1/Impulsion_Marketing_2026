@@ -310,6 +310,16 @@ test('buildSearchBlob — un terme absent n’est pas trouvé', () => {
   assert.ok(!blob.includes('proj-789'));
 });
 
+test('buildSearchBlob — inclut les personnes affectées (recherche par nom)', () => {
+  const data = {
+    id: 'Camp', po: 'Alice', channels: [],
+    workflow: { assignments: { manager: 'Manuela', com: ['Camille Com'], ebf: 'Éric EBF', data: ['Dora Data'] } }
+  };
+  const blob = workflow.buildSearchBlob(data);
+  ['alice', 'manuela', 'camille com', 'éric ebf', 'dora data']
+    .forEach(t => assert.ok(blob.includes(t), 'blob doit contenir la personne : ' + t));
+});
+
 // ─────────────────────────────────────────────────────────
 // #14 — managerAffectationDone : un manager de service n'a plus l'action
 // d'affectation dès que son équipe est affectée (ou non requise).

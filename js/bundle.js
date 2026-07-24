@@ -2848,6 +2848,10 @@ window.ImpulsionMarketing.workflow = (function () {
     }
     add(campaignData.id);
     add(campaignData.po);
+    // Personnes affectées (manager + Com/EBF/Data) : permet de rechercher par le
+    // nom d'une personne et de retrouver TOUTES ses campagnes (pas que le PO).
+    var _asn = (campaignData.workflow && campaignData.workflow.assignments) || {};
+    add(_asn.manager); add(_asn.com); add(_asn.ebf); add(_asn.data);
     add(campaignData.description);
     add(campaignData.market);
     add(campaignData.typology);
