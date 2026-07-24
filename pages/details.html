@@ -3968,6 +3968,20 @@
         if (fileEl) fileEl.textContent = idx ? ('Fichier courant : ' + (idx.label || '') + ' · 12 mois glissants') : 'Aucun fichier de suivi dans « Suivi »';
         if (!channels.length) { content.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun canal sur cette campagne.</p>'; return; }
 
+        // Aucune donnée (ni live ni archive) sur l'ensemble des canaux : plutôt
+        // qu'une liste de « aucune ligne », on affiche une page d'attente soignée.
+        var hasAnyData = results.some(function (r) { return r.rows && r.rows.length; });
+        if (!hasAnyData) {
+            if (fileEl) fileEl.textContent = '';
+            content.innerHTML =
+                '<div style="text-align:center;padding:48px 24px;">'
+                + '<div style="font-size:46px;line-height:1;margin-bottom:14px;">📊</div>'
+                + '<div style="font-size:16px;font-weight:750;color:var(--ink,#0c1a14);margin-bottom:8px;">Le bilan sera bientôt disponible</div>'
+                + '<div style="font-size:13.5px;color:var(--muted,#56655e);max-width:480px;margin:0 auto;line-height:1.6;">Les indicateurs de performance (envois, taux d\'ouverture, de clic, leads…) s\'afficheront ici automatiquement <strong>dès que les premières données de suivi de la campagne seront disponibles</strong>.</div>'
+                + '</div>';
+            return;
+        }
+
         // Graphiques (taux d'engagement + leads) en tête.
         var series = buildBilanSeries(channels, results);
         var chartsBlock = '';
