@@ -1954,7 +1954,7 @@
                         html += '    <div class="summary-item"><span class="summary-label">Typologie com :</span><span class="summary-value">' + (document.querySelector(`input[name="comTypology${i}"]:checked`)?.value || '-') + '</span></div>';
                         if ($(`#urlLccx${i}`)?.value) html += '    <div class="summary-item"><span class="summary-label">Lien LCCX :</span><span class="summary-value">' + ($(`#urlLccx${i}`)?.value || '-') + '</span></div>';
                         if (document.querySelector(`input[name="comTypology${i}"]:checked`)?.value === 'Reprise Natio') {
-                            html += '    <div class="summary-item"><span class="summary-label">URL Tic et Tac :</span><span class="summary-value">' + ($(`#urlTicTac${i}`)?.value || '-') + '</span></div>';
+                            html += '    <div class="summary-item"><span class="summary-label">URL Tic et Tac / CA NOUS :</span><span class="summary-value">' + ($(`#urlTicTac${i}`)?.value || '-') + '</span></div>';
                             html += '    <div class="summary-item"><span class="summary-label">URL Com Store :</span><span class="summary-value">' + ($(`#urlComStore${i}`)?.value || '-') + '</span></div>';
                         }
                         html += '  </div>';
@@ -2182,7 +2182,7 @@
                         text += '  Critère ciblage     : ' + (channel.targetingCriteria || '-') + '\n';
                         text += '  Typologie com       : ' + (channel.comTypology || '-') + '\n';
                         if (channel.comTypology === 'Reprise Natio') {
-                            if (channel.urlTicTac) text += '  URL Tic et Tac      : ' + channel.urlTicTac + '\n';
+                            if (channel.urlTicTac) text += '  URL Tic et Tac/CA NOUS : ' + channel.urlTicTac + '\n';
                             if (channel.urlComStore) text += '  URL Com Store       : ' + channel.urlComStore + '\n';
                         }
                     });
@@ -2216,6 +2216,7 @@
                         <div class="form-group">
                             <label for="deliverableName${i}">Nom du livrable :</label>
                             <input type="text" id="deliverableName${i}" placeholder="Ex: Visuel email, Bannière web..." required>
+                            <small style="display:block;color:var(--muted,#666);font-size:11px;margin-top:3px;">⚠️ Donnez un nom <strong>unique</strong> à chaque canal — deux canaux ne peuvent pas porter le même nom.</small>
                         </div>
                         <div class="form-group">
                             <label for="channelContent${i}">Canal du contenu :</label>
@@ -2275,7 +2276,7 @@
                             </div>
                         </div>
                         <div class="conditional-field" id="repriseNatioFields${i}" style="display: none;">
-                            <label for="urlTicTac${i}">URL Tic et Tac (optionnel):</label>
+                            <label for="urlTicTac${i}">URL Tic et Tac / CA NOUS (optionnel):</label>
                             <input type="url" id="urlTicTac${i}" placeholder="https://...">
                         </div>
                         <div class="form-group">
