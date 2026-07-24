@@ -997,6 +997,49 @@
         return null;
     }
 
+    // ── Retour à une étape antérieure (L2 #2/#12/#18) ──────────────────────
+    var _REOPEN_LABELS = {
+        com_maquette: 'Maquette Com', com_juridique: 'Validation juridique',
+        ebf_bat: 'Réalisation BAT', data_ciblage: 'Ciblage Data',
+        data_lancement_test: 'Lancement test', ebf_test_prod: 'Test en production',
+        data_mise_en_prod: 'Mise en production'
+    };
+    function _stepRole(stepId) {
+        if (/^com_/.test(stepId)) return 'com';
+        if (/^ebf_/.test(stepId)) return 'ebf';
+        if (/^data_/.test(stepId)) return 'data';
+        return null;
+    }
+    // Qui peut renvoyer un canal à une étape : le PO (toute étape franchie), un
+    // super-admin / manager général, ou l'acteur affecté sur SA propre étape.
+    // L'étape doit avoir été franchie (déposée / validée).
+    function canReopenStep(data, idx, stepId) {
+        var u = users && users.getCurrentUser();
+        if (!u) return false;
+        var cs = (data.workflow.channelSteps || {})[idx] || {};
+        if (['submitted', 'validated', 'completed'].indexOf(cs[stepId]) === -1) return false;
+        if (u.isSuperAdmin) return true;
+        if (users.isCurrentUserPO && users.isCurrentUserPO(data)) return true;
+        if (u.role === 'marketing' && u.isManager) return true;
+        var role = _stepRole(stepId);
+        if (role && u.role === role && getAssignees(data.workflow.assignments, role).indexOf(u.name) !== -1) return true;
+        return false;
+    }
+    // Bouton « Revenir à cette étape » + formulaire de motif (obligatoire).
+    function buildReopenControl(stepId, idx, data) {
+        if (!canReopenStep(data, idx, stepId)) return '';
+        var lbl = _REOPEN_LABELS[stepId] || stepId;
+        var uid = stepId + '-' + idx;
+        var h = '<div style="margin:-4px 0 14px;">';
+        h += '<button type="button" class="btn-reopen-step" data-step="' + stepId + '" data-ch="' + idx + '" style="background:none;border:1px solid var(--amber);color:#9a6b00;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">↩️ Revenir à l\'étape « ' + security.escapeHtml(lbl) + ' »</button>';
+        h += '<div id="reopen-form-' + uid + '" style="display:none;margin-top:8px;background:var(--amber-50,#fdf3e2);border:1px solid var(--amber);border-radius:8px;padding:10px 12px;">';
+        h += '<div style="font-size:12px;color:#7a5a00;margin-bottom:6px;line-height:1.5;">⚠️ Cette étape et les étapes suivantes qui en dépendent seront à refaire. Motif <strong>obligatoire</strong> :</div>';
+        h += buildRichEditor('reopen-motif-' + uid, 'Décrivez pourquoi vous revenez à cette étape…');
+        h += '<button type="button" class="btn-reopen-confirm" data-step="' + stepId + '" data-ch="' + idx + '" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:13px;">↩️ Renvoyer à cette étape</button>';
+        h += '</div></div>';
+        return h;
+    }
+
     // Vérifie si une équipe est requise (délègue au module workflow)
     function isTeamRequired(data, team) {
         return workflow.isTeamRequired(data.requiredTeams, team);
@@ -1066,36 +1109,42 @@
         if (reqCom) {
             var comActive = cs.com_maquette === 'pending' || cs.com_maquette === 'revision_requested';
             html += buildComChannelSection(data, ch, idx, cs, isAssignedCom && comActive);
+            html += buildReopenControl('com_maquette', idx, data);
         }
 
         // Zone 1.5 : Validation juridique Com — visible si juridique requis et déverrouillée
         if (reqCom && data.juridique && data.juridique.required && cs.com_juridique && cs.com_juridique !== 'locked') {
             var jurEditable = isAssignedCom && cs.com_juridique === 'pending';
             html += buildJuridiqueChannelSection(data, ch, idx, cs, jurEditable);
+            html += buildReopenControl('com_juridique', idx, data);
         }
 
         // Zone 2 : BAT EBF — visible seulement si EBF requis
         if (reqEbf) {
             var ebfBatActive = cs.ebf_bat === 'pending' || cs.ebf_bat === 'revision_requested';
             html += buildEbfBatChannelSection(data, ch, idx, cs, isAssignedEbf && ebfBatActive);
+            html += buildReopenControl('ebf_bat', idx, data);
         }
 
         // Zone 3 : Ciblage Data — non visible pour canal LP
         if (reqData && !isLP) {
             var dataActive = cs.data_ciblage === 'pending' || cs.data_ciblage === 'revision_requested';
             html += buildDataChannelSection(data, ch, idx, cs, 'data_ciblage', 'Ciblage Data', isAssignedData && dataActive);
+            html += buildReopenControl('data_ciblage', idx, data);
         }
 
         // Zone 4 : Lancement test — non visible pour canal LP
         if (reqData && reqEbf && !isLP && cs.data_lancement_test !== 'locked') {
             var ltActive = cs.data_lancement_test === 'pending' || cs.data_lancement_test === 'revision_requested';
             html += buildDataLancementTestSection(data, ch, idx, cs, isAssignedData && ltActive);
+            html += buildReopenControl('data_lancement_test', idx, data);
         }
 
         // Zone 5 : Test en prod EBF — visible si EBF+Data requis, OU si canal LP+EBF
         if (reqEbf && (reqData || isLP)) {
             var ebfTpActive = cs.ebf_test_prod === 'pending' || cs.ebf_test_prod === 'revision_requested';
             html += buildEbfTestProdChannelSection(data, ch, idx, cs, isAssignedEbf && ebfTpActive);
+            html += buildReopenControl('ebf_test_prod', idx, data);
         }
 
         // Zone 6 : MEP Data — non visible pour canal LP
@@ -3065,6 +3114,29 @@
             });
         });
 
+        // ── Retour à une étape antérieure (L2 #2/#12/#18) ──
+        document.querySelectorAll('.btn-reopen-step[data-ch="' + idx + '"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var uid = btn.getAttribute('data-step') + '-' + btn.getAttribute('data-ch');
+                var f = document.getElementById('reopen-form-' + uid);
+                if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+            });
+        });
+        document.querySelectorAll('.btn-reopen-confirm[data-ch="' + idx + '"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var stepId     = btn.getAttribute('data-step');
+                var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                var uid        = stepId + '-' + channelIdx;
+                var field      = readRichField(document.getElementById('reopen-motif-' + uid));
+                if (!field.text) { notify('Le motif est obligatoire pour revenir à une étape.', 'warning'); return; }
+                disableBtn(btn, 'Traitement...');
+                workflow.reopenChannelStep(currentCampaignData, channelIdx, stepId, field.html);
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function() { refreshCurrentPage(); })
+                    .catch(function(err) { enableBtn(btn, '↩️ Renvoyer à cette étape'); notify('Erreur : ' + err.message, 'error'); });
+            });
+        });
+
         // ── Submit DATA ──
         var btnSubmitData = document.querySelector('.btn-submit-canal-data[data-ch="' + idx + '"]');
         if (btnSubmitData) {
@@ -3550,6 +3622,14 @@
             workflow.requestChannelRevision = function(data, poStepId, sourceStepId, channelIdx, comment) {
                 try { var n = buildChannelNotif(data, channelIdx, sourceStepId, 'revision_requested'); if (n) _pendingNotifs.push(n); } catch (e) {}
                 return origRev.apply(this, arguments);
+            };
+        }
+        // Retour à une étape antérieure : notifie l'acteur de l'étape rouverte.
+        if (workflow.reopenChannelStep) {
+            var origReopen = workflow.reopenChannelStep;
+            workflow.reopenChannelStep = function(data, channelIdx, targetStepId, reason) {
+                try { var n = buildChannelNotif(data, channelIdx, targetStepId, 'revision_requested'); if (n) _pendingNotifs.push(n); } catch (e) {}
+                return origReopen.apply(this, arguments);
             };
         }
         var origSave = workflow.saveCampaignWorkflow;
