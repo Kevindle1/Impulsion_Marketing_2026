@@ -439,3 +439,63 @@ test('getChannelProgress — plusieurs canaux indépendants', () => {
   assert.equal(arr.length, 2);
   assert.ok(arr[0].pct > arr[1].pct, 'le canal 0 doit être plus avancé que le canal 1');
 });
+
+// ─────────────────────────────────────────────────────────
+// reopenChannelStep : retour à une étape antérieure (L2 #2/#12/#18)
+function fullyAdvancedChannel() {
+  const data = makeCampaign(['Com', 'EBF', 'Data']);
+  workflow.initWorkflow(data);
+  data.workflow.steps.manager_affectation = 'validated';
+  data.workflow.steps.po_kickoff = 'validated';
+  const cs = data.workflow.channelSteps[0];
+  cs.com_maquette = 'validated'; cs.po_validation_maquette = 'validated';
+  cs.ebf_bat = 'validated'; cs.po_validation_bat = 'validated';
+  cs.data_ciblage = 'validated'; cs.po_validation_ciblage = 'validated';
+  cs.data_lancement_test = 'validated'; cs.ebf_test_prod = 'validated'; cs.po_validation_test_prod = 'validated';
+  return data;
+}
+
+test('reopenChannelStep — retour au BAT : Data conservée, test prod à refaire', () => {
+  const data = fullyAdvancedChannel();
+  workflow.reopenChannelStep(data, 0, 'ebf_bat', 'Corriger le code com');
+  const cs = data.workflow.channelSteps[0];
+  // Cible ré-éditable + sa validation reverrouillée
+  assert.equal(cs.ebf_bat, 'revision_requested');
+  assert.equal(cs.po_validation_bat, 'locked');
+  // Branche Data conservée (indépendante du BAT)
+  assert.equal(cs.data_ciblage, 'validated', 'le ciblage Data doit être conservé');
+  assert.equal(cs.po_validation_ciblage, 'validated');
+  // Test en prod (et suite) à refaire
+  assert.equal(cs.data_lancement_test, 'locked');
+  assert.equal(cs.ebf_test_prod, 'locked', 'le test en prod doit être à refaire');
+  assert.equal(cs.po_validation_test_prod, 'locked');
+  // Motif conservé
+  assert.equal(data.workflow.channelRevisionComments[0].ebf_bat, 'Corriger le code com');
+});
+
+test('reopenChannelStep — retour à la maquette : BAT à refaire, ciblage conservé', () => {
+  const data = fullyAdvancedChannel();
+  workflow.reopenChannelStep(data, 0, 'com_maquette', 'Visuel à revoir');
+  const cs = data.workflow.channelSteps[0];
+  assert.equal(cs.com_maquette, 'revision_requested');
+  assert.equal(cs.po_validation_maquette, 'locked');
+  assert.equal(cs.ebf_bat, 'locked', 'le BAT doit être à refaire');
+  assert.equal(cs.po_validation_bat, 'locked');
+  assert.equal(cs.data_ciblage, 'validated', 'le ciblage Data (indépendant) doit être conservé');
+  assert.equal(cs.ebf_test_prod, 'locked');
+});
+
+test('reopenChannelStep — motif obligatoire enregistré, autres canaux intacts', () => {
+  const data = makeCampaign(['Com', 'EBF', 'Data'], [{ deliverableName: 'A' }, { deliverableName: 'B' }]);
+  workflow.initWorkflow(data);
+  data.workflow.steps.manager_affectation = 'validated';
+  data.workflow.steps.po_kickoff = 'validated';
+  data.workflow.channelSteps[0].ebf_bat = 'validated';
+  data.workflow.channelSteps[0].po_validation_bat = 'validated';
+  data.workflow.channelSteps[1].ebf_bat = 'validated';
+  data.workflow.channelSteps[1].po_validation_bat = 'validated';
+  workflow.reopenChannelStep(data, 0, 'ebf_bat', 'motif canal 0');
+  assert.equal(data.workflow.channelSteps[0].ebf_bat, 'revision_requested');
+  // Le canal 1 ne doit pas être affecté
+  assert.equal(data.workflow.channelSteps[1].ebf_bat, 'validated', 'le canal 1 doit rester intact');
+});

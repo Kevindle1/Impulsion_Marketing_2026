@@ -2316,6 +2316,55 @@ window.ImpulsionMarketing.workflow = (function () {
     return campaignData;
   }
 
+  // Carte des dépendances : pour chaque étape, les étapes qui EN DÉPENDENT
+  // (descendantes, transitivement). Sert au retour à une étape antérieure :
+  // seules les descendantes sont à refaire ; les branches indépendantes sont
+  // conservées. Les deux chaînes Com→BAT et Data→ciblage sont indépendantes
+  // jusqu'à leur jonction au lancement test. C'est un sur-ensemble statique :
+  // recalcChannelUnlocks ne ré-ouvre que les étapes réellement requises.
+  var STEP_DESCENDANTS = {
+    com_maquette:            ['po_validation_maquette', 'com_juridique', 'ebf_bat', 'po_validation_bat', 'data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    po_validation_maquette:  ['com_juridique', 'ebf_bat', 'po_validation_bat', 'data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    com_juridique:           ['ebf_bat', 'po_validation_bat', 'data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    ebf_bat:                 ['po_validation_bat', 'data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    po_validation_bat:       ['data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    data_ciblage:            ['po_validation_ciblage', 'data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    po_validation_ciblage:   ['data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    data_lancement_test:     ['ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    ebf_test_prod:           ['po_validation_test_prod', 'data_mise_en_prod', 'ebf_mise_en_prod'],
+    po_validation_test_prod: ['data_mise_en_prod', 'ebf_mise_en_prod'],
+    data_mise_en_prod:       [],
+    ebf_mise_en_prod:        []
+  };
+
+  /**
+   * Renvoie un canal à une étape antérieure (L2 : « revenir en arrière »).
+   * - L'étape cible redevient éditable (revision_requested) → l'acteur la refait.
+   * - Sa validation PO associée et toutes ses étapes DESCENDANTES repassent à
+   *   'locked' : elles seront à refaire dans l'ordre. Les branches indépendantes
+   *   (ex. le ciblage Data quand on revient au BAT) sont conservées.
+   * - Le motif est obligatoire (stocké + affiché en « Modification demandée »).
+   * Utilisable par l'acteur sur sa propre étape, ou par le PO sur toute étape.
+   */
+  function reopenChannelStep(campaignData, channelIdx, targetStepId, reason) {
+    initWorkflow(campaignData);
+    var cs = campaignData.workflow.channelSteps;
+    if (!cs || !cs[channelIdx] || CHANNEL_STEP_IDS.indexOf(targetStepId) === -1) return campaignData;
+    var ch = cs[channelIdx];
+    ch[targetStepId] = 'revision_requested';
+    var v = _DEPOT_VALIDATION[targetStepId];
+    if (v && ch[v] !== undefined) ch[v] = 'locked';
+    (STEP_DESCENDANTS[targetStepId] || []).forEach(function (sid) {
+      if (ch[sid] !== undefined) ch[sid] = 'locked';
+    });
+    if (!campaignData.workflow.channelRevisionComments) campaignData.workflow.channelRevisionComments = {};
+    if (!campaignData.workflow.channelRevisionComments[channelIdx]) campaignData.workflow.channelRevisionComments[channelIdx] = {};
+    campaignData.workflow.channelRevisionComments[channelIdx][targetStepId] = reason || '';
+    var chType = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].type;
+    cs[channelIdx] = recalcChannelUnlocks(ch, campaignData.workflow.steps, campaignData.requiredTeams, chType, juridiqueRequired(campaignData));
+    return campaignData;
+  }
+
   /**
    * Alias rétrocompat — demande de révision globale (utilisé par requestRevision)
    */
@@ -2960,6 +3009,7 @@ window.ImpulsionMarketing.workflow = (function () {
     advanceChannelStep:       advanceChannelStep,
     requestRevision:          requestRevision,
     requestChannelRevision:   requestChannelRevision,
+    reopenChannelStep:        reopenChannelStep,
     initChannelValidations:   initChannelValidations,
     validateChannelStep:      validateChannelStep,
     refuseChannelJuridique:   refuseChannelJuridique,
