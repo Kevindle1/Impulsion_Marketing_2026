@@ -900,6 +900,17 @@
             if (data.lotNumber) smallCards += '<div class="detail-item"><span class="detail-label">N° Lot</span><span class="detail-value">' + security.escapeHtml(data.lotNumber) + '</span></div>';
             smallCards += '</div></div>';
         }
+        // Synthèse des canaux (avec le type de com) — visible dès la 1re page pour
+        // que les managers voient l'info sans ouvrir chaque canal.
+        if (data.channels && data.channels.length) {
+            smallCards += '<div class="detail-section"><h3>📡 Canaux (' + data.channels.length + ')</h3><div class="detail-grid">';
+            data.channels.forEach(function(ch, i) {
+                var nom = ch.deliverableName || ch.content || ('Canal ' + (i + 1));
+                var meta = (ch.content ? ch.content : '') + (ch.comType ? ((ch.content ? ' · ' : '') + 'Type de com : ' + ch.comType) : '');
+                smallCards += '<div class="detail-item"><span class="detail-label">' + security.escapeHtml(nom) + '</span><span class="detail-value">' + (meta ? security.escapeHtml(meta) : '-') + '</span></div>';
+            });
+            smallCards += '</div></div>';
+        }
 
         // Section juridique (colonne latérale) — vue d'ensemble en lecture seule.
         // La validation/refus se fait désormais étape par étape dans le workflow,
