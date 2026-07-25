@@ -4366,6 +4366,22 @@
             });
     }
 
+    // Type MIME déduit de l'extension : les fichiers lus via File System Access
+    // ont souvent un type vide, ce qui empêche le navigateur de lire vidéos,
+    // audios, PDF… On le reconstitue pour pouvoir les ouvrir/jouer correctement.
+    function _mimeFromName(name) {
+        var ext = (String(name).split('.').pop() || '').toLowerCase();
+        var map = {
+            mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime', m4v: 'video/mp4',
+            mp3: 'audio/mpeg', wav: 'audio/wav', m4a: 'audio/mp4', ogg: 'audio/ogg', aac: 'audio/aac',
+            xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xls: 'application/vnd.ms-excel', csv: 'text/csv',
+            doc: 'application/msword', docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            ppt: 'application/vnd.ms-powerpoint', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            pdf: 'application/pdf', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp', svg: 'image/svg+xml',
+            html: 'text/html', htm: 'text/html', txt: 'text/plain', zip: 'application/zip'
+        };
+        return map[ext] || '';
+    }
     function openDocFile(campaignName, subFolderName, fileName) {
         currentRootHandle.getDirectoryHandle('Campagnes')
             .then(function(d) { return d.getDirectoryHandle(campaignName); })
@@ -4376,8 +4392,20 @@
             .then(function(dir) { return dir.getFileHandle(fileName); })
             .then(function(fh) { return fh.getFile(); })
             .then(function(file) {
-                var url = URL.createObjectURL(file);
-                window.open(url, '_blank');
+                var mime = file.type || _mimeFromName(fileName);
+                var blob = mime ? new Blob([file], { type: mime }) : file;
+                var url = URL.createObjectURL(blob);
+                // Vidéo / audio / image / PDF / texte / HTML → lecture dans un onglet.
+                // Excel / Word / PowerPoint / zip → téléchargement (non affichables
+                // par le navigateur), pour ouverture dans l'application dédiée.
+                var previewable = /^(video|audio|image)\//.test(mime) || mime === 'application/pdf' || mime === 'text/plain' || mime === 'text/html' || mime === 'image/svg+xml';
+                if (previewable) {
+                    window.open(url, '_blank');
+                } else {
+                    var a = document.createElement('a');
+                    a.href = url; a.download = fileName;
+                    document.body.appendChild(a); a.click(); a.remove();
+                }
                 setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
             })
             .catch(function(e) { notify('Impossible d\'ouvrir le fichier : ' + e.message, 'error'); });
