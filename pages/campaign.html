@@ -2803,6 +2803,16 @@
                     window.ImpulsionMarketing.workflow.initWorkflow(data);
                 }
 
+                // Affectation automatique (L2 #21) : applique les règles paramétrées
+                // en Administration (création ET édition). Additif — n'écrase rien.
+                try {
+                    var _wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+                    var _rules = (window.ImpulsionMarketing && window.ImpulsionMarketing.config && window.ImpulsionMarketing.config.AUTO_ASSIGN_RULES) || [];
+                    if (_wfMod && _wfMod.applyAutoAssignments && _rules.length) {
+                        _wfMod.applyAutoAssignments(data, _rules);
+                    }
+                } catch (e) { console.warn('Affectation automatique ignorée :', e && e.message); }
+
                 // Write JSON file
                 const jsonHandle = await campaignDir.getFileHandle("campagne.json", { create: true });
                 const writable = await jsonHandle.createWritable();

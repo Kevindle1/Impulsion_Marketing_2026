@@ -137,6 +137,7 @@
                         <button class="admin-nav-item active" data-tab="people"><span class="admin-nav-ic">👥</span><span class="admin-nav-label">Équipes &amp; personnes</span></button>
                         <button class="admin-nav-item" data-tab="segments"><span class="admin-nav-ic">🎯</span><span class="admin-nav-label">Segments</span></button>
                         <button class="admin-nav-item" data-tab="settings"><span class="admin-nav-ic">⚙️</span><span class="admin-nav-label">Paramètres généraux</span></button>
+                        <button class="admin-nav-item" data-tab="autoassign"><span class="admin-nav-ic">🤖</span><span class="admin-nav-label">Affectation automatique</span></button>
                         <button class="admin-nav-item" data-tab="webzones"><span class="admin-nav-ic">🌐</span><span class="admin-nav-label">Zones site web</span></button>
                         <button class="admin-nav-item" data-tab="bilan"><span class="admin-nav-ic">📊</span><span class="admin-nav-label">Bilan (suivi .xlsx)</span></button>
                         <!-- Les pages de listes de choix sont injectées ici par le script -->
@@ -158,6 +159,14 @@
                     <section class="admin-section" id="tab-segments">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🎯</div><div><h2>Segments</h2><p>Segments cibles, organisés par groupe (Particuliers / Pro / Agri).</p></div></div>
                         <div id="segments-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-autoassign">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🤖</div><div><h2>Affectation automatique</h2><p>Affecte des personnes automatiquement selon des conditions (à la création/édition d'une campagne).</p></div></div>
+                        <div id="autoassign-container"></div>
+                        <div style="margin-top:14px;display:flex;gap:10px;">
+                            <button type="button" id="autoassign-add" class="btn secondary">➕ Ajouter une règle</button>
+                            <button type="button" id="autoassign-save" class="btn primary">💾 Enregistrer les règles</button>
+                        </div>
                     </section>
                     <section class="admin-section" id="tab-settings">
                         <div class="admin-sec-head"><div class="admin-sec-ic">⚙️</div><div><h2>Paramètres généraux</h2><p>Réglages globaux : galerie, dossier, seuil d'alerte, couleurs des rôles.</p></div></div>
@@ -233,6 +242,7 @@
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
+        var autoAssignState = [];       // copie éditable des règles d'affectation auto
         var incidents = [];
 
         // Listes de choix simples éditables (clé _config.json → libellé + clé IM.config)
@@ -774,8 +784,9 @@
             reponseStatutsState = (config && Array.isArray(config.REPONSE_STATUTS)) ? JSON.parse(JSON.stringify(config.REPONSE_STATUTS)) : [];
             whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
             bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
+            autoAssignState = (config && Array.isArray(config.AUTO_ASSIGN_RULES)) ? JSON.parse(JSON.stringify(config.AUTO_ASSIGN_RULES)) : [];
         }
-        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
 
         // Chips réutilisables (liste éditable de chaînes).
         function chipsHtml(arr, delAttr) {
@@ -845,6 +856,105 @@
         }
 
         // ── BILAN (mapping du fichier de suivi .xlsx) ──
+        // ── AFFECTATION AUTOMATIQUE (L2 #21) ──
+        var AA_FIELDS = [
+            { k: 'comType', label: 'Type de com (canal)' }, { k: 'volumeCible', label: 'Volume cible (canal)' },
+            { k: 'content', label: 'Canal / contenu' }, { k: 'comTypology', label: 'Typologie com (canal)' },
+            { k: 'market', label: 'Marché (campagne)' }, { k: 'typology', label: 'Typologie (campagne)' },
+            { k: 'recurrence', label: 'Récurrence (campagne)' }, { k: 'ubs', label: 'Univers de besoin (campagne)' }
+        ];
+        var AA_OPS = [
+            { k: 'equals', label: '=' }, { k: 'notEquals', label: '≠' }, { k: 'contains', label: 'contient' },
+            { k: 'gt', label: '>' }, { k: 'gte', label: '≥' }, { k: 'lt', label: '<' }, { k: 'lte', label: '≤' }, { k: 'in', label: 'parmi (a,b,c)' }
+        ];
+        var AA_ROLES = [{ k: 'com', label: 'Com' }, { k: 'ebf', label: 'EBF' }, { k: 'data', label: 'Data' }];
+        function _peopleByRole(role) { return (users.USERS || []).filter(function (u) { return u.role === role; }); }
+        function renderAutoAssign() {
+            var host = document.getElementById('autoassign-container');
+            if (!host) return;
+            if (!autoAssignState.length) { host.innerHTML = '<div class="empty-hint">Aucune règle. Cliquez sur « Ajouter une règle ».</div>'; return; }
+            host.innerHTML = autoAssignState.map(function (rule, ri) {
+                var conds = rule.conditions || [];
+                var h = '<div class="admin-card" data-rule="' + ri + '">';
+                h += '<div class="admin-card-title" style="display:flex;gap:8px;align-items:center;"><input type="text" class="admin-input aa-name" value="' + esc(rule.name || '') + '" placeholder="Nom de la règle" style="flex:1;font-weight:700;"><button class="icon-del" data-delrule="' + ri + '">🗑</button></div>';
+                h += '<div style="font-size:12px;font-weight:700;color:var(--muted);margin:6px 0;">SI (toutes ces conditions) :</div>';
+                conds.forEach(function (c, ci) {
+                    h += '<div class="aa-cond" style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center;">';
+                    h += '<select class="admin-select aa-field" data-c="' + ci + '">' + AA_FIELDS.map(function (f) { return '<option value="' + f.k + '"' + (c.field === f.k ? ' selected' : '') + '>' + esc(f.label) + '</option>'; }).join('') + '</select>';
+                    h += '<select class="admin-select aa-op" data-c="' + ci + '">' + AA_OPS.map(function (o) { return '<option value="' + o.k + '"' + (c.op === o.k ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') + '</select>';
+                    h += '<input type="text" class="admin-input aa-value" data-c="' + ci + '" value="' + esc(c.value == null ? '' : String(c.value)) + '" placeholder="valeur" style="flex:1;min-width:110px;">';
+                    h += '<button class="icon-del" data-delcond="' + ri + '-' + ci + '">✕</button></div>';
+                });
+                h += '<button type="button" class="btn secondary small" data-addcond="' + ri + '">➕ Condition</button>';
+                h += '<div style="font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 6px;">ALORS affecter (équipe) :</div>';
+                h += '<select class="admin-select aa-role">' + AA_ROLES.map(function (r) { return '<option value="' + r.k + '"' + (rule.role === r.k ? ' selected' : '') + '>' + r.label + '</option>'; }).join('') + '</select>';
+                var ppl = _peopleByRole(rule.role || 'com');
+                h += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">';
+                if (!ppl.length) h += '<span class="empty-hint">Aucune personne dans cette équipe.</span>';
+                ppl.forEach(function (u) {
+                    var ck = (rule.people || []).indexOf(u.name) !== -1 ? ' checked' : '';
+                    h += '<label style="font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="aa-person" value="' + esc(u.name) + '"' + ck + '> ' + esc(u.name) + '</label>';
+                });
+                h += '</div>';
+                h += '<label style="display:flex;align-items:flex-start;gap:6px;margin-top:12px;font-size:13px;line-height:1.4;"><input type="checkbox" class="aa-replace" style="margin-top:2px;"' + (rule.replaceManagerAffectation ? ' checked' : '') + '> <span>Remplacer l\'étape d\'affectation du manager — l\'équipe est posée automatiquement, le manager du service n\'a pas à l\'affecter. <em>(décoché : ajout en renfort sur le canal concerné)</em></span></label>';
+                h += '</div>';
+                return h;
+            }).join('');
+        }
+        function collectAutoAssign() {
+            var host = document.getElementById('autoassign-container');
+            if (!host) return;
+            autoAssignState.forEach(function (rule, ri) {
+                var card = host.querySelector('[data-rule="' + ri + '"]');
+                if (!card) return;
+                var nameEl = card.querySelector('.aa-name'); if (nameEl) rule.name = nameEl.value;
+                var roleEl = card.querySelector('.aa-role'); if (roleEl) rule.role = roleEl.value;
+                rule.replaceManagerAffectation = !!card.querySelector('.aa-replace:checked');
+                rule.people = Array.prototype.map.call(card.querySelectorAll('.aa-person:checked'), function (cb) { return cb.value; });
+                var conds = [];
+                Array.prototype.forEach.call(card.querySelectorAll('.aa-cond'), function (row) {
+                    var f = row.querySelector('.aa-field'), o = row.querySelector('.aa-op'), v = row.querySelector('.aa-value');
+                    conds.push({ field: f ? f.value : 'comType', op: o ? o.value : 'equals', value: v ? v.value : '' });
+                });
+                rule.conditions = conds;
+            });
+        }
+        (function wireAutoAssign() {
+            var addBtn = document.getElementById('autoassign-add');
+            var saveBtn = document.getElementById('autoassign-save');
+            var host = document.getElementById('autoassign-container');
+            if (addBtn) addBtn.addEventListener('click', function () {
+                collectAutoAssign();
+                autoAssignState.push({ name: 'Nouvelle règle', conditions: [{ field: 'comType', op: 'equals', value: '' }], role: 'com', people: [], replaceManagerAffectation: false });
+                renderAutoAssign();
+            });
+            if (saveBtn) saveBtn.addEventListener('click', function () {
+                collectAutoAssign();
+                var clean = autoAssignState.filter(function (r) { return r.role && r.people && r.people.length; });
+                saveConfig({ autoAssignRules: clean }, 'Règles d\'affectation enregistrées.').then(function () { autoAssignState = JSON.parse(JSON.stringify(clean)); renderAutoAssign(); });
+            });
+            if (host) {
+                host.addEventListener('click', function (e) {
+                    var t = e.target;
+                    if (t.getAttribute && t.getAttribute('data-delrule') !== null && t.hasAttribute('data-delrule')) {
+                        collectAutoAssign(); autoAssignState.splice(parseInt(t.getAttribute('data-delrule'), 10), 1); renderAutoAssign(); return;
+                    }
+                    if (t.hasAttribute && t.hasAttribute('data-addcond')) {
+                        collectAutoAssign(); var ri = parseInt(t.getAttribute('data-addcond'), 10);
+                        (autoAssignState[ri].conditions = autoAssignState[ri].conditions || []).push({ field: 'comType', op: 'equals', value: '' }); renderAutoAssign(); return;
+                    }
+                    if (t.hasAttribute && t.hasAttribute('data-delcond')) {
+                        collectAutoAssign(); var parts = t.getAttribute('data-delcond').split('-');
+                        autoAssignState[parseInt(parts[0], 10)].conditions.splice(parseInt(parts[1], 10), 1); renderAutoAssign(); return;
+                    }
+                });
+                // Changement d'équipe → recharger la liste de personnes.
+                host.addEventListener('change', function (e) {
+                    if (e.target && e.target.classList && e.target.classList.contains('aa-role')) { collectAutoAssign(); renderAutoAssign(); }
+                });
+            }
+        })();
+
         function renderBilanCfg() {
             var cont = document.getElementById('bilan-container');
             if (!cont) return;
