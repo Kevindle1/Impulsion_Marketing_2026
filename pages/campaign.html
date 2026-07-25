@@ -1517,7 +1517,18 @@
                                     }
                                 }
                             }
-                            if (channel.sendDate) $(`#sendDate${idx}`).value = channel.sendDate;
+                            if (channel.sendDate) {
+                                var _sdInp = $(`#sendDate${idx}`);
+                                if (_sdInp) {
+                                    // Valeur libre (délai / condition) → bascule le champ en texte + coche la case.
+                                    if (!/^\d{4}-\d{2}-\d{2}$/.test(channel.sendDate)) {
+                                        _sdInp.type = 'text';
+                                        var _sdCb = document.querySelector('.sendDateFree-cb[data-i="' + idx + '"]');
+                                        if (_sdCb) _sdCb.checked = true;
+                                    }
+                                    _sdInp.value = channel.sendDate;
+                                }
+                            }
                             // comType: if stored value doesn't match any option, add it as a custom option
                             if (channel.comType) {
                                 const comTypeSel = $(`#comType${idx}`);
@@ -1731,6 +1742,22 @@
             }
             document.querySelectorAll('input[name="offrePromo"]').forEach(function (r) {
                 r.addEventListener('change', _toggleOffrePromo);
+            });
+
+            // « Date de réception client » : bascule date ↔ texte libre (délai / condition).
+            document.addEventListener('change', function (e) {
+                var t = e.target;
+                if (!t || !t.classList || !t.classList.contains('sendDateFree-cb')) return;
+                var inp = document.getElementById('sendDate' + t.getAttribute('data-i'));
+                if (!inp) return;
+                if (t.checked) {
+                    inp.type = 'text';
+                    inp.placeholder = 'Ex : J+3 après ouverture de compte';
+                } else {
+                    inp.type = 'date';
+                    inp.placeholder = '';
+                    if (inp.value && !/^\d{4}-\d{2}-\d{2}$/.test(inp.value)) inp.value = '';
+                }
             });
 
             // Variables globales pour le stepper
@@ -2257,6 +2284,7 @@
                         <div class="form-group">
                             <label for="sendDate${i}">Date de réception client :</label>
                             <input type="date" id="sendDate${i}">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:#666;margin-top:4px;cursor:pointer;"><input type="checkbox" class="sendDateFree-cb" data-i="${i}"> Délai / condition à la place d'une date (ex : « J+3 après ouverture de compte »)</label>
                         </div>
                         <div class="form-group">
                             <label for="comType${i}">Type de Com :</label>
