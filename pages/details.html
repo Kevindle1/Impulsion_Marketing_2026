@@ -162,6 +162,16 @@
         .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
         .info-layout .detail-section, .info-cards .detail-section { margin-bottom: 0; }
         @media (max-width: 1100px) { .info-layout { grid-template-columns: 1fr; } }
+        /* Anti-débordement horizontal (petits écrans / campagnes à nombreux canaux) */
+        .actor-section, .detail-section, .wf-block { max-width: 100%; overflow-wrap: anywhere; }
+        .actor-section .actor-submit-row button, .actor-section button { max-width: 100%; white-space: normal; }
+        @media (max-width: 640px) {
+            .actor-section { padding: 14px; }
+            .detail-section { padding: 14px; }
+            /* Les boutons de validation passent en pleine largeur et restent accessibles */
+            .actor-submit-row { flex-direction: column; align-items: stretch; }
+            .actor-submit-row button { width: 100%; }
+        }
 
         /* ── Stepper du workflow ── */
         .wf-block { margin-bottom: 8px; }
@@ -1630,9 +1640,9 @@
             h += '<input type="file" id="po-ch-img-' + uid + '" class="form-control" accept="image/*">';
             h += '<div id="po-ch-img-preview-' + uid + '" style="margin-top:8px;"></div>';
             h += '</div>';
-            h += '<div style="display:flex;gap:8px;">';
+            h += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
         } else {
-            h += '<div style="display:flex;gap:8px;">';
+            h += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
         }
         h += '<button class="btn-po-validate-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:var(--green-600);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">✅ Valider ce canal</button>';
         if (canRevise) {
