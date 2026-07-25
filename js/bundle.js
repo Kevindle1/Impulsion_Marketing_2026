@@ -4001,6 +4001,16 @@ window.ImpulsionMarketing.adminConfig = (function () {
     else { badge.style.display = 'none'; }
     if (markAll) markAll.style.display = mine.length > 0 ? 'inline' : 'none';
 
+    // Alerte à l'arrivée de nouvelles notifications (son / pop-up), réglable en
+    // Administration. On ne déclenche pas au premier chargement de la page.
+    var _prev = renderNotifications._lastCount;
+    if (typeof _prev === 'number' && mine.length > _prev) {
+      var _st = (IM.config && IM.config.APP_SETTINGS) || {};
+      if (_st.notifSound !== false) _notifBeep();
+      if (_st.notifPopup !== false && typeof notify === 'function') notify('🔔 Nouvelle notification', 'info', 3500);
+    }
+    renderNotifications._lastCount = mine.length;
+
     if (markAll && !markAll._bound) {
       markAll._bound = true;
       markAll.addEventListener('click', function (e) {
@@ -4069,6 +4079,14 @@ window.ImpulsionMarketing.adminConfig = (function () {
       });
       document.addEventListener('click', function () { var p = $('topbar-notif-panel'); if (p) p.style.display = 'none'; });
     }
+    pollNotifications();
+    // Interrogation périodique : détecte l'arrivée de nouvelles notifications
+    // (pour le son / pop-up), sans recharger la page. Une seule fois.
+    if (!wireNotifications._timer) {
+      wireNotifications._timer = setInterval(pollNotifications, 60000);
+    }
+  }
+  function pollNotifications() {
     var ds = IM.directoryStorage, u = currentUser();
     if (!ds || !u) { renderNotifications([], [], null); return; }
     ds.getRootHandleWithCheck().then(function (res) {
@@ -4082,6 +4100,22 @@ window.ImpulsionMarketing.adminConfig = (function () {
         })
         .catch(function () { renderNotifications([], [], null); });
     }).catch(function () { renderNotifications([], [], null); });
+  }
+  // Bip court généré par Web Audio (aucun fichier externe — compatible file://).
+  function _notifBeep() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx();
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.value = 0.07;
+      o.connect(g); g.connect(ctx.destination);
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+      o.stop(ctx.currentTime + 0.37);
+      setTimeout(function () { try { ctx.close(); } catch (e) {} }, 700);
+    } catch (e) {}
   }
 
   // ── Montage ──

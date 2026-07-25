@@ -1019,6 +1019,10 @@
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Échéance « proche » (jours)</label><input type="number" min="0" class="admin-input" id="set-urgent" value="' + (typeof s.urgentThresholdDays === 'number' ? s.urgentThresholdDays : 7) + '"></div>';
             html += '<div class="form-row"><label class="admin-label">Échéance « urgente / rouge » (jours)</label><input type="number" min="0" class="admin-input" id="set-soon" value="' + (typeof s.dueSoonDays === 'number' ? s.dueSoonDays : 2) + '"></div>';
             html += '</div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>🔔 Notifications</h3></div>';
+            html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="set-notif-sound"' + (s.notifSound !== false ? ' checked' : '') + '> Jouer un <strong>son</strong> à la réception d\'une notification</label>';
+            html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="set-notif-popup"' + (s.notifPopup !== false ? ' checked' : '') + '> Afficher une <strong>pop-up</strong> à la réception d\'une notification</label>';
+            html += '</div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Couleurs des rôles</h3></div><div style="display:flex;flex-wrap:wrap;gap:18px;">';
             roles.forEach(function (r) {
                 html += '<label style="display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--muted);">' + esc(r[1])
@@ -1033,7 +1037,9 @@
                     defaultRootPath: (document.getElementById('set-path').value || '').trim(),
                     volumeAlertThreshold: parseInt(document.getElementById('set-volume').value, 10) || 0,
                     urgentThresholdDays: parseInt(document.getElementById('set-urgent').value, 10) || 0,
-                    dueSoonDays: parseInt(document.getElementById('set-soon').value, 10) || 0
+                    dueSoonDays: parseInt(document.getElementById('set-soon').value, 10) || 0,
+                    notifSound: !!document.getElementById('set-notif-sound').checked,
+                    notifPopup: !!document.getElementById('set-notif-popup').checked
                 };
                 var roleColors = {};
                 cont.querySelectorAll('[data-rolecolor]').forEach(function (inp) { roleColors[inp.getAttribute('data-rolecolor')] = inp.value; });
