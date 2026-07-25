@@ -1142,9 +1142,16 @@
                                 <label><input type="radio" name="offrePromo" value="Non"> Non</label>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="offerValidityDate">DATE CONDITION VIGEUR DE L'OFFRE :</label>
-                            <input type="date" id="offerValidityDate">
+                        <div class="conditional-field" id="offrePromoFields" style="display:none;">
+                            <div style="font-weight:600;font-size:12px;color:#15803d;margin-bottom:8px;">🎁 Conditions de l'offre promotionnelle</div>
+                            <div class="form-group">
+                                <label for="offerValidityDate">Date de mise en vigueur de l'offre :</label>
+                                <input type="date" id="offerValidityDate">
+                            </div>
+                            <div class="form-group">
+                                <label for="offerEndDate">Date de fin de validité :</label>
+                                <input type="date" id="offerEndDate">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Parcours selfcare :</label>
@@ -1454,12 +1461,16 @@
                            : (data.targetProduct ? [data.targetProduct] : []);
                 if (window.setSelectedProducts) window.setSelectedProducts(_prods);
                 if (data.offerValidityDate) $("#offerValidityDate").value = data.offerValidityDate;
+                if (data.offerEndDate && $("#offerEndDate")) $("#offerEndDate").value = data.offerEndDate;
                 ['offrePromo', 'parcoursSelfcare', 'parcoursSimulateur'].forEach(function(name) {
                     if (data[name]) {
                         var r = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]');
                         if (r) r.checked = true;
                     }
                 });
+                // Révèle les dates d'offre si « Offre promotionnelle = Oui ».
+                var _opChecked = document.querySelector('input[name="offrePromo"]:checked');
+                if (_opChecked) _opChecked.dispatchEvent(new Event('change'));
 
                 // Transfo — default to "Non" if missing to avoid blocking step 3 validation
                 const transfoValue = data.transfo || "Non";
@@ -1712,6 +1723,16 @@
                 });
             }
 
+            // Offre promotionnelle = Oui → affiche les dates de mise en vigueur / fin de validité.
+            function _toggleOffrePromo() {
+                var checked = document.querySelector('input[name="offrePromo"]:checked');
+                var g = document.getElementById('offrePromoFields');
+                if (g) g.style.display = (checked && checked.value === 'Oui') ? 'block' : 'none';
+            }
+            document.querySelectorAll('input[name="offrePromo"]').forEach(function (r) {
+                r.addEventListener('change', _toggleOffrePromo);
+            });
+
             // Variables globales pour le stepper
             var currentStep = 1;
             var totalSteps = 5;
@@ -1929,7 +1950,8 @@
                 var _summaryProds = Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function(cb){ return cb.value; });
                 html += '  <div class="summary-item"><span class="summary-label">Produits ciblés :</span><span class="summary-value">' + (_summaryProds.length ? _summaryProds.join(', ') : '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Offre promotionnelle :</span><span class="summary-value">' + (document.querySelector('input[name="offrePromo"]:checked')?.value || '-') + '</span></div>';
-                html += '  <div class="summary-item"><span class="summary-label">Date validité offre :</span><span class="summary-value">' + ($("#offerValidityDate").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Date de mise en vigueur :</span><span class="summary-value">' + ($("#offerValidityDate").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Date de fin de validité :</span><span class="summary-value">' + (($("#offerEndDate") || {}).value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Parcours selfcare :</span><span class="summary-value">' + (document.querySelector('input[name="parcoursSelfcare"]:checked')?.value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Parcours simulateur :</span><span class="summary-value">' + (document.querySelector('input[name="parcoursSimulateur"]:checked')?.value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Transfo :</span><span class="summary-value">' + (document.querySelector('input[name="transfo"]:checked')?.value || '-') + '</span></div>';
@@ -2159,7 +2181,8 @@
                     if (data.productUrl) text += 'URL Fiche Produit   : ' + data.productUrl + '\n';
                     if (_expProds.length) text += 'Produits ciblés     : ' + _expProds.join(', ') + '\n';
                     if (data.offrePromo) text += 'Offre promotionnelle: ' + data.offrePromo + '\n';
-                    if (data.offerValidityDate) text += 'Date validité offre : ' + data.offerValidityDate + '\n';
+                    if (data.offerValidityDate) text += 'Date mise en vigueur : ' + data.offerValidityDate + '\n';
+                    if (data.offerEndDate) text += 'Date fin de validité : ' + data.offerEndDate + '\n';
                     if (data.parcoursSelfcare) text += 'Parcours selfcare   : ' + data.parcoursSelfcare + '\n';
                     if (data.parcoursSimulateur) text += 'Parcours simulateur : ' + data.parcoursSimulateur + '\n';
                     if (data.transfo) text += 'Transfo             : ' + data.transfo + '\n';
@@ -2602,6 +2625,7 @@
                     cibleProspect: !!(document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked),
                     prospectSource: ($("#prospectSource") ? $("#prospectSource").value : '').trim(),
                     offerValidityDate: $("#offerValidityDate").value,
+                    offerEndDate: ($("#offerEndDate") || {}).value || '',
                     transfo: document.querySelector('input[name="transfo"]:checked')?.value,
                     lotNumber: $("#lotNumber").value,
                     channels: []
@@ -2727,6 +2751,7 @@
                     cibleProspect: !!(document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked),
                     prospectSource: ($("#prospectSource") ? $("#prospectSource").value : '').trim(),
                     offerValidityDate: $("#offerValidityDate").value,
+                    offerEndDate: ($("#offerEndDate") || {}).value || '',
                     transfo: document.querySelector('input[name="transfo"]:checked')?.value,
                     lotNumber: $("#lotNumber").value,
                     numChannels: document.querySelector('input[name="numChannels"]:checked')?.value,
