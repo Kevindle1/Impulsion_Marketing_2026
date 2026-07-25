@@ -1814,8 +1814,14 @@
                         var radioName = field.getAttribute('name');
                         var radioGroup = currentFormStep.querySelectorAll('input[name="' + radioName + '"]');
                         var isChecked = Array.from(radioGroup).some(function(r) { return r.checked; });
+                        // Encart rouge sur un groupe de radios obligatoire non renseigné
+                        // (ex. Typologie de communication) — comme les autres champs.
+                        var grp = field.closest('.radio-group') || field.closest('.form-group');
                         if (!isChecked) {
                             allValid = false;
+                            if (grp) { grp.style.outline = '1.5px solid var(--red)'; grp.style.outlineOffset = '3px'; grp.style.borderRadius = '6px'; }
+                        } else if (grp) {
+                            grp.style.outline = '';
                         }
                     } else if (!field.value.trim()) {
                         field.style.borderColor = 'var(--red)';
