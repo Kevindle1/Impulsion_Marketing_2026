@@ -1557,6 +1557,13 @@
                                 typologyRadio.checked = true;
                                 typologyRadio.dispatchEvent(new Event('change'));
                             }
+                            // Univers de besoin propres au canal (multi)
+                            if (channel.ubs && channel.ubs.length) {
+                                channel.ubs.forEach(function(ub) {
+                                    var cb = document.querySelector('.ch-ub-cb-' + idx + '[value="' + String(ub).replace(/"/g, '&quot;') + '"]');
+                                    if (cb) cb.checked = true;
+                                });
+                            }
                             if (channel.urlTicTac) {
                                 setTimeout(() => {
                                     const field = $(`#urlTicTac${idx}`);
@@ -1629,6 +1636,7 @@
                         targetingCriteria: ($(`#targetingCriteria${i}`) || {}).value || '',
                         emailObject: ($(`#emailObject${i}`) || {}).value || '',
                         comTypology: (document.querySelector(`input[name="comTypology${i}"]:checked`) || {}).value || '',
+                        ubs: Array.from(document.querySelectorAll(`.ch-ub-cb-${i}:checked`)).map(function(cb){ return cb.value; }),
                         urlTicTac: ($(`#urlTicTac${i}`) || {}).value || '',
                         urlLccx: ($(`#urlLccx${i}`) || {}).value || '',
                         urlsComStore: (function() {
@@ -2264,6 +2272,7 @@
                 const typesCom = (cfgCampaign && Array.isArray(cfgCampaign.TYPES_COM) && cfgCampaign.TYPES_COM.length)
                     ? cfgCampaign.TYPES_COM.slice()
                     : ["Commerciales", "Gestion", "Réglementaire"];
+                const universBesoins = (cfgCampaign && Array.isArray(cfgCampaign.UNIVERS_BESOINS)) ? cfgCampaign.UNIVERS_BESOINS.slice() : [];
                 for (let i = 1; i <= num; i++) {
                     const div = document.createElement("div");
                     div.className = "form-group";
@@ -2301,6 +2310,12 @@
                             <label>Typologie de communication:</label>
                             <div class="radio-group">
                                 ${(window.ImpulsionMarketing.config.COM_TYPOLOGIES || []).map(function(t, ti){ var v = String(t).replace(/"/g,'&quot;'); return '<label><input type="radio" name="comTypology' + i + '" value="' + v + '"' + (ti === 0 ? ' required' : '') + '> ' + v + '</label>'; }).join('')}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Univers de besoin de ce livrable <small style="font-weight:400;color:#888;">(facultatif — si vide, celui de la campagne s'applique)</small></label>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                ${universBesoins.map(function(u){ var v = String(u).replace(/"/g,'&quot;'); return '<label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;"><input type="checkbox" class="ch-ub-cb-' + i + '" value="' + v + '"> ' + v + '</label>'; }).join('')}
                             </div>
                         </div>
                         <div class="conditional-field" id="siteWebFields${i}" style="display:none;background:var(--green-50);border:1px solid var(--green-100);border-radius:6px;padding:10px 12px;margin-top:4px;">
@@ -2684,6 +2699,7 @@
                         // déjà enregistrée sur le canal existant.
                         emailObject: (state.editCampaignData && (state.editCampaignData.channels || [])[i - 1] && (state.editCampaignData.channels || [])[i - 1].emailObject) || '',
                         comTypology: document.querySelector(`input[name="comTypology${i}"]:checked`)?.value,
+                        ubs: Array.from(document.querySelectorAll(`.ch-ub-cb-${i}:checked`)).map(function(cb){ return cb.value; }),
                         urlTicTac: $(`#urlTicTac${i}`) ? $(`#urlTicTac${i}`).value : '',
                         urlLccx: $(`#urlLccx${i}`) ? $(`#urlLccx${i}`).value : '',
                         urlsComStore: (function() {
@@ -2818,6 +2834,7 @@
                         // déjà enregistrée sur le canal existant.
                         emailObject: (state.editCampaignData && (state.editCampaignData.channels || [])[i - 1] && (state.editCampaignData.channels || [])[i - 1].emailObject) || '',
                         comTypology: document.querySelector(`input[name="comTypology${i}"]:checked`)?.value,
+                        ubs: Array.from(document.querySelectorAll(`.ch-ub-cb-${i}:checked`)).map(function(cb){ return cb.value; }),
                         urlTicTac: $(`#urlTicTac${i}`) ? $(`#urlTicTac${i}`).value : '',
                         urlLccx: $(`#urlLccx${i}`) ? $(`#urlLccx${i}`).value : '',
                         urlsComStore: (function() {

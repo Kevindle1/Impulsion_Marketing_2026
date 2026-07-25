@@ -1097,6 +1097,9 @@
         html += '<div class="detail-item"><span class="detail-label">Canal contenu</span><span class="detail-value">' + security.escapeHtml(ch.content || '-') + '</span></div>';
         html += '<div class="detail-item"><span class="detail-label">Date de réception client</span><span class="detail-value">' + security.escapeHtml(ch.sendDate || '-') + '</span></div>';
         html += '<div class="detail-item"><span class="detail-label">Type de Com</span><span class="detail-value">' + security.escapeHtml(ch.comType || '-') + '</span></div>';
+        // Univers de besoin effectif du canal : propre au livrable s'il est défini, sinon celui de la campagne.
+        var _chUbs = (ch.ubs && ch.ubs.length) ? ch.ubs : (data.ubs || []);
+        if (_chUbs.length) html += '<div class="detail-item"><span class="detail-label">Univers de besoin</span><span class="detail-value">' + security.escapeHtml(_chUbs.join(', ')) + (ch.ubs && ch.ubs.length ? '' : ' <em style="color:var(--muted-2);font-size:11px;">(campagne)</em>') + '</span></div>';
         html += '<div class="detail-item"><span class="detail-label">Critère ciblage</span><span class="detail-value">' + security.escapeHtml(ch.targetingCriteria || '-') + '</span></div>';
         if (ch.emailObject) html += '<div class="detail-item"><span class="detail-label">Objet de l\'email</span><span class="detail-value">' + security.escapeHtml(ch.emailObject) + '</span></div>';
         if (ch.volumeCible) html += '<div class="detail-item"><span class="detail-label">Volume cible</span><span class="detail-value">' + ch.volumeCible.toLocaleString('fr-FR') + (ch.volumeCible > (window.ImpulsionMarketing.config.APP_SETTINGS.volumeAlertThreshold || 100000) ? ' ⚠️' : '') + '</span></div>';

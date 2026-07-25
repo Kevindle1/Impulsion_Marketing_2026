@@ -1056,7 +1056,7 @@ window.ImpulsionMarketing.workflow = (function () {
     add(campaignData.prospectSource);
     (campaignData.channels || []).forEach(function (c) {
       add(c.deliverableName); add(c.content); add(c.emailObject);
-      add(c.comType); add(c.comTypology); add(c.targetingCriteria);
+      add(c.comType); add(c.comTypology); add(c.targetingCriteria); add(c.ubs);
       add(c.codeCom); add(c.refParacom); add(c.codeProjet); add(c.codeAction); add(c.codeMK);
       add(c.urlTicTac); add(c.urlComStore); add(c.urlsComStore); add(c.urlLccx);
     });
