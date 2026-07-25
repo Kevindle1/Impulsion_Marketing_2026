@@ -126,6 +126,7 @@ window.ImpulsionMarketing.config = (function() {
   const BILAN            = (_cfgCache.bilan && typeof _cfgCache.bilan === 'object') ? _cfgCache.bilan : {};
   const COM_TYPOLOGIES   = _arr('comTypologies');
   const NOTIFICATION_LABELS = (_cfgCache.notificationLabels && typeof _cfgCache.notificationLabels === 'object') ? _cfgCache.notificationLabels : {};
+  const AUTO_ASSIGN_RULES = Array.isArray(_cfgCache.autoAssignRules) ? _cfgCache.autoAssignRules.slice() : [];
 
   // ========================================
   // Valeurs Oui/Non
@@ -310,6 +311,7 @@ window.ImpulsionMarketing.config = (function() {
     BILAN: BILAN,
     COM_TYPOLOGIES: COM_TYPOLOGIES,
     NOTIFICATION_LABELS: NOTIFICATION_LABELS,
+    AUTO_ASSIGN_RULES: AUTO_ASSIGN_RULES,
     OUI_NON: OUI_NON,
     NUM_SEGMENTS_RANGE: NUM_SEGMENTS_RANGE,
     NUM_UBS_RANGE: NUM_UBS_RANGE,

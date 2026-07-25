@@ -130,6 +130,7 @@ window.ImpulsionMarketing.config = (function() {
   const BILAN            = (_cfgCache.bilan && typeof _cfgCache.bilan === 'object') ? _cfgCache.bilan : {};
   const COM_TYPOLOGIES   = _arr('comTypologies');
   const NOTIFICATION_LABELS = (_cfgCache.notificationLabels && typeof _cfgCache.notificationLabels === 'object') ? _cfgCache.notificationLabels : {};
+  const AUTO_ASSIGN_RULES = Array.isArray(_cfgCache.autoAssignRules) ? _cfgCache.autoAssignRules.slice() : [];
 
   // ========================================
   // Valeurs Oui/Non
@@ -314,6 +315,7 @@ window.ImpulsionMarketing.config = (function() {
     BILAN: BILAN,
     COM_TYPOLOGIES: COM_TYPOLOGIES,
     NOTIFICATION_LABELS: NOTIFICATION_LABELS,
+    AUTO_ASSIGN_RULES: AUTO_ASSIGN_RULES,
     OUI_NON: OUI_NON,
     NUM_SEGMENTS_RANGE: NUM_SEGMENTS_RANGE,
     NUM_UBS_RANGE: NUM_UBS_RANGE,
@@ -2631,6 +2633,81 @@ window.ImpulsionMarketing.workflow = (function () {
     return out;
   }
 
+  // ─────────────────────────────────────────────────────────
+  // AFFECTATION AUTOMATIQUE (règles paramétrables — L2 #21)
+  // ─────────────────────────────────────────────────────────
+  // Valeur d'un champ de condition pour une campagne / un canal donné.
+  function _autoFieldValue(campaignData, ch, field) {
+    switch (field) {
+      case 'comType':      return ch && ch.comType;
+      case 'volumeCible':  return ch && ch.volumeCible;
+      case 'content':      return ch && ch.content;
+      case 'comTypology':  return ch && ch.comTypology;
+      case 'market':       return campaignData.market;
+      case 'typology':     return campaignData.typology;
+      case 'recurrence':   return campaignData.recurrence;
+      case 'ubs':          return campaignData.ubs; // tableau
+      default:             return undefined;
+    }
+  }
+  function _autoCondMatch(actual, op, value) {
+    var arr = Array.isArray(actual) ? actual.map(function (x) { return String(x).toLowerCase(); }) : null;
+    var a = (actual == null) ? '' : String(actual);
+    var v = (value == null) ? '' : String(value);
+    switch (op) {
+      case 'equals':    return arr ? arr.indexOf(v.toLowerCase()) !== -1 : a === v;
+      case 'notEquals': return arr ? arr.indexOf(v.toLowerCase()) === -1 : a !== v;
+      case 'contains':  return arr ? arr.indexOf(v.toLowerCase()) !== -1 : a.toLowerCase().indexOf(v.toLowerCase()) !== -1;
+      case 'gt':        return parseFloat(a) >  parseFloat(v);
+      case 'gte':       return parseFloat(a) >= parseFloat(v);
+      case 'lt':        return parseFloat(a) <  parseFloat(v);
+      case 'lte':       return parseFloat(a) <= parseFloat(v);
+      case 'in':        return v.split(',').map(function (s) { return s.trim().toLowerCase(); }).indexOf(a.toLowerCase()) !== -1;
+      default:          return false;
+    }
+  }
+  function _addPeople(target, role, people) {
+    var cur = _asArr(target[role]);
+    var seen = {}; cur.forEach(function (n) { seen[n] = 1; });
+    people.forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; cur.push(n); } });
+    target[role] = cur;
+  }
+  /**
+   * Applique les règles d'affectation automatique à une campagne.
+   * Une règle = { name, conditions:[{field,op,value}] (toutes vraies), role,
+   * people:[], replaceManagerAffectation:bool }.
+   *  - replaceManagerAffectation = true  → affecte l'équipe de la CAMPAGNE
+   *    (le manager du service est ainsi dispensé de l'étape d'affectation) ;
+   *  - false → ajoute un renfort sur le(s) canal(aux) concerné(s).
+   * Toujours ADDITIF (n'écrase jamais une affectation existante).
+   */
+  function applyAutoAssignments(campaignData, rules) {
+    if (!rules || !rules.length) return campaignData;
+    initWorkflow(campaignData);
+    var wf = campaignData.workflow;
+    var channels = campaignData.channels || [];
+    rules.forEach(function (rule) {
+      if (!rule || !rule.role || !(rule.people && rule.people.length)) return;
+      var conds = rule.conditions || [];
+      var matched = [];
+      channels.forEach(function (ch, idx) {
+        var ok = conds.every(function (c) { return _autoCondMatch(_autoFieldValue(campaignData, ch, c.field), c.op, c.value); });
+        if (ok) matched.push(idx);
+      });
+      if (!matched.length) return;
+      if (rule.replaceManagerAffectation) {
+        _addPeople(wf.assignments, rule.role, rule.people);
+      } else {
+        if (!wf.channelAssignments) wf.channelAssignments = {};
+        matched.forEach(function (idx) {
+          if (!wf.channelAssignments[idx]) wf.channelAssignments[idx] = {};
+          _addPeople(wf.channelAssignments[idx], rule.role, rule.people);
+        });
+      }
+    });
+    return campaignData;
+  }
+
   function getAvailableActions(currentUser, campaignData) {
     if (!currentUser || !campaignData) return [];
     initWorkflow(campaignData);
@@ -3031,6 +3108,7 @@ window.ImpulsionMarketing.workflow = (function () {
     requestChannelRevision:   requestChannelRevision,
     reopenChannelStep:        reopenChannelStep,
     channelAssignees:         channelAssignees,
+    applyAutoAssignments:     applyAutoAssignments,
     initChannelValidations:   initChannelValidations,
     validateChannelStep:      validateChannelStep,
     refuseChannelJuridique:   refuseChannelJuridique,

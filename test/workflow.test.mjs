@@ -389,6 +389,51 @@ test('getAvailableActions — manager Data non encore affecté : action d\'affec
     'le manager Data non affecté doit garder l\'action manager_affectation');
 });
 
+// ─────────────────────────────────────────────────────────
+// Affectation automatique (L2 #21)
+test('applyAutoAssignments — case cochée → équipe campagne (dispense le manager)', () => {
+  const data = makeCampaign(['Com'], [{ deliverableName: 'Mail', content: 'MAIL', comType: 'Commerciales', volumeCible: 80000 }]);
+  const rules = [{
+    name: 'Marc gros volume', role: 'com', people: ['Marc Favre'],
+    replaceManagerAffectation: true,
+    conditions: [{ field: 'comType', op: 'equals', value: 'Commerciales' }, { field: 'volumeCible', op: 'gt', value: 50000 }]
+  }];
+  workflow.applyAutoAssignments(data, rules);
+  assert.deepEqual(workflow.channelAssignees(data, 0, 'com'), ['Marc Favre']);
+  assert.ok((data.workflow.assignments.com || []).indexOf('Marc Favre') !== -1, 'affecté à l\'équipe campagne');
+});
+
+test('applyAutoAssignments — volume sous le seuil → règle non appliquée', () => {
+  const data = makeCampaign(['Com'], [{ deliverableName: 'Mail', comType: 'Commerciales', volumeCible: 20000 }]);
+  const rules = [{ role: 'com', people: ['Marc'], replaceManagerAffectation: true,
+    conditions: [{ field: 'volumeCible', op: 'gt', value: 50000 }] }];
+  workflow.applyAutoAssignments(data, rules);
+  assert.equal((data.workflow.assignments.com || []).length, 0);
+});
+
+test('applyAutoAssignments — case décochée → renfort sur le canal concerné uniquement', () => {
+  const data = makeCampaign(['EBF'], [
+    { deliverableName: 'A', content: 'MAIL', comType: 'Commerciales' },
+    { deliverableName: 'B', content: 'SMS', comType: 'Gestion' }
+  ]);
+  const rules = [{ role: 'ebf', people: ['Kevin'], replaceManagerAffectation: false,
+    conditions: [{ field: 'comType', op: 'equals', value: 'Commerciales' }] }];
+  workflow.applyAutoAssignments(data, rules);
+  assert.deepEqual(workflow.channelAssignees(data, 0, 'ebf'), ['Kevin'], 'canal 0 (commercial) reçoit le renfort');
+  assert.deepEqual(workflow.channelAssignees(data, 1, 'ebf'), [], 'canal 1 (gestion) non concerné');
+  assert.equal((data.workflow.assignments.ebf || []).length, 0, 'équipe campagne intacte');
+});
+
+test('applyAutoAssignments — additif : n\'écrase pas une affectation existante', () => {
+  const data = makeCampaign(['Com'], [{ deliverableName: 'M', comType: 'Commerciales' }]);
+  workflow.initWorkflow(data);
+  data.workflow.assignments.com = ['Alice'];
+  const rules = [{ role: 'com', people: ['Marc'], replaceManagerAffectation: true,
+    conditions: [{ field: 'comType', op: 'equals', value: 'Commerciales' }] }];
+  workflow.applyAutoAssignments(data, rules);
+  assert.deepEqual(data.workflow.assignments.com.sort(), ['Alice', 'Marc'].sort());
+});
+
 test('channelAssignees — renfort par canal additif, sans propagation (L2 #15)', () => {
   const data = makeCampaign(['EBF'], [{ deliverableName: 'Mail' }, { deliverableName: 'SMS' }]);
   workflow.initWorkflow(data);

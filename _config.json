@@ -514,5 +514,6 @@
     "workflow_a_valider": "🕓 À valider",
     "workflow_revision": "🔄 Révision demandée",
     "workflow_info": "📣 Campagne"
-  }
+  },
+  "autoAssignRules": []
 }
