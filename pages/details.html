@@ -3688,6 +3688,17 @@
             try { var n = buildChannelNotif(data, idx, stepId, status); if (n) _pendingNotifs.push(n); } catch (e) {}
             return origAdvCh.apply(this, arguments);
         };
+        // validateChannelStep appelle en interne le advanceChannelStep du module
+        // (pas la version enveloppée) : on la capte donc ici pour journaliser les
+        // VALIDATIONS PO (maquette, BAT, ciblage, test en prod) avec date/heure.
+        if (workflow.validateChannelStep) {
+            var origValCh = workflow.validateChannelStep;
+            workflow.validateChannelStep = function(data, poStepId, channelIdx) {
+                _pendingActivity.push({ type: 'workflow', detail: 'Canal ' + (channelIdx + 1) + ' · ' + (ACT_STEP_LABELS[poStepId] || poStepId) + ' — ' + ACT_STATUS_LABELS.validated });
+                try { var n = buildChannelNotif(data, channelIdx, poStepId, 'validated'); if (n) _pendingNotifs.push(n); } catch (e) {}
+                return origValCh.apply(this, arguments);
+            };
+        }
         // La demande de révision passe par requestChannelRevision (pas advanceChannelStep) :
         // on la capte ici pour notifier l'équipe concernée.
         if (workflow.requestChannelRevision) {
