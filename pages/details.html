@@ -1175,10 +1175,10 @@
             html += buildReopenControl('data_lancement_test', idx, data);
         }
 
-        // Zone 5 : Test en prod EBF — visible si EBF+Data requis, OU si canal LP+EBF
+        // Zone 5 : Test en prod — désormais déposé ET validé par le PO (M10).
         if (reqEbf && (reqData || isLP)) {
             var ebfTpActive = cs.ebf_test_prod === 'pending' || cs.ebf_test_prod === 'revision_requested';
-            html += buildEbfTestProdChannelSection(data, ch, idx, cs, isAssignedEbf && ebfTpActive);
+            html += buildEbfTestProdChannelSection(data, ch, idx, cs, isPO && ebfTpActive);
             html += buildReopenControl('ebf_test_prod', idx, data);
         }
 
@@ -1374,13 +1374,8 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée :</strong>' + sanitizeRichHtml(revisionComment) + '</div>';
-        var _emEbf = teamEditMode(data, 'ebf', idx);
-        if (_emEbf) {
-            h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), data, idx, _emEbf);
-        } else if (!editable) {
-            var _ebfDisp2 = assigneesDisplay(data.workflow.assignments, 'ebf');
-            if (_ebfDisp2) h += '<p style="font-size:13px;color:var(--muted);margin-bottom:12px;">EBF assigné(s) : <strong>' + _ebfDisp2 + '</strong></p>';
-        }
+        // M10 : étape déposée et validée par le PO.
+        if (editable) h += '<p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Déposez le test en production et validez en une seule étape.</p>';
 
         h += '<div id="ebf-testprod-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
         h += '<div id="testprod-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
@@ -1391,13 +1386,8 @@
             h += '<div class="form-row"><label>Fichier test en production (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées.</small></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
-            h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">📤 Déposer et soumettre</button>';
+            h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">✅ Déposer et valider le test en production</button>';
             h += '</div>';
-        }
-        // Bloc validation PO (v2 : channelSteps)
-        var isPO = users && users.isCurrentUserPO(data);
-        if (isPO && cs.po_validation_test_prod === 'pending') {
-            h += buildPoValidationBlock('po_validation_test_prod', 'ebf_test_prod', true, false, idx, null);
         }
         h += '</div>';
         return h;
@@ -3064,6 +3054,13 @@
                         // v2 : avancement direct du canal
                         mirrorChannelCodes(idx, depot); // #27 : indexer les codes saisis
                         workflow.advanceChannelStep(currentCampaignData, idx, stepId, 'submitted');
+                        // M10 : le test en prod est déposé ET validé par le PO en une seule étape.
+                        if (stepId === 'ebf_test_prod' && users.isCurrentUserPO(currentCampaignData)) {
+                            workflow.validateChannelStep(currentCampaignData, 'po_validation_test_prod', idx);
+                            currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
+                            currentCampaignData.workflow.channelDates[idx] = currentCampaignData.workflow.channelDates[idx] || {};
+                            currentCampaignData.workflow.channelDates[idx].po_validation_test_prod = new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+                        }
                         return writePromise
                             .then(function() { return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData); })
                             .then(function() { refreshCurrentPage(); });
