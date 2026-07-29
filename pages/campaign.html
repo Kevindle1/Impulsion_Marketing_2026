@@ -947,16 +947,25 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="launchDate">Date de lancement :</label>
+                            <label for="launchDate">Date Envoi client :</label>
                             <input type="date" id="launchDate" required>
                         </div>
                         <div class="form-group">
-                            <label for="instantiation">Date de saisie :</label>
-                            <input type="date" id="instantiation" required>
+                            <label for="instantiation">Date de saisie : <span style="font-weight:400;color:#888;">(automatique)</span></label>
+                            <input type="date" id="instantiation" readonly style="background:var(--line-2);cursor:not-allowed;">
                         </div>
                         <div class="form-group">
-                            <label for="kickoffDate">Date de kick-off : <span style="font-weight:400;color:#888;">(optionnel)</span></label>
-                            <input type="date" id="kickoffDate">
+                            <label>Kick-off :</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="kickoffNeeded" value="Oui"> Oui</label>
+                                <label><input type="radio" name="kickoffNeeded" value="Non" checked> Non</label>
+                            </div>
+                        </div>
+                        <div class="conditional-field" id="kickoffDateGroup" style="display:none;">
+                            <div class="form-group" style="margin:0;">
+                                <label for="kickoffDate">Date de kick-off :</label>
+                                <input type="date" id="kickoffDate">
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="typology">Typologie :</label>
@@ -1408,6 +1417,10 @@
                 if (data.launchDate) $("#launchDate").value = data.launchDate;
                 if (data.instantiation) $("#instantiation").value = data.instantiation;
                 if (data.kickoffDate) $("#kickoffDate").value = data.kickoffDate;
+                // Kick-off Oui/Non : rétro-compat — Oui si une date de kick-off existe.
+                var _kn = data.kickoffNeeded || (data.kickoffDate ? 'Oui' : 'Non');
+                var _knRadio = document.querySelector('input[name="kickoffNeeded"][value="' + _kn + '"]');
+                if (_knRadio) { _knRadio.checked = true; _knRadio.dispatchEvent(new Event('change')); }
                 if (data.typology) $("#typology").value = data.typology;
                 if (data.market) $("#market").value = data.market;
                 if (data.recurrence) $("#recurrence").value = data.recurrence;
@@ -1742,6 +1755,20 @@
                 });
             }
 
+            // Date de saisie = date du jour (automatique, non modifiable).
+            (function () {
+                var inst = document.getElementById('instantiation');
+                if (inst && !inst.value) inst.value = new Date().toISOString().slice(0, 10);
+            })();
+
+            // Kick-off Oui/Non → affiche la date de kick-off.
+            function _toggleKickoff() {
+                var checked = document.querySelector('input[name="kickoffNeeded"]:checked');
+                var g = document.getElementById('kickoffDateGroup');
+                if (g) g.style.display = (checked && checked.value === 'Oui') ? 'block' : 'none';
+            }
+            document.querySelectorAll('input[name="kickoffNeeded"]').forEach(function (r) { r.addEventListener('change', _toggleKickoff); });
+
             // Offre promotionnelle = Oui → affiche les dates de mise en vigueur / fin de validité.
             function _toggleOffrePromo() {
                 var checked = document.querySelector('input[name="offrePromo"]:checked');
@@ -1892,6 +1919,22 @@
                     }
                 }
 
+                // Offre promotionnelle = Oui → dates de vigueur ET de fin de validité obligatoires.
+                var _opRadio = currentFormStep.querySelector('input[name="offrePromo"]:checked');
+                if (_opRadio && _opRadio.value === 'Oui') {
+                    var _vd = document.getElementById('offerValidityDate');
+                    var _ed = document.getElementById('offerEndDate');
+                    var _bad = (_vd && !_vd.value) ? _vd : ((_ed && !_ed.value) ? _ed : null);
+                    if (_vd) _vd.style.borderColor = '';
+                    if (_ed) _ed.style.borderColor = '';
+                    if (_bad) {
+                        _bad.style.borderColor = 'var(--red)';
+                        _bad.focus();
+                        notify('Offre promotionnelle : renseignez la date de mise en vigueur ET la date de fin de validité.', 'warning');
+                        return false;
+                    }
+                }
+
                 // Contrainte URL : tout champ URL renseigné (fiche produit, TicTac,
                 // LCCX, ComStore…) doit être une adresse http(s) valide. On ignore
                 // les champs masqués (groupes conditionnels non applicables).
@@ -1952,7 +1995,7 @@
                 html += '  <div class="summary-item"><span class="summary-label">Nom de la tâche :</span><span class="summary-value">' + ($("#taskName").value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Description :</span><span class="summary-value">' + ($("#description").value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">PO :</span><span class="summary-value">' + ($("#po").value || '-') + '</span></div>';
-                html += '  <div class="summary-item"><span class="summary-label">Date de lancement :</span><span class="summary-value">' + ($("#launchDate").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Date Envoi client :</span><span class="summary-value">' + ($("#launchDate").value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Date de saisie :</span><span class="summary-value">' + ($("#instantiation").value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Typologie :</span><span class="summary-value">' + ($("#typology").value || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Marché :</span><span class="summary-value">' + ($("#market").value || '-') + '</span></div>';
@@ -2180,7 +2223,7 @@
                 text += 'Nom de la tâche     : ' + (data.taskName || '-') + '\n';
                 text += 'Description         : ' + (data.description || '-') + '\n';
                 text += 'PO                  : ' + (data.po || '-') + '\n';
-                text += 'Date de lancement   : ' + (data.launchDate || '-') + '\n';
+                text += 'Date Envoi client   : ' + (data.launchDate || '-') + '\n';
                 text += 'Date de saisie      : ' + (data.instantiation || '-') + '\n';
                 text += 'Typologie           : ' + (data.typology || '-') + '\n';
                 text += 'Marché              : ' + (data.market || '-') + '\n';
@@ -2648,7 +2691,8 @@
                     description: $("#description").value,
                     po: $("#po").value,
                     launchDate: $("#launchDate").value,
-                    instantiation: $("#instantiation").value,
+                    instantiation: $("#instantiation").value || new Date().toISOString().slice(0, 10),
+                    kickoffNeeded: (document.querySelector('input[name="kickoffNeeded"]:checked') || {}).value || 'Non',
                     typology: $("#typology").value,
                     market: $("#market").value,
                     recurrence: $("#recurrence").value,
@@ -2773,7 +2817,8 @@
                     description: $("#description").value,
                     po: $("#po").value,
                     launchDate: $("#launchDate").value,
-                    instantiation: $("#instantiation").value,
+                    instantiation: $("#instantiation").value || new Date().toISOString().slice(0, 10),
+                    kickoffNeeded: (document.querySelector('input[name="kickoffNeeded"]:checked') || {}).value || 'Non',
                     kickoffDate: $("#kickoffDate").value || "",
                     typology: $("#typology").value,
                     market: $("#market").value,

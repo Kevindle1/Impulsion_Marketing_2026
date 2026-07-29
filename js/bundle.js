@@ -2073,8 +2073,16 @@ window.ImpulsionMarketing.workflow = (function () {
       }
     });
 
+    // Kick-off conditionné (M7) : si la campagne n'a pas de kick-off
+    // (kickoffNeeded === 'Non'), l'étape est validée automatiquement (on ne
+    // demande rien au PO). Rétro-compat : un champ absent garde l'ancien
+    // comportement (kick-off requis).
+    var kickoffSkipped = campaignData.kickoffNeeded === 'Non';
     if (s.po_kickoff === 'locked' && s.manager_affectation === 'validated' && !anyChannelStarted) {
-      s.po_kickoff = 'pending';
+      s.po_kickoff = kickoffSkipped ? 'validated' : 'pending';
+    }
+    if (kickoffSkipped && s.po_kickoff === 'pending') {
+      s.po_kickoff = 'validated';
     }
     if ((s.po_kickoff === 'locked' || s.po_kickoff === 'pending') && anyChannelStarted) {
       s.po_kickoff = 'validated';
