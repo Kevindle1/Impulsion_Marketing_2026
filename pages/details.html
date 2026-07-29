@@ -1175,10 +1175,10 @@
             html += buildReopenControl('data_lancement_test', idx, data);
         }
 
-        // Zone 5 : Test en prod — désormais déposé ET validé par le PO (M10).
+        // Zone 5 : Test en prod — déposé ET validé par le PO (ou un super-admin) (M10).
         if (reqEbf && (reqData || isLP)) {
             var ebfTpActive = cs.ebf_test_prod === 'pending' || cs.ebf_test_prod === 'revision_requested';
-            html += buildEbfTestProdChannelSection(data, ch, idx, cs, isPO && ebfTpActive);
+            html += buildEbfTestProdChannelSection(data, ch, idx, cs, (isPO || _isSuperAdmin) && ebfTpActive);
             html += buildReopenControl('ebf_test_prod', idx, data);
         }
 
@@ -3054,8 +3054,8 @@
                         // v2 : avancement direct du canal
                         mirrorChannelCodes(idx, depot); // #27 : indexer les codes saisis
                         workflow.advanceChannelStep(currentCampaignData, idx, stepId, 'submitted');
-                        // M10 : le test en prod est déposé ET validé par le PO en une seule étape.
-                        if (stepId === 'ebf_test_prod' && users.isCurrentUserPO(currentCampaignData)) {
+                        // M10 : le test en prod est déposé ET validé par le PO (ou un super-admin) en une seule étape.
+                        if (stepId === 'ebf_test_prod' && (users.isCurrentUserPO(currentCampaignData) || ((users.getCurrentUser() || {}).isSuperAdmin))) {
                             workflow.validateChannelStep(currentCampaignData, 'po_validation_test_prod', idx);
                             currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
                             currentCampaignData.workflow.channelDates[idx] = currentCampaignData.workflow.channelDates[idx] || {};
