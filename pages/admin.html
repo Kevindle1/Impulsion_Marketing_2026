@@ -869,6 +869,20 @@
         ];
         var AA_ROLES = [{ k: 'com', label: 'Com' }, { k: 'ebf', label: 'EBF' }, { k: 'data', label: 'Data' }];
         function _peopleByRole(role) { return (users.USERS || []).filter(function (u) { return u.role === role; }); }
+        // Valeurs possibles d'un champ de condition (remontées automatiquement).
+        function _aaFieldValues(field) {
+            var c = config || {};
+            switch (field) {
+                case 'comType': return c.TYPES_COM || [];
+                case 'comTypology': return c.COM_TYPOLOGIES || [];
+                case 'market': return c.MARCHES || [];
+                case 'typology': return c.TYPOLOGIES || [];
+                case 'recurrence': return c.RECURRENCES || [];
+                case 'content': return c.CANAUX || [];
+                case 'ubs': return c.UNIVERS_BESOINS || [];
+                default: return [];
+            }
+        }
         function renderAutoAssign() {
             var host = document.getElementById('autoassign-container');
             if (!host) return;
@@ -882,7 +896,9 @@
                     h += '<div class="aa-cond" style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center;">';
                     h += '<select class="admin-select aa-field" data-c="' + ci + '">' + AA_FIELDS.map(function (f) { return '<option value="' + f.k + '"' + (c.field === f.k ? ' selected' : '') + '>' + esc(f.label) + '</option>'; }).join('') + '</select>';
                     h += '<select class="admin-select aa-op" data-c="' + ci + '">' + AA_OPS.map(function (o) { return '<option value="' + o.k + '"' + (c.op === o.k ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') + '</select>';
-                    h += '<input type="text" class="admin-input aa-value" data-c="' + ci + '" value="' + esc(c.value == null ? '' : String(c.value)) + '" placeholder="valeur" style="flex:1;min-width:110px;">';
+                    var _vals = _aaFieldValues(c.field), _dl = 'aa-dl-' + ri + '-' + ci;
+                    h += '<input type="text" class="admin-input aa-value" data-c="' + ci + '"' + (_vals.length ? (' list="' + _dl + '"') : '') + ' value="' + esc(c.value == null ? '' : String(c.value)) + '" placeholder="valeur" style="flex:1;min-width:110px;">';
+                    if (_vals.length) h += '<datalist id="' + _dl + '">' + _vals.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
                     h += '<button class="icon-del" data-delcond="' + ri + '-' + ci + '">✕</button></div>';
                 });
                 h += '<button type="button" class="btn secondary small" data-addcond="' + ri + '">➕ Condition</button>';
@@ -948,9 +964,10 @@
                         autoAssignState[parseInt(parts[0], 10)].conditions.splice(parseInt(parts[1], 10), 1); renderAutoAssign(); return;
                     }
                 });
-                // Changement d'équipe → recharger la liste de personnes.
+                // Changement d'équipe → recharger la liste de personnes ;
+                // changement de champ → mettre à jour les valeurs suggérées.
                 host.addEventListener('change', function (e) {
-                    if (e.target && e.target.classList && e.target.classList.contains('aa-role')) { collectAutoAssign(); renderAutoAssign(); }
+                    if (e.target && e.target.classList && (e.target.classList.contains('aa-role') || e.target.classList.contains('aa-field'))) { collectAutoAssign(); renderAutoAssign(); }
                 });
             }
         })();

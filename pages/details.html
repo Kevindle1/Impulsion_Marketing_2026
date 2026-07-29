@@ -1035,6 +1035,12 @@
         if (/^data_/.test(stepId)) return 'data';
         return null;
     }
+    // Date de validation mémorisée d'une étape PO (M8) → ' le jj/mm/aa hh:mm' ou ''.
+    function _valDateSuffix(data, idx, poStepId) {
+        var cd = data.workflow && data.workflow.channelDates;
+        var v = cd && cd[idx] && cd[idx][poStepId];
+        return v ? (' le ' + v) : '';
+    }
     // Qui peut renvoyer un canal à une étape : le PO (toute étape franchie), un
     // super-admin / manager général, ou l'acteur affecté sur SA propre étape.
     // L'étape doit avoir été franchie (déposée / validée).
@@ -1205,7 +1211,7 @@
         var h = '<div class="actor-section actor-section--com' + (isRevision ? ' actor-section--revision' : '') + '" id="com-work-section">';
         h += '<h3>🎨 Maquette Com';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (stepStatus === 'submitted' && (steps.po_validation_maquette === 'validated' || steps.po_validation_maquette === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_maquette === 'validated' || steps.po_validation_maquette === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé' + _valDateSuffix(data, idx, 'po_validation_maquette') + '</span>';
         else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
         else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
         h += '</h3>';
@@ -1213,7 +1219,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée :</strong>' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emCom = teamEditMode(data, 'com', idx);
         if (_emCom) {
             h += buildReassignBlock('com', users.getUsersByRole('com'), data, idx, _emCom);
@@ -1297,7 +1303,7 @@
         var h = '<div class="actor-section actor-section--ebf' + (isRevision ? ' actor-section--revision' : '') + '" id="ebf-work-section">';
         h += '<h3>🖨️ Réalisation BAT';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (stepStatus === 'submitted' && (steps.po_validation_bat === 'validated' || steps.po_validation_bat === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_bat === 'validated' || steps.po_validation_bat === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé' + _valDateSuffix(data, idx, 'po_validation_bat') + '</span>';
         else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
         else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
         h += '</h3>';
@@ -1305,7 +1311,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation de la maquette Com.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée :</strong>' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emEbf = teamEditMode(data, 'ebf', idx);
         if (_emEbf) {
             h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), data, idx, _emEbf);
@@ -1359,7 +1365,7 @@
         var h = '<div class="actor-section actor-section--ebf' + (isRevision ? ' actor-section--revision' : '') + '" id="ebf-testprod-section">';
         h += '<h3>🔬 Test en production';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
-        else if (stepStatus === 'submitted' && (steps.po_validation_test_prod === 'validated' || steps.po_validation_test_prod === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted' && (steps.po_validation_test_prod === 'validated' || steps.po_validation_test_prod === 'completed')) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé' + _valDateSuffix(data, idx, 'po_validation_test_prod') + '</span>';
         else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
         else if (stepStatus === 'validated') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
         h += '</h3>';
@@ -1367,7 +1373,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du BAT et du ciblage.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée :</strong>' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emEbf = teamEditMode(data, 'ebf', idx);
         if (_emEbf) {
             h += buildReassignBlock('ebf', users.getUsersByRole('ebf'), data, idx, _emEbf);
@@ -1413,7 +1419,7 @@
         h += '<h3>' + icon + ' ' + (stepLabel || 'Workflow Data');
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
         else if (isMep && stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Terminé</span>';
-        else if (stepStatus === 'submitted' && dataPoValidated) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
+        else if (stepStatus === 'submitted' && dataPoValidated) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé' + _valDateSuffix(data, idx, dataStepId === 'data_ciblage' ? 'po_validation_ciblage' : 'po_validation_ciblage') + '</span>';
         else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de validation</span>';
         else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ ' + (isMep ? 'Terminé' : 'Validé') + '</span>';
         h += '</h3>';
@@ -1421,7 +1427,7 @@
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de l\'affectation des équipes.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée :</strong>' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emData = teamEditMode(data, 'data', idx);
         if (_emData) {
             h += buildReassignBlock('data', users.getUsersByRole('data'), data, idx, _emData);
@@ -1525,18 +1531,21 @@
         var isRevision      = stepStatus === 'revision_requested';
         var _crc            = data.workflow.channelRevisionComments;
         var revisionComment = isRevision && _crc && _crc[idx] && _crc[idx].data_lancement_test;
+        // M9 : le lancement test est « fait » dès que le test en prod est validé
+        // (fusion dépôt→validation) — au lieu de rester bloqué « en attente MEP ».
+        var testProdOk = cs.po_validation_test_prod === 'validated' || cs.po_validation_test_prod === 'completed';
 
         var h = '<div class="actor-section actor-section--data' + (isRevision ? ' actor-section--revision' : '') + '" id="data-testlaunch-section">';
         h += '<h3>🧪 Lancement test en prod';
         if (isRevision) h += ' <span class="badge-revision">Révision demandée</span>';
+        else if (stepStatus === 'validated' || stepStatus === 'completed' || (stepStatus === 'submitted' && testProdOk)) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé' + _valDateSuffix(data, idx, 'po_validation_test_prod') + '</span>';
         else if (stepStatus === 'submitted') h += ' <span style="font-size:11px;background:var(--blue-50);color:var(--blue);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">En attente de MEP</span>';
-        else if (stepStatus === 'validated' || stepStatus === 'completed') h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Lancé</span>';
         h += '</h3>';
         if (stepStatus === 'locked') {
             h += '<p style="color:var(--muted-2);font-size:13px;font-style:italic;margin:4px 0 0;">🔒 En attente de la validation du test en production.</p>';
             h += '</div>'; return h;
         }
-        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée par le PO :</strong> ' + sanitizeRichHtml(revisionComment) + '</div>';
+        if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée :</strong>' + sanitizeRichHtml(revisionComment) + '</div>';
         var _emData = teamEditMode(data, 'data', idx);
         if (_emData) {
             h += buildReassignBlock('data', users.getUsersByRole('data'), data, idx, _emData);
@@ -3131,11 +3140,12 @@
                 var imgFile    = imgInput && imgInput.files && imgInput.files[0];
                 disableBtn(btn, 'Validation...');
                 workflow.validateChannelStep(currentCampaignData, stepId, channelIdx);
-                if (stepId === 'po_validation_maquette') {
-                    currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
-                    currentCampaignData.workflow.channelDates[channelIdx] = currentCampaignData.workflow.channelDates[channelIdx] || {};
-                    currentCampaignData.workflow.channelDates[channelIdx].validationMaquetteDate = new Date().toLocaleDateString('fr-FR');
-                }
+                // M8 : mémorise la date/heure de validation de CHAQUE étape (affichée sur le canal).
+                currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
+                currentCampaignData.workflow.channelDates[channelIdx] = currentCampaignData.workflow.channelDates[channelIdx] || {};
+                var _valNow = new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+                currentCampaignData.workflow.channelDates[channelIdx][stepId] = _valNow;
+                if (stepId === 'po_validation_maquette') currentCampaignData.workflow.channelDates[channelIdx].validationMaquetteDate = _valNow;
                 var saveScreenshot = imgFile ? (function() {
                     var ext  = imgFile.name.split('.').pop();
                     var fname = stepId + '_' + channelIdx + '.' + ext;
@@ -3708,10 +3718,12 @@
                 return origRev.apply(this, arguments);
             };
         }
-        // Retour à une étape antérieure : notifie l'acteur de l'étape rouverte.
+        // Retour à une étape antérieure : journalise l'action (avec l'acteur réel
+        // via logActivity) et notifie l'acteur de l'étape rouverte.
         if (workflow.reopenChannelStep) {
             var origReopen = workflow.reopenChannelStep;
             workflow.reopenChannelStep = function(data, channelIdx, targetStepId, reason) {
+                _pendingActivity.push({ type: 'workflow', detail: 'Canal ' + (channelIdx + 1) + ' · Retour à l\'étape « ' + (ACT_STEP_LABELS[targetStepId] || targetStepId) + ' » demandé' });
                 try { var n = buildChannelNotif(data, channelIdx, targetStepId, 'revision_requested'); if (n) _pendingNotifs.push(n); } catch (e) {}
                 return origReopen.apply(this, arguments);
             };
