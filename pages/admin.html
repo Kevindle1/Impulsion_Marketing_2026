@@ -87,6 +87,9 @@
         .inc-type { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
         .inc-type.incident { background: var(--red-50); color: var(--red); }
         .inc-type.amelioration { background: var(--amber-50); color: #9a6b00; }
+        .inc-prio-badge { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+        .inc-prio-01 { background: #fdecea; color: #c0392b; } .inc-prio-02 { background: #fef5e7; color: #b9770e; } .inc-prio-03 { background: #eafaf1; color: #1e7e34; } .inc-prio-04 { background: #eef0f2; color: #7a7a7a; }
+        .inc-manage { background: var(--line-2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
         .inc-meta { font-size: 12px; color: var(--muted-2); }
         .inc-desc { font-size: 13.5px; color: var(--gray-700); line-height: 1.5; white-space: pre-wrap; }
         .inc-reponse-saved { background: var(--green-50, #e8f6ef); border: 1px solid var(--green-200, #b7e4cd); border-radius: 8px; padding: 9px 12px; margin-top: 10px; font-size: 13px; color: var(--gray-700); white-space: pre-wrap; }
@@ -503,11 +506,25 @@
             var optsHtml = REPONSE_STATUTS.map(function (o) {
                 return '<option value="' + o.value + '"' + (o.value === selVal ? ' selected' : '') + '>' + o.label + '</option>';
             }).join('');
+            var PRIOS = ['', '01 Prioritaire', '02 Moyen', '03 Non prioritaire', '04 Non retenue'];
+            var prioBadge = it.priorite ? '<span class="inc-prio-badge inc-prio-' + it.priorite.slice(0, 2) + '">' + esc(it.priorite) + '</span>' : '';
             var h = '<div class="inc-item' + (done ? ' done' : '') + '">'
                 + '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
-                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + '</span>'
+                + prioBadge
+                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + (it.livraison ? ' · 📦 ' + esc(it.livraison) : '') + '</span>'
                 + '<span class="inc-status ' + (done ? 'done' : 'open') + '">' + (done ? '✅ Traité' : '🟠 À traiter') + '</span></div>'
                 + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
+            // Bloc de gestion interne (remplace le fichier Excel de suivi).
+            h += '<details class="inc-manage"' + ((it.priorite || it.livraison || it.noteDev || it.contournement) ? ' open' : '') + '>'
+                + '<summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);margin:6px 0;">⚙️ Suivi (priorité, livraison, dev, contournement)</summary>'
+                + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
+                + '<label style="font-size:12px;">Priorité<br><select class="admin-select inc-prio">' + PRIOS.map(function (p) { return '<option' + (it.priorite === p ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '</select></label>'
+                + '<label style="font-size:12px;">Livraison prévue<br><input type="text" class="admin-input inc-livraison" value="' + esc(it.livraison || '') + '" placeholder="Ex : Lot 3" style="min-width:120px;"></label>'
+                + '</div>'
+                + '<label style="font-size:12px;display:block;margin-bottom:6px;">Note dev (interne)<textarea class="admin-input inc-notedev" rows="2" style="width:100%;">' + esc(it.noteDev || '') + '</textarea></label>'
+                + '<label style="font-size:12px;display:block;">Contournement<textarea class="admin-input inc-contournement" rows="2" style="width:100%;">' + esc(it.contournement || '') + '</textarea></label>'
+                + '<button class="btn btn-secondary btn-save-manage" data-i="' + i + '" style="margin-top:8px;">💾 Enregistrer le suivi</button>'
+                + '</details>';
             if (rep && rep.texte) {
                 h += '<div class="inc-reponse-saved">↳ <strong>' + esc(statutReponseLabel(rep.statut)) + '</strong> — ' + esc(rep.texte)
                     + '<div class="inc-reponse-meta">par ' + esc(rep.par || '?') + ' · ' + esc((rep.date || '').slice(0, 10)) + ' · auteur notifié</div></div>';
@@ -530,10 +547,11 @@
             var openCount = incidents.filter(function (i) { return i.statut !== 'traité'; }).length;
             var doneCount = incidents.length - openCount;
 
-            // Sous-onglets : À traiter / Traités
-            var html = '<div class="sub-tabs">'
+            // Sous-onglets : À traiter / Traités + export.
+            var html = '<div class="sub-tabs" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
                 + '<button class="sub-tab' + (incView === 'open' ? ' active' : '') + '" data-incview="open">🟠 À traiter <span class="sub-tab-count">' + openCount + '</span></button>'
                 + '<button class="sub-tab' + (incView === 'done' ? ' active' : '') + '" data-incview="done">✅ Traités <span class="sub-tab-count">' + doneCount + '</span></button>'
+                + '<button class="btn btn-secondary" id="inc-export" style="margin-left:auto;">⬇️ Exporter (Excel/CSV)</button>'
                 + '</div>';
 
             var wantDone = incView === 'done';
@@ -555,6 +573,40 @@
             c.querySelectorAll('[data-toggle]').forEach(function (b) { b.addEventListener('click', function () { var i = +b.getAttribute('data-toggle'); incidents[i].statut = incidents[i].statut === 'traité' ? 'nouveau' : 'traité'; saveIncidents(); }); });
             c.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
             c.querySelectorAll('[data-reply]').forEach(function (b) { b.addEventListener('click', function () { respondToIncident(+b.getAttribute('data-reply'), b); }); });
+            c.querySelectorAll('.btn-save-manage').forEach(function (b) { b.addEventListener('click', function () {
+                var it = incidents[+b.getAttribute('data-i')]; if (!it) return;
+                var card = b.closest('.inc-item');
+                it.priorite = card.querySelector('.inc-prio').value;
+                it.livraison = card.querySelector('.inc-livraison').value.trim();
+                it.noteDev = card.querySelector('.inc-notedev').value.trim();
+                it.contournement = card.querySelector('.inc-contournement').value.trim();
+                saveIncidents();
+            }); });
+            var expBtn = document.getElementById('inc-export');
+            if (expBtn) expBtn.addEventListener('click', exportIncidentsCsv);
+        }
+
+        // Export CSV (ouvrable dans Excel) de tous les signalements + leur suivi.
+        function exportIncidentsCsv() {
+            var cols = ['Type', 'Auteur', 'Page', 'Date', 'Priorité', 'Livraison prévue', 'Statut', 'Description', 'Note dev', 'Contournement', 'Réponse'];
+            var lines = [cols];
+            incidents.forEach(function (it) {
+                lines.push([
+                    it.type === 'amelioration' ? 'Amélioration' : 'Incident',
+                    it.auteur || '', it.page || '', (it.date || '').slice(0, 10),
+                    it.priorite || '', it.livraison || '',
+                    it.statut === 'traité' ? 'Traité' : 'À traiter',
+                    it.description || '', it.noteDev || '', it.contournement || '',
+                    (it.reponse && it.reponse.texte) || ''
+                ]);
+            });
+            var csv = lines.map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+            var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'signalements.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
         }
 
         // Répond à un signalement : enregistre la réponse, met à jour le statut
