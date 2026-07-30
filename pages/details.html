@@ -4425,8 +4425,16 @@
             note = document.getElementById('cmp-note'), detail = document.getElementById('bilan-compare-detail');
         if (!campSel) return;
         listCampaignsForCompare().then(function (names) {
-            names.filter(function (n) { return n !== (_bilanState && _bilanState.campaignName); }).sort()
-                .forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; campSel.appendChild(o); });
+            // La campagne courante reste dans la liste (marquée) : on peut ainsi
+            // comparer deux livrables de la MÊME campagne, pas seulement entre
+            // deux campagnes différentes.
+            var current = _bilanState && _bilanState.campaignName;
+            names.slice().sort().forEach(function (n) {
+                var o = document.createElement('option');
+                o.value = n;
+                o.textContent = (n === current) ? ('📍 ' + n + ' (cette campagne)') : n;
+                campSel.appendChild(o);
+            });
         });
         campSel.addEventListener('change', function () {
             chSel.innerHTML = '<option value="">— livrable —</option>'; chSel.disabled = true;
