@@ -1051,6 +1051,14 @@
         var v = cd && cd[idx] && cd[idx][poStepId];
         return v ? (' le ' + v) : '';
     }
+    // Horodatage court partagé (jj/mm/aa hh:mm) — utilisé pour tracer qui a fait
+    // quoi et quand (validations, demandes de modification…).
+    function _nowStamp() {
+        return new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+    function _currentUserName() {
+        return (users && users.getCurrentUser() && users.getCurrentUser().name) || '';
+    }
     // Qui peut renvoyer un canal à une étape : le PO (toute étape franchie), un
     // super-admin / manager général, ou l'acteur affecté sur SA propre étape.
     // L'étape doit avoir été franchie (déposée / validée).
@@ -1204,7 +1212,36 @@
             html += buildEbfMepSection(data, ch, idx, cs, isAssignedEbf && ebfMepActive);
         }
 
+        // Card historique des demandes de modification (M16) — en bas du livrable.
+        html += buildRevisionHistoryCard(data, idx);
+
         return html;
+    }
+
+    // Historique de toutes les demandes de modification faites sur ce canal :
+    // étape, demandeur, date/heure, description — avec un compteur d'allers-retours.
+    function buildRevisionHistoryCard(data, idx) {
+        var log = (workflow.getChannelRevisionLog ? workflow.getChannelRevisionLog(data, idx) : []) || [];
+        if (!log.length) return '';
+        var h = '<div class="detail-section" id="revision-history-' + idx + '">';
+        h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
+        h += '<h3 style="margin:0;">🔁 Historique des demandes de modification</h3>';
+        h += '<span style="font-size:12px;font-weight:700;background:var(--amber-50);color:#9a6b00;border-radius:999px;padding:4px 12px;">' + log.length + ' aller' + (log.length > 1 ? 's' : '') + '-retour' + (log.length > 1 ? 's' : '') + '</span>';
+        h += '</div>';
+        h += '<div style="display:flex;flex-direction:column;gap:10px;">';
+        // Plus récent en premier.
+        log.slice().reverse().forEach(function(entry) {
+            h += '<div style="background:var(--line-2);border-radius:10px;padding:10px 14px;">';
+            h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;font-size:12px;">';
+            h += '<span style="font-weight:700;color:var(--ink);">' + security.escapeHtml(_REOPEN_LABELS[entry.stepId] || entry.stepId) + '</span>';
+            if (entry.author) h += '<span style="color:var(--muted);">· demandé par <strong>' + security.escapeHtml(entry.author) + '</strong></span>';
+            if (entry.date) h += '<span style="color:var(--muted-2);">· ' + security.escapeHtml(entry.date) + '</span>';
+            h += '</div>';
+            if (entry.comment) h += '<div style="font-size:13px;color:var(--gray-700);white-space:pre-wrap;word-break:break-word;">' + sanitizeRichHtml(entry.comment) + '</div>';
+            h += '</div>';
+        });
+        h += '</div></div>';
+        return h;
     }
 
     // ─────────────────────────────────────────────
@@ -3328,7 +3365,7 @@
                 if (!field.text) { notify('Veuillez décrire la modification demandée.', 'warning'); return; }
                 var comment = field.html;
                 disableBtn(btn, 'Envoi...');
-                workflow.requestChannelRevision(currentCampaignData, stepId, sourceId, channelIdx, comment);
+                workflow.requestChannelRevision(currentCampaignData, stepId, sourceId, channelIdx, comment, _currentUserName(), _nowStamp());
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
                     .catch(function(err) { enableBtn(btn, '📤 Envoyer la demande'); notify('Erreur : ' + err.message, 'error'); });
@@ -3351,7 +3388,7 @@
                 var field      = readRichField(document.getElementById('reopen-motif-' + uid));
                 if (!field.text) { notify('Le motif est obligatoire pour revenir à une étape.', 'warning'); return; }
                 disableBtn(btn, 'Traitement...');
-                workflow.reopenChannelStep(currentCampaignData, channelIdx, stepId, field.html);
+                workflow.reopenChannelStep(currentCampaignData, channelIdx, stepId, field.html, _currentUserName(), _nowStamp());
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
                     .catch(function(err) { enableBtn(btn, '↩️ Renvoyer à cette étape'); notify('Erreur : ' + err.message, 'error'); });
@@ -3578,7 +3615,7 @@
                 var reason = reasonEl ? reasonEl.value.trim() : '';
                 if (!reason) { notify('Merci d\'indiquer le motif du refus juridique.', 'warning'); if (reasonEl) reasonEl.focus(); return; }
                 disableBtn(btn, 'Envoi...');
-                workflow.refuseChannelJuridique(currentCampaignData, channelIdx, reason);
+                workflow.refuseChannelJuridique(currentCampaignData, channelIdx, reason, _currentUserName(), _nowStamp());
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
                     .catch(function(err) { enableBtn(btn, '❌ Refuser (retour Com)'); notify('Erreur : ' + err.message, 'error'); });

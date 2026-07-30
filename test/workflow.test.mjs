@@ -103,6 +103,42 @@ test('requestChannelRevision — repasse l’étape source en révision et rever
   assert.equal(data.workflow.channelRevisionComments[0].com_maquette, 'À revoir');
 });
 
+test('getChannelRevisionLog — historique cumulé (append-only) + auteur/date (M16)', () => {
+  const data = makeCampaign(['Com', 'EBF', 'Data']);
+  workflow.advanceStep(data, 'manager_affectation', 'validated');
+  workflow.advanceStep(data, 'po_kickoff', 'validated');
+  workflow.advanceChannelStep(data, 0, 'com_maquette', 'submitted');
+
+  workflow.requestChannelRevision(data, 'po_validation_maquette', 'com_maquette', 0, 'Manque le logo', 'Sébastien (PO)', '24/07/26 10:00');
+  // La Com redépose, puis un second aller-retour a lieu.
+  workflow.advanceChannelStep(data, 0, 'com_maquette', 'submitted');
+  workflow.requestChannelRevision(data, 'po_validation_maquette', 'com_maquette', 0, 'Couleur à revoir', 'Sébastien (PO)', '24/07/26 14:30');
+
+  const log = workflow.getChannelRevisionLog(data, 0);
+  assert.equal(log.length, 2, 'les deux demandes doivent être cumulées, pas écrasées');
+  assert.deepEqual(log.map(e => e.comment), ['Manque le logo', 'Couleur à revoir']);
+  assert.equal(log[0].author, 'Sébastien (PO)');
+  assert.equal(log[0].date, '24/07/26 10:00');
+  assert.equal(log[0].stepId, 'com_maquette');
+  // Canal sans historique → tableau vide, jamais undefined.
+  assert.deepEqual(workflow.getChannelRevisionLog(data, 1), []);
+});
+
+test('getChannelRevisionLog — reopenChannelStep et refuseChannelJuridique alimentent aussi le journal', () => {
+  const data = makeCampaign(['Com']);
+  workflow.advanceStep(data, 'manager_affectation', 'validated');
+  workflow.advanceStep(data, 'po_kickoff', 'validated');
+  workflow.advanceChannelStep(data, 0, 'com_maquette', 'validated');
+  workflow.reopenChannelStep(data, 0, 'com_maquette', 'Erreur de date', 'Marie (Com manager)', '25/07/26 09:00');
+  workflow.refuseChannelJuridique(data, 0, 'Mention légale manquante', 'Paul (Juridique)', '25/07/26 09:05');
+
+  const log = workflow.getChannelRevisionLog(data, 0);
+  assert.equal(log.length, 2);
+  assert.equal(log[0].author, 'Marie (Com manager)');
+  assert.equal(log[1].author, 'Paul (Juridique)');
+  assert.ok(log[1].comment.indexOf('Mention légale manquante') !== -1);
+});
+
 test('isChannelCompleted — selon les équipes requises', () => {
   // Com+EBF+Data : terminé quand data_mise_en_prod = completed
   assert.equal(

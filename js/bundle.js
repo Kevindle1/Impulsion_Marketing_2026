@@ -2309,11 +2309,29 @@ window.ImpulsionMarketing.workflow = (function () {
     return campaignData;
   }
 
+  // Historique des demandes de modification par canal (M16) — append-only :
+  // un événement par demande (étape concernée, demandeur, date/heure,
+  // description), pour affichage dans la card « Historique des modifications »
+  // + compteur d'allers-retours. Alimenté par requestChannelRevision,
+  // reopenChannelStep et refuseChannelJuridique. author/when sont fournis par
+  // l'appelant (page) : le moteur reste une fonction pure, sans horloge/identité.
+  function _pushRevisionLog(campaignData, channelIdx, stepId, comment, author, when) {
+    if (!campaignData.workflow.channelRevisionLog) campaignData.workflow.channelRevisionLog = {};
+    if (!campaignData.workflow.channelRevisionLog[channelIdx]) campaignData.workflow.channelRevisionLog[channelIdx] = [];
+    campaignData.workflow.channelRevisionLog[channelIdx].push({
+      stepId: stepId, author: author || '', date: when || '', comment: comment || ''
+    });
+  }
+  function getChannelRevisionLog(campaignData, channelIdx) {
+    var log = campaignData.workflow && campaignData.workflow.channelRevisionLog;
+    return (log && log[channelIdx]) ? log[channelIdx] : [];
+  }
+
   /**
    * Demande une modification sur une étape canal (PO → acteur)
    * Met à jour channelSteps[channelIdx] et stocke le commentaire
    */
-  function requestChannelRevision(campaignData, poStepId, sourceStepId, channelIdx, comment) {
+  function requestChannelRevision(campaignData, poStepId, sourceStepId, channelIdx, comment, author, when) {
     initWorkflow(campaignData);
     var cs = campaignData.workflow.channelSteps;
     if (!cs || !cs[channelIdx]) return campaignData;
@@ -2326,6 +2344,7 @@ window.ImpulsionMarketing.workflow = (function () {
       campaignData.workflow.channelRevisionComments[channelIdx] = {};
     }
     campaignData.workflow.channelRevisionComments[channelIdx][sourceStepId] = comment || '';
+    _pushRevisionLog(campaignData, channelIdx, sourceStepId, comment, author, when);
     return campaignData;
   }
 
@@ -2359,7 +2378,7 @@ window.ImpulsionMarketing.workflow = (function () {
    * - Le motif est obligatoire (stocké + affiché en « Modification demandée »).
    * Utilisable par l'acteur sur sa propre étape, ou par le PO sur toute étape.
    */
-  function reopenChannelStep(campaignData, channelIdx, targetStepId, reason) {
+  function reopenChannelStep(campaignData, channelIdx, targetStepId, reason, author, when) {
     initWorkflow(campaignData);
     var cs = campaignData.workflow.channelSteps;
     if (!cs || !cs[channelIdx] || CHANNEL_STEP_IDS.indexOf(targetStepId) === -1) return campaignData;
@@ -2373,6 +2392,7 @@ window.ImpulsionMarketing.workflow = (function () {
     if (!campaignData.workflow.channelRevisionComments) campaignData.workflow.channelRevisionComments = {};
     if (!campaignData.workflow.channelRevisionComments[channelIdx]) campaignData.workflow.channelRevisionComments[channelIdx] = {};
     campaignData.workflow.channelRevisionComments[channelIdx][targetStepId] = reason || '';
+    _pushRevisionLog(campaignData, channelIdx, targetStepId, reason, author, when);
     var chType = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].type;
     cs[channelIdx] = recalcChannelUnlocks(ch, campaignData.workflow.steps, campaignData.requiredTeams, chType, juridiqueRequired(campaignData));
     return campaignData;
@@ -2404,16 +2424,18 @@ window.ImpulsionMarketing.workflow = (function () {
    * la validation PO et la validation juridique sont reverrouillées, le motif
    * est conservé. Quand la Com redépose, la séquence repart automatiquement.
    */
-  function refuseChannelJuridique(campaignData, channelIdx, reason) {
+  function refuseChannelJuridique(campaignData, channelIdx, reason, author, when) {
     initWorkflow(campaignData);
     var cs = campaignData.workflow.channelSteps;
     if (!cs || !cs[channelIdx]) return campaignData;
     cs[channelIdx].com_juridique          = 'locked';
     cs[channelIdx].po_validation_maquette = 'locked';
     cs[channelIdx].com_maquette           = 'revision_requested';
+    var fullReason = '⚖️ Refus juridique : ' + (reason || '');
     if (!campaignData.workflow.channelRevisionComments) campaignData.workflow.channelRevisionComments = {};
     if (!campaignData.workflow.channelRevisionComments[channelIdx]) campaignData.workflow.channelRevisionComments[channelIdx] = {};
-    campaignData.workflow.channelRevisionComments[channelIdx].com_maquette = '⚖️ Refus juridique : ' + (reason || '');
+    campaignData.workflow.channelRevisionComments[channelIdx].com_maquette = fullReason;
+    _pushRevisionLog(campaignData, channelIdx, 'com_maquette', fullReason, author, when);
     return campaignData;
   }
 
@@ -3127,6 +3149,7 @@ window.ImpulsionMarketing.workflow = (function () {
     requestRevision:          requestRevision,
     requestChannelRevision:   requestChannelRevision,
     reopenChannelStep:        reopenChannelStep,
+    getChannelRevisionLog:    getChannelRevisionLog,
     channelAssignees:         channelAssignees,
     applyAutoAssignments:     applyAutoAssignments,
     initChannelValidations:   initChannelValidations,
