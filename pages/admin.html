@@ -102,6 +102,29 @@
         .btn-reply:disabled { opacity: .6; cursor: default; }
         .empty-hint { color: var(--muted-2); font-size: 14px; padding: 16px 0; }
         .toggle-label { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; }
+
+        /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
+        .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+        .lot-status-a_venir, .dev-status-a_venir { background: #eef0f2; color: #64748b; }
+        .lot-status-dev_en_cours, .dev-status-dev_en_cours { background: #e8f0fe; color: #1a56db; }
+        .lot-status-recettage, .dev-status-recettage { background: var(--amber-50); color: #9a6b00; }
+        .lot-status-livre { background: var(--green-50); color: var(--green-600); }
+        .lot-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s; background: #fff; }
+        .lot-card:hover { border-color: var(--primary); box-shadow: var(--shadow-xs); }
+        .lot-card .lot-name { font-size: 15px; font-weight: 750; color: var(--ink); flex: 1; min-width: 0; }
+        .lot-card .lot-progress { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+        .lot-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .lot-header h3 { margin: 0; font-size: 18px; font-weight: 800; color: var(--ink); }
+        .lot-header .admin-select { margin-left: auto; }
+        .btn-back-lots { background: none; border: 1px solid var(--line); border-radius: 9px; padding: 7px 13px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; }
+        .btn-back-lots:hover { background: var(--line-2); color: var(--ink); }
+        .sig-search-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .sig-search-row input[type="text"] { flex: 2; min-width: 220px; }
+        .sig-search-row select { flex: 1; min-width: 140px; }
+        .inc-devstatut-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; align-items: center; }
+        .inc-triage-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; align-items: flex-end; }
+        .inc-triage-row label { font-size: 12px; color: var(--muted); }
+        .inc-lot-tag { font-size: 11px; font-weight: 700; color: var(--muted-2); }
     </style>
 </head>
 <body>
@@ -299,15 +322,6 @@
             });
         });
 
-        // Badge de la nav : nombre de signalements ouverts (non « traité »).
-        function updateNavCounts() {
-            var el = document.getElementById('nav-count-incidents');
-            if (!el) return;
-            var open = incidents.filter(function (i) { return i.statut !== 'traité'; }).length;
-            if (open > 0) { el.textContent = open; el.style.display = ''; }
-            else { el.style.display = 'none'; }
-        }
-
         // ── PERSONNES ──
         function renderPeople() {
             var teamSelectOptions = TEAMS.map(function (t) { return '<option value="' + t.role + '">' + t.label + '</option>'; }).join('');
@@ -486,45 +500,147 @@
         }
 
         // ── SIGNALEMENTS ──
-        // Statuts de réponse proposés quand on traite un signalement.
-        // `incStatut` = statut appliqué au signalement (les non-« traité » restent « ouverts »).
+        // Statuts de réponse proposés quand on traite un signalement (réponse à l'auteur).
         var REPONSE_STATUTS = IM.config.REPONSE_STATUTS;
         function statutReponseLabel(v) {
             for (var k = 0; k < REPONSE_STATUTS.length; k++) if (REPONSE_STATUTS[k].value === v) return REPONSE_STATUTS[k].label;
             return v || '';
         }
 
-        // Sous-vue active des signalements : 'open' (à traiter) | 'done' (traités)
-        var incView = 'open';
+        // Statuts d'avancement dev, par signalement (une fois affecté à un lot).
+        var DEV_STATUTS = [
+            { value: 'a_venir', label: 'À venir' },
+            { value: 'dev_en_cours', label: 'Dev en cours' },
+            { value: 'recettage', label: 'Recettage' }
+        ];
+        function devStatutLabel(v) {
+            for (var k = 0; k < DEV_STATUTS.length; k++) if (DEV_STATUTS[k].value === v) return DEV_STATUTS[k].label;
+            return DEV_STATUTS[0].label;
+        }
 
-        // Markup d'une carte de signalement (réutilisé par les deux sous-vues).
-        function incidentCardHtml(it) {
+        // Statuts d'avancement d'un lot (agrégé — indépendant du statut de chaque signalement).
+        var LOT_STATUTS = [
+            { value: 'a_venir', label: 'À venir' },
+            { value: 'dev_en_cours', label: 'En cours de dev' },
+            { value: 'recettage', label: 'Recettage' },
+            { value: 'livre', label: 'Livré' }
+        ];
+        function lotStatutLabel(v) {
+            for (var k = 0; k < LOT_STATUTS.length; k++) if (LOT_STATUTS[k].value === v) return LOT_STATUTS[k].label;
+            return LOT_STATUTS[0].label;
+        }
+
+        // Sous-page active : 'triage' | 'lots' | 'archive' | 'recherche'.
+        var incView = 'triage';
+        var activeLot = null; // nom du lot ouvert dans la sous-page « Lots à dev »
+        var sigSearch = { q: '', type: '', lot: '', dev: '' };
+
+        // Suivi des lots (statut agrégé), persisté à part des signalements (Données/signalement_lots.json).
+        var sigLots = []; // [{ nom, statut }]
+        function findLot(nom) {
+            for (var k = 0; k < sigLots.length; k++) if (sigLots[k].nom === nom) return sigLots[k];
+            return null;
+        }
+        function ensureLot(nom) {
+            var l = findLot(nom);
+            if (!l) { l = { nom: nom, statut: 'a_venir' }; sigLots.push(l); }
+            return l;
+        }
+        function lotStatutOf(nom) { var l = findLot(nom); return l ? l.statut : 'a_venir'; }
+        function saveLots() { return writeJson('Données', 'signalement_lots.json', sigLots, 'Statut du lot enregistré.'); }
+
+        // Noms de lot connus : liste de choix « Numéros de lot » + lots déjà utilisés.
+        function knownLotNames() {
+            var set = {};
+            (lists.lots || []).forEach(function (v) { if (v) set[v] = true; });
+            incidents.forEach(function (it) { if (it.livraison) set[it.livraison] = true; });
+            sigLots.forEach(function (l) { if (l.nom) set[l.nom] = true; });
+            return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+        }
+        function isTriaged(it) { return !!(it.priorite && it.livraison); }
+        function readLotValue(card) {
+            var sel = card.querySelector('.inc-lot');
+            if (!sel) return '';
+            if (sel.value === '__new__') {
+                var inp = card.querySelector('.inc-lot-new');
+                return inp ? inp.value.trim() : '';
+            }
+            return sel.value;
+        }
+        function wireLotSelects(cont) {
+            cont.querySelectorAll('.inc-lot').forEach(function (sel) {
+                sel.addEventListener('change', function () {
+                    var inp = sel.parentElement.querySelector('.inc-lot-new');
+                    if (!inp) return;
+                    inp.style.display = sel.value === '__new__' ? '' : 'none';
+                    if (sel.value === '__new__') inp.focus();
+                });
+            });
+        }
+
+        // Badge de la nav : nombre de signalements en attente de triage.
+        function updateNavCounts() {
+            var el = document.getElementById('nav-count-incidents');
+            if (!el) return;
+            var pending = incidents.filter(function (i) { return !isTriaged(i); }).length;
+            if (pending > 0) { el.textContent = pending; el.style.display = ''; }
+            else { el.style.display = 'none'; }
+        }
+
+        var SIG_VIEWS = [
+            { key: 'triage', ic: '🗂️', label: 'Triage' },
+            { key: 'lots', ic: '🚧', label: 'Lots à dev' },
+            { key: 'archive', ic: '📦', label: 'Archive' },
+            { key: 'recherche', ic: '🔎', label: 'Recherche' }
+        ];
+        function sigSubnavHtml() {
+            var counts = {
+                triage: incidents.filter(function (i) { return !isTriaged(i); }).length,
+                lots: sigLots.filter(function (l) { return l.statut !== 'livre'; }).length,
+                archive: sigLots.filter(function (l) { return l.statut === 'livre'; }).length,
+                recherche: incidents.length
+            };
+            var html = '<div class="sub-tabs" style="flex-wrap:wrap;">';
+            SIG_VIEWS.forEach(function (v) {
+                html += '<button class="sub-tab' + (incView === v.key ? ' active' : '') + '" data-sigview="' + v.key + '">' + v.ic + ' ' + v.label + ' <span class="sub-tab-count">' + counts[v.key] + '</span></button>';
+            });
+            html += '<button class="btn btn-secondary" id="inc-export" style="margin-left:auto;">⬇️ Exporter (Excel/CSV)</button></div>';
+            return html;
+        }
+
+        // Bloc priorité + lot (+ champs complets en mode « full ») — réutilisé sur toutes les pages.
+        function manageBlockHtml(it, mode) {
             var i = incidents.indexOf(it);
-            var done = it.statut === 'traité';
+            var PRIOS = ['', '01 Prioritaire', '02 Moyen', '03 Non prioritaire', '04 Non retenue'];
+            var lotOpts = knownLotNames();
+            var lotOptsHtml = '<option value="">— Choisir un lot —</option>' + lotOpts.map(function (n) {
+                return '<option value="' + esc(n) + '"' + (it.livraison === n ? ' selected' : '') + '>' + esc(n) + '</option>';
+            }).join('') + '<option value="__new__">➕ Nouveau lot…</option>';
+            var h = '<div class="inc-triage-row">'
+                + '<label>Priorité<br><select class="admin-select inc-prio" data-i="' + i + '">' + PRIOS.map(function (p) { return '<option' + (it.priorite === p ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '</select></label>'
+                + '<label>Lot<br><select class="admin-select inc-lot" data-i="' + i + '">' + lotOptsHtml + '</select>'
+                + '<input type="text" class="admin-input inc-lot-new" data-i="' + i + '" placeholder="Nom du nouveau lot" style="display:none;margin-top:6px;"></label>'
+                + (mode === 'triage' ? '<button class="btn btn-primary btn-triage" data-i="' + i + '">✅ Valider le triage</button>' : '')
+                + '</div>';
+            if (mode === 'full') {
+                var devOptsHtml = DEV_STATUTS.map(function (d) { return '<option value="' + d.value + '"' + ((it.devStatut || 'a_venir') === d.value ? ' selected' : '') + '>' + d.label + '</option>'; }).join('');
+                h += '<div class="inc-devstatut-row"><label style="font-size:12px;color:var(--muted);">Statut du signalement&nbsp;'
+                    + '<select class="admin-select inc-devstatut" data-i="' + i + '">' + devOptsHtml + '</select></label></div>'
+                    + '<label style="font-size:12px;display:block;margin-bottom:6px;">Modifications faites<textarea class="admin-input inc-notedev" data-i="' + i + '" rows="2" style="width:100%;">' + esc(it.noteDev || '') + '</textarea></label>'
+                    + '<label style="font-size:12px;display:block;margin-bottom:6px;">Bilan du recettage<textarea class="admin-input inc-bilan" data-i="' + i + '" rows="2" style="width:100%;">' + esc(it.bilanRecettage || '') + '</textarea></label>'
+                    + '<label style="font-size:12px;display:block;">Contournement<textarea class="admin-input inc-contournement" data-i="' + i + '" rows="2" style="width:100%;">' + esc(it.contournement || '') + '</textarea></label>'
+                    + '<button class="btn btn-secondary btn-save-manage" data-i="' + i + '" style="margin-top:8px;">💾 Enregistrer le suivi</button>';
+            }
+            return h;
+        }
+
+        // Bloc réponse à l'auteur — réutilisé sur les pages Lots à dev / Recherche.
+        function replyBlockHtml(it) {
+            var i = incidents.indexOf(it);
             var rep = it.reponse;
             var selVal = rep ? rep.statut : 'resolu';
-            var optsHtml = REPONSE_STATUTS.map(function (o) {
-                return '<option value="' + o.value + '"' + (o.value === selVal ? ' selected' : '') + '>' + o.label + '</option>';
-            }).join('');
-            var PRIOS = ['', '01 Prioritaire', '02 Moyen', '03 Non prioritaire', '04 Non retenue'];
-            var prioBadge = it.priorite ? '<span class="inc-prio-badge inc-prio-' + it.priorite.slice(0, 2) + '">' + esc(it.priorite) + '</span>' : '';
-            var h = '<div class="inc-item' + (done ? ' done' : '') + '">'
-                + '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
-                + prioBadge
-                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + (it.livraison ? ' · 📦 ' + esc(it.livraison) : '') + '</span>'
-                + '<span class="inc-status ' + (done ? 'done' : 'open') + '">' + (done ? '✅ Traité' : '🟠 À traiter') + '</span></div>'
-                + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
-            // Bloc de gestion interne (remplace le fichier Excel de suivi).
-            h += '<details class="inc-manage"' + ((it.priorite || it.livraison || it.noteDev || it.contournement) ? ' open' : '') + '>'
-                + '<summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);margin:6px 0;">⚙️ Suivi (priorité, livraison, dev, contournement)</summary>'
-                + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
-                + '<label style="font-size:12px;">Priorité<br><select class="admin-select inc-prio">' + PRIOS.map(function (p) { return '<option' + (it.priorite === p ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '</select></label>'
-                + '<label style="font-size:12px;">Livraison prévue<br><input type="text" class="admin-input inc-livraison" value="' + esc(it.livraison || '') + '" placeholder="Ex : Lot 3" style="min-width:120px;"></label>'
-                + '</div>'
-                + '<label style="font-size:12px;display:block;margin-bottom:6px;">Note dev (interne)<textarea class="admin-input inc-notedev" rows="2" style="width:100%;">' + esc(it.noteDev || '') + '</textarea></label>'
-                + '<label style="font-size:12px;display:block;">Contournement<textarea class="admin-input inc-contournement" rows="2" style="width:100%;">' + esc(it.contournement || '') + '</textarea></label>'
-                + '<button class="btn btn-secondary btn-save-manage" data-i="' + i + '" style="margin-top:8px;">💾 Enregistrer le suivi</button>'
-                + '</details>';
+            var optsHtml = REPONSE_STATUTS.map(function (o) { return '<option value="' + o.value + '"' + (o.value === selVal ? ' selected' : '') + '>' + o.label + '</option>'; }).join('');
+            var h = '';
             if (rep && rep.texte) {
                 h += '<div class="inc-reponse-saved">↳ <strong>' + esc(statutReponseLabel(rep.statut)) + '</strong> — ' + esc(rep.texte)
                     + '<div class="inc-reponse-meta">par ' + esc(rep.par || '?') + ' · ' + esc((rep.date || '').slice(0, 10)) + ' · auteur notifié</div></div>';
@@ -533,70 +649,207 @@
                 + '<textarea class="inc-reply-text" data-rep="' + i + '" rows="2" placeholder="Réponse à l\'auteur : ce que vous avez fait…">' + esc(rep ? rep.texte : '') + '</textarea>'
                 + '<div class="inc-reply-row"><select class="inc-reply-statut" data-reps="' + i + '">' + optsHtml + '</select>'
                 + '<button class="btn-reply" data-reply="' + i + '">💬 Répondre &amp; notifier</button></div>'
-                + '</div>'
-                + '<div class="save-bar" style="margin-top:10px;">'
-                + '<button class="btn btn-secondary" data-toggle="' + i + '">' + (done ? '↩ Rouvrir' : '✅ Marquer traité') + '</button>'
-                + '<button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div>'
                 + '</div>';
             return h;
+        }
+
+        function cardHead(it) {
+            var prioBadge = it.priorite ? '<span class="inc-prio-badge inc-prio-' + it.priorite.slice(0, 2) + '">' + esc(it.priorite) + '</span>' : '';
+            var devBadge = it.livraison ? '<span class="dev-status-badge dev-status-' + (it.devStatut || 'a_venir') + '">' + esc(devStatutLabel(it.devStatut)) + '</span>' : '';
+            return '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
+                + prioBadge + devBadge
+                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + (it.livraison ? ' · <span class="inc-lot-tag">📦 ' + esc(it.livraison) + '</span>' : '') + '</span></div>'
+                + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
+        }
+
+        // ── Page 1 : Triage ──
+        function triageCardHtml(it) {
+            var i = incidents.indexOf(it);
+            return '<div class="inc-item">' + cardHead(it) + manageBlockHtml(it, 'triage')
+                + '<div class="save-bar" style="margin-top:10px;"><button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div></div>';
+        }
+        function renderTriage(cont) {
+            var list = incidents.filter(function (it) { return !isTriaged(it); });
+            var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>Les nouveaux signalements arrivent ici. Une fois <strong>priorité</strong> et <strong>lot</strong> renseignés, le signalement bascule automatiquement dans « Lots à dev ».</div></div>';
+            if (!list.length) {
+                html += '<div class="admin-card"><div class="empty-hint">Rien à trier pour l’instant. 🎉</div></div>';
+            } else {
+                html += '<div class="admin-card"><div class="admin-card-title"><h3>À trier</h3><span class="count-pill">' + list.length + '</span></div>';
+                list.slice().reverse().forEach(function (it) { html += triageCardHtml(it); });
+                html += '</div>';
+            }
+            cont.innerHTML = html;
+            wireLotSelects(cont);
+            cont.querySelectorAll('.btn-triage').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var it = incidents[+b.getAttribute('data-i')]; if (!it) return;
+                    var card = b.closest('.inc-item');
+                    var prio = card.querySelector('.inc-prio').value;
+                    var lotVal = readLotValue(card);
+                    if (!prio || !lotVal) { notify('Indiquez une priorité et un lot.', 'error'); return; }
+                    it.priorite = prio; it.livraison = lotVal;
+                    ensureLot(it.livraison);
+                    saveIncidents();
+                    saveLots();
+                });
+            });
+            cont.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
+        }
+
+        // ── Page 2 : Lots à dev ──
+        function renderLotsList(cont) {
+            var lotNames = {};
+            incidents.forEach(function (it) { if (isTriaged(it)) lotNames[it.livraison] = true; });
+            sigLots.forEach(function (l) { if (l.statut !== 'livre') lotNames[l.nom] = true; });
+            var names = Object.keys(lotNames).filter(function (n) { return lotStatutOf(n) !== 'livre'; }).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Lots à dev</h3><span class="count-pill">' + names.length + '</span></div>';
+            if (!names.length) {
+                html += '<div class="empty-hint">Aucun lot en cours. Triez des signalements pour en créer un.</div>';
+            } else {
+                names.forEach(function (n) {
+                    var tickets = incidents.filter(function (it) { return it.livraison === n; });
+                    var done = tickets.filter(function (it) { return it.devStatut === 'recettage'; }).length;
+                    var st = lotStatutOf(n);
+                    html += '<div class="lot-card" data-openlot="' + esc(n) + '"><span class="lot-name">📦 ' + esc(n) + '</span>'
+                        + '<span class="lot-progress">' + tickets.length + ' signalement' + (tickets.length > 1 ? 's' : '') + (tickets.length ? ' · ' + done + '/' + tickets.length + ' en recettage' : '') + '</span>'
+                        + '<span class="lot-status-badge lot-status-' + st + '">' + lotStatutLabel(st) + '</span></div>';
+                });
+            }
+            html += '</div>';
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-openlot]').forEach(function (b) { b.addEventListener('click', function () { activeLot = b.getAttribute('data-openlot'); renderIncidents(); }); });
+        }
+        function lotTicketCardHtml(it) {
+            var i = incidents.indexOf(it);
+            return '<div class="inc-item">' + cardHead(it) + manageBlockHtml(it, 'full') + replyBlockHtml(it)
+                + '<div class="save-bar" style="margin-top:10px;"><button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div></div>';
+        }
+        function renderLotDetail(cont) {
+            var nom = activeLot;
+            ensureLot(nom);
+            var st = lotStatutOf(nom);
+            var tickets = incidents.filter(function (it) { return it.livraison === nom; });
+            var html = '<div class="lot-header"><button class="btn-back-lots" id="back-to-lots">← Lots à dev</button>'
+                + '<h3>📦 ' + esc(nom) + '</h3>'
+                + '<select class="admin-select" id="lot-statut-sel">' + LOT_STATUTS.map(function (s) { return '<option value="' + s.value + '"' + (st === s.value ? ' selected' : '') + '>' + s.label + '</option>'; }).join('') + '</select></div>';
+            if (!tickets.length) {
+                html += '<div class="admin-card"><div class="empty-hint">Aucun signalement dans ce lot.</div></div>';
+            } else {
+                html += '<div class="admin-card"><div class="admin-card-title"><h3>Signalements du lot</h3><span class="count-pill">' + tickets.length + '</span></div>';
+                tickets.slice().reverse().forEach(function (it) { html += lotTicketCardHtml(it); });
+                html += '</div>';
+            }
+            cont.innerHTML = html;
+            document.getElementById('back-to-lots').addEventListener('click', function () { activeLot = null; renderIncidents(); });
+            document.getElementById('lot-statut-sel').addEventListener('change', function (e) {
+                ensureLot(nom).statut = e.target.value;
+                saveLots().then(function () { renderIncidents(); });
+            });
+            wireManageBlocks(cont);
+            wireLotSelects(cont);
+            wireReplyBlocks(cont);
+            cont.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
+        }
+        function renderLots(cont) { if (activeLot) renderLotDetail(cont); else renderLotsList(cont); }
+
+        // ── Page 3 : Archive (lots livrés) ──
+        function renderArchive(cont) {
+            var names = sigLots.filter(function (l) { return l.statut === 'livre'; }).map(function (l) { return l.nom; }).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Lots livrés</h3><span class="count-pill">' + names.length + '</span></div>';
+            if (!names.length) {
+                html += '<div class="empty-hint">Aucun lot livré pour l’instant.</div>';
+            } else {
+                names.forEach(function (n) {
+                    var tickets = incidents.filter(function (it) { return it.livraison === n; });
+                    html += '<div class="lot-card" data-archlot="' + esc(n) + '"><span class="lot-name">📦 ' + esc(n) + '</span>'
+                        + '<span class="lot-progress">' + tickets.length + ' signalement' + (tickets.length > 1 ? 's' : '') + '</span>'
+                        + '<span class="lot-status-badge lot-status-livre">✅ Livré</span></div>';
+                });
+            }
+            html += '</div>';
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-archlot]').forEach(function (b) { b.addEventListener('click', function () { activeLot = b.getAttribute('data-archlot'); incView = 'lots'; renderIncidents(); }); });
+        }
+
+        // ── Page 4 : Recherche ──
+        function renderRecherche(cont) {
+            var lotOpts = knownLotNames();
+            var html = '<div class="admin-card"><div class="sig-search-row">'
+                + '<input type="text" class="admin-input" id="sig-q" placeholder="Rechercher (description, auteur, page…)" value="' + esc(sigSearch.q) + '">'
+                + '<select class="admin-select" id="sig-f-type"><option value="">Tous types</option><option value="incident"' + (sigSearch.type === 'incident' ? ' selected' : '') + '>🐞 Incident</option><option value="amelioration"' + (sigSearch.type === 'amelioration' ? ' selected' : '') + '>💡 Amélioration</option></select>'
+                + '<select class="admin-select" id="sig-f-lot"><option value="">Tous les lots</option>' + lotOpts.map(function (n) { return '<option value="' + esc(n) + '"' + (sigSearch.lot === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>'
+                + '<select class="admin-select" id="sig-f-dev"><option value="">Tous statuts</option>' + DEV_STATUTS.map(function (d) { return '<option value="' + d.value + '"' + (sigSearch.dev === d.value ? ' selected' : '') + '>' + d.label + '</option>'; }).join('') + '</select>'
+                + '</div></div>';
+            var q = (sigSearch.q || '').toLowerCase();
+            var list = incidents.filter(function (it) {
+                if (sigSearch.type && it.type !== sigSearch.type) return false;
+                if (sigSearch.lot && it.livraison !== sigSearch.lot) return false;
+                if (sigSearch.dev && (it.devStatut || 'a_venir') !== sigSearch.dev) return false;
+                if (q && (String(it.description || '') + ' ' + String(it.auteur || '') + ' ' + String(it.page || '')).toLowerCase().indexOf(q) === -1) return false;
+                return true;
+            });
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Résultats</h3><span class="count-pill">' + list.length + '</span></div>';
+            if (!list.length) html += '<div class="empty-hint">Aucun signalement ne correspond.</div>';
+            else list.slice().reverse().forEach(function (it) { html += lotTicketCardHtml(it); });
+            html += '</div>';
+            cont.innerHTML = html;
+            document.getElementById('sig-q').addEventListener('input', function (e) { var pos = e.target.selectionStart; sigSearch.q = e.target.value; renderIncidents(); var q2 = document.getElementById('sig-q'); if (q2) { q2.focus(); q2.selectionStart = q2.selectionEnd = pos; } });
+            document.getElementById('sig-f-type').addEventListener('change', function (e) { sigSearch.type = e.target.value; renderIncidents(); });
+            document.getElementById('sig-f-lot').addEventListener('change', function (e) { sigSearch.lot = e.target.value; renderIncidents(); });
+            document.getElementById('sig-f-dev').addEventListener('change', function (e) { sigSearch.dev = e.target.value; renderIncidents(); });
+            wireManageBlocks(cont);
+            wireLotSelects(cont);
+            wireReplyBlocks(cont);
+            cont.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
+        }
+
+        // ── Câblage commun ──
+        function wireManageBlocks(cont) {
+            cont.querySelectorAll('.btn-save-manage').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var it = incidents[+b.getAttribute('data-i')]; if (!it) return;
+                    var card = b.closest('.inc-item');
+                    it.priorite = card.querySelector('.inc-prio').value;
+                    var lotVal = readLotValue(card);
+                    if (lotVal) { it.livraison = lotVal; ensureLot(it.livraison); }
+                    var devSel = card.querySelector('.inc-devstatut'); if (devSel) it.devStatut = devSel.value;
+                    var noteDev = card.querySelector('.inc-notedev'); if (noteDev) it.noteDev = noteDev.value.trim();
+                    var bilan = card.querySelector('.inc-bilan'); if (bilan) it.bilanRecettage = bilan.value.trim();
+                    var contourn = card.querySelector('.inc-contournement'); if (contourn) it.contournement = contourn.value.trim();
+                    saveIncidents();
+                    if (it.livraison) saveLots();
+                });
+            });
+        }
+        function wireReplyBlocks(cont) {
+            cont.querySelectorAll('[data-reply]').forEach(function (b) { b.addEventListener('click', function () { respondToIncident(+b.getAttribute('data-reply'), b); }); });
         }
 
         function renderIncidents() {
             updateNavCounts();
             var c = document.getElementById('incidents-container');
-            var openCount = incidents.filter(function (i) { return i.statut !== 'traité'; }).length;
-            var doneCount = incidents.length - openCount;
-
-            // Sous-onglets : À traiter / Traités + export.
-            var html = '<div class="sub-tabs" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
-                + '<button class="sub-tab' + (incView === 'open' ? ' active' : '') + '" data-incview="open">🟠 À traiter <span class="sub-tab-count">' + openCount + '</span></button>'
-                + '<button class="sub-tab' + (incView === 'done' ? ' active' : '') + '" data-incview="done">✅ Traités <span class="sub-tab-count">' + doneCount + '</span></button>'
-                + '<button class="btn btn-secondary" id="inc-export" style="margin-left:auto;">⬇️ Exporter (Excel/CSV)</button>'
-                + '</div>';
-
-            var wantDone = incView === 'done';
-            var list = incidents.filter(function (it) { return (it.statut === 'traité') === wantDone; });
-
-            if (!list.length) {
-                html += '<div class="admin-card"><div class="empty-hint">'
-                    + (wantDone ? 'Aucun signalement traité pour l’instant.' : 'Aucun signalement à traiter. 🎉')
-                    + '</div></div>';
-            } else {
-                html += '<div class="admin-card"><div class="admin-card-title"><h3>' + (wantDone ? 'Signalements traités' : 'À traiter') + '</h3>'
-                    + '<span class="count-pill">' + list.length + '</span></div>';
-                list.slice().reverse().forEach(function (it) { html += incidentCardHtml(it); });
-                html += '</div>';
-            }
-            c.innerHTML = html;
-
-            c.querySelectorAll('[data-incview]').forEach(function (b) { b.addEventListener('click', function () { incView = b.getAttribute('data-incview'); renderIncidents(); }); });
-            c.querySelectorAll('[data-toggle]').forEach(function (b) { b.addEventListener('click', function () { var i = +b.getAttribute('data-toggle'); incidents[i].statut = incidents[i].statut === 'traité' ? 'nouveau' : 'traité'; saveIncidents(); }); });
-            c.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
-            c.querySelectorAll('[data-reply]').forEach(function (b) { b.addEventListener('click', function () { respondToIncident(+b.getAttribute('data-reply'), b); }); });
-            c.querySelectorAll('.btn-save-manage').forEach(function (b) { b.addEventListener('click', function () {
-                var it = incidents[+b.getAttribute('data-i')]; if (!it) return;
-                var card = b.closest('.inc-item');
-                it.priorite = card.querySelector('.inc-prio').value;
-                it.livraison = card.querySelector('.inc-livraison').value.trim();
-                it.noteDev = card.querySelector('.inc-notedev').value.trim();
-                it.contournement = card.querySelector('.inc-contournement').value.trim();
-                saveIncidents();
-            }); });
+            c.innerHTML = sigSubnavHtml() + '<div id="sig-page"></div>';
+            var page = document.getElementById('sig-page');
+            if (incView === 'triage') renderTriage(page);
+            else if (incView === 'lots') renderLots(page);
+            else if (incView === 'archive') renderArchive(page);
+            else renderRecherche(page);
+            c.querySelectorAll('[data-sigview]').forEach(function (b) { b.addEventListener('click', function () { incView = b.getAttribute('data-sigview'); if (incView !== 'lots') activeLot = null; renderIncidents(); }); });
             var expBtn = document.getElementById('inc-export');
             if (expBtn) expBtn.addEventListener('click', exportIncidentsCsv);
         }
 
         // Export CSV (ouvrable dans Excel) de tous les signalements + leur suivi.
         function exportIncidentsCsv() {
-            var cols = ['Type', 'Auteur', 'Page', 'Date', 'Priorité', 'Livraison prévue', 'Statut', 'Description', 'Note dev', 'Contournement', 'Réponse'];
+            var cols = ['Type', 'Auteur', 'Page', 'Date', 'Priorité', 'Lot', 'Statut lot', 'Statut signalement', 'Description', 'Modifications faites', 'Bilan du recettage', 'Contournement', 'Réponse'];
             var lines = [cols];
             incidents.forEach(function (it) {
                 lines.push([
                     it.type === 'amelioration' ? 'Amélioration' : 'Incident',
                     it.auteur || '', it.page || '', (it.date || '').slice(0, 10),
-                    it.priorite || '', it.livraison || '',
-                    it.statut === 'traité' ? 'Traité' : 'À traiter',
-                    it.description || '', it.noteDev || '', it.contournement || '',
+                    it.priorite || '', it.livraison || '', it.livraison ? lotStatutLabel(lotStatutOf(it.livraison)) : '',
+                    it.livraison ? devStatutLabel(it.devStatut) : '',
+                    it.description || '', it.noteDev || '', it.bilanRecettage || '', it.contournement || '',
                     (it.reponse && it.reponse.texte) || ''
                 ]);
             });
@@ -1172,16 +1425,21 @@
             loadStateFromConfig();
             renderAll();
             loadWhatsNew();
-            // incidents
+            // incidents + suivi des lots
             return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
-                if (res.status !== 'success') return [];
+                if (res.status !== 'success') return [[], []];
                 return res.handle.getDirectoryHandle('Données').then(function (d) {
-                    return d.getFileHandle('incidents.json').then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
-                        .then(function (t) { try { return JSON.parse(t) || []; } catch (e) { return []; } });
-                }).catch(function () { return []; });
+                    function readJson(file) {
+                        return d.getFileHandle(file).then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
+                            .then(function (t) { try { return JSON.parse(t) || []; } catch (e) { return []; } })
+                            .catch(function () { return []; });
+                    }
+                    return Promise.all([readJson('incidents.json'), readJson('signalement_lots.json')]);
+                }).catch(function () { return [[], []]; });
             });
-        }).then(function (inc) {
-            incidents = Array.isArray(inc) ? inc : [];
+        }).then(function (r) {
+            incidents = Array.isArray(r[0]) ? r[0] : [];
+            sigLots = Array.isArray(r[1]) ? r[1] : [];
             renderIncidents();
         }).catch(function () {
             loadStateFromConfig();
