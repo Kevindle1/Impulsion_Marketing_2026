@@ -729,6 +729,12 @@ window.ImpulsionMarketing.workflow = (function () {
   // + renforts propres à ce canal (channelAssignments). Additif : un renfort
   // ajouté sur un canal n'affecte pas les autres canaux (L2 #15).
   function _asArr(v) { return Array.isArray(v) ? v : (v ? [v] : []); }
+  // PO effectif : le PO principal OU un co-PO (suppléance congés).
+  function isPoName(campaignData, name) {
+    if (!name || !campaignData) return false;
+    if (name === (campaignData.po || '')) return true;
+    return _asArr(campaignData.coPo).indexOf(name) !== -1;
+  }
   function channelAssignees(campaignData, channelIdx, role) {
     var wf = campaignData.workflow || {};
     var base = _asArr((wf.assignments || {})[role]);
@@ -830,7 +836,7 @@ window.ImpulsionMarketing.workflow = (function () {
       if (status !== 'pending' && status !== 'revision_requested') return;
       var actorMatch = false;
       if (step.actor === 'po') {
-        actorMatch = currentUser.name === campaignData.po;
+        actorMatch = isPoName(campaignData, currentUser.name);
       } else if (step.actor === 'manager') {
         actorMatch = currentUser.isManager === true;
         // #14 : un manager de service ayant déjà affecté son équipe n'a plus
@@ -855,7 +861,7 @@ window.ImpulsionMarketing.workflow = (function () {
         if (status !== 'pending' && status !== 'revision_requested') continue;
         var actorMatch = false;
         if (step.actor === 'po') {
-          actorMatch = currentUser.name === campaignData.po;
+          actorMatch = isPoName(campaignData, currentUser.name);
         } else {
           // Assignés effectifs de CE canal (base campagne + renfort du canal).
           actorMatch = channelAssignees(campaignData, ci, step.actor).indexOf(currentUser.name) !== -1;
@@ -1048,6 +1054,7 @@ window.ImpulsionMarketing.workflow = (function () {
     }
     add(campaignData.id);
     add(campaignData.po);
+    add(campaignData.coPo);
     // Personnes affectées (manager + Com/EBF/Data) : permet de rechercher par le
     // nom d'une personne et de retrouver TOUTES ses campagnes (pas que le PO).
     var _asn = (campaignData.workflow && campaignData.workflow.assignments) || {};
@@ -1093,6 +1100,7 @@ window.ImpulsionMarketing.workflow = (function () {
     return {
       id:          campaignData.id || '',
       po:          campaignData.po || '',
+      copo:        campaignData.coPo || null,
       desc:        campaignData.description || '',
       launch:      campaignData.launchDate || '',
       mkt:         campaignData.market || '',

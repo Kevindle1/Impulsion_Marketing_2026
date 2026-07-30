@@ -332,9 +332,9 @@
             var currentUser = users && users.getCurrentUser();
             if (!currentUser) return true;
             if (currentUser.role === 'manager' || currentUser.isManager) return true;
-            if (data.po === currentUser.name) return true;
-            var a = (data.workflow && data.workflow.assignments) || {};
             function has(v) { return Array.isArray(v) ? v.indexOf(currentUser.name) !== -1 : v === currentUser.name; }
+            if (data.po === currentUser.name || has(data.coPo)) return true;
+            var a = (data.workflow && data.workflow.assignments) || {};
             return has(a.com) || has(a.ebf) || has(a.data);
         }
 
@@ -728,8 +728,9 @@
             var data = campaign.data;
             // Manager / responsable de service voit tout
             if (currentUser.role === 'manager' || currentUser.isManager) return true;
-            // PO : correspond au champ po
+            // PO ou co-PO : correspond au champ po / coPo
             if (data.po === currentUser.name) return true;
+            if (Array.isArray(data.coPo) && data.coPo.indexOf(currentUser.name) !== -1) return true;
             // Équipes : correspond à l'assignation workflow
             if (data.workflow && data.workflow.assignments) {
                 var a = data.workflow.assignments;

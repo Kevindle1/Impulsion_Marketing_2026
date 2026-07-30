@@ -547,6 +547,7 @@
                     chprog: m.chprog || null,   // progression par canal (option multi-canal)
                     data: {
                         po:          m.po || '',
+                        coPo:        m.copo || undefined,
                         description: m.desc || '',
                         launchDate:  m.launch || '',
                         market:      m.mkt || '',
@@ -593,7 +594,7 @@
                 if (currentUser) {
                     if (currentUser.isManager) {
                         rel = true;
-                    } else if (c.data.po === currentUser.name) {
+                    } else if (c.data.po === currentUser.name || (Array.isArray(c.data.coPo) && c.data.coPo.indexOf(currentUser.name) !== -1)) {
                         rel = true;
                     } else {
                         var inAsn = function(val) {

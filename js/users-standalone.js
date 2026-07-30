@@ -90,7 +90,10 @@ window.ImpulsionMarketing.users = (function () {
     if (!user || !campaignData) return false;
     // Le super admin peut effectuer les actions PO sur n'importe quelle campagne
     if (user.isSuperAdmin) return true;
-    return user.name === (campaignData.po || '');
+    if (user.name === (campaignData.po || '')) return true;
+    // Co-PO (suppléance congés) : mêmes droits que le PO sur cette campagne
+    var co = campaignData.coPo;
+    return Array.isArray(co) ? co.indexOf(user.name) !== -1 : co === user.name;
   }
 
   /**

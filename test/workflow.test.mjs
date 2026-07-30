@@ -389,6 +389,20 @@ test('getAvailableActions — manager Data non encore affecté : action d\'affec
     'le manager Data non affecté doit garder l\'action manager_affectation');
 });
 
+test('getAvailableActions — co-PO : mêmes actions PO que le PO principal (M12)', () => {
+  const data = makeCampaign(['EBF']);
+  data.coPo = ['Suppléant'];
+  workflow.initWorkflow(data);
+  data.workflow.steps.manager_affectation = 'validated';
+  workflow.initWorkflow(data); // recalcul : kick-off passe à pending
+  const co = { name: 'Suppléant', role: 'marketing' };
+  assert.ok(workflow.getAvailableActions(co, data).some(a => a.step.id === 'po_kickoff'),
+    'le co-PO doit avoir l\'action kick-off');
+  const autre = { name: 'Quelqu\'un d\'autre', role: 'marketing' };
+  assert.ok(!workflow.getAvailableActions(autre, data).some(a => a.step.id === 'po_kickoff'),
+    'un non-PO ne doit pas avoir l\'action kick-off');
+});
+
 // ─────────────────────────────────────────────────────────
 // Affectation automatique (L2 #21)
 test('applyAutoAssignments — case cochée → équipe campagne (dispense le manager)', () => {
