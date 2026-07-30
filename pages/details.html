@@ -90,6 +90,8 @@
         .btn-actor-save { background: #fff; border: 1px solid var(--line, #eaefec); border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 650; cursor: pointer; color: var(--gray-700, #33403a); transition: all 0.15s; margin-top: 4px; }
         .btn-actor-save:hover { background: var(--green-50, #e8f6ef); border-color: var(--primary, #00875A); color: var(--green-600, #00734C); }
         .btn-actor-save:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Dépôt enregistré (brouillon) mais pas encore soumis à validation. */
+        .draft-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #9a6b00; background: var(--amber-50, #fdf3e2); border: 1px solid var(--amber, #E8A100); border-radius: 999px; padding: 3px 10px; margin-bottom: 10px; cursor: help; }
         .btn-actor-submit { background: var(--primary, #00875A); color: #fff; border: none; border-radius: 10px; padding: 10px 22px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; box-shadow: 0 2px 6px rgba(0,135,90,0.22); }
         .btn-actor-submit:hover { background: var(--primary-hover, #00734C); box-shadow: 0 6px 16px rgba(0,135,90,0.3); }
         .btn-actor-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
@@ -1351,6 +1353,7 @@
             h += '<div class="form-row"><label>Fichier BAT (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées au BAT.</small></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-save btn-save-ebf" data-ch="' + idx + '" data-step="ebf_bat">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '">📤 Déposer et soumettre</button>';
             h += '</div>';
         }
@@ -1394,6 +1397,7 @@
             h += '<div class="form-row"><label>Fichier test en production (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées.</small></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-save btn-save-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">✅ Déposer et valider le test en production</button>';
             h += '</div>';
         }
@@ -1453,6 +1457,7 @@
             h += '<div class="actor-submit-row">';
             var submitLabel = isMep ? '🚀 Confirmer MEP de ce canal' : '📤 Déposer et soumettre';
             var submitClass = isMep ? 'btn-actor-submit btn-actor-submit--mep' : 'btn-actor-submit';
+            if (isCiblage) h += '<button type="button" class="btn-actor-save btn-save-ciblage" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="' + submitClass + ' btn-submit-canal-data" data-ch="' + idx + '" data-step="' + (dataStepId || '') + '">' + submitLabel + '</button>';
             h += '</div>';
         }
@@ -1484,6 +1489,7 @@
             h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="data-mepcomment-' + idx + '" class="form-control" placeholder="Ex : routage déclenché à 9h00"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-save btn-save-datamep" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';
             h += '</div>';
         }
@@ -1517,6 +1523,7 @@
             h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="ebf-mepcomment-' + idx + '" class="form-control" placeholder="Ex : LP mise en ligne à 9h00"></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-save btn-save-ebfmep" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-ebf-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';
             h += '</div>';
         }
@@ -1560,6 +1567,7 @@
             h += '<div class="form-row"><label>Cible du test <small style="font-weight:normal;">(ex : 50 clients segment X)</small></label><input type="text" id="data-cibletest-' + idx + '" class="form-control" placeholder="Décrivez la cible du test..."></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
+            h += '<button type="button" class="btn-actor-save btn-save-datatest" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-datatest" data-ch="' + idx + '" data-step="data_lancement_test">🧪 Confirmer le lancement test</button>';
             h += '</div>';
         }
@@ -2256,10 +2264,18 @@
         setVal('data-testreceivers-' + idx, d.testReceivers);
     }
 
+    // M13 : dépôt en 2 temps (Enregistrer / Soumettre à validation). Un dépôt
+    // enregistré (status === 'draft') est déjà visible par tous, mais porte ce
+    // badge tant qu'il n'a pas été soumis : les infos peuvent encore changer.
+    function buildDraftBadge(d) {
+        if (!d || d.status !== 'draft') return '';
+        return '<div class="draft-badge" title="Les informations sont susceptibles de changer tant que le dépôt n\'est pas soumis à validation.">🚧 En cours de construction</div>';
+    }
+
     function renderComReadonly(idx, d) {
         var el = document.getElementById('com-readonly-' + idx);
         if (!el || !d) return;
-        var h = '<div class="depot-readonly-grid">';
+        var h = buildDraftBadge(d) + '<div class="depot-readonly-grid">';
         if (d.depotMaquetteDate) h += '<div class="depot-readonly-item"><strong>Date dépôt maquette</strong>' + security.escapeHtml(d.depotMaquetteDate) + '</div>';
         if (d.figmaUrl) h += '<div class="depot-readonly-item"><strong>Figma</strong><a href="' + security.escapeHtml(d.figmaUrl) + '" target="_blank">Ouvrir</a></div>';
         if (d.numImages) h += '<div class="depot-readonly-item"><strong>Images</strong>' + d.numImages + '</div>';
@@ -2418,7 +2434,7 @@
     function renderEbfReadonly(idx, d) {
         var el = document.getElementById('ebf-readonly-' + idx);
         if (!el || !d) return;
-        var h = '<div class="depot-readonly-grid">';
+        var h = buildDraftBadge(d) + '<div class="depot-readonly-grid">';
         if (d.emailObject) h += '<div class="depot-readonly-item"><strong>Objet de l\'email</strong>' + security.escapeHtml(d.emailObject) + '</div>';
         if (d.webmaster) h += '<div class="depot-readonly-item"><strong>Webmaster</strong>' + security.escapeHtml(d.webmaster) + '</div>';
         if (d.codeCom) h += '<div class="depot-readonly-item"><strong>Code Com</strong>' + security.escapeHtml(d.codeCom) + '</div>';
@@ -2777,7 +2793,7 @@
     function renderEbfTestProdReadonly(idx, d) {
         var el = document.getElementById('ebf-testprod-readonly-' + idx);
         if (!el || !d) return;
-        var h = '<div class="depot-readonly-grid">';
+        var h = buildDraftBadge(d) + '<div class="depot-readonly-grid">';
         if (d.pdfTestProdFileName) h += '<div class="depot-readonly-item"><strong>Fichier</strong>' + security.escapeHtml(d.pdfTestProdFileName) + '</div>';
         h += '</div>';
         el.innerHTML = h;
@@ -2788,7 +2804,7 @@
     function renderDataReadonly(idx, d) {
         var el = document.getElementById('data-readonly-' + idx);
         if (!el || !d) return;
-        var h = '<div class="depot-readonly-grid">';
+        var h = buildDraftBadge(d) + '<div class="depot-readonly-grid">';
         if (d.codeProjet) h += '<div class="depot-readonly-item"><strong>Code Projet</strong>' + security.escapeHtml(d.codeProjet) + '</div>';
         if (d.codeAction) h += '<div class="depot-readonly-item"><strong>Code Action</strong>' + security.escapeHtml(d.codeAction) + '</div>';
         if (d.codeMK) h += '<div class="depot-readonly-item"><strong>Code MK</strong>' + security.escapeHtml(d.codeMK) + '</div>';
@@ -2804,7 +2820,7 @@
     function renderDataLancementTestReadonly(idx, d) {
         var el = document.getElementById('data-testlaunch-readonly-' + idx);
         if (!el || !d) return;
-        var h = '<div class="depot-readonly-grid">';
+        var h = buildDraftBadge(d) + '<div class="depot-readonly-grid">';
         if (d.cibleTest) h += '<div class="depot-readonly-item"><strong>Cible test</strong>' + security.escapeHtml(d.cibleTest) + '</div>';
         h += '</div>';
         el.innerHTML = h;
@@ -2816,7 +2832,7 @@
     function renderDataMepReadonly(idx, d) {
         var el = document.getElementById('data-mep-readonly-' + idx);
         if (!el || !d) return;
-        var h = '<div class="depot-readonly-grid">';
+        var h = buildDraftBadge(d) + '<div class="depot-readonly-grid">';
         if (d.mepDate)      h += '<div class="depot-readonly-item"><strong>Date MEP</strong>' + security.escapeHtml(d.mepDate) + '</div>';
         if (d.mepFirstSend) h += '<div class="depot-readonly-item"><strong>Date du premier envoi</strong>' + security.escapeHtml(d.mepFirstSend) + '</div>';
         if (d.mepComment)   h += '<div class="depot-readonly-item"><strong>Commentaire</strong>' + security.escapeHtml(d.mepComment) + '</div>';
@@ -2824,6 +2840,20 @@
         el.innerHTML = h;
         el.style.display = 'block';
         var emptyEl = document.getElementById('data-mep-empty-' + idx);
+        if (emptyEl) emptyEl.style.display = 'none';
+    }
+
+    // EBF MEP (LP) : n'existait pas encore (confirmation jamais réaffichée).
+    function renderEbfMepReadonly(idx, d) {
+        var el = document.getElementById('ebf-mep-readonly-' + idx);
+        if (!el || !d) return;
+        var h = buildDraftBadge(d) + '<div class="depot-readonly-grid">';
+        if (d.date)    h += '<div class="depot-readonly-item"><strong>Date MEP</strong>' + security.escapeHtml(d.date) + '</div>';
+        if (d.comment) h += '<div class="depot-readonly-item"><strong>Commentaire</strong>' + security.escapeHtml(d.comment) + '</div>';
+        h += '</div>';
+        el.innerHTML = h;
+        el.style.display = 'block';
+        var emptyEl = document.getElementById('ebf-mep-empty-' + idx);
         if (emptyEl) emptyEl.style.display = 'none';
     }
 
@@ -2875,6 +2905,8 @@
             else { var ete = document.getElementById('ebf-testprod-empty-' + idx); if (ete) ete.style.display = 'block'; }
             if (cache.datatest) { renderDataLancementTestReadonly(idx, cache.datatest); }
             else { var dte = document.getElementById('data-testlaunch-empty-' + idx); if (dte) dte.style.display = 'block'; }
+            if (cache.ebfmep) { renderEbfMepReadonly(idx, cache.ebfmep); }
+            else { var eme = document.getElementById('ebf-mep-empty-' + idx); if (eme) eme.style.display = 'block'; }
             return;
         }
 
@@ -2947,6 +2979,16 @@
                 var el = document.getElementById('data-testlaunch-empty-' + idx);
                 if (el) el.style.display = 'block';
             });
+
+        readDepotFile(campaignName, folder, 'depotebf_mep.json')
+            .then(function(d) {
+                loadedDepots[idx].ebfmep = d;
+                renderEbfMepReadonly(idx, d);
+            })
+            .catch(function() {
+                var el = document.getElementById('ebf-mep-empty-' + idx);
+                if (el) el.style.display = 'block';
+            });
     }
 
     // ─────────────────────────────────────────────
@@ -2969,13 +3011,19 @@
             });
         }
 
-        // ── Save COM ──
+        // ── Save COM (M13 : brouillon, sans faire avancer le workflow) ──
         var btnSaveCom = document.querySelector('.btn-save-com[data-ch="' + idx + '"]');
         if (btnSaveCom) {
             btnSaveCom.addEventListener('click', function() {
                 var folder = getChannelFolder(idx);
                 var depot  = collectComDepot(idx);
-                depot.status = 'pending';
+                depot.status = 'draft';
+                var comFileEl = document.getElementById('com-pdf-' + idx);
+                var comFileToSave = comFileEl && comFileEl.files[0];
+                if (comFileToSave) {
+                    var comExt = comFileToSave.name.split('.').pop().toLowerCase();
+                    depot.pdfComSavedName = 'maquette_canal_' + idx + '.' + comExt;
+                }
                 // Persister la date de dépôt maquette dans campagne.json
                 if (depot.depotMaquetteDate) {
                     currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
@@ -2992,8 +3040,24 @@
                     .then(function() {
                         loadedDepots[idx] = loadedDepots[idx] || {};
                         loadedDepots[idx].com = depot;
+                        renderComReadonly(idx, depot);
+                        if (comFileToSave && depot.pdfComSavedName) {
+                            return currentRootHandle.getDirectoryHandle('Campagnes')
+                                .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+                                .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
+                                .then(function(d) { return d.getFileHandle(depot.pdfComSavedName, {create:true}); })
+                                .then(function(fh) { return fh.createWritable(); })
+                                .then(function(w) { return comFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
+                                .then(function() { loadComFilePreview(idx, folder, depot.pdfComSavedName); })
+                                .catch(function(err) {
+                                    console.error('Échec de l\'enregistrement du fichier maquette :', err);
+                                    errors.showNotification('Le fichier maquette n\'a pas pu être enregistré : ' + err.message, 'error');
+                                });
+                        }
+                    })
+                    .then(function() {
                         enableBtn(btnSaveCom, '💾 Enregistrer');
-                        errors.showNotification('Canal enregistré !', 'success', 2000);
+                        errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                     })
                     .catch(function(err) { enableBtn(btnSaveCom, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
             });
@@ -3040,6 +3104,51 @@
                     .catch(function(err) { enableBtn(btnSubmitCom, '📤 Soumettre ce canal'); errors.showNotification('Erreur : ' + err.message, 'error'); });
             });
         }
+
+        // ── Save EBF (BAT ou Test Prod) — M13 : brouillon, pas d'avancement ──
+        document.querySelectorAll('.btn-save-ebf[data-ch="' + idx + '"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var stepId     = btn.getAttribute('data-step') || 'ebf_bat';
+                var isTestProd = stepId === 'ebf_test_prod';
+                var folder     = getChannelFolder(idx);
+                var depotFile  = isTestProd ? 'depotebf_test.json' : 'depotebf.json';
+                var inputEl    = document.getElementById((isTestProd ? 'ebf-pdf-testprod-' : 'ebf-pdf-bat-') + idx);
+                disableBtn(btn, 'Enregistrement...');
+                prepareEbfDepotFile(inputEl && inputEl.files).then(function(prepared) {
+                    var depot = isTestProd ? collectEbfTestProdDepot(idx) : collectEbfDepot(idx);
+                    depot.status = 'draft';
+                    var savedName = null;
+                    if (prepared) {
+                        savedName = (isTestProd ? 'testprod_canal_' : 'bat_canal_') + idx + '.' + prepared.ext;
+                        if (isTestProd) depot.pdfTestProdSavedName = savedName;
+                        else            depot.pdfBatSavedName = savedName;
+                    }
+                    return saveDepotFile(currentCampaignName, folder, depotFile, depot).then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        if (isTestProd) { loadedDepots[idx].ebftest = depot; renderEbfTestProdReadonly(idx, depot); }
+                        else            { loadedDepots[idx].ebf = depot; renderEbfReadonly(idx, depot); }
+                        if (prepared && savedName) {
+                            return currentRootHandle.getDirectoryHandle('Campagnes')
+                                .then(function(d) { return d.getDirectoryHandle(currentCampaignName); })
+                                .then(function(d) { return d.getDirectoryHandle(folder, {create:true}); })
+                                .then(function(d) { return d.getFileHandle(savedName, {create:true}); })
+                                .then(function(fh) { return fh.createWritable(); })
+                                .then(function(w) { return prepared.blob.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
+                                .catch(function(err) {
+                                    console.error('Échec de l\'enregistrement du fichier EBF :', err);
+                                    errors.showNotification('Le fichier n\'a pas pu être enregistré : ' + err.message, 'error');
+                                });
+                        }
+                    });
+                }).then(function() {
+                    enableBtn(btn, '💾 Enregistrer');
+                    errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
+                }).catch(function(err) {
+                    enableBtn(btn, '💾 Enregistrer');
+                    errors.showNotification('Erreur : ' + (err && err.message), 'error');
+                });
+            });
+        });
 
         // ── Submit EBF (BAT ou Test Prod) ──
         document.querySelectorAll('.btn-submit-canal-ebf[data-ch="' + idx + '"]').forEach(function(btn) {
@@ -3241,6 +3350,33 @@
             });
         });
 
+        // ── Save Ciblage Data — M13 : brouillon, pas d'avancement ──
+        var btnSaveCiblage = document.querySelector('.btn-save-ciblage[data-ch="' + idx + '"]');
+        if (btnSaveCiblage) {
+            btnSaveCiblage.addEventListener('click', function() {
+                var folder = getChannelFolder(idx);
+                var depot  = collectDataDepot(idx, 'data_ciblage');
+                depot.status = 'draft';
+                var volInput = document.getElementById('data-volume-' + idx);
+                if (volInput && currentCampaignData.channels && currentCampaignData.channels[idx] !== undefined) {
+                    currentCampaignData.channels[idx].volumeCible = parseInt(volInput.value) || 0;
+                }
+                disableBtn(btnSaveCiblage, 'Enregistrement...');
+                saveDepotFile(currentCampaignName, folder, 'depotdata.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].data = depot;
+                        renderDataReadonly(idx, depot);
+                        return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData);
+                    })
+                    .then(function() {
+                        enableBtn(btnSaveCiblage, '💾 Enregistrer');
+                        errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
+                    })
+                    .catch(function(err) { enableBtn(btnSaveCiblage, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
         // ── Submit DATA ──
         var btnSubmitData = document.querySelector('.btn-submit-canal-data[data-ch="' + idx + '"]');
         if (btnSubmitData) {
@@ -3289,6 +3425,26 @@
             });
         }
 
+        // ── Save Lancement Test — M13 : brouillon, pas d'avancement ──
+        var btnSaveDataTest = document.querySelector('.btn-save-datatest[data-ch="' + idx + '"]');
+        if (btnSaveDataTest) {
+            btnSaveDataTest.addEventListener('click', function() {
+                var folder = getChannelFolder(idx);
+                var depot  = collectDataLancementTestDepot(idx);
+                depot.status = 'draft';
+                disableBtn(btnSaveDataTest, 'Enregistrement...');
+                saveDepotFile(currentCampaignName, folder, 'depotdata_test.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].datatest = depot;
+                        renderDataLancementTestReadonly(idx, depot);
+                        enableBtn(btnSaveDataTest, '💾 Enregistrer');
+                        errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
+                    })
+                    .catch(function(err) { enableBtn(btnSaveDataTest, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
         // ── Submit Data Lancement Test ──
         var btnDataTest = document.querySelector('.btn-submit-canal-datatest[data-ch="' + idx + '"]');
         if (btnDataTest) {
@@ -3313,6 +3469,26 @@
             });
         }
 
+        // ── Save MEP Data — M13 : brouillon, pas d'avancement ──
+        var btnSaveDataMep = document.querySelector('.btn-save-datamep[data-ch="' + idx + '"]');
+        if (btnSaveDataMep) {
+            btnSaveDataMep.addEventListener('click', function() {
+                var folder = getChannelFolder(idx);
+                var depot  = collectDataMepDepot(idx);
+                depot.status = 'draft';
+                disableBtn(btnSaveDataMep, 'Enregistrement...');
+                saveDepotFile(currentCampaignName, folder, 'depotdata_mep.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].datamep = depot;
+                        renderDataMepReadonly(idx, depot);
+                        enableBtn(btnSaveDataMep, '💾 Enregistrer');
+                        errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
+                    })
+                    .catch(function(err) { enableBtn(btnSaveDataMep, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
         // ── Submit MEP Data ──
         var btnMep = document.querySelector('.btn-submit-mep[data-ch="' + idx + '"]');
         if (btnMep) {
@@ -3331,6 +3507,27 @@
                         errors.showNotification('MEP confirmée !', 'success', 2000);
                     })
                     .catch(function(err) { enableBtn(btnMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+            });
+        }
+
+        // ── Save MEP EBF (LP) — M13 : brouillon, pas d'avancement ──
+        var btnSaveEbfMep = document.querySelector('.btn-save-ebfmep[data-ch="' + idx + '"]');
+        if (btnSaveEbfMep) {
+            btnSaveEbfMep.addEventListener('click', function() {
+                var folder  = getChannelFolder(idx);
+                var dateVal = (document.getElementById('ebf-mepdate-' + idx) || {}).value || '';
+                var comment = (document.getElementById('ebf-mepcomment-' + idx) || {}).value || '';
+                var depot   = { date: dateVal, comment: comment, status: 'draft', savedAt: new Date().toISOString() };
+                disableBtn(btnSaveEbfMep, 'Enregistrement...');
+                saveDepotFile(currentCampaignName, folder, 'depotebf_mep.json', depot)
+                    .then(function() {
+                        loadedDepots[idx] = loadedDepots[idx] || {};
+                        loadedDepots[idx].ebfmep = depot;
+                        renderEbfMepReadonly(idx, depot);
+                        enableBtn(btnSaveEbfMep, '💾 Enregistrer');
+                        errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
+                    })
+                    .catch(function(err) { enableBtn(btnSaveEbfMep, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
             });
         }
 
