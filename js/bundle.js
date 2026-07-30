@@ -2996,6 +2996,7 @@ window.ImpulsionMarketing.workflow = (function () {
       return {
         deliverableName: c.deliverableName,
         content: c.content,
+        comType: c.comType || '',
         siteWebDateFin: (c.siteWeb && c.siteWeb.dateFin) ? c.siteWeb.dateFin : null,
         ebfWebmaster: (c.siteWeb && c.siteWeb.webmaster) ? c.siteWeb.webmaster : null
       };

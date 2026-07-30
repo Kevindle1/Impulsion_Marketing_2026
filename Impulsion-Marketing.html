@@ -900,14 +900,27 @@
             return name.trim().split(/\s+/).map(function (p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
         }
 
-        // Vignette = type de com (Gestion / Commerciales / Réglementaire) du 1er canal.
+        // Vignette = type de com AGRÉGÉ sur tous les livrables : si les canaux
+        // diffèrent, on affiche le plus « lourd » — Réglementaire > Gestion >
+        // Commerciales.
+        function comTypeWeight(ct) {
+            ct = (ct || '').toLowerCase();
+            if (ct.indexOf('régle') >= 0 || ct.indexOf('regle') >= 0) return 3;
+            if (ct.indexOf('gestion') >= 0) return 2;
+            if (ct.indexOf('commerc') >= 0) return 1;
+            return 0;
+        }
         function channelInfo(c) {
             var chs = c.data.channels || [];
-            var ct = ((chs[0] && chs[0].comType) || '').toLowerCase();
-            if (ct.indexOf('commerc') >= 0) return { cls: 'ct-com', label: 'Com', title: 'Commerciales' };
-            if (ct.indexOf('gestion') >= 0) return { cls: 'ct-ges', label: 'Ges', title: 'Gestion' };
-            if (ct.indexOf('régle') >= 0 || ct.indexOf('regle') >= 0) return { cls: 'ct-reg', label: 'Rég', title: 'Réglementaire' };
-            return { cls: 'ct-none', label: '—', title: (chs[0] && chs[0].comType) || 'Type de com non défini' };
+            var best = 0;
+            chs.forEach(function(ch) {
+                var w = comTypeWeight(ch && ch.comType);
+                if (w > best) best = w;
+            });
+            if (best === 3) return { cls: 'ct-reg', label: 'Rég', title: 'Réglementaire' };
+            if (best === 2) return { cls: 'ct-ges', label: 'Ges', title: 'Gestion' };
+            if (best === 1) return { cls: 'ct-com', label: 'Com', title: 'Commerciales' };
+            return { cls: 'ct-none', label: '—', title: 'Type de com non défini' };
         }
 
         function channelMeta(c) {
