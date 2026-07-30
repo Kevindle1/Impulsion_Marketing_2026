@@ -1193,10 +1193,13 @@
             html += buildReopenControl('data_lancement_test', idx, data);
         }
 
-        // Zone 5 : Test en prod — déposé ET validé par le PO (ou un super-admin) (M10).
+        // Zone 5 : Test en prod — déposé par l'EBF assigné OU un destinataire du
+        // test sélectionné à l'étape « Lancement test » ; validé séparément par
+        // le PO (M21 — comme le BAT). isAssignedEbf inclut déjà le super-admin.
         if (reqEbf && (reqData || isLP)) {
             var ebfTpActive = cs.ebf_test_prod === 'pending' || cs.ebf_test_prod === 'revision_requested';
-            html += buildEbfTestProdChannelSection(data, ch, idx, cs, (isPO || _isSuperAdmin) && ebfTpActive);
+            var _isTestReceiver = currentUser && (ch.testReceivers || []).indexOf(currentUser.name) !== -1;
+            html += buildEbfTestProdChannelSection(data, ch, idx, cs, (isAssignedEbf || _isTestReceiver) && ebfTpActive);
             html += buildReopenControl('ebf_test_prod', idx, data);
         }
 
@@ -1434,8 +1437,13 @@
             h += '</div>'; return h;
         }
         if (isRevision && revisionComment) h += '<div class="revision-alert">🔄 <strong>Modification demandée :</strong>' + sanitizeRichHtml(revisionComment) + '</div>';
-        // M10 : étape déposée et validée par le PO.
-        if (editable) h += '<p style="font-size:12px;color:var(--muted);margin-bottom:10px;">Déposez le test en production et validez en une seule étape.</p>';
+        // M21 : dépôt et validation redeviennent deux étapes séparées (comme le
+        // BAT) — le dépôt peut être fait par l'EBF assigné OU par l'un des
+        // destinataires du test sélectionnés à l'étape « Lancement test »,
+        // mais l'EBF reste responsable du dépôt.
+        if (editable) h += '<p style="font-size:12px;color:var(--muted);margin-bottom:10px;">ℹ️ L\'EBF reste responsable du dépôt du test en production, même si un destinataire du test le dépose ici.</p>';
+        var _testReceivers = ch.testReceivers || [];
+        if (_testReceivers.length) h += '<p style="font-size:12.5px;color:var(--muted);margin-bottom:10px;">Destinataires du test : <strong>' + security.escapeHtml(_testReceivers.join(', ')) + '</strong></p>';
 
         h += '<div id="ebf-testprod-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
         h += '<div id="testprod-image-preview-' + idx + '" style="margin-bottom:12px;"></div>';
@@ -1447,16 +1455,13 @@
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">💾 Enregistrer</button>';
-            h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">✅ Déposer et valider le test en production</button>';
-            // Comme pour le BAT : si le test s'avère non concluant, demander une
-            // modification (motif obligatoire) plutôt que de valider. Réutilise le
-            // mécanisme générique de révision (mêmes classes/handlers que le BAT).
-            h += '<button type="button" class="btn-po-ask-revision-ch" data-step="po_validation_test_prod" data-ch="' + idx + '" style="background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer;">🔄 Demander modification</button>';
+            h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">📤 Déposer et soumettre</button>';
             h += '</div>';
-            h += '<div id="revision-form-ch-po_validation_test_prod-' + idx + '" style="display:none;margin-top:10px;">';
-            h += buildRichEditor('revision-comment-ch-po_validation_test_prod-' + idx, 'Décrivez la modification demandée...');
-            h += '<button class="btn-po-send-revision-ch" data-step="po_validation_test_prod" data-source="ebf_test_prod" data-ch="' + idx + '" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">📤 Envoyer la demande</button>';
-            h += '</div>';
+        }
+        // Bloc validation PO par canal (comme le BAT) — Valider / Demander modification.
+        var isPO = users && users.isCurrentUserPO(data);
+        if (isPO && cs.po_validation_test_prod === 'pending') {
+            h += buildPoValidationBlock('po_validation_test_prod', 'ebf_test_prod', true, false, idx, null);
         }
         h += '</div>';
         return h;
@@ -1622,11 +1627,24 @@
         if (editable) {
             h += '<div class="actor-form">';
             h += '<div class="form-row"><label>Cible du test <small style="font-weight:normal;">(ex : 50 clients segment X)</small></label><input type="text" id="data-cibletest-' + idx + '" class="form-control" placeholder="Décrivez la cible du test..."></div>';
+            // Destinataires du test en prod : les personnes sélectionnées ici
+            // pourront ensuite déposer le résultat du test (elles l'ont reçu),
+            // en plus de l'EBF assigné qui reste responsable du dépôt.
+            h += '<div class="form-row"><label>Destinataires du test en prod <small style="font-weight:normal;color:var(--muted);">(pourront déposer le test reçu)</small></label>';
+            h += '<div style="max-height:150px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;padding:6px;background:#fff;">';
+            var _curReceivers = ch.testReceivers || [];
+            users.USERS.slice().sort(function(a, b) { return a.name.localeCompare(b.name); }).forEach(function(u) {
+                var ck = _curReceivers.indexOf(u.name) !== -1 ? ' checked' : '';
+                h += '<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;cursor:pointer;"><input type="checkbox" class="testreceiver-cb-' + idx + '" value="' + security.escapeHtml(u.name) + '"' + ck + '> ' + security.escapeHtml(u.name) + ' <span style="font-size:11px;color:var(--muted-2);">(' + security.escapeHtml(u.role || '') + ')</span></label>';
+            });
+            h += '</div></div>';
             h += '</div>';
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-datatest" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-datatest" data-ch="' + idx + '" data-step="data_lancement_test">🧪 Confirmer le lancement test</button>';
             h += '</div>';
+        } else if (ch.testReceivers && ch.testReceivers.length) {
+            h += '<p style="font-size:12.5px;color:var(--muted);margin:4px 0 12px;">Destinataires du test : <strong>' + security.escapeHtml(ch.testReceivers.join(', ')) + '</strong></p>';
         }
         h += '</div>';
         return h;
@@ -3253,14 +3271,10 @@
                         }
                         // v2 : avancement direct du canal
                         mirrorChannelCodes(idx, depot); // #27 : indexer les codes saisis
+                        // M21 : dépôt et validation redeviennent deux étapes séparées (comme
+                        // le BAT) — le test en prod reste « soumis », en attente de la
+                        // validation PO (bloc buildPoValidationBlock).
                         workflow.advanceChannelStep(currentCampaignData, idx, stepId, 'submitted');
-                        // M10 : le test en prod est déposé ET validé par le PO (ou un super-admin) en une seule étape.
-                        if (stepId === 'ebf_test_prod' && (users.isCurrentUserPO(currentCampaignData) || ((users.getCurrentUser() || {}).isSuperAdmin))) {
-                            workflow.validateChannelStep(currentCampaignData, 'po_validation_test_prod', idx);
-                            currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
-                            currentCampaignData.workflow.channelDates[idx] = currentCampaignData.workflow.channelDates[idx] || {};
-                            currentCampaignData.workflow.channelDates[idx].po_validation_test_prod = new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
-                        }
                         return writePromise
                             .then(function() { return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData); })
                             .then(function() { refreshCurrentPage(); });
@@ -3488,18 +3502,28 @@
         }
 
         // ── Save Lancement Test — M13 : brouillon, pas d'avancement ──
+        // Destinataires du test en prod cochés dans le formulaire de ce canal.
+        function _collectTestReceivers(chIdx) {
+            return Array.from(document.querySelectorAll('.testreceiver-cb-' + chIdx + ':checked')).map(function(cb) { return cb.value; });
+        }
         var btnSaveDataTest = document.querySelector('.btn-save-datatest[data-ch="' + idx + '"]');
         if (btnSaveDataTest) {
             btnSaveDataTest.addEventListener('click', function() {
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataLancementTestDepot(idx);
                 depot.status = 'draft';
+                if (currentCampaignData.channels && currentCampaignData.channels[idx] !== undefined) {
+                    currentCampaignData.channels[idx].testReceivers = _collectTestReceivers(idx);
+                }
                 disableBtn(btnSaveDataTest, 'Enregistrement...');
                 saveDepotFile(currentCampaignName, folder, 'depotdata_test.json', depot)
                     .then(function() {
                         loadedDepots[idx] = loadedDepots[idx] || {};
                         loadedDepots[idx].datatest = depot;
                         renderDataLancementTestReadonly(idx, depot);
+                        return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData);
+                    })
+                    .then(function() {
                         enableBtn(btnSaveDataTest, '💾 Enregistrer');
                         errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                     })
@@ -3514,6 +3538,9 @@
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataLancementTestDepot(idx);
                 depot.status = 'submitted';
+                if (currentCampaignData.channels && currentCampaignData.channels[idx] !== undefined) {
+                    currentCampaignData.channels[idx].testReceivers = _collectTestReceivers(idx);
+                }
                 disableBtn(btnDataTest, 'Envoi...');
                 saveDepotFile(currentCampaignName, folder, 'depotdata_test.json', depot)
                     .then(function() {
