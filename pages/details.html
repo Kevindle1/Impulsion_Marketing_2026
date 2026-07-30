@@ -1854,17 +1854,22 @@
             return html;
         }
 
-        var hasAssignments = getAssignees(assignments, 'com').length || getAssignees(assignments, 'ebf').length || getAssignees(assignments, 'data').length;
-        if (hasAssignments) {
+        // Composition de l'équipe : affichée dès le départ (même à l'étape
+        // d'affectation, avant que quiconque soit affecté), pour chaque service
+        // REQUIS par la campagne. Un service sans personne affectée affiche
+        // « en attente d'affectation » plutôt que de disparaître.
+        // Le manager qui a fait l'affectation n'est pas affiché comme « affecté »
+        // à la tâche : seules les équipes réellement affectées le sont.
+        var _teamParts = [];
+        [['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data']].forEach(function(t) {
+            if (!isTeamRequired(data, t[1])) return;
+            var disp = assigneesDisplay(assignments, t[0]);
+            _teamParts.push(t[1] + ' : ' + (disp || '<em style="color:var(--muted-2);font-style:italic;">en attente d\'affectation</em>'));
+        });
+        if (_teamParts.length) {
             html += '<div style="background:var(--line-2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
-            html += '<strong>Équipes affectées :</strong> ';
-            var parts = [];
-            // Le manager qui a fait l'affectation n'est pas affiché comme
-            // « affecté » à la tâche : seules les équipes réellement affectées le sont.
-            if (assigneesDisplay(assignments,'com')) parts.push('Com : ' + assigneesDisplay(assignments,'com'));
-            if (assigneesDisplay(assignments,'ebf')) parts.push('EBF : ' + assigneesDisplay(assignments,'ebf'));
-            if (assigneesDisplay(assignments,'data'))parts.push('Data : ' + assigneesDisplay(assignments,'data'));
-            html += parts.join(' &nbsp;|&nbsp; ');
+            html += '<strong>Composition de l\'équipe :</strong> ';
+            html += _teamParts.join(' &nbsp;|&nbsp; ');
             html += '</div>';
         }
 
