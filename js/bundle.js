@@ -4044,16 +4044,6 @@ window.ImpulsionMarketing.adminConfig = (function () {
     else { badge.style.display = 'none'; }
     if (markAll) markAll.style.display = mine.length > 0 ? 'inline' : 'none';
 
-    // Alerte à l'arrivée de nouvelles notifications (son / pop-up), réglable en
-    // Administration. On ne déclenche pas au premier chargement de la page.
-    var _prev = renderNotifications._lastCount;
-    if (typeof _prev === 'number' && mine.length > _prev) {
-      var _st = (IM.config && IM.config.APP_SETTINGS) || {};
-      if (_st.notifSound !== false) _notifBeep();
-      if (_st.notifPopup !== false && typeof notify === 'function') notify('🔔 Nouvelle notification', 'info', 3500);
-    }
-    renderNotifications._lastCount = mine.length;
-
     if (markAll && !markAll._bound) {
       markAll._bound = true;
       markAll.addEventListener('click', function (e) {
@@ -4119,9 +4109,14 @@ window.ImpulsionMarketing.adminConfig = (function () {
       bell.addEventListener('click', function (e) {
         e.stopPropagation();
         var p = $('topbar-notif-panel'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        // Un clic est un vrai geste utilisateur : c'est le meilleur moment pour
+        // demander l'autorisation d'afficher des notifications système si ce
+        // n'est pas déjà fait (Chrome bloque parfois la demande hors interaction).
+        _ensureNotifPermission();
       });
       document.addEventListener('click', function () { var p = $('topbar-notif-panel'); if (p) p.style.display = 'none'; });
     }
+    _ensureNotifPermission();
     pollNotifications();
     // Interrogation périodique : détecte l'arrivée de nouvelles notifications
     // (pour le son / pop-up), sans recharger la page. Une seule fois.
@@ -4139,25 +4134,94 @@ window.ImpulsionMarketing.adminConfig = (function () {
         .then(function (txt) {
           var all = JSON.parse(txt);
           var mine = all.filter(function (n) { return n.destinataire === u.name && !n.lu; });
+          _alertOnNewNotifications(mine);
           renderNotifications(mine, all, root);
         })
         .catch(function () { renderNotifications([], [], null); });
     }).catch(function () { renderNotifications([], [], null); });
   }
-  // Bip court généré par Web Audio (aucun fichier externe — compatible file://).
+
+  // ── Alerte (son + pop-up) à l'arrivée de nouvelles notifications ──────────
+  // Suivi PERSISTANT (localStorage, par utilisateur) des notifications déjà
+  // signalées : contrairement à un simple compteur en mémoire, il survit à la
+  // navigation entre pages (chaque page recharge entièrement ce script) et ne
+  // se laisse pas tromper par un compteur qui redescend (marquage lu ailleurs).
+  function _seenNotifKey() { return 'im_notif_seen_' + (currentUserName() || 'anon'); }
+  function _loadSeenIds() {
+    try { return new Set(JSON.parse(localStorage.getItem(_seenNotifKey()) || '[]')); }
+    catch (e) { return new Set(); }
+  }
+  function _saveSeenIds(set) {
+    try {
+      var arr = Array.from(set);
+      if (arr.length > 300) arr = arr.slice(arr.length - 300); // borne la taille
+      localStorage.setItem(_seenNotifKey(), JSON.stringify(arr));
+    } catch (e) {}
+  }
+  // Détecte les notifications réellement NOUVELLES depuis le dernier contrôle
+  // et déclenche son/pop-up (réglables en Administration). Le tout premier
+  // contrôle d'un chargement de page « amorce » juste le suivi, sans alerter
+  // (évite une salve d'alertes pour des notifications déjà en attente).
+  function _alertOnNewNotifications(mine) {
+    var seen = _loadSeenIds();
+    var isFirstCheck = !_alertOnNewNotifications._done;
+    _alertOnNewNotifications._done = true;
+    var fresh = mine.filter(function (n) { return n.id && !seen.has(n.id); });
+    mine.forEach(function (n) { if (n.id) seen.add(n.id); });
+    _saveSeenIds(seen);
+    if (isFirstCheck || !fresh.length) return;
+
+    var _st = (IM.config && IM.config.APP_SETTINGS) || {};
+    if (_st.notifSound !== false) _notifBeep();
+    if (_st.notifPopup !== false) {
+      var typeLabels = (IM.config && IM.config.NOTIFICATION_LABELS) || {};
+      fresh.forEach(function (n) {
+        var title = typeLabels[n.type] || '🔔 Nouvelle notification';
+        var body = (n.campagneTitre ? n.campagneTitre + ' — ' : '') + (n.message || '');
+        if (!_showNativeNotification(title, body)) notify(title + (body ? ' : ' + body : ''), 'info', 4000);
+      });
+    }
+  }
+  // Demande l'autorisation d'afficher des notifications système (une fois).
+  function _ensureNotifPermission() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      try { Notification.requestPermission(); } catch (e) {}
+    }
+  }
+  // Notification système : rendue par l'OS (bas-droite sous Windows, coin
+  // d'écran sous macOS), visible même fenêtre réduite/en arrière-plan — tant
+  // que le navigateur reste ouvert. Renvoie false si indisponible/refusée
+  // (repli sur le toast in-page dans ce cas).
+  function _showNativeNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+    try {
+      var n = new Notification(title, { body: body, tag: 'impulsion-' + Date.now(), silent: false });
+      n.onclick = function () { try { window.focus(); } catch (e) {} n.close(); };
+      setTimeout(function () { try { n.close(); } catch (e) {} }, 12000);
+      return true;
+    } catch (e) { return false; }
+  }
+  // Carillon deux notes, nettement audible (aucun fichier externe — compatible file://).
   function _notifBeep() {
     try {
       var Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return;
       var ctx = new Ctx();
-      var o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; o.frequency.value = 880;
-      g.gain.value = 0.07;
-      o.connect(g); g.connect(ctx.destination);
-      o.start();
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-      o.stop(ctx.currentTime + 0.37);
-      setTimeout(function () { try { ctx.close(); } catch (e) {} }, 700);
+      if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
+      function tone(freq, startAt, dur, peak) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = freq;
+        g.gain.setValueAtTime(0.0001, ctx.currentTime + startAt);
+        g.gain.exponentialRampToValueAtTime(peak, ctx.currentTime + startAt + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startAt + dur);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime + startAt);
+        o.stop(ctx.currentTime + startAt + dur + 0.02);
+      }
+      tone(880, 0, 0.16, 0.28);
+      tone(1175, 0.15, 0.22, 0.28);
+      setTimeout(function () { try { ctx.close(); } catch (e) {} }, 900);
     } catch (e) {}
   }
 

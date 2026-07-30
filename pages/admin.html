@@ -1090,7 +1090,8 @@
             html += '</div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>🔔 Notifications</h3></div>';
             html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="set-notif-sound"' + (s.notifSound !== false ? ' checked' : '') + '> Jouer un <strong>son</strong> à la réception d\'une notification</label>';
-            html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="set-notif-popup"' + (s.notifPopup !== false ? ' checked' : '') + '> Afficher une <strong>pop-up</strong> à la réception d\'une notification</label>';
+            html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="set-notif-popup"' + (s.notifPopup !== false ? ' checked' : '') + '> Afficher une <strong>pop-up</strong> à la réception d\'une notification (notification système — visible même fenêtre réduite)</label>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;">ℹ️ La pop-up utilise les notifications du navigateur. Au premier clic sur la cloche 🔔, Chrome demande une autorisation — il faut cliquer « Autoriser » pour que les pop-up s\'affichent.</div>';
             html += '</div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Couleurs des rôles</h3></div><div style="display:flex;flex-wrap:wrap;gap:18px;">';
             roles.forEach(function (r) {
