@@ -157,6 +157,10 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    /* Un enfant flex:1 a min-width:auto par défaut : sans min-width:0 il ne peut
+       pas rétrécir sous la largeur de son contenu → la page déborde à droite
+       (et body overflow-x:hidden la rogne au lieu de scroller). */
+    min-width: 0;
 }
 
 /* ── Top Header ── */
@@ -198,7 +202,7 @@ body {
 .header-right { display: flex; align-items: center; gap: 10px; }
 
 /* ── Content ── */
-.content { padding: 26px 28px 36px; flex: 1; }
+.content { padding: 26px 28px 36px; flex: 1; min-width: 0; max-width: 100%; }
 
 /* ── Boutons ── */
 .btn {
