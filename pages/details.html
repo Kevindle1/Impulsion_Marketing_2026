@@ -1399,6 +1399,14 @@
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">✅ Déposer et valider le test en production</button>';
+            // Comme pour le BAT : si le test s'avère non concluant, demander une
+            // modification (motif obligatoire) plutôt que de valider. Réutilise le
+            // mécanisme générique de révision (mêmes classes/handlers que le BAT).
+            h += '<button type="button" class="btn-po-ask-revision-ch" data-step="po_validation_test_prod" data-ch="' + idx + '" style="background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer;">🔄 Demander modification</button>';
+            h += '</div>';
+            h += '<div id="revision-form-ch-po_validation_test_prod-' + idx + '" style="display:none;margin-top:10px;">';
+            h += buildRichEditor('revision-comment-ch-po_validation_test_prod-' + idx, 'Décrivez la modification demandée...');
+            h += '<button class="btn-po-send-revision-ch" data-step="po_validation_test_prod" data-source="ebf_test_prod" data-ch="' + idx + '" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">📤 Envoyer la demande</button>';
             h += '</div>';
         }
         h += '</div>';
