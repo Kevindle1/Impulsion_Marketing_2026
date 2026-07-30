@@ -103,6 +103,25 @@ test('requestChannelRevision — repasse l’étape source en révision et rever
   assert.equal(data.workflow.channelRevisionComments[0].com_maquette, 'À revoir');
 });
 
+test('requestChannelRevision — M17 : le webmaster EBF renvoie la maquette à la Com depuis le dépôt BAT', () => {
+  // Même mécanisme que la demande de modification PO→BAT, appliqué en sens
+  // inverse (EBF→Com) au moment du dépôt BAT.
+  const data = makeCampaign(['Com', 'EBF']);
+  workflow.advanceStep(data, 'manager_affectation', 'validated');
+  workflow.advanceStep(data, 'po_kickoff', 'validated');
+  workflow.advanceChannelStep(data, 0, 'com_maquette', 'validated');
+  workflow.advanceChannelStep(data, 0, 'po_validation_maquette', 'validated');
+  workflow.initWorkflow(data); // débloque ebf_bat (BAT éditable, comme au moment du dépôt)
+  assert.equal(ch0(data).ebf_bat, 'pending', 'le BAT doit être éditable au moment de la demande');
+
+  workflow.requestChannelRevision(data, 'po_validation_maquette', 'com_maquette', 0, 'Logo manquant', 'Webmaster EBF', '26/07/26 11:00');
+  assert.equal(ch0(data).com_maquette, 'revision_requested');
+  assert.equal(ch0(data).po_validation_maquette, 'locked');
+  const log = workflow.getChannelRevisionLog(data, 0);
+  assert.equal(log[log.length - 1].author, 'Webmaster EBF');
+  assert.equal(log[log.length - 1].stepId, 'com_maquette');
+});
+
 test('getChannelRevisionLog — historique cumulé (append-only) + auteur/date (M16)', () => {
   const data = makeCampaign(['Com', 'EBF', 'Data']);
   workflow.advanceStep(data, 'manager_affectation', 'validated');
