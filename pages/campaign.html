@@ -1515,7 +1515,24 @@
                 setTimeout(() => {
                         channels.forEach((channel, i) => {
                             const idx = i + 1;
+                            // Le nom final (readonly) est restauré TEL QUEL, sans recalcul :
+                            // c'est le nom déjà utilisé pour le dossier de stockage du canal
+                            // (déposts existants). Le libellé libre est restauré séparément
+                            // pour rester éditable — s'il n'a pas été mémorisé (anciennes
+                            // campagnes), on tente de retirer le préfixe « Type - » connu,
+                            // sinon on reprend le nom complet tel quel.
                             if (channel.deliverableName) $(`#deliverableName${idx}`).value = channel.deliverableName;
+                            const labelInp = $(`#deliverableLabel${idx}`);
+                            if (labelInp) {
+                                if (channel.deliverableLabel) {
+                                    labelInp.value = channel.deliverableLabel;
+                                } else if (channel.deliverableName) {
+                                    const prefix = channel.content ? (channel.content + ' - ') : '';
+                                    labelInp.value = (prefix && channel.deliverableName.indexOf(prefix) === 0)
+                                        ? channel.deliverableName.slice(prefix.length)
+                                        : channel.deliverableName;
+                                }
+                            }
                             // channelContent: if stored value doesn't match any option, add it as a custom option
                             if (channel.content) {
                                 const contentSel = $(`#channelContent${idx}`);
@@ -1643,6 +1660,7 @@
                 for (var i = 1; document.getElementById('deliverableName' + i); i++) {
                     channels.push({
                         deliverableName: ($(`#deliverableName${i}`) || {}).value || '',
+                        deliverableLabel: ($(`#deliverableLabel${i}`) || {}).value || '',
                         content: ($(`#channelContent${i}`) || {}).value || '',
                         sendDate: ($(`#sendDate${i}`) || {}).value || '',
                         comType: ($(`#comType${i}`) || {}).value || '',
@@ -1969,7 +1987,12 @@
                         if (_seen[_nv]) {
                             nameEls[_n2].style.borderColor = 'var(--red)';
                             _seen[_nv].style.borderColor = 'var(--red)';
-                            nameEls[_n2].focus();
+                            // Le champ readonly « deliverableName<i> » n'est pas éditable :
+                            // on met le focus sur le libellé libre correspondant à la place.
+                            var _dupIdSuffix = nameEls[_n2].id.replace('deliverableName', '');
+                            var _dupLabelEl = document.getElementById('deliverableLabel' + _dupIdSuffix);
+                            (_dupLabelEl || nameEls[_n2]).focus();
+                            if (_dupLabelEl) _dupLabelEl.style.borderColor = 'var(--red)';
                             notify('Deux canaux portent le même nom de livrable (« ' + nameEls[_n2].value.trim() + ' »). Donnez un nom unique à chaque canal.', 'warning');
                             return false;
                         }
@@ -2322,16 +2345,17 @@
                     div.innerHTML = `
                         <h4>Canal ${i}</h4>
                         <div class="form-group">
-                            <label for="deliverableName${i}">Nom du livrable :</label>
-                            <input type="text" id="deliverableName${i}" placeholder="Ex: Visuel email, Bannière web..." required>
-                            <small style="display:block;color:var(--muted,#666);font-size:11px;margin-top:3px;">⚠️ Donnez un nom <strong>unique</strong> à chaque canal — deux canaux ne peuvent pas porter le même nom.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="channelContent${i}">Canal du contenu :</label>
+                            <label for="channelContent${i}">Type de livrable :</label>
                             <select id="channelContent${i}" required>
                                 <option value="">Choisir...</option>
                                 ${channels.map(c => `<option value="${c}">${c}</option>`).join("")}
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="deliverableLabel${i}">Nom du livrable :</label>
+                            <input type="text" id="deliverableLabel${i}" placeholder="Ex: Offre été, Bannière rentrée..." required>
+                            <small style="display:block;color:var(--muted,#666);font-size:11px;margin-top:3px;">Le nom final est standardisé : <strong>Type de livrable - votre saisie</strong>. Il doit rester <strong>unique</strong> pour chaque canal.</small>
+                            <input type="text" id="deliverableName${i}" readonly style="margin-top:6px;background:var(--line-2,#f0f4f1);color:var(--muted,#666);cursor:not-allowed;">
                         </div>
                         <div class="form-group">
                             <label for="sendDate${i}">Date de réception client :</label>
@@ -2495,6 +2519,21 @@
                         applySiteWebConstraints(channelSel.value);
                         applyMailConstraints(channelSel.value);
                     }
+
+                    // Nom du livrable standardisé : « Type de livrable - saisie utilisateur ».
+                    // Recalculé en direct dès que le type ou le libellé changent — mais
+                    // JAMAIS lors de la restauration programmatique d'une valeur existante
+                    // (restoreChannelFields ne déclenche pas ces événements), pour ne pas
+                    // renommer silencieusement un canal déjà déposé en édition.
+                    const recomputeDeliverableName = function() {
+                        const typeVal  = (document.getElementById(`channelContent${i}`) || {}).value || '';
+                        const labelVal = (document.getElementById(`deliverableLabel${i}`) || {}).value || '';
+                        const nameEl   = document.getElementById(`deliverableName${i}`);
+                        if (nameEl) nameEl.value = typeVal && labelVal ? (typeVal + ' - ' + labelVal) : (typeVal || labelVal || '');
+                    };
+                    if (channelSel) channelSel.addEventListener('change', recomputeDeliverableName);
+                    const labelEl = document.getElementById(`deliverableLabel${i}`);
+                    if (labelEl) labelEl.addEventListener('input', recomputeDeliverableName);
 
                     // Lundi → Lundi : snap dateDebut and dateFin to Monday
                     const dateDebutEl = document.getElementById(`siteWebDateDebut${i}`);
@@ -2734,6 +2773,7 @@
                 for (let i = 1; i <= numChannels; i++) {
                     data.channels.push({
                         deliverableName: $(`#deliverableName${i}`).value,
+                        deliverableLabel: ($(`#deliverableLabel${i}`) || {}).value || '',
                         content: $(`#channelContent${i}`).value,
                         sendDate: $(`#sendDate${i}`).value,
                         comType: $(`#comType${i}`).value,
@@ -2870,6 +2910,7 @@
                 for (let i = 1; i <= numChannels; i++) {
                     data.channels.push({
                         deliverableName: $(`#deliverableName${i}`).value,
+                        deliverableLabel: ($(`#deliverableLabel${i}`) || {}).value || '',
                         content: $(`#channelContent${i}`).value,
                         sendDate: $(`#sendDate${i}`).value,
                         comType: $(`#comType${i}`).value,
