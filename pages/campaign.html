@@ -2692,12 +2692,17 @@
                 $("#btnSubmit").textContent = state.editMode ? "Modification..." : "Création...";
                 $(".loader").style.display = "block";
                 try {
+                    var oldCampaignFolder = state.editCampaignName;
                     var campaignFolder = await createCampaign();
                     clearDraft(); // création réussie → on jette le brouillon
                     logCampaignActivity(campaignFolder, 'campagne', state.editMode ? 'Campagne modifiée' : 'Campagne créée');
 
-                    // Invalider le cache métadonnées pour cette campagne (edit ou création)
+                    // Invalider le cache métadonnées pour cette campagne (edit ou création),
+                    // et pour l'ancien nom de dossier si la campagne a été renommée.
                     MetadataCacheInvalidator.invalidate(campaignFolder);
+                    if (oldCampaignFolder && oldCampaignFolder !== campaignFolder) {
+                        MetadataCacheInvalidator.invalidate(oldCampaignFolder);
+                    }
 
                     // Utiliser le module d'erreurs pour afficher une notification
                     var errors = window.ImpulsionMarketing.errors;
@@ -2810,6 +2815,59 @@
                 return data;
             }
 
+            // Copie récursive du contenu d'un dossier vers un autre (utilisée pour le
+            // renommage de dossier de campagne quand l'API move() n'est pas disponible).
+            async function copyDirRecursive(srcDir, destDir) {
+                for await (var [name, handle] of srcDir.entries()) {
+                    if (handle.kind === 'file') {
+                        var srcFile = await handle.getFile();
+                        var destFileHandle = await destDir.getFileHandle(name, { create: true });
+                        var writable = await destFileHandle.createWritable();
+                        await writable.write(await srcFile.arrayBuffer());
+                        await writable.close();
+                    } else {
+                        var destSubDir = await destDir.getDirectoryHandle(name, { create: true });
+                        await copyDirRecursive(handle, destSubDir);
+                    }
+                }
+            }
+
+            // Renomme le dossier d'une campagne (nom de campagne ou univers de besoin
+            // modifié → le préfixe/nom du dossier doit suivre). Utilise l'API native
+            // move() quand elle est disponible (rapide), sinon copie récursive + suppression
+            // de l'ancien dossier.
+            async function renameCampaignFolder(parentDir, oldName, newName) {
+                if (oldName === newName) return await parentDir.getDirectoryHandle(oldName);
+                var oldDir = await parentDir.getDirectoryHandle(oldName);
+                var collision = true;
+                try { await parentDir.getDirectoryHandle(newName); } catch (e) { collision = false; }
+                if (collision) throw new Error('Un dossier "' + newName + '" existe déjà. Choisissez un autre nom de campagne ou univers de besoin.');
+                if (typeof oldDir.move === 'function') {
+                    await oldDir.move(newName);
+                    return await parentDir.getDirectoryHandle(newName);
+                }
+                var newDir = await parentDir.getDirectoryHandle(newName, { create: true });
+                await copyDirRecursive(oldDir, newDir);
+                await parentDir.removeEntry(oldName, { recursive: true });
+                return newDir;
+            }
+
+            // Retire une entrée de _index.json (utilisé après renommage de dossier,
+            // pour ne pas laisser une entrée orpheline sous l'ancien nom).
+            async function removeFromCampaignIndex(campaignsDir, campaignName) {
+                try {
+                    var fh = await campaignsDir.getFileHandle('_index.json', { create: false });
+                    var file = await fh.getFile();
+                    var idx = JSON.parse(await file.text());
+                    if (idx.campaigns && idx.campaigns[campaignName]) {
+                        delete idx.campaigns[campaignName];
+                        var w = await (await campaignsDir.getFileHandle('_index.json', { create: true })).createWritable();
+                        await w.write(JSON.stringify(idx));
+                        await w.close();
+                    }
+                } catch (e) { /* pas d'index existant ou illisible : rien à purger */ }
+            }
+
             function sanitizeFileName(name) {
                 // Replace invalid characters with underscores
                 let sanitized = name.replace(/[<>:"|?*\\\/()\[\]{}]/g, '_').replace(/\s+/g, '_');
@@ -2838,16 +2896,26 @@
                 let folderName;
                 let campaignDir;
 
+                const sanitizedTaskName = sanitizeFileName(taskName);
+                const computedFolderName = firstUB
+                    ? `[${sanitizeFileName(firstUB)}] ${sanitizedTaskName}`
+                    : sanitizedTaskName;
+
                 if (state.editMode) {
-                    // Mode édition : utiliser le dossier existant
-                    folderName = state.editCampaignName;
-                    campaignDir = await state.campaignsFolder.getDirectoryHandle(folderName);
+                    // Mode édition : le dossier existant doit être renommé si le nom de la
+                    // campagne ou l'univers de besoin (préfixe du dossier) a changé.
+                    const oldFolderName = state.editCampaignName;
+                    if (computedFolderName !== oldFolderName) {
+                        campaignDir = await renameCampaignFolder(state.campaignsFolder, oldFolderName, computedFolderName);
+                        await removeFromCampaignIndex(state.campaignsFolder, oldFolderName);
+                        folderName = computedFolderName;
+                    } else {
+                        folderName = oldFolderName;
+                        campaignDir = await state.campaignsFolder.getDirectoryHandle(folderName);
+                    }
                 } else {
                     // Mode création : créer un nouveau dossier
-                    const sanitizedTaskName = sanitizeFileName(taskName);
-                    folderName = firstUB
-                        ? `[${sanitizeFileName(firstUB)}] ${sanitizedTaskName}`
-                        : sanitizedTaskName;
+                    folderName = computedFolderName;
                     campaignDir = await state.campaignsFolder.getDirectoryHandle(folderName, { create: true });
                 }
 

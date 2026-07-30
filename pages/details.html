@@ -762,8 +762,9 @@
             }
         }
         var deleteBtn = document.getElementById('deleteCampaignButton');
-        // #12 : la suppression d'une campagne est réservée à l'administrateur.
-        var canDelete = users && users.isCurrentUserSuperAdmin && users.isCurrentUserSuperAdmin();
+        // La suppression d'une campagne est réservée au PO (et au super-admin), comme la modification.
+        var canDelete = (users && users.isCurrentUserPO && users.isCurrentUserPO(data))
+            || (users && users.isCurrentUserSuperAdmin && users.isCurrentUserSuperAdmin());
         if (deleteBtn) deleteBtn.style.display = canDelete ? 'inline-flex' : 'none';
         buildSideNav(name, data);
         navigateTo('info');
