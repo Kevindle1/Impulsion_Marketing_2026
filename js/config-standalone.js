@@ -104,6 +104,15 @@ window.ImpulsionMarketing.config = (function() {
   const MARCHES = _arr('marches');
 
   // ========================================
+  // Marchés « site web » (matrice du Comité éditorial)
+  // ========================================
+
+  // Liste {value,label} — pilote les onglets marché et les cases à cocher
+  // « Marché(s) » du planning site web (pages/comite-editorial.html, pages/campaign.html).
+  // Source : _config.json (clé marchesSiteWeb), éditable via l'espace Administration.
+  const MARCHES_SITE_WEB = Array.isArray(_cfgCache.marchesSiteWeb) ? JSON.parse(JSON.stringify(_cfgCache.marchesSiteWeb)) : [];
+
+  // ========================================
   // Récurrences
   // ========================================
 
@@ -300,6 +309,7 @@ window.ImpulsionMarketing.config = (function() {
     TYPOLOGIES: TYPOLOGIES,
     PRODUITS: PRODUITS,
     MARCHES: MARCHES,
+    MARCHES_SITE_WEB: MARCHES_SITE_WEB,
     RECURRENCES: RECURRENCES,
     LOTS: LOTS,
     // Données pilotées par _config.json

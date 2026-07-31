@@ -152,7 +152,7 @@
 
         <div class="aside-body">
             <h1>Vos campagnes, du brief à la mise en production.</h1>
-            <p class="lead">L'espace de pilotage des campagnes marketing du Crédit Agricole Toulouse 31.</p>
+            <p class="lead" id="brand-lead">L'espace de pilotage des campagnes marketing de votre caisse régionale.</p>
             <div class="feats">
                 <div class="feat"><span class="chk">✓</span> Workflow COM · EBF · Data centralisé</div>
                 <div class="feat"><span class="chk">✓</span> Validation et suivi en temps réel</div>
@@ -160,7 +160,7 @@
             </div>
         </div>
 
-        <div class="aside-foot">© 2026 Crédit Agricole Toulouse 31 — Usage interne</div>
+        <div class="aside-foot" id="brand-foot">© 2026 — Usage interne</div>
     </aside>
 
     <!-- Formulaire -->
@@ -234,6 +234,19 @@
             function showError(msg) { errorBox.innerHTML = msg; errorBox.classList.add('show'); }
             function clearError() { errorBox.classList.remove('show'); }
 
+            // Nom de la caisse / organisation : entièrement paramétrable depuis
+            // Administration → Paramètres généraux (aucun nom codé en dur).
+            function applyOrgName() {
+                var orgName = (IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.orgName) || '';
+                var leadEl = document.getElementById('brand-lead');
+                var footEl = document.getElementById('brand-foot');
+                if (leadEl) leadEl.textContent = orgName
+                    ? ('L\'espace de pilotage des campagnes marketing du ' + orgName + '.')
+                    : 'L\'espace de pilotage des campagnes marketing de votre caisse régionale.';
+                if (footEl) footEl.textContent = '© ' + new Date().getFullYear() + (orgName ? ' ' + orgName : '') + ' — Usage interne';
+            }
+            applyOrgName();
+
             // Compatibilité navigateur (File System Access API)
             if (typeof window.showDirectoryPicker !== 'function') {
                 document.getElementById('compat-banner').style.display = 'block';
@@ -304,6 +317,7 @@
             var _acReady = directoryStorage && window.ImpulsionMarketing.adminConfig && window.ImpulsionMarketing.adminConfig.ready;
             if (_acReady) {
                 _acReady.then(function () {
+                    applyOrgName();
                     if (!teamSelect.value) return;
                     var keep = nameSelect.value;
                     populateNames(teamSelect.value);

@@ -128,7 +128,8 @@
     {
       "name": "Kévin Dolie",
       "role": "ebf",
-      "roleLabel": "EBF"
+      "roleLabel": "EBF",
+      "isSuperAdmin": true
     },
     {
       "name": "Marc Favre",
@@ -238,6 +239,24 @@
     "Création"
   ],
   "produits": [],
+  "marchesSiteWeb": [
+    {
+      "value": "part",
+      "label": "Particuliers"
+    },
+    {
+      "value": "bp",
+      "label": "Banque Privée"
+    },
+    {
+      "value": "pro",
+      "label": "Pro"
+    },
+    {
+      "value": "agri",
+      "label": "Agri"
+    }
+  ],
   "segmentsGroups": [
     {
       "group": "Particuliers",
@@ -356,11 +375,15 @@
     }
   ],
   "settings": {
+    "orgName": "Crédit Agricole Toulouse 31",
     "galleryUrl": "https://e.ca-toulouse31.fr/images/index.php",
     "defaultRootPath": "V:/Impulsion Marketing/Historique des Campagnes",
     "volumeAlertThreshold": 100000,
     "urgentThresholdDays": 7,
-    "dueSoonDays": 2
+    "dueSoonDays": 2,
+    "siteWebComTypologies": [
+      "Reprise Natio"
+    ]
   },
   "roleColors": {
     "po": "#7C3AED",
@@ -453,42 +476,50 @@
       {
         "k": "Nb_Envois",
         "label": "Envois",
-        "pct": false
+        "pct": false,
+        "agg": "moyenne"
       },
       {
         "k": "Nb_communications",
         "label": "Comm.",
-        "pct": false
+        "pct": false,
+        "agg": "somme"
       },
       {
         "k": "Nb_MDC_Actifs",
         "label": "MDC actifs",
-        "pct": false
+        "pct": false,
+        "agg": "moyenne"
       },
       {
         "k": "Tx_Ouvreurs",
         "label": "Tx ouv.",
-        "pct": true
+        "pct": true,
+        "agg": "moyenne"
       },
       {
         "k": "Tx_Cliqueurs",
         "label": "Tx clic",
-        "pct": true
+        "pct": true,
+        "agg": "moyenne"
       },
       {
         "k": "Tx_Desabonnement",
         "label": "Tx désab.",
-        "pct": true
+        "pct": true,
+        "agg": "moyenne"
       },
       {
         "k": "Tx_Reussite",
         "label": "Tx réussite",
-        "pct": true
+        "pct": true,
+        "agg": "moyenne"
       },
       {
         "k": "Nb_leads",
         "label": "Leads",
-        "pct": false
+        "pct": false,
+        "agg": "somme"
       }
     ],
     "chartRates": [

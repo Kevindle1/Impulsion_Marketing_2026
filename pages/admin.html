@@ -148,7 +148,7 @@
             </div>
             <div class="nav-section">
                 <span class="nav-section-title">Externe</span>
-                <a href="https://e.ca-toulouse31.fr/images/index.php" class="nav-link" target="_blank" rel="noopener"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galerie</span></a>
+                <a href="#" class="nav-link" data-gallery target="_blank" rel="noopener"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galerie</span></a>
             </div>
         </nav>
     </aside>
@@ -165,6 +165,7 @@
                         <button class="admin-nav-item" data-tab="settings"><span class="admin-nav-ic">⚙️</span><span class="admin-nav-label">Paramètres généraux</span></button>
                         <button class="admin-nav-item" data-tab="autoassign"><span class="admin-nav-ic">🤖</span><span class="admin-nav-label">Affectation automatique</span></button>
                         <button class="admin-nav-item" data-tab="webzones"><span class="admin-nav-ic">🌐</span><span class="admin-nav-label">Zones site web</span></button>
+                        <button class="admin-nav-item" data-tab="marchessiteweb"><span class="admin-nav-ic">🗺️</span><span class="admin-nav-label">Marchés site web</span></button>
                         <button class="admin-nav-item" data-tab="bilan"><span class="admin-nav-ic">📊</span><span class="admin-nav-label">Bilan (suivi .xlsx)</span></button>
                         <!-- Les pages de listes de choix sont injectées ici par le script -->
                     </div>
@@ -201,6 +202,10 @@
                     <section class="admin-section" id="tab-webzones">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🌐</div><div><h2>Zones site web</h2><p>Zones du planning du Comité éditorial et leurs sous-lignes.</p></div></div>
                         <div id="webzones-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-marchessiteweb">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🗺️</div><div><h2>Marchés site web</h2><p>Marchés proposés sur les onglets et cases à cocher du planning site web (Comité éditorial).</p></div></div>
+                        <div id="marchessiteweb-container"></div>
                     </section>
                     <section class="admin-section" id="tab-bilan">
                         <div class="admin-sec-head"><div class="admin-sec-ic">📊</div><div><h2>Bilan (suivi .xlsx)</h2><p>Correspondance des colonnes et indicateurs du fichier de suivi.</p></div></div>
@@ -265,6 +270,7 @@
         var lists = {};           // { canaux:[], universBesoins:[], … } copies éditables
         var segmentsGroups = [];  // copie éditable des segments groupés
         var webZonesState = { zones: [], bpOnlyZones: [], zonesMulti: {} }; // copie éditable des zones site web
+        var marchesSiteWebState = [];   // copie éditable des marchés site web (matrice Comité éditorial)
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
@@ -281,7 +287,7 @@
             { key: 'marches',        label: 'Marchés',                     icon: '🌍', desc: 'Marchés cibles.', ph: 'Ex : Particuliers…' },
             { key: 'recurrences',    label: 'Récurrences',                 icon: '🔁', desc: 'Rythmes de récurrence.', ph: 'Ex : Mensuel, One shot…' },
             { key: 'lots',           label: 'Numéros de lot',              icon: '🔢', desc: 'Numéros de lot disponibles.', ph: 'Ex : 1, 2, Création' },
-            { key: 'comTypologies',  label: 'Typologies de communication', icon: '🗂️', desc: 'Ex : Création Caisse, Reprise Natio. « Reprise Natio » déclenche les champs site web.', ph: 'Ex : Création Caisse' }
+            { key: 'comTypologies',  label: 'Typologies de communication', icon: '🗂️', desc: 'Ex : Création Caisse, Reprise Natio. La ou les valeurs qui déclenchent les champs site web se choisissent dans « Paramètres généraux ».', ph: 'Ex : Création Caisse' }
         ];
         var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS', comTypologies: 'COM_TYPOLOGIES' };
 
@@ -1335,6 +1341,7 @@
             var rc = config.ROLE_COLORS || {};
             var roles = [['po', 'PO / Marketing'], ['marketing', 'Marketing'], ['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data'], ['superadmin', 'Super Admin']];
             var html = '<div class="admin-card"><div class="admin-card-title"><h3>Réglages</h3></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Nom de la caisse / organisation</label><input class="admin-input" id="set-orgname" style="width:100%;" placeholder="Ex : Crédit Agricole Toulouse 31" value="' + esc(s.orgName || '') + '"><div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Affiché sur l\'écran de connexion.</div></div>';
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">URL de la Galerie</label><input class="admin-input" id="set-gallery" style="width:100%;" placeholder="https://…" value="' + esc(s.galleryUrl || '') + '"></div>';
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Chemin par défaut du dossier</label><input class="admin-input" id="set-path" style="width:100%;" value="' + esc(s.defaultRootPath || '') + '"></div>';
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Seuil d\'alerte volume</label><input type="number" min="0" class="admin-input" id="set-volume" value="' + (typeof s.volumeAlertThreshold === 'number' ? s.volumeAlertThreshold : '') + '"></div>';
@@ -1356,6 +1363,7 @@
             cont.innerHTML = html;
             document.getElementById('save-settings').addEventListener('click', function () {
                 var settings = {
+                    orgName: (document.getElementById('set-orgname').value || '').trim(),
                     galleryUrl: (document.getElementById('set-gallery').value || '').trim(),
                     defaultRootPath: (document.getElementById('set-path').value || '').trim(),
                     volumeAlertThreshold: parseInt(document.getElementById('set-volume').value, 10) || 0,

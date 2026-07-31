@@ -4,7 +4,7 @@
  *   « fixes » éditables (liste des personnes, types de livrables). N'intervient
  *   pas sur l'écran de connexion (pas de menu latéral).
  * - Injecte le lien « Administration » dans le menu, visible uniquement pour les
- *   managers, le super admin et Kévin Dolie.
+ *   personnes marquées « manager » ou « super admin » dans _config.json.
  */
 window.ImpulsionMarketing = window.ImpulsionMarketing || {};
 
@@ -121,6 +121,10 @@ window.ImpulsionMarketing.adminConfig = (function () {
       spliceInPlace(IM.config.SEGMENTS_GROUPS, cfg.segmentsGroups);
       if (Array.isArray(IM.config.SEGMENTS)) spliceInPlace(IM.config.SEGMENTS, flattenSegments(cfg.segmentsGroups));
     }
+    // Marchés « site web » (liste {value,label} — matrice du Comité éditorial)
+    if (Array.isArray(cfg.marchesSiteWeb) && cfg.marchesSiteWeb.length && Array.isArray(IM.config.MARCHES_SITE_WEB)) {
+      spliceInPlace(IM.config.MARCHES_SITE_WEB, cfg.marchesSiteWeb);
+    }
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
     assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);
@@ -159,9 +163,11 @@ window.ImpulsionMarketing.adminConfig = (function () {
   // coder l'URL en dur dans chaque page.
   function applyGalleryLink() {
     var url = IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.galleryUrl;
-    if (!url) return;
-    var links = document.querySelectorAll('a.nav-link[href*="ca-toulouse31"], a.nav-link[data-gallery]');
-    Array.prototype.forEach.call(links, function (a) { a.href = url; });
+    var links = document.querySelectorAll('a.nav-link[data-gallery]');
+    Array.prototype.forEach.call(links, function (a) {
+      if (url) { a.href = url; a.style.display = ''; }
+      else { a.href = '#'; a.style.display = 'none'; }
+    });
   }
 
   function init() {

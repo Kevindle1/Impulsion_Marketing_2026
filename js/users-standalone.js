@@ -31,10 +31,11 @@ window.ImpulsionMarketing.users = (function () {
     USERS.splice.apply(USERS, [0, USERS.length].concat(clean));
   }
 
-  // Droit d'accès à l'espace Administration : managers, super admin, ou Kévin Dolie.
+  // Droit d'accès à l'espace Administration : managers ou super admin (config _config.json,
+  // aucun nom codé en dur — l'accès admin se donne exclusivement via le flag isManager/isSuperAdmin).
   function canAccessAdmin() {
     var u = getCurrentUser();
-    return !!(u && (u.isManager === true || u.isSuperAdmin === true || u.name === 'Kévin Dolie'));
+    return !!(u && (u.isManager === true || u.isSuperAdmin === true));
   }
 
   /**
