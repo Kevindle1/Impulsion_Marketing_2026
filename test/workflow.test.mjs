@@ -749,3 +749,29 @@ test('stepLabel / stepActor — surchargeables depuis la config (Administration 
     assert.equal(workflow.stepLabel('data_ciblage'), 'Ciblage Data', 'les étapes non surchargées gardent leur libellé par défaut');
   });
 });
+
+test('stepActor — surchargeable par canal (ex. Com autorisée en plus de l\'EBF pour le Courrier), sans affecter les autres canaux', () => {
+  withConfig({ CANAL_ACTOR_OVERRIDES: { COURRIER: { ebf_test_prod: 'com' } } }, () => {
+    assert.equal(workflow.stepActor('ebf_test_prod', 'COURRIER'), 'com');
+    assert.equal(workflow.stepActor('ebf_test_prod', 'MAIL'), 'ebf', 'un canal non concerné par la surcharge garde l\'acteur par défaut');
+    assert.equal(workflow.stepActor('ebf_test_prod'), 'ebf', 'sans canal précisé, acteur par défaut');
+  });
+});
+
+test('getAvailableActions — acteur surchargé par canal : la Com voit l\'action sur le canal Courrier, pas sur MAIL', () => {
+  withConfig({ CANAL_ACTOR_OVERRIDES: { COURRIER: { ebf_bat: 'com' } } }, () => {
+    const data = makeCampaign(['Com', 'EBF', 'Data'], [
+      { deliverableName: 'Lettre', content: 'COURRIER' },
+      { deliverableName: 'Mail', content: 'MAIL' }
+    ]);
+    workflow.advanceStep(data, 'manager_affectation', 'validated');
+    workflow.advanceStep(data, 'po_kickoff', 'validated');
+    workflow.initWorkflow(data);
+    data.workflow.assignments.com = ['Alice'];
+    data.workflow.channelSteps[0].ebf_bat = 'pending'; // Courrier — surchargé Com
+    data.workflow.channelSteps[1].ebf_bat = 'locked';  // MAIL — reste EBF
+    const alice = { name: 'Alice', isManager: false };
+    const actions = workflow.getAvailableActions(alice, data);
+    assert.ok(actions.some(function (a) { return a.step.id === 'ebf_bat'; }), 'Alice (Com) doit voir l\'action ebf_bat sur le canal Courrier');
+  });
+});

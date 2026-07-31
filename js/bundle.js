@@ -139,6 +139,10 @@ window.ImpulsionMarketing.config = (function() {
   // canal absent de cet objet applique toutes les étapes (repli sûr par défaut).
   // Source : _config.json workflow.canalSteps.
   const CANAL_STEPS = (_cfgCache.workflow && _cfgCache.workflow.canalSteps && typeof _cfgCache.workflow.canalSteps === 'object') ? JSON.parse(JSON.stringify(_cfgCache.workflow.canalSteps)) : {};
+  // Acteur exceptionnel par canal : { "<canal>": { "<stepId>": "<acteur>" } }.
+  // N'affecte que QUI peut agir sur l'étape pour ce canal (pas le déblocage).
+  // Source : _config.json workflow.canalActorOverrides.
+  const CANAL_ACTOR_OVERRIDES = (_cfgCache.workflow && _cfgCache.workflow.canalActorOverrides && typeof _cfgCache.workflow.canalActorOverrides === 'object') ? JSON.parse(JSON.stringify(_cfgCache.workflow.canalActorOverrides)) : {};
 
   // ========================================
   // Autres données pilotées par _config.json (objets/listes mutés en place par adminConfig)
@@ -338,6 +342,7 @@ window.ImpulsionMarketing.config = (function() {
     ROLE_LABELS: ROLE_LABELS,
     WORKFLOW_STEPS: WORKFLOW_STEPS,
     CANAL_STEPS: CANAL_STEPS,
+    CANAL_ACTOR_OVERRIDES: CANAL_ACTOR_OVERRIDES,
     WEB_ZONES: WEB_ZONES,
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,
@@ -2036,7 +2041,20 @@ window.ImpulsionMarketing.workflow = (function () {
     };
   }
   function stepLabel(id) { return _stepDef(id).label; }
-  function stepActor(id) { return _stepDef(id).actor; }
+  // Acteur d'une étape — éventuellement surchargé pour un canal donné (ex. la
+  // Com peut déposer le test en prod pour le canal Courrier, en plus de l'EBF).
+  // Piloté par _config.json workflow.canalActorOverrides : { canal: { stepId: actor } }.
+  // N'affecte QUE qui peut agir — aucun impact sur le déblocage des étapes.
+  function stepActor(id, channelContent) {
+    if (channelContent) {
+      var c = _cfg();
+      var overrides = c && c.CANAL_ACTOR_OVERRIDES;
+      if (overrides && overrides[channelContent] && overrides[channelContent][id]) {
+        return overrides[channelContent][id];
+      }
+    }
+    return _stepDef(id).actor;
+  }
 
   // Applicabilité d'une étape pour un CANAL donné (channel.content, ex. « MAIL »,
   // « ZAC », « LP »…) — pilotée par _config.json workflow.canalSteps. Un canal
@@ -2890,11 +2908,14 @@ window.ImpulsionMarketing.workflow = (function () {
 
     STEPS.slice(3).forEach(function (step) {
       if (seenSteps[step.id]) return;
-      var actor = stepActor(step.id); // surcharge admin éventuelle (Administration ▸ Workflow)
       for (var ci = 0; ci < numChannels; ci++) {
         if (!cs[ci]) continue;
         var status = cs[ci][step.id] || 'locked';
         if (status !== 'pending' && status !== 'revision_requested') continue;
+        // Acteur résolu PAR CANAL (surcharge admin éventuelle — Administration ▸
+        // Workflow) : deux canaux du même step.id peuvent avoir un acteur différent.
+        var chContentAA = campaignData.channels && campaignData.channels[ci] && campaignData.channels[ci].content;
+        var actor = stepActor(step.id, chContentAA);
         var actorMatch = false;
         if (actor === 'po') {
           actorMatch = isPoName(campaignData, currentUser.name);
@@ -3823,6 +3844,9 @@ window.ImpulsionMarketing.adminConfig = (function () {
       }
       if (cfg.workflow.canalSteps && typeof cfg.workflow.canalSteps === 'object') {
         assignInPlace(IM.config.CANAL_STEPS, cfg.workflow.canalSteps);
+      }
+      if (cfg.workflow.canalActorOverrides && typeof cfg.workflow.canalActorOverrides === 'object') {
+        assignInPlace(IM.config.CANAL_ACTOR_OVERRIDES, cfg.workflow.canalActorOverrides);
       }
     }
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)

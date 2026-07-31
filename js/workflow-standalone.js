@@ -103,7 +103,20 @@ window.ImpulsionMarketing.workflow = (function () {
     };
   }
   function stepLabel(id) { return _stepDef(id).label; }
-  function stepActor(id) { return _stepDef(id).actor; }
+  // Acteur d'une étape — éventuellement surchargé pour un canal donné (ex. la
+  // Com peut déposer le test en prod pour le canal Courrier, en plus de l'EBF).
+  // Piloté par _config.json workflow.canalActorOverrides : { canal: { stepId: actor } }.
+  // N'affecte QUE qui peut agir — aucun impact sur le déblocage des étapes.
+  function stepActor(id, channelContent) {
+    if (channelContent) {
+      var c = _cfg();
+      var overrides = c && c.CANAL_ACTOR_OVERRIDES;
+      if (overrides && overrides[channelContent] && overrides[channelContent][id]) {
+        return overrides[channelContent][id];
+      }
+    }
+    return _stepDef(id).actor;
+  }
 
   // Applicabilité d'une étape pour un CANAL donné (channel.content, ex. « MAIL »,
   // « ZAC », « LP »…) — pilotée par _config.json workflow.canalSteps. Un canal
@@ -957,11 +970,14 @@ window.ImpulsionMarketing.workflow = (function () {
 
     STEPS.slice(3).forEach(function (step) {
       if (seenSteps[step.id]) return;
-      var actor = stepActor(step.id); // surcharge admin éventuelle (Administration ▸ Workflow)
       for (var ci = 0; ci < numChannels; ci++) {
         if (!cs[ci]) continue;
         var status = cs[ci][step.id] || 'locked';
         if (status !== 'pending' && status !== 'revision_requested') continue;
+        // Acteur résolu PAR CANAL (surcharge admin éventuelle — Administration ▸
+        // Workflow) : deux canaux du même step.id peuvent avoir un acteur différent.
+        var chContentAA = campaignData.channels && campaignData.channels[ci] && campaignData.channels[ci].content;
+        var actor = stepActor(step.id, chContentAA);
         var actorMatch = false;
         if (actor === 'po') {
           actorMatch = isPoName(campaignData, currentUser.name);

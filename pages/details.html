@@ -1153,6 +1153,17 @@
         var isAssignedCom  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'com').indexOf(currentUser.name)  !== -1);
         var isAssignedEbf  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'ebf').indexOf(currentUser.name)  !== -1);
         var isAssignedData = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'data').indexOf(currentUser.name) !== -1);
+        // Autorisation d'agir sur une étape donnée, acteur résolu PAR CANAL
+        // (surcharge admin éventuelle — Administration ▸ Workflow, ex. la Com
+        // peut déposer le test en prod pour le canal Courrier).
+        function isAssignedForStep(stepId) {
+            var actor = workflow.stepActor(stepId, ch.content);
+            if (actor === 'po')   return _isSuperAdmin || (users && users.isCurrentUserPO(data));
+            if (actor === 'com')  return isAssignedCom;
+            if (actor === 'ebf')  return isAssignedEbf;
+            if (actor === 'data') return isAssignedData;
+            return false;
+        }
 
         // Étapes actives pour CE canal : source unique (moteur workflow), pilotée
         // par les équipes requises, le juridique et l'applicabilité par canal
@@ -1166,13 +1177,13 @@
         // Zone 1 : Maquette Com
         if (stepActive('com_maquette')) {
             var comActive = cs.com_maquette === 'pending' || cs.com_maquette === 'revision_requested';
-            html += buildComChannelSection(data, ch, idx, cs, isAssignedCom && comActive);
+            html += buildComChannelSection(data, ch, idx, cs, isAssignedForStep('com_maquette') && comActive);
             html += buildReopenControl('com_maquette', idx, data);
         }
 
         // Zone 1.5 : Validation juridique Com — visible si applicable et déverrouillée
         if (stepActive('com_juridique') && cs.com_juridique && cs.com_juridique !== 'locked') {
-            var jurEditable = isAssignedCom && cs.com_juridique === 'pending';
+            var jurEditable = isAssignedForStep('com_juridique') && cs.com_juridique === 'pending';
             html += buildJuridiqueChannelSection(data, ch, idx, cs, jurEditable);
             html += buildReopenControl('com_juridique', idx, data);
         }
@@ -1180,44 +1191,45 @@
         // Zone 2 : BAT EBF
         if (stepActive('ebf_bat')) {
             var ebfBatActive = cs.ebf_bat === 'pending' || cs.ebf_bat === 'revision_requested';
-            html += buildEbfBatChannelSection(data, ch, idx, cs, isAssignedEbf && ebfBatActive);
+            html += buildEbfBatChannelSection(data, ch, idx, cs, isAssignedForStep('ebf_bat') && ebfBatActive);
             html += buildReopenControl('ebf_bat', idx, data);
         }
 
         // Zone 3 : Ciblage Data
         if (stepActive('data_ciblage')) {
             var dataActive = cs.data_ciblage === 'pending' || cs.data_ciblage === 'revision_requested';
-            html += buildDataChannelSection(data, ch, idx, cs, 'data_ciblage', 'Ciblage Data', isAssignedData && dataActive);
+            html += buildDataChannelSection(data, ch, idx, cs, 'data_ciblage', 'Ciblage Data', isAssignedForStep('data_ciblage') && dataActive);
             html += buildReopenControl('data_ciblage', idx, data);
         }
 
         // Zone 4 : Lancement test
         if (stepActive('data_lancement_test') && cs.data_lancement_test !== 'locked') {
             var ltActive = cs.data_lancement_test === 'pending' || cs.data_lancement_test === 'revision_requested';
-            html += buildDataLancementTestSection(data, ch, idx, cs, isAssignedData && ltActive);
+            html += buildDataLancementTestSection(data, ch, idx, cs, isAssignedForStep('data_lancement_test') && ltActive);
             html += buildReopenControl('data_lancement_test', idx, data);
         }
 
-        // Zone 5 : Test en prod — déposé par l'EBF assigné OU un destinataire du
-        // test sélectionné à l'étape « Lancement test » ; validé séparément par
-        // le PO (M21 — comme le BAT). isAssignedEbf inclut déjà le super-admin.
+        // Zone 5 : Test en prod — déposé par l'acteur résolu pour ce canal (EBF par
+        // défaut, surchargeable en admin — ex. Com pour le Courrier) OU un
+        // destinataire du test sélectionné à l'étape « Lancement test » ; validé
+        // séparément par le PO (M21 — comme le BAT).
         if (stepActive('ebf_test_prod')) {
             var ebfTpActive = cs.ebf_test_prod === 'pending' || cs.ebf_test_prod === 'revision_requested';
             var _isTestReceiver = currentUser && (ch.testReceivers || []).indexOf(currentUser.name) !== -1;
-            html += buildEbfTestProdChannelSection(data, ch, idx, cs, (isAssignedEbf || _isTestReceiver) && ebfTpActive);
+            html += buildEbfTestProdChannelSection(data, ch, idx, cs, (isAssignedForStep('ebf_test_prod') || _isTestReceiver) && ebfTpActive);
             html += buildReopenControl('ebf_test_prod', idx, data);
         }
 
         // Zone 6 : MEP Data
         if (stepActive('data_mise_en_prod') && cs.data_mise_en_prod !== 'locked') {
             var mepActive = cs.data_mise_en_prod === 'pending';
-            html += buildDataMepSection(data, ch, idx, cs, isAssignedData && mepActive);
+            html += buildDataMepSection(data, ch, idx, cs, isAssignedForStep('data_mise_en_prod') && mepActive);
         }
 
         // Zone 6 bis : MEP EBF (ex. flux type LP — piloté par la config du canal)
         if (stepActive('ebf_mise_en_prod') && cs.ebf_mise_en_prod !== 'locked') {
             var ebfMepActive = cs.ebf_mise_en_prod === 'pending';
-            html += buildEbfMepSection(data, ch, idx, cs, isAssignedEbf && ebfMepActive);
+            html += buildEbfMepSection(data, ch, idx, cs, isAssignedForStep('ebf_mise_en_prod') && ebfMepActive);
         }
 
         // Card historique des demandes de modification (M16) — en bas du livrable.

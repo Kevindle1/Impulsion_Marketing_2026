@@ -133,6 +133,9 @@ window.ImpulsionMarketing.adminConfig = (function () {
       if (cfg.workflow.canalSteps && typeof cfg.workflow.canalSteps === 'object') {
         assignInPlace(IM.config.CANAL_STEPS, cfg.workflow.canalSteps);
       }
+      if (cfg.workflow.canalActorOverrides && typeof cfg.workflow.canalActorOverrides === 'object') {
+        assignInPlace(IM.config.CANAL_ACTOR_OVERRIDES, cfg.workflow.canalActorOverrides);
+      }
     }
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);

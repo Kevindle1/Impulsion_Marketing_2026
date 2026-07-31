@@ -135,6 +135,10 @@ window.ImpulsionMarketing.config = (function() {
   // canal absent de cet objet applique toutes les étapes (repli sûr par défaut).
   // Source : _config.json workflow.canalSteps.
   const CANAL_STEPS = (_cfgCache.workflow && _cfgCache.workflow.canalSteps && typeof _cfgCache.workflow.canalSteps === 'object') ? JSON.parse(JSON.stringify(_cfgCache.workflow.canalSteps)) : {};
+  // Acteur exceptionnel par canal : { "<canal>": { "<stepId>": "<acteur>" } }.
+  // N'affecte que QUI peut agir sur l'étape pour ce canal (pas le déblocage).
+  // Source : _config.json workflow.canalActorOverrides.
+  const CANAL_ACTOR_OVERRIDES = (_cfgCache.workflow && _cfgCache.workflow.canalActorOverrides && typeof _cfgCache.workflow.canalActorOverrides === 'object') ? JSON.parse(JSON.stringify(_cfgCache.workflow.canalActorOverrides)) : {};
 
   // ========================================
   // Autres données pilotées par _config.json (objets/listes mutés en place par adminConfig)
@@ -334,6 +338,7 @@ window.ImpulsionMarketing.config = (function() {
     ROLE_LABELS: ROLE_LABELS,
     WORKFLOW_STEPS: WORKFLOW_STEPS,
     CANAL_STEPS: CANAL_STEPS,
+    CANAL_ACTOR_OVERRIDES: CANAL_ACTOR_OVERRIDES,
     WEB_ZONES: WEB_ZONES,
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,

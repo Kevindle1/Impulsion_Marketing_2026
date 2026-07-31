@@ -302,6 +302,7 @@
         var marchesSiteWebState = [];   // copie éditable des marchés site web (matrice Comité éditorial)
         var workflowStepsState = [];    // copie éditable des étapes (libellé/acteur/ordre)
         var canalStepsState = {};       // copie éditable de l'applicabilité des étapes par canal
+        var canalActorOverridesState = []; // copie éditable des exceptions d'acteur par canal : [{canal, stepId, actor}]
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
@@ -1127,6 +1128,7 @@
             marchesSiteWebState = (config && Array.isArray(config.MARCHES_SITE_WEB)) ? JSON.parse(JSON.stringify(config.MARCHES_SITE_WEB)) : [];
             workflowStepsState = (config && Array.isArray(config.WORKFLOW_STEPS) && config.WORKFLOW_STEPS.length) ? JSON.parse(JSON.stringify(config.WORKFLOW_STEPS)) : defaultWorkflowSteps();
             canalStepsState = (config && config.CANAL_STEPS && typeof config.CANAL_STEPS === 'object') ? JSON.parse(JSON.stringify(config.CANAL_STEPS)) : {};
+            canalActorOverridesState = flattenActorOverrides((config && config.CANAL_ACTOR_OVERRIDES) || {});
             reponseStatutsState = (config && Array.isArray(config.REPONSE_STATUTS)) ? JSON.parse(JSON.stringify(config.REPONSE_STATUTS)) : [];
             whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
             bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
@@ -1551,6 +1553,25 @@
             var base = (IM.workflow && Array.isArray(IM.workflow.STEPS)) ? IM.workflow.STEPS.slice(3) : [];
             return base.map(function (s, i) { return { id: s.id, label: s.label, actor: s.actor, order: i }; });
         }
+        // { canal: { stepId: actor } } ↔ [{canal, stepId, actor}] — la liste à plat
+        // est plus simple à éditer ligne par ligne (ajout/suppression) que l'objet imbriqué.
+        function flattenActorOverrides(obj) {
+            var out = [];
+            Object.keys(obj || {}).forEach(function (canal) {
+                var stepsMap = obj[canal] || {};
+                Object.keys(stepsMap).forEach(function (stepId) { out.push({ canal: canal, stepId: stepId, actor: stepsMap[stepId] }); });
+            });
+            return out;
+        }
+        function unflattenActorOverrides(list) {
+            var out = {};
+            list.forEach(function (o) {
+                if (!o.canal || !o.stepId || !o.actor) return;
+                if (!out[o.canal]) out[o.canal] = {};
+                out[o.canal][o.stepId] = o.actor;
+            });
+            return out;
+        }
         // Correspondance étape de dépôt → sa validation PO associée (même source
         // que le moteur — js/workflow-standalone.js) : sert à détecter les
         // configurations incohérentes (dépôt actif sans sa validation, ou l'inverse).
@@ -1660,8 +1681,27 @@
                 });
                 html += '</tbody></table></div>';
             }
-            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-workflow">💾 Enregistrer le workflow</button></div>';
             html += '</div>';
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Acteur spécifique par canal (exceptions)</h3><span class="count-pill">' + canalActorOverridesState.length + '</span></div>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Pour un canal donné, autorise une équipe différente de l\'équipe habituelle à agir sur une étape (ex. la Com peut déposer le test en prod pour le Courrier, en plus de l\'EBF). N\'affecte que <strong>qui peut agir</strong> — le déblocage des étapes n\'est pas modifié.</div>';
+            if (!canaux.length) {
+                html += '<div class="empty-hint">Ajoutez d\'abord un canal dans « Types de livrables / canaux ».</div>';
+            } else {
+                if (!canalActorOverridesState.length) html += '<div class="empty-hint">Aucune exception.</div>';
+                canalActorOverridesState.forEach(function (o, i) {
+                    html += '<div class="person-row" style="flex-wrap:wrap;">'
+                        + '<select class="admin-select" data-wfao-canal="' + i + '" style="min-width:150px;">' + canaux.map(function (c) { return '<option value="' + esc(c) + '"' + (o.canal === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>'
+                        + '<select class="admin-select" data-wfao-step="' + i + '" style="min-width:180px;">' + steps.map(function (s) { return '<option value="' + esc(s.id) + '"' + (o.stepId === s.id ? ' selected' : '') + '>' + esc(s.label) + '</option>'; }).join('') + '</select>'
+                        + '<span style="font-size:12px;color:var(--muted);">acteur autorisé :</span>'
+                        + '<select class="admin-select" data-wfao-actor="' + i + '">' + WF_ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (o.actor === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'
+                        + '<button class="icon-del" data-wfao-del="' + i + '">🗑</button></div>';
+                });
+                html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="wfao-add">+ Ajouter une exception</button></div>';
+            }
+            html += '</div>';
+
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-workflow">💾 Enregistrer le workflow</button></div>';
 
             cont.innerHTML = html;
 
@@ -1701,6 +1741,16 @@
                 });
             });
 
+            cont.querySelectorAll('[data-wfao-canal]').forEach(function (sel) { var i = +sel.getAttribute('data-wfao-canal'); sel.addEventListener('change', function () { canalActorOverridesState[i].canal = sel.value; }); });
+            cont.querySelectorAll('[data-wfao-step]').forEach(function (sel) { var i = +sel.getAttribute('data-wfao-step'); sel.addEventListener('change', function () { canalActorOverridesState[i].stepId = sel.value; }); });
+            cont.querySelectorAll('[data-wfao-actor]').forEach(function (sel) { var i = +sel.getAttribute('data-wfao-actor'); sel.addEventListener('change', function () { canalActorOverridesState[i].actor = sel.value; }); });
+            cont.querySelectorAll('[data-wfao-del]').forEach(function (b) { b.addEventListener('click', function () { canalActorOverridesState.splice(+b.getAttribute('data-wfao-del'), 1); renderWorkflow(); }); });
+            var addAoBtn = document.getElementById('wfao-add');
+            if (addAoBtn) addAoBtn.addEventListener('click', function () {
+                canalActorOverridesState.push({ canal: canaux[0], stepId: steps[0] ? steps[0].id : '', actor: 'com' });
+                renderWorkflow();
+            });
+
             document.getElementById('save-workflow').addEventListener('click', function () {
                 var cleanSteps = workflowStepsState.map(function (s) {
                     return { id: s.id, label: (s.label || '').trim() || s.id, actor: s.actor, order: (typeof s.order === 'number') ? s.order : 0 };
@@ -1709,13 +1759,15 @@
                 Object.keys(canalStepsState).forEach(function (k) {
                     if (Array.isArray(canalStepsState[k])) cleanCanalSteps[k] = canalStepsState[k].slice();
                 });
+                var cleanActorOverrides = unflattenActorOverrides(canalActorOverridesState);
                 var stillFlagged = Object.keys(cleanCanalSteps).filter(function (k) { return wfWarnings(cleanCanalSteps[k], labelById).length > 0; });
                 if (stillFlagged.length && !confirm('Configuration à vérifier pour : ' + stillFlagged.join(', ') + ' (voir le détail en rouge ci-dessus). Enregistrer quand même ?')) return;
-                var payload = { steps: cleanSteps, canalSteps: cleanCanalSteps };
+                var payload = { steps: cleanSteps, canalSteps: cleanCanalSteps, canalActorOverrides: cleanActorOverrides };
                 saveConfig({ workflow: payload }, 'Workflow enregistré.').then(function () {
                     if (adminConfig.applyConfig) adminConfig.applyConfig({ workflow: payload });
                     workflowStepsState = JSON.parse(JSON.stringify(cleanSteps));
                     canalStepsState = JSON.parse(JSON.stringify(cleanCanalSteps));
+                    canalActorOverridesState = flattenActorOverrides(cleanActorOverrides);
                     renderWorkflow();
                 });
             });
