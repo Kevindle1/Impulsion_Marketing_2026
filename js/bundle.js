@@ -108,6 +108,15 @@ window.ImpulsionMarketing.config = (function() {
   const MARCHES = _arr('marches');
 
   // ========================================
+  // Marchés « site web » (matrice du Comité éditorial)
+  // ========================================
+
+  // Liste {value,label} — pilote les onglets marché et les cases à cocher
+  // « Marché(s) » du planning site web (pages/comite-editorial.html, pages/campaign.html).
+  // Source : _config.json (clé marchesSiteWeb), éditable via l'espace Administration.
+  const MARCHES_SITE_WEB = Array.isArray(_cfgCache.marchesSiteWeb) ? JSON.parse(JSON.stringify(_cfgCache.marchesSiteWeb)) : [];
+
+  // ========================================
   // Récurrences
   // ========================================
 
@@ -304,6 +313,7 @@ window.ImpulsionMarketing.config = (function() {
     TYPOLOGIES: TYPOLOGIES,
     PRODUITS: PRODUITS,
     MARCHES: MARCHES,
+    MARCHES_SITE_WEB: MARCHES_SITE_WEB,
     RECURRENCES: RECURRENCES,
     LOTS: LOTS,
     // Données pilotées par _config.json
@@ -1801,10 +1811,11 @@ window.ImpulsionMarketing.users = (function () {
     USERS.splice.apply(USERS, [0, USERS.length].concat(clean));
   }
 
-  // Droit d'accès à l'espace Administration : managers, super admin, ou Kévin Dolie.
+  // Droit d'accès à l'espace Administration : managers ou super admin (config _config.json,
+  // aucun nom codé en dur — l'accès admin se donne exclusivement via le flag isManager/isSuperAdmin).
   function canAccessAdmin() {
     var u = getCurrentUser();
-    return !!(u && (u.isManager === true || u.isSuperAdmin === true || u.name === 'Kévin Dolie'));
+    return !!(u && (u.isManager === true || u.isSuperAdmin === true));
   }
 
   /**
@@ -3579,7 +3590,7 @@ window.ImpulsionMarketing.incident = (function () {
  *   « fixes » éditables (liste des personnes, types de livrables). N'intervient
  *   pas sur l'écran de connexion (pas de menu latéral).
  * - Injecte le lien « Administration » dans le menu, visible uniquement pour les
- *   managers, le super admin et Kévin Dolie.
+ *   personnes marquées « manager » ou « super admin » dans _config.json.
  */
 window.ImpulsionMarketing = window.ImpulsionMarketing || {};
 
@@ -3696,6 +3707,10 @@ window.ImpulsionMarketing.adminConfig = (function () {
       spliceInPlace(IM.config.SEGMENTS_GROUPS, cfg.segmentsGroups);
       if (Array.isArray(IM.config.SEGMENTS)) spliceInPlace(IM.config.SEGMENTS, flattenSegments(cfg.segmentsGroups));
     }
+    // Marchés « site web » (liste {value,label} — matrice du Comité éditorial)
+    if (Array.isArray(cfg.marchesSiteWeb) && cfg.marchesSiteWeb.length && Array.isArray(IM.config.MARCHES_SITE_WEB)) {
+      spliceInPlace(IM.config.MARCHES_SITE_WEB, cfg.marchesSiteWeb);
+    }
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
     assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);
@@ -3734,9 +3749,11 @@ window.ImpulsionMarketing.adminConfig = (function () {
   // coder l'URL en dur dans chaque page.
   function applyGalleryLink() {
     var url = IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.galleryUrl;
-    if (!url) return;
-    var links = document.querySelectorAll('a.nav-link[href*="ca-toulouse31"], a.nav-link[data-gallery]');
-    Array.prototype.forEach.call(links, function (a) { a.href = url; });
+    var links = document.querySelectorAll('a.nav-link[data-gallery]');
+    Array.prototype.forEach.call(links, function (a) {
+      if (url) { a.href = url; a.style.display = ''; }
+      else { a.href = '#'; a.style.display = 'none'; }
+    });
   }
 
   function init() {

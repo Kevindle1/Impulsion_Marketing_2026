@@ -54,6 +54,10 @@
         .pil-ct-ges { background: #e8f0fe; color: #2563EB; }
         .pil-ct-reg { background: #fdf3e2; color: #9a6b00; }
         .pil-ct-none { background: var(--line-2); color: var(--muted-2); }
+        /* Palette générique (au-delà de 3 « Types de communication » configurés en Administration) */
+        .pil-ct-pal3 { background: #f3e8ff; color: #7C3AED; }
+        .pil-ct-pal4 { background: #fce7f3; color: #9d174d; }
+        .pil-ct-pal5 { background: #cffafe; color: #0e7490; }
         .pil-empty { text-align: center; padding: 42px 20px; color: var(--muted); font-size: 14px; }
         .pil-empty .big { font-size: 40px; margin-bottom: 10px; }
 
@@ -365,12 +369,14 @@
             fill('f-type', types);
         }
 
+        // Couleur du badge « Type de com » dérivée de la position dans IM.config.TYPES_COM
+        // (piloté par _config.json / Administration) — aucun nom de catégorie codé en dur.
+        var PIL_CT_PALETTE = ['pil-ct-com', 'pil-ct-ges', 'pil-ct-reg', 'pil-ct-pal3', 'pil-ct-pal4', 'pil-ct-pal5'];
         function ctBadgeClass(t) {
-            var v = (t || '').toLowerCase();
-            if (v.indexOf('commerc') >= 0) return 'pil-ct-com';
-            if (v.indexOf('gestion') >= 0) return 'pil-ct-ges';
-            if (v.indexOf('regle') >= 0 || v.indexOf('régle') >= 0) return 'pil-ct-reg';
-            return 'pil-ct-none';
+            var types = (window.ImpulsionMarketing.config.TYPES_COM || []);
+            var idx = types.indexOf(t);
+            if (idx === -1) return 'pil-ct-none';
+            return PIL_CT_PALETTE[idx % PIL_CT_PALETTE.length];
         }
         function frDate(iso) {
             if (!iso) return '—';

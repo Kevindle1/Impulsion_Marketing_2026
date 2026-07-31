@@ -1278,6 +1278,16 @@
                 else alert(message);
             }
 
+            // Typologie(s) de com déclenchant les champs « zone site web » (marché, dates,
+            // URL Tic et Tac / Com Store…). Piloté par _config.json (settings.siteWebComTypologies,
+            // éditable via Administration ▸ Paramètres généraux) — plus aucune valeur en dur :
+            // repli sur « Reprise Natio » (comportement historique) si le réglage est absent.
+            function isSiteWebComTypology(v) {
+                var s = window.ImpulsionMarketing.config.APP_SETTINGS || {};
+                var trig = Array.isArray(s.siteWebComTypologies) && s.siteWebComTypologies.length ? s.siteWebComTypologies : ['Reprise Natio'];
+                return trig.indexOf(v) !== -1;
+            }
+
             // Invalidation MetadataCache lors de la création/modification d'une campagne
             var MetadataCacheInvalidator = (function() {
                 var DB = 'ImpulsionMetaCache', STORE = 'meta';
@@ -2082,7 +2092,7 @@
                         html += '    <div class="summary-item"><span class="summary-label">Critère ciblage :</span><span class="summary-value">' + ($(`#targetingCriteria${i}`)?.value || '-') + '</span></div>';
                         html += '    <div class="summary-item"><span class="summary-label">Typologie com :</span><span class="summary-value">' + (document.querySelector(`input[name="comTypology${i}"]:checked`)?.value || '-') + '</span></div>';
                         if ($(`#urlLccx${i}`)?.value) html += '    <div class="summary-item"><span class="summary-label">Lien LCCX :</span><span class="summary-value">' + ($(`#urlLccx${i}`)?.value || '-') + '</span></div>';
-                        if (document.querySelector(`input[name="comTypology${i}"]:checked`)?.value === 'Reprise Natio') {
+                        if (isSiteWebComTypology(document.querySelector(`input[name="comTypology${i}"]:checked`)?.value)) {
                             html += '    <div class="summary-item"><span class="summary-label">URL Tic et Tac / CA NOUS :</span><span class="summary-value">' + ($(`#urlTicTac${i}`)?.value || '-') + '</span></div>';
                             html += '    <div class="summary-item"><span class="summary-label">URL Com Store :</span><span class="summary-value">' + ($(`#urlComStore${i}`)?.value || '-') + '</span></div>';
                         }
@@ -2311,7 +2321,7 @@
                         text += '  Type de Com         : ' + (channel.comType || '-') + '\n';
                         text += '  Critère ciblage     : ' + (channel.targetingCriteria || '-') + '\n';
                         text += '  Typologie com       : ' + (channel.comTypology || '-') + '\n';
-                        if (channel.comTypology === 'Reprise Natio') {
+                        if (isSiteWebComTypology(channel.comTypology)) {
                             if (channel.urlTicTac) text += '  URL Tic et Tac/CA NOUS : ' + channel.urlTicTac + '\n';
                             if (channel.urlComStore) text += '  URL Com Store       : ' + channel.urlComStore + '\n';
                         }
@@ -2343,6 +2353,11 @@
                 const universBesoins = (cfgCampaign && Array.isArray(cfgCampaign.UNIVERS_BESOINS)) ? cfgCampaign.UNIVERS_BESOINS.slice() : [];
                 // Zones site web : reprises de la config (Administration → Zones site web).
                 const webZonesCfg = (cfgCampaign && cfgCampaign.WEB_ZONES && typeof cfgCampaign.WEB_ZONES === 'object') ? cfgCampaign.WEB_ZONES : {};
+                // Marchés du planning site web : repris de la config (Administration → Marchés
+                // site web — même liste que la matrice du Comité éditorial).
+                const marchesSiteWeb = (cfgCampaign && Array.isArray(cfgCampaign.MARCHES_SITE_WEB) && cfgCampaign.MARCHES_SITE_WEB.length)
+                    ? cfgCampaign.MARCHES_SITE_WEB.slice()
+                    : [{ value: 'part', label: 'Particuliers' }, { value: 'bp', label: 'BP' }, { value: 'pro', label: 'Pro' }, { value: 'agri', label: 'Agri' }, { value: 'ent', label: 'ENT' }, { value: 'asso', label: 'Association' }];
                 for (let i = 1; i <= num; i++) {
                     const div = document.createElement("div");
                     div.className = "form-group";
@@ -2397,12 +2412,7 @@
                                 <div>
                                     <label style="font-size:12px;">Marché(s) :</label>
                                     <div id="siteWebMarcheGroup${i}" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;">
-                                        <label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-${i}" value="part" checked> Particuliers</label>
-                                        <label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-${i}" value="bp"> BP</label>
-                                        <label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-${i}" value="pro"> Pro</label>
-                                        <label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-${i}" value="agri"> Agri</label>
-                                        <label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-${i}" value="ent"> ENT</label>
-                                        <label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-${i}" value="asso"> Association</label>
+                                        ${marchesSiteWeb.map(function(m, mi) { var v = String(m.value).replace(/"/g, '&quot;'); return '<label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-' + i + '" value="' + v + '"' + (mi === 0 ? ' checked' : '') + '> ' + m.label + '</label>'; }).join('')}
                                     </div>
                                 </div>
                                 <div id="siteWebUniversGroup${i}" style="display:none;">
@@ -2571,7 +2581,7 @@
                         radio.addEventListener('change', function() {
                             const repriseFields = document.getElementById(`repriseNatioFields${i}`);
                             const urlComStoreGroup = document.getElementById(`urlComStoreGroup${i}`);
-                            if (this.value === "Reprise Natio") {
+                            if (isSiteWebComTypology(this.value)) {
                                 repriseFields.style.display = "block";
                                 urlComStoreGroup.style.display = "block";
                                 // Force reflow pour l'animation

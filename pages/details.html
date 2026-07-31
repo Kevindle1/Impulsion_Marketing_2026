@@ -4100,15 +4100,18 @@
     var _bilanState = null;     // { campaignName, channels, results, idx }
     var _bilanCompareSeries = null; // série de comparaison (autre campagne)
     var BILAN_IDENT = _BILAN_CFG.ident || ['Canal', 'ID_ACTION', 'code_communication', 'CAMPAGNE', 'ACTION'];
+    // Chaque KPI porte désormais aussi son mode d'agrégation ('somme' ou 'moyenne',
+    // piloté par _config.json bilan.kpis[].agg, éditable en Administration ▸ Bilan) —
+    // utilisé par bilanAggregate() ci-dessous pour combiner les lignes d'un même canal.
     var BILAN_KPIS = _BILAN_CFG.kpis || [
-        { k: 'Nb_Envois', label: 'Envois', pct: false },
-        { k: 'Nb_communications', label: 'Comm.', pct: false },
-        { k: 'Nb_MDC_Actifs', label: 'MDC actifs', pct: false },
-        { k: 'Tx_Ouvreurs', label: 'Tx ouv.', pct: true },
-        { k: 'Tx_Cliqueurs', label: 'Tx clic', pct: true },
-        { k: 'Tx_Desabonnement', label: 'Tx désab.', pct: true },
-        { k: 'Tx_Reussite', label: 'Tx réussite', pct: true },
-        { k: 'Nb_leads', label: 'Leads', pct: false }
+        { k: 'Nb_Envois', label: 'Envois', pct: false, agg: 'moyenne' },
+        { k: 'Nb_communications', label: 'Comm.', pct: false, agg: 'somme' },
+        { k: 'Nb_MDC_Actifs', label: 'MDC actifs', pct: false, agg: 'moyenne' },
+        { k: 'Tx_Ouvreurs', label: 'Tx ouv.', pct: true, agg: 'moyenne' },
+        { k: 'Tx_Cliqueurs', label: 'Tx clic', pct: true, agg: 'moyenne' },
+        { k: 'Tx_Desabonnement', label: 'Tx désab.', pct: true, agg: 'moyenne' },
+        { k: 'Tx_Reussite', label: 'Tx réussite', pct: true, agg: 'moyenne' },
+        { k: 'Nb_leads', label: 'Leads', pct: false, agg: 'somme' }
     ];
     // Indicateurs tracés en graphiques.
     var BILAN_CHART_RATES = _BILAN_CFG.chartRates || ['Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
@@ -4301,21 +4304,22 @@
 
     var BILAN_COLORS = ['#00875A', '#2563EB', '#E8A100', '#7C3AED', '#E2001A', '#0891b2', '#65a30d', '#db2777'];
 
-    // Agrège les lignes d'un canal : on additionne le nombre de communications et de
-    // leads ; tout le reste (envois, MDC actifs, taux) est une moyenne simple.
-    var BILAN_SUM_KEYS = ['Nb_communications', 'Nb_leads'];
-    var BILAN_AVG_KEYS = ['Nb_Envois', 'Nb_MDC_Actifs', 'Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
+    // Agrège les lignes d'un canal : pour chaque KPI de BILAN_KPIS (piloté par
+    // _config.json / Administration ▸ Bilan), on additionne ('somme') ou on fait une
+    // moyenne simple ('moyenne' — valeur par défaut si non précisé) selon kp.agg.
     function bilanAggregate(rows) {
         var agg = {};
-        BILAN_SUM_KEYS.forEach(function (k) {
-            var s = 0, any = false;
-            rows.forEach(function (o) { var n = bilanToNumber(o[k]); if (n != null) { s += n; any = true; } });
-            agg[k] = any ? s : null;
-        });
-        BILAN_AVG_KEYS.forEach(function (k) {
-            var s = 0, c = 0;
-            rows.forEach(function (o) { var n = bilanToNumber(o[k]); if (n != null) { s += n; c++; } });
-            agg[k] = c > 0 ? (s / c) : null;
+        BILAN_KPIS.forEach(function (kp) {
+            var k = kp.k;
+            if (kp.agg === 'somme') {
+                var s = 0, any = false;
+                rows.forEach(function (o) { var n = bilanToNumber(o[k]); if (n != null) { s += n; any = true; } });
+                agg[k] = any ? s : null;
+            } else {
+                var s2 = 0, c = 0;
+                rows.forEach(function (o) { var n = bilanToNumber(o[k]); if (n != null) { s2 += n; c++; } });
+                agg[k] = c > 0 ? (s2 / c) : null;
+            }
         });
         return agg;
     }

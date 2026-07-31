@@ -635,10 +635,7 @@
 
                     <!-- Control bar: tabs + nav + filters -->
                     <div class="ce-controls">
-                        <button class="marche-tab active" data-marche="part">Particuliers</button>
-                        <button class="marche-tab" data-marche="bp">Banque Privée</button>
-                        <button class="marche-tab" data-marche="pro">Pro</button>
-                        <button class="marche-tab" data-marche="agri">Agri</button>
+                        <div id="marche-tabs-group" style="display:contents;"><!-- Onglets marché — générés depuis IM.config.MARCHES_SITE_WEB (admin) --></div>
 
                         <div class="ce-controls-sep"></div>
 
@@ -724,12 +721,20 @@
     // stable de l'objet config (muté en place par adminConfig) et on lit ses propriétés
     // au moment du rendu : _WZ.zones, _WZ.bpOnlyZones, _WZ.zonesMulti.
     var _WZ = window.ImpulsionMarketing.config.WEB_ZONES;
-    var MARCHES = [
-        { value: 'part', label: 'Particuliers' },
-        { value: 'bp',   label: 'Banque Privée' },
-        { value: 'pro',  label: 'Pro' },
-        { value: 'agri', label: 'Agri' }
-    ];
+    // Marchés du planning site web — pilotés par _config.json (clé marchesSiteWeb,
+    // éditable via Administration ▸ Marchés site web). On garde la référence stable
+    // du tableau de config (muté en place par adminConfig lors d'un reload), avec un
+    // repli sur les 4 valeurs historiques uniquement si la config n'a encore jamais
+    // été chargée (tableau vide au tout premier démarrage).
+    var MARCHES = window.ImpulsionMarketing.config.MARCHES_SITE_WEB || [];
+    if (!MARCHES.length) {
+        Array.prototype.push.apply(MARCHES, [
+            { value: 'part', label: 'Particuliers' },
+            { value: 'bp',   label: 'Banque Privée' },
+            { value: 'pro',  label: 'Pro' },
+            { value: 'agri', label: 'Agri' }
+        ]);
+    }
     var MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
     // Palette of colors for campaign blocks (cycle)
@@ -746,7 +751,7 @@
         campaigns: [],
         colorMap: {},
         colorIdx: 0,
-        activeMarche: 'part',     // onglet actif
+        activeMarche: (MARCHES[0] && MARCHES[0].value) || 'part',     // onglet actif
         periodYear: new Date().getFullYear(),
         periodMonth: new Date().getMonth() // 0-based
     };
@@ -762,6 +767,29 @@
         $('period-label').textContent = MONTHS_FR[m1] + ' ' + y1 + ' — ' + MONTHS_FR[m2] + ' ' + y2;
     }
 
+    // Génère les onglets marché depuis MARCHES (piloté par l'Administration) et
+    // (re)branche leurs gestionnaires de clic.
+    function renderMarcheTabs() {
+        var group = $('marche-tabs-group');
+        if (!group) return;
+        group.innerHTML = MARCHES.map(function(m) {
+            var active = m.value === state.activeMarche;
+            return '<button class="marche-tab' + (active ? ' active' : '') + '" data-marche="' + escHtml(m.value) + '">' + escHtml(m.label) + '</button>';
+        }).join('');
+        group.querySelectorAll('.marche-tab').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                state.activeMarche = this.getAttribute('data-marche');
+                group.querySelectorAll('.marche-tab').forEach(function(b) {
+                    var active = b.getAttribute('data-marche') === state.activeMarche;
+                    b.style.color = active ? 'var(--green-700)' : '#6b7280';
+                    b.style.borderBottomColor = active ? '#308276' : 'transparent';
+                    b.style.fontWeight = active ? '700' : '600';
+                });
+                renderGantt();
+            });
+        });
+    }
+
     // ── Init ───────────────────────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', function() {
         var um = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
@@ -775,19 +803,8 @@
 
         updatePeriodLabel();
 
-        // Onglets marché
-        document.querySelectorAll('.marche-tab').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                state.activeMarche = this.getAttribute('data-marche');
-                document.querySelectorAll('.marche-tab').forEach(function(b) {
-                    var active = b.getAttribute('data-marche') === state.activeMarche;
-                    b.style.color = active ? 'var(--green-700)' : '#6b7280';
-                    b.style.borderBottomColor = active ? '#308276' : 'transparent';
-                    b.style.fontWeight = active ? '700' : '600';
-                });
-                renderGantt();
-            });
-        });
+        // Onglets marché (générés depuis la config — voir renderMarcheTabs)
+        renderMarcheTabs();
 
         // Navigation période
         $('btn-prev').addEventListener('click', function() {
@@ -1564,7 +1581,8 @@
     }
 
     function marcheLabel(v) {
-        return v === 'bp' ? 'BP' : 'Particuliers';
+        var m = MARCHES.filter(function(x) { return x.value === v; })[0];
+        return m ? m.label : (v || 'Particuliers');
     }
 
     function escHtml(s) {
