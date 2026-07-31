@@ -2329,16 +2329,20 @@
             function generateChannelFields(num) {
                 const container = $("#channelsContainer");
                 container.innerHTML = "";
-                const channels = [
-                    "LP", "MAIL", "COURRIER", "SMS", "MDC", "PUSH / NOTIF MA BANQUE", "PERSO MA BANQUE", "Zone de Gauche ( synthese des comptes)", "Zone de Gauche ( Authentification)", "Bandeau Hero", "ZAC HOME PAGE Gauche", "ZAC HOME PAGE Droite", "E-message", "Zone de droite ( synthese des comptes)", "Article", "Newsletter", "ZAC", "Menu Burger", "MAIL + E-MESSAGE"
-                ];
+                // Types de livrable / canaux : repris de la config (éditable via
+                // l'Administration), avec repli sur la liste par défaut si indisponible.
+                var cfgCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.config;
+                const channels = (cfgCampaign && Array.isArray(cfgCampaign.CANAUX) && cfgCampaign.CANAUX.length)
+                    ? cfgCampaign.CANAUX.slice()
+                    : ["LP", "MAIL", "COURRIER", "SMS", "MDC", "PUSH / NOTIF MA BANQUE", "PERSO MA BANQUE", "Zone de Gauche ( synthese des comptes)", "Zone de Gauche ( Authentification)", "Bandeau Hero", "ZAC HOME PAGE", "E-message", "Zone de droite ( synthese des comptes)", "Article", "Newsletter", "ZAC", "Menu Burger", "MAIL + E-MESSAGE"];
                 // Types de com : repris de la config (éditable via l'Administration),
                 // avec repli sur la liste par défaut si indisponible.
-                var cfgCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.config;
                 const typesCom = (cfgCampaign && Array.isArray(cfgCampaign.TYPES_COM) && cfgCampaign.TYPES_COM.length)
                     ? cfgCampaign.TYPES_COM.slice()
                     : ["Commerciales", "Gestion", "Réglementaire"];
                 const universBesoins = (cfgCampaign && Array.isArray(cfgCampaign.UNIVERS_BESOINS)) ? cfgCampaign.UNIVERS_BESOINS.slice() : [];
+                // Zones site web : reprises de la config (Administration → Zones site web).
+                const webZonesCfg = (cfgCampaign && cfgCampaign.WEB_ZONES && typeof cfgCampaign.WEB_ZONES === 'object') ? cfgCampaign.WEB_ZONES : {};
                 for (let i = 1; i <= num; i++) {
                     const div = document.createElement("div");
                     div.className = "form-group";
@@ -2439,13 +2443,13 @@
                     container.appendChild(div);
 
                     // Show/hide siteWeb fields based on channel content selection
-                    const WEB_CHANNELS = [
-                        "Zone de Gauche ( synthese des comptes)", "Zone de Gauche ( Authentification)", "Bandeau Hero",
-                        "ZAC HOME PAGE Gauche", "ZAC HOME PAGE Droite",
-                        "Zone de droite ( synthese des comptes)", "ZAC", "Menu Burger"
-                    ];
-                    // ZAC is BP only — no Particuliers
-                    const ZAC_BP_ONLY = ["ZAC"];
+                    // (zones + zones réservées BP reprises de la config Administration).
+                    const WEB_CHANNELS = (Array.isArray(webZonesCfg.zones) && webZonesCfg.zones.length)
+                        ? webZonesCfg.zones.slice()
+                        : ["Zone de Gauche ( synthese des comptes)", "Zone de Gauche ( Authentification)", "Bandeau Hero", "ZAC HOME PAGE", "Zone de droite ( synthese des comptes)", "ZAC", "Menu Burger"];
+                    const ZAC_BP_ONLY = (Array.isArray(webZonesCfg.bpOnlyZones) && webZonesCfg.bpOnlyZones.length)
+                        ? webZonesCfg.bpOnlyZones.slice()
+                        : ["ZAC"];
 
                     // Snap a date string to the nearest previous Monday
                     const snapToMonday = function(dateStr) {
@@ -2484,10 +2488,20 @@
                         const universGroup = document.getElementById(`siteWebUniversGroup${i}`);
                         const universLabel = document.getElementById(`siteWebUniversLabel${i}`);
                         const universEl    = document.getElementById(`siteWebUnivers${i}`);
-                        const UNIVERS_OPTIONS = {
-                            'Menu Burger': { label: 'Univers :', options: ['Compte et carte', 'Epargne', 'Assurance', 'Crédit'] },
-                            'Zone de Gauche ( Authentification)': { label: 'Emplacement :', options: ['Emplacement 1', 'Emplacement 2', 'Emplacement 3', 'Emplacement 4', 'Emplacement 5'] }
-                        };
+                        // Sous-lignes par zone : reprises de la config Administration
+                        // (Zones site web → « Sous-lignes par zone »), à défaut liste par défaut.
+                        var zonesMultiCfg = (webZonesCfg.zonesMulti && typeof webZonesCfg.zonesMulti === 'object') ? webZonesCfg.zonesMulti : {};
+                        var UNIVERS_OPTIONS = {};
+                        if (Object.keys(zonesMultiCfg).length) {
+                            Object.keys(zonesMultiCfg).forEach(function (zoneName) {
+                                UNIVERS_OPTIONS[zoneName] = { label: 'Sélection :', options: (zonesMultiCfg[zoneName] || []).slice() };
+                            });
+                        } else {
+                            UNIVERS_OPTIONS = {
+                                'Menu Burger': { label: 'Univers :', options: ['Compte et carte', 'Epargne', 'Assurance', 'Crédit'] },
+                                'Zone de Gauche ( Authentification)': { label: 'Emplacement :', options: ['Emplacement 1', 'Emplacement 2', 'Emplacement 3', 'Emplacement 4', 'Emplacement 5'] }
+                            };
+                        }
                         if (universGroup && universEl) {
                             if (UNIVERS_OPTIONS[val]) {
                                 var cfg = UNIVERS_OPTIONS[val];
