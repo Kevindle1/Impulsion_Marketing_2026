@@ -112,9 +112,16 @@
         .wf-matrix { border-collapse: collapse; font-size: 12.5px; white-space: nowrap; }
         .wf-matrix th, .wf-matrix td { padding: 7px 9px; text-align: center; border-bottom: 1px solid var(--line-2); }
         .wf-matrix th { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; color: var(--muted); vertical-align: bottom; }
-        .wf-matrix-canal { text-align: left !important; font-weight: 650; color: var(--ink); white-space: nowrap; }
+        .wf-matrix-canal { text-align: left !important; font-weight: 650; color: var(--ink); white-space: normal; vertical-align: top; max-width: 260px; }
         .wf-matrix tbody tr:hover { background: var(--line-2); }
         .wf-matrix input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .wf-canal-badge { font-size: 9.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+        .wf-canal-badge.default { background: var(--line-2); color: var(--muted-2); }
+        .wf-canal-badge.custom { background: var(--blue-50,#e8f0fe); color: var(--blue,#2563EB); }
+        .wf-row-preview { font-size: 10.5px; color: var(--muted-2); font-weight: 400; margin-top: 3px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+        .wf-row-warning { font-size: 11px; color: #c0392b; font-weight: 600; margin-top: 4px; max-width: 260px; white-space: normal; line-height: 1.4; }
+        .wf-matrix tr.wf-row-warn { background: var(--red-50,#fdeaec); }
+        .wf-matrix tr.wf-row-warn:hover { background: #fbdadd; }
 
         /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
         .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
@@ -1544,11 +1551,60 @@
             var base = (IM.workflow && Array.isArray(IM.workflow.STEPS)) ? IM.workflow.STEPS.slice(3) : [];
             return base.map(function (s, i) { return { id: s.id, label: s.label, actor: s.actor, order: i }; });
         }
+        // Correspondance étape de dépôt → sa validation PO associée (même source
+        // que le moteur — js/workflow-standalone.js) : sert à détecter les
+        // configurations incohérentes (dépôt actif sans sa validation, ou l'inverse).
+        // Une validation peut être nourrie par PLUSIEURS dépôts (ex. « Validation
+        // test » ← « Lancement test » OU « Test en prod », flux LP) — on ne
+        // signale une validation orpheline que si AUCUN de ses dépôts n'est actif.
+        var WF_DEPOT_VALIDATION = (IM.workflow && IM.workflow.depotValidationMap) || {};
+        var WF_VALIDATION_DEPOTS = {};
+        Object.keys(WF_DEPOT_VALIDATION).forEach(function (depotId) {
+            var valId = WF_DEPOT_VALIDATION[depotId];
+            (WF_VALIDATION_DEPOTS[valId] = WF_VALIDATION_DEPOTS[valId] || []).push(depotId);
+        });
+
+        function wfActiveIds(canal, steps) {
+            var allIds = steps.map(function (s) { return s.id; });
+            var active = canalStepsState[canal];
+            if (!active) return allIds; // absent = flux complet
+            return allIds.filter(function (id) { return active.indexOf(id) !== -1; });
+        }
+        // Détecte les incohérences d'une configuration canal : dépôt actif sans sa
+        // validation, validation active sans aucun de ses dépôts, ou aucune étape
+        // active du tout.
+        function wfWarnings(activeIds, labelById) {
+            var warnings = [];
+            if (!activeIds.length) {
+                warnings.push('Aucune étape active : ce canal ne progressera jamais.');
+                return warnings;
+            }
+            var set = {};
+            activeIds.forEach(function (id) { set[id] = true; });
+            Object.keys(WF_DEPOT_VALIDATION).forEach(function (depotId) {
+                var valId = WF_DEPOT_VALIDATION[depotId];
+                if (set[depotId] && !set[valId]) {
+                    warnings.push('« ' + (labelById[depotId] || depotId) + ' » est active mais sa validation « ' + (labelById[valId] || valId) + ' » ne l\'est pas : le flux restera bloqué en attente de validation.');
+                }
+            });
+            Object.keys(WF_VALIDATION_DEPOTS).forEach(function (valId) {
+                if (!set[valId]) return;
+                var depots = WF_VALIDATION_DEPOTS[valId];
+                if (!depots.some(function (d) { return set[d]; })) {
+                    var depotLabels = depots.map(function (d) { return labelById[d] || d; }).join(' ou ');
+                    warnings.push('« ' + (labelById[valId] || valId) + ' » est active mais aucun dépôt associé (' + depotLabels + ') ne l\'est : rien ne pourra jamais y être soumis.');
+                }
+            });
+            return warnings;
+        }
+
         function renderWorkflow() {
             var cont = document.getElementById('workflow-container');
             if (!cont) return;
             var steps = workflowStepsState.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
             var canaux = (lists.canaux || []).slice();
+            var labelById = {};
+            steps.forEach(function (s) { labelById[s.id] = s.label; });
 
             var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>'
                 + 'Le <strong>libellé</strong>, l\'<strong>équipe responsable</strong> et l\'<strong>ordre</strong> de chaque étape sont modifiables. '
@@ -1573,12 +1629,28 @@
             if (!canaux.length) {
                 html += '<div class="empty-hint">Aucun canal. Ajoutez-en dans « Types de livrables / canaux ».</div>';
             } else {
+                var flagged = [];
+                canaux.forEach(function (canal) {
+                    if (wfWarnings(wfActiveIds(canal, steps), labelById).length) flagged.push(canal);
+                });
+                if (flagged.length) {
+                    html += '<div class="admin-note" style="background:var(--red-50,#fdeaec);border-color:#f5c2c7;"><span class="admin-note-ic">⚠️</span><div>'
+                        + '<strong>' + flagged.length + ' canal' + (flagged.length > 1 ? 'aux' : '') + ' à vérifier</strong> — détail en rouge sur ' + (flagged.length > 1 ? 'leurs lignes' : 'sa ligne') + ' ci-dessous : ' + esc(flagged.join(', ')) + '.'
+                        + '</div></div>';
+                }
                 html += '<div class="wf-matrix-wrap"><table class="wf-matrix"><thead><tr><th>Canal</th>'
                     + steps.map(function (s) { return '<th title="' + esc(s.label) + '">' + esc(s.label) + '</th>'; }).join('')
                     + '<th></th></tr></thead><tbody>';
                 canaux.forEach(function (canal) {
                     var active = canalStepsState[canal]; // absent = flux complet (toutes les étapes)
-                    html += '<tr><td class="wf-matrix-canal">' + esc(canal) + '</td>';
+                    var activeIds = wfActiveIds(canal, steps);
+                    var warnings = wfWarnings(activeIds, labelById);
+                    var preview = activeIds.map(function (id) { return labelById[id] || id; }).join(' → ') || '—';
+                    html += '<tr' + (warnings.length ? ' class="wf-row-warn"' : '') + '><td class="wf-matrix-canal">'
+                        + '<div>' + esc(canal) + ' <span class="wf-canal-badge ' + (active ? 'custom' : 'default') + '">' + (active ? 'Personnalisé' : 'Flux complet') + '</span></div>'
+                        + '<div class="wf-row-preview" title="' + esc(preview) + '">' + esc(preview) + '</div>'
+                        + (warnings.length ? '<div class="wf-row-warning">⚠️ ' + esc(warnings.join(' ')) + '</div>' : '')
+                        + '</td>';
                     steps.forEach(function (s) {
                         var checked = !active || active.indexOf(s.id) !== -1;
                         html += '<td><input type="checkbox" data-wfc="' + esc(canal) + '" data-wfc-step="' + esc(s.id) + '"' + (checked ? ' checked' : '') + '></td>';
@@ -1603,6 +1675,8 @@
                 renderWorkflow();
             });
 
+            // Case cochée/décochée : mise à jour immédiate de l'état + de la ligne
+            // (badge, aperçu, avertissements) sans perdre le focus sur toute la grille.
             cont.querySelectorAll('[data-wfc]').forEach(function (cb) {
                 cb.addEventListener('change', function () {
                     var canal = cb.getAttribute('data-wfc');
@@ -1615,11 +1689,14 @@
                     var pos = list.indexOf(stepId);
                     if (cb.checked && pos === -1) list.push(stepId);
                     if (!cb.checked && pos !== -1) list.splice(pos, 1);
+                    renderWorkflow();
                 });
             });
             cont.querySelectorAll('[data-wfc-reset]').forEach(function (b) {
                 b.addEventListener('click', function () {
-                    delete canalStepsState[b.getAttribute('data-wfc-reset')];
+                    var canal = b.getAttribute('data-wfc-reset');
+                    if (!confirm('Revenir au flux complet pour « ' + canal + '» ? La personnalisation de ce canal sera perdue (jusqu\'au prochain enregistrement).')) return;
+                    delete canalStepsState[canal];
                     renderWorkflow();
                 });
             });
@@ -1632,6 +1709,8 @@
                 Object.keys(canalStepsState).forEach(function (k) {
                     if (Array.isArray(canalStepsState[k])) cleanCanalSteps[k] = canalStepsState[k].slice();
                 });
+                var stillFlagged = Object.keys(cleanCanalSteps).filter(function (k) { return wfWarnings(cleanCanalSteps[k], labelById).length > 0; });
+                if (stillFlagged.length && !confirm('Configuration à vérifier pour : ' + stillFlagged.join(', ') + ' (voir le détail en rouge ci-dessus). Enregistrer quand même ?')) return;
                 var payload = { steps: cleanSteps, canalSteps: cleanCanalSteps };
                 saveConfig({ workflow: payload }, 'Workflow enregistré.').then(function () {
                     if (adminConfig.applyConfig) adminConfig.applyConfig({ workflow: payload });

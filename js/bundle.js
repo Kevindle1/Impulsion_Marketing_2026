@@ -3255,6 +3255,7 @@ window.ImpulsionMarketing.workflow = (function () {
     stepLabel:                stepLabel,
     stepActor:                stepActor,
     channelStepIds:           _channelStepIds,
+    depotValidationMap:       _DEPOT_VALIDATION,
     isTeamRequired:           isTeamRequired,
     isChannelCompleted:       isChannelCompleted,
     buildSearchBlob:          buildSearchBlob,
