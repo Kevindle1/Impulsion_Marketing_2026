@@ -1092,12 +1092,13 @@
                 bpOnlyZones: Array.isArray(wz.bpOnlyZones) ? wz.bpOnlyZones.slice() : [],
                 zonesMulti: (wz.zonesMulti && typeof wz.zonesMulti === 'object') ? JSON.parse(JSON.stringify(wz.zonesMulti)) : {}
             };
+            marchesSiteWebState = (config && Array.isArray(config.MARCHES_SITE_WEB)) ? JSON.parse(JSON.stringify(config.MARCHES_SITE_WEB)) : [];
             reponseStatutsState = (config && Array.isArray(config.REPONSE_STATUTS)) ? JSON.parse(JSON.stringify(config.REPONSE_STATUTS)) : [];
             whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
             bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
             autoAssignState = (config && Array.isArray(config.AUTO_ASSIGN_RULES)) ? JSON.parse(JSON.stringify(config.AUTO_ASSIGN_RULES)) : [];
         }
-        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
 
         // Chips réutilisables (liste éditable de chaînes).
         function chipsHtml(arr, delAttr) {
@@ -1290,10 +1291,12 @@
             if (!Array.isArray(bc.ident)) bc.ident = [];
             if (!Array.isArray(bc.kpis)) bc.kpis = [];
             if (!Array.isArray(bc.chartRates)) bc.chartRates = [];
+            var AGG_OPTS = [['moyenne', 'Moyenne'], ['somme', 'Somme']];
             function syncKpis() {
                 cont.querySelectorAll('[data-kk]').forEach(function (inp) { var i = +inp.getAttribute('data-kk'); if (bc.kpis[i]) bc.kpis[i].k = inp.value; });
                 cont.querySelectorAll('[data-klabel]').forEach(function (inp) { var i = +inp.getAttribute('data-klabel'); if (bc.kpis[i]) bc.kpis[i].label = inp.value; });
                 cont.querySelectorAll('[data-kpct]').forEach(function (cb) { var i = +cb.getAttribute('data-kpct'); if (bc.kpis[i]) bc.kpis[i].pct = cb.checked; });
+                cont.querySelectorAll('[data-kagg]').forEach(function (sel) { var i = +sel.getAttribute('data-kagg'); if (bc.kpis[i]) bc.kpis[i].agg = sel.value; });
             }
             var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>Doit correspondre aux <strong>colonnes du fichier de suivi .xlsx</strong>. À ne modifier que si le format du fichier change.</div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Fichier</h3></div>'
@@ -1302,11 +1305,13 @@
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Colonnes d\'identification</h3></div>' + chipsHtml(bc.ident, 'delident')
                 + '<div class="add-row"><input class="admin-input" id="add-ident" placeholder="Nom de colonne…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-ident">+ Ajouter</button></div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs (KPIs)</h3><span class="count-pill">' + bc.kpis.length + '</span></div>';
+            html += '<div class="empty-hint" style="padding-top:0;">« Agrégation » définit comment combiner les lignes d\'un même canal dans les graphiques bilan : Somme (ex. nombre de communications, leads) ou Moyenne (ex. taux, envois).</div>';
             bc.kpis.forEach(function (kp, i) {
                 html += '<div class="person-row" style="flex-wrap:wrap;">'
                     + '<input class="admin-input" data-kk="' + i + '" value="' + esc(kp.k || '') + '" placeholder="colonne (clé)" style="width:180px;">'
                     + '<input class="admin-input" data-klabel="' + i + '" value="' + esc(kp.label || '') + '" placeholder="libellé" style="flex:1;min-width:120px;">'
                     + '<label class="toggle-label"><input type="checkbox" data-kpct="' + i + '"' + (kp.pct ? ' checked' : '') + '> %</label>'
+                    + '<select class="admin-select" data-kagg="' + i + '">' + AGG_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + ((kp.agg || 'moyenne') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'
                     + '<button class="icon-del" data-delkpi="' + i + '">🗑</button></div>';
             });
             html += '<div class="add-row"><button class="btn btn-secondary" id="add-kpi">+ Ajouter un indicateur</button></div></div>';
@@ -1319,14 +1324,14 @@
             cont.querySelectorAll('[data-delident]').forEach(function (b) { b.addEventListener('click', function () { bc.ident.splice(+b.getAttribute('data-delident'), 1); syncKpis(); renderBilanCfg(); }); });
             cont.querySelectorAll('[data-delchart]').forEach(function (b) { b.addEventListener('click', function () { bc.chartRates.splice(+b.getAttribute('data-delchart'), 1); syncKpis(); renderBilanCfg(); }); });
             cont.querySelectorAll('[data-delkpi]').forEach(function (b) { b.addEventListener('click', function () { syncKpis(); bc.kpis.splice(+b.getAttribute('data-delkpi'), 1); renderBilanCfg(); }); });
-            document.getElementById('add-kpi').addEventListener('click', function () { syncKpis(); bc.kpis.push({ k: '', label: '', pct: false }); renderBilanCfg(); });
+            document.getElementById('add-kpi').addEventListener('click', function () { syncKpis(); bc.kpis.push({ k: '', label: '', pct: false, agg: 'moyenne' }); renderBilanCfg(); });
             document.getElementById('save-bilan').addEventListener('click', function () {
                 syncKpis();
                 var out = {
                     suiviFolder: (document.getElementById('bilan-folder').value || '').trim(),
                     suiviSheet: (document.getElementById('bilan-sheet').value || '').trim(),
                     ident: bc.ident.slice(),
-                    kpis: bc.kpis.filter(function (k) { return (k.k || '').trim(); }).map(function (k) { return { k: k.k.trim(), label: (k.label || '').trim(), pct: !!k.pct }; }),
+                    kpis: bc.kpis.filter(function (k) { return (k.k || '').trim(); }).map(function (k) { return { k: k.k.trim(), label: (k.label || '').trim(), pct: !!k.pct, agg: (k.agg === 'somme') ? 'somme' : 'moyenne' }; }),
                     chartRates: bc.chartRates.slice()
                 };
                 saveConfig({ bilan: out }, 'Bilan enregistré.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ bilan: out }); bilanCfgState = JSON.parse(JSON.stringify(out)); renderBilanCfg(); });
@@ -1353,6 +1358,11 @@
             html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="set-notif-popup"' + (s.notifPopup !== false ? ' checked' : '') + '> Afficher une <strong>pop-up</strong> à la réception d\'une notification (notification système — visible même fenêtre réduite)</label>';
             html += '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;">ℹ️ La pop-up utilise les notifications du navigateur. Au premier clic sur la cloche 🔔, Chrome demande une autorisation — il faut cliquer « Autoriser » pour que les pop-up s\'affichent.</div>';
             html += '</div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>🌐 Champs site web</h3></div>';
+            html += '<label class="admin-label">Typologie(s) de com déclenchant les champs site web</label>';
+            html += '<input class="admin-input" id="set-sitewebtrigger" style="width:100%;" placeholder="Ex : Reprise Natio" value="' + esc((Array.isArray(s.siteWebComTypologies) ? s.siteWebComTypologies : ['Reprise Natio']).join(', ')) + '">';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5;">Une ou plusieurs valeurs de la liste « Typologies de communication », séparées par des virgules. Quand un canal a l\'une de ces typologies, les champs « zone site web » (marché, dates, URL Tic et Tac / Com Store…) s\'affichent automatiquement à la création d\'une campagne.</div>';
+            html += '</div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Couleurs des rôles</h3></div><div style="display:flex;flex-wrap:wrap;gap:18px;">';
             roles.forEach(function (r) {
                 html += '<label style="display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--muted);">' + esc(r[1])
@@ -1370,8 +1380,10 @@
                     urgentThresholdDays: parseInt(document.getElementById('set-urgent').value, 10) || 0,
                     dueSoonDays: parseInt(document.getElementById('set-soon').value, 10) || 0,
                     notifSound: !!document.getElementById('set-notif-sound').checked,
-                    notifPopup: !!document.getElementById('set-notif-popup').checked
+                    notifPopup: !!document.getElementById('set-notif-popup').checked,
+                    siteWebComTypologies: (document.getElementById('set-sitewebtrigger').value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean)
                 };
+                if (!settings.siteWebComTypologies.length) settings.siteWebComTypologies = ['Reprise Natio'];
                 var roleColors = {};
                 cont.querySelectorAll('[data-rolecolor]').forEach(function (inp) { roleColors[inp.getAttribute('data-rolecolor')] = inp.value; });
                 saveConfig({ settings: settings, roleColors: roleColors }, 'Paramètres enregistrés.').then(function () {
@@ -1423,6 +1435,40 @@
                 var payload = { zones: st.zones.slice(), bpOnlyZones: st.bpOnlyZones.slice(), zonesMulti: JSON.parse(JSON.stringify(st.zonesMulti)) };
                 saveConfig({ webZones: payload }, 'Zones site web enregistrées.').then(function () {
                     if (adminConfig.applyConfig) adminConfig.applyConfig({ webZones: payload });
+                });
+            });
+        }
+
+        // ── MARCHÉS SITE WEB (onglets + cases à cocher « Marché(s) » du planning Comité éditorial) ──
+        function renderMarchesSiteWeb() {
+            var cont = document.getElementById('marchessiteweb-container');
+            if (!cont) return;
+            var st = marchesSiteWebState;
+            var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>'
+                + 'Ces marchés alimentent les <strong>onglets</strong> et les cases « Marché(s) » du planning du <strong>Comité éditorial</strong>. '
+                + 'La « clé » (value) est stockée dans les campagnes existantes : évitez de la renommer une fois utilisée — renommez seulement le libellé affiché.'
+                + '</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Marchés</h3><span class="count-pill">' + st.length + '</span></div>';
+            if (!st.length) html += '<div class="empty-hint">Aucun marché pour le moment.</div>';
+            st.forEach(function (m, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;">'
+                    + '<input class="admin-input" data-msv="' + i + '" value="' + esc(m.value || '') + '" placeholder="clé (ex : part)" style="width:130px;">'
+                    + '<input class="admin-input" data-msl="' + i + '" value="' + esc(m.label || '') + '" placeholder="Libellé affiché (ex : Particuliers)" style="flex:1;min-width:170px;">'
+                    + '<button class="icon-del" data-delms="' + i + '">🗑</button></div>';
+            });
+            html += '<div class="add-row"><button class="btn btn-secondary" id="add-marchesiteweb">+ Ajouter un marché</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-marchessiteweb">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-msv]').forEach(function (inp) { var i = +inp.getAttribute('data-msv'); inp.addEventListener('input', function () { st[i].value = inp.value; }); });
+            cont.querySelectorAll('[data-msl]').forEach(function (inp) { var i = +inp.getAttribute('data-msl'); inp.addEventListener('input', function () { st[i].label = inp.value; }); });
+            cont.querySelectorAll('[data-delms]').forEach(function (b) { b.addEventListener('click', function () { st.splice(+b.getAttribute('data-delms'), 1); renderMarchesSiteWeb(); }); });
+            document.getElementById('add-marchesiteweb').addEventListener('click', function () { st.push({ value: '', label: '' }); renderMarchesSiteWeb(); });
+            document.getElementById('save-marchessiteweb').addEventListener('click', function () {
+                var clean = st.filter(function (m) { return (m.value || '').trim(); }).map(function (m) { return { value: m.value.trim(), label: (m.label || '').trim() || m.value.trim() }; });
+                saveConfig({ marchesSiteWeb: clean }, 'Marchés site web enregistrés.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ marchesSiteWeb: clean });
+                    marchesSiteWebState = JSON.parse(JSON.stringify(clean));
+                    renderMarchesSiteWeb();
                 });
             });
         }
