@@ -183,11 +183,11 @@
                 <label for="login-team">Service</label>
                 <select id="login-team">
                     <option value="">Sélectionnez votre service…</option>
-                    <option value="superadmin">Super Admin</option>
-                    <option value="marketing">Marketing</option>
-                    <option value="com">Com</option>
-                    <option value="ebf">EBF</option>
-                    <option value="data">Data</option>
+                    <option value="superadmin" id="opt-role-superadmin">Super Admin</option>
+                    <option value="marketing" id="opt-role-marketing">Marketing</option>
+                    <option value="com" id="opt-role-com">Com</option>
+                    <option value="ebf" id="opt-role-ebf">EBF</option>
+                    <option value="data" id="opt-role-data">Data</option>
                 </select>
             </div>
 
@@ -246,6 +246,18 @@
                 if (footEl) footEl.textContent = '© ' + new Date().getFullYear() + (orgName ? ' ' + orgName : '') + ' — Usage interne';
             }
             applyOrgName();
+
+            // Libellés des équipes (Service) : clés fixes, libellés éditables depuis
+            // Administration ▸ Paramètres généraux ▸ Rôles (aucun nom codé en dur).
+            var DEFAULT_ROLE_LABELS = { superadmin: 'Super Admin', marketing: 'Marketing', com: 'Com', ebf: 'EBF', data: 'Data' };
+            function applyRoleLabels() {
+                var rl = (IM.config && IM.config.ROLE_LABELS) || {};
+                Object.keys(DEFAULT_ROLE_LABELS).forEach(function (k) {
+                    var opt = document.getElementById('opt-role-' + k);
+                    if (opt) opt.textContent = rl[k] || DEFAULT_ROLE_LABELS[k];
+                });
+            }
+            applyRoleLabels();
 
             // Compatibilité navigateur (File System Access API)
             if (typeof window.showDirectoryPicker !== 'function') {
@@ -318,6 +330,7 @@
             if (_acReady) {
                 _acReady.then(function () {
                     applyOrgName();
+                    applyRoleLabels();
                     if (!teamSelect.value) return;
                     var keep = nameSelect.value;
                     populateNames(teamSelect.value);

@@ -133,6 +133,10 @@ window.ImpulsionMarketing.config = (function() {
   // ========================================
   const APP_SETTINGS     = (_cfgCache.settings && typeof _cfgCache.settings === 'object') ? _cfgCache.settings : {};
   const ROLE_COLORS      = (_cfgCache.roleColors && typeof _cfgCache.roleColors === 'object') ? _cfgCache.roleColors : {};
+  // Libellés affichés des rôles (marketing/com/ebf/data/superadmin) — les CLÉS de rôle
+  // restent fixes (structurelles au moteur de workflow), seuls les libellés sont
+  // éditables via Administration ▸ Paramètres généraux ▸ Rôles.
+  const ROLE_LABELS      = (_cfgCache.roleLabels && typeof _cfgCache.roleLabels === 'object') ? _cfgCache.roleLabels : {};
   const WEB_ZONES        = (_cfgCache.webZones && typeof _cfgCache.webZones === 'object') ? _cfgCache.webZones : { zones: [], bpOnlyZones: [], zonesMulti: {} };
   const REPONSE_STATUTS  = Array.isArray(_cfgCache.reponseStatuts) ? _cfgCache.reponseStatuts.slice() : [];
   const WHATSNEW_BADGES  = (_cfgCache.whatsnewBadges && typeof _cfgCache.whatsnewBadges === 'object') ? _cfgCache.whatsnewBadges : {};
@@ -319,6 +323,7 @@ window.ImpulsionMarketing.config = (function() {
     // Données pilotées par _config.json
     APP_SETTINGS: APP_SETTINGS,
     ROLE_COLORS: ROLE_COLORS,
+    ROLE_LABELS: ROLE_LABELS,
     WEB_ZONES: WEB_ZONES,
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,
@@ -3714,6 +3719,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
     assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);
+    assignInPlace(IM.config.ROLE_LABELS, cfg.roleLabels);
     assignInPlace(IM.config.WEB_ZONES, cfg.webZones);
     assignInPlace(IM.config.WHATSNEW_BADGES, cfg.whatsnewBadges);
     assignInPlace(IM.config.BILAN, cfg.bilan);

@@ -383,7 +383,8 @@
     "dueSoonDays": 2,
     "siteWebComTypologies": [
       "Reprise Natio"
-    ]
+    ],
+    "webSlotStartDay": 1
   },
   "roleColors": {
     "po": "#7C3AED",
@@ -546,5 +547,12 @@
     "workflow_revision": "🔄 Révision demandée",
     "workflow_info": "📣 Campagne"
   },
-  "autoAssignRules": []
+  "autoAssignRules": [],
+  "roleLabels": {
+    "marketing": "Marketing",
+    "com": "Com",
+    "ebf": "EBF",
+    "data": "Data",
+    "superadmin": "Super Admin"
+  }
 }

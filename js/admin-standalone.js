@@ -128,6 +128,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
     assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);
+    assignInPlace(IM.config.ROLE_LABELS, cfg.roleLabels);
     assignInPlace(IM.config.WEB_ZONES, cfg.webZones);
     assignInPlace(IM.config.WHATSNEW_BADGES, cfg.whatsnewBadges);
     assignInPlace(IM.config.BILAN, cfg.bilan);

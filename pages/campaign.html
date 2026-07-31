@@ -2358,6 +2358,12 @@
                 const marchesSiteWeb = (cfgCampaign && Array.isArray(cfgCampaign.MARCHES_SITE_WEB) && cfgCampaign.MARCHES_SITE_WEB.length)
                     ? cfgCampaign.MARCHES_SITE_WEB.slice()
                     : [{ value: 'part', label: 'Particuliers' }, { value: 'bp', label: 'BP' }, { value: 'pro', label: 'Pro' }, { value: 'agri', label: 'Agri' }, { value: 'ent', label: 'ENT' }, { value: 'asso', label: 'Association' }];
+                // Jour de début des créneaux site web : repris de la config (Administration →
+                // Paramètres généraux), avec repli sur lundi (comportement historique).
+                const DAY_LABELS_FR = { 0: 'dimanche', 1: 'lundi', 2: 'mardi', 3: 'mercredi', 4: 'jeudi', 5: 'vendredi', 6: 'samedi' };
+                var _appSettings = (cfgCampaign && cfgCampaign.APP_SETTINGS) || {};
+                const webSlotStartDay = (typeof _appSettings.webSlotStartDay === 'number' && _appSettings.webSlotStartDay >= 0 && _appSettings.webSlotStartDay <= 6) ? _appSettings.webSlotStartDay : 1;
+                const webSlotDayLabel = DAY_LABELS_FR[webSlotStartDay];
                 for (let i = 1; i <= num; i++) {
                     const div = document.createElement("div");
                     div.className = "form-group";
@@ -2406,7 +2412,7 @@
                         </div>
                         <div class="conditional-field" id="siteWebFields${i}" style="display:none;background:var(--green-50);border:1px solid var(--green-100);border-radius:6px;padding:10px 12px;margin-top:4px;">
                             <div style="font-weight:600;font-size:12px;color:#15803d;margin-bottom:4px;">🌐 Paramètres zone site web</div>
-                            <div style="font-size:11px;color:#166534;margin-bottom:8px;">⚠️ Les créneaux site web sont du <strong>lundi au lundi</strong> — les dates seront automatiquement ajustées.</div>
+                            <div style="font-size:11px;color:#166534;margin-bottom:8px;">⚠️ Les créneaux site web sont du <strong>${webSlotDayLabel} au ${webSlotDayLabel}</strong> — les dates seront automatiquement ajustées.</div>
                             <div style="font-size:11px;color:#166534;margin-bottom:8px;">📋 Vérifiez avant la saisie le <strong>plan de communication national</strong> pour vous assurer d'un alignement avec la stratégie CASA.</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                                 <div>
@@ -2461,15 +2467,14 @@
                         ? webZonesCfg.bpOnlyZones.slice()
                         : ["ZAC"];
 
-                    // Snap a date string to the nearest previous Monday
+                    // Ramène une date au jour de créneau site web configuré (webSlotStartDay,
+                    // Administration → Paramètres généraux — lundi par défaut) le plus proche.
                     const snapToMonday = function(dateStr) {
                         if (!dateStr) return dateStr;
                         var d = new Date(dateStr + 'T00:00:00');
                         var day = d.getDay(); // 0=Sun,1=Mon,...
-                        if (day !== 1) {
-                            var diff = (day === 0) ? -6 : 1 - day;
-                            d.setDate(d.getDate() + diff);
-                        }
+                        var diff = (day - webSlotStartDay + 7) % 7;
+                        if (diff) d.setDate(d.getDate() - diff);
                         var y = d.getFullYear();
                         var m = String(d.getMonth() + 1).padStart(2, '0');
                         var dd = String(d.getDate()).padStart(2, '0');

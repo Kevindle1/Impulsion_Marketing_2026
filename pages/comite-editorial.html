@@ -1261,7 +1261,10 @@
         html += '<div class="form-field"><label class="form-label">Date fin</label>';
         html += '<input type="date" id="repos-fin" class="form-input" value="' + escHtml(sw.dateFin || '') + '"></div>';
         html += '</div>';
-        html += '<p style="font-size:11px;color:var(--muted-2);margin:4px 0 0;">Les dates seront automatiquement snappées au lundi.</p>';
+        var _daySettings = window.ImpulsionMarketing.config.APP_SETTINGS || {};
+        var _slotDay = (typeof _daySettings.webSlotStartDay === 'number' && _daySettings.webSlotStartDay >= 0 && _daySettings.webSlotStartDay <= 6) ? _daySettings.webSlotStartDay : 1;
+        var _slotDayLabel = { 0: 'dimanche', 1: 'lundi', 2: 'mardi', 3: 'mercredi', 4: 'jeudi', 5: 'vendredi', 6: 'samedi' }[_slotDay];
+        html += '<p style="font-size:11px;color:var(--muted-2);margin:4px 0 0;">Les dates seront automatiquement snappées au ' + _slotDayLabel + '.</p>';
 
         $('detail-content').innerHTML = html;
 
@@ -1291,10 +1294,15 @@
         if (!newDebut || !newFin) { showNotifToast('⚠️ Veuillez renseigner les deux dates.'); return; }
         if (newDebut > newFin)    { showNotifToast('⚠️ La date de début doit être avant la date de fin.'); return; }
 
-        // Snap to Monday (use local date to avoid UTC offset shift)
+        // Ramène une date au jour de créneau site web configuré (webSlotStartDay,
+        // Administration → Paramètres généraux — lundi par défaut) le plus proche
+        // (date locale, pour éviter un décalage lié au fuseau UTC).
+        var _wsSettings = window.ImpulsionMarketing.config.APP_SETTINGS || {};
+        var webSlotStartDay = (typeof _wsSettings.webSlotStartDay === 'number' && _wsSettings.webSlotStartDay >= 0 && _wsSettings.webSlotStartDay <= 6) ? _wsSettings.webSlotStartDay : 1;
         var snapMonday = function(s) {
             var d = new Date(s + 'T00:00:00'), day = d.getDay();
-            if (day !== 1) d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+            var diff = (day - webSlotStartDay + 7) % 7;
+            if (diff) d.setDate(d.getDate() - diff);
             var y = d.getFullYear();
             var m = String(d.getMonth() + 1).padStart(2, '0');
             var dd = String(d.getDate()).padStart(2, '0');

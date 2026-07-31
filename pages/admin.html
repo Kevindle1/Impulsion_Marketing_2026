@@ -251,15 +251,19 @@
         var users = IM.users, config = IM.config, adminConfig = IM.adminConfig, errors = IM.errors;
         var esc = (IM.security && IM.security.escapeHtml) ? IM.security.escapeHtml : function (s) { return String(s == null ? '' : s); };
 
-        var TEAMS = [
-            { role: 'marketing', label: 'Marketing' },
-            { role: 'com', label: 'Com' },
-            { role: 'ebf', label: 'EBF' },
-            { role: 'data', label: 'Data' },
-            { role: 'superadmin', label: 'Super Admin' }
-        ];
+        // Les CLÉS de rôle sont structurelles au moteur de workflow (kick-off → maquette
+        // COM → BAT/test EBF → ciblage Data) et restent fixes. Seuls les LIBELLÉS affichés
+        // sont éditables via Administration ▸ Paramètres généraux ▸ Rôles (IM.config.ROLE_LABELS) —
+        // avec repli sur les libellés historiques si non encore configurés.
+        var ROLE_KEYS = ['marketing', 'com', 'ebf', 'data', 'superadmin'];
+        var DEFAULT_ROLE_LABELS = { marketing: 'Marketing', com: 'Com', ebf: 'EBF', data: 'Data', superadmin: 'Super Admin' };
+        function roleLabel(role) {
+            var rl = config.ROLE_LABELS || {};
+            return rl[role] || DEFAULT_ROLE_LABELS[role] || role;
+        }
+        function getTeams() { return ROLE_KEYS.map(function (k) { return { role: k, label: roleLabel(k) }; }); }
         function labelFor(role, isManager) {
-            var base = { marketing: 'Marketing', com: 'Com', ebf: 'EBF', data: 'Data', superadmin: 'Super Admin' }[role] || role;
+            var base = roleLabel(role);
             return (isManager && role !== 'superadmin') ? ('Resp. ' + base) : base;
         }
         // Couleur d'avatar par rôle + initiales (refonte UX des personnes)
@@ -330,6 +334,7 @@
 
         // ── PERSONNES ──
         function renderPeople() {
+            var TEAMS = getTeams();
             var teamSelectOptions = TEAMS.map(function (t) { return '<option value="' + t.role + '">' + t.label + '</option>'; }).join('');
             var html = '';
             TEAMS.forEach(function (t) {
@@ -1179,7 +1184,7 @@
             { k: 'equals', label: '=' }, { k: 'notEquals', label: '≠' }, { k: 'contains', label: 'contient' },
             { k: 'gt', label: '>' }, { k: 'gte', label: '≥' }, { k: 'lt', label: '<' }, { k: 'lte', label: '≤' }, { k: 'in', label: 'parmi (a,b,c)' }
         ];
-        var AA_ROLES = [{ k: 'com', label: 'Com' }, { k: 'ebf', label: 'EBF' }, { k: 'data', label: 'Data' }];
+        function getAaRoles() { return ['com', 'ebf', 'data'].map(function (k) { return { k: k, label: roleLabel(k) }; }); }
         function _peopleByRole(role) { return (users.USERS || []).filter(function (u) { return u.role === role; }); }
         // Valeurs possibles d'un champ de condition (remontées automatiquement).
         function _aaFieldValues(field) {
@@ -1215,7 +1220,7 @@
                 });
                 h += '<button type="button" class="btn secondary small" data-addcond="' + ri + '">➕ Condition</button>';
                 h += '<div style="font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 6px;">ALORS affecter (équipe) :</div>';
-                h += '<select class="admin-select aa-role">' + AA_ROLES.map(function (r) { return '<option value="' + r.k + '"' + (rule.role === r.k ? ' selected' : '') + '>' + r.label + '</option>'; }).join('') + '</select>';
+                h += '<select class="admin-select aa-role">' + getAaRoles().map(function (r) { return '<option value="' + r.k + '"' + (rule.role === r.k ? ' selected' : '') + '>' + r.label + '</option>'; }).join('') + '</select>';
                 var ppl = _peopleByRole(rule.role || 'com');
                 h += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">';
                 if (!ppl.length) h += '<span class="empty-hint">Aucune personne dans cette équipe.</span>';
@@ -1344,7 +1349,10 @@
             if (!cont) return;
             var s = config.APP_SETTINGS || {};
             var rc = config.ROLE_COLORS || {};
-            var roles = [['po', 'PO / Marketing'], ['marketing', 'Marketing'], ['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data'], ['superadmin', 'Super Admin']];
+            // 'po' n'est pas une équipe éditable (les clés de rôle restent fixes) — c'est une
+            // ligne de couleur dérivée, dont le libellé suit automatiquement celui de « marketing ».
+            var roles = [['po', 'PO / ' + roleLabel('marketing'), false]]
+                .concat(ROLE_KEYS.map(function (k) { return [k, roleLabel(k), true]; }));
             var html = '<div class="admin-card"><div class="admin-card-title"><h3>Réglages</h3></div>';
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Nom de la caisse / organisation</label><input class="admin-input" id="set-orgname" style="width:100%;" placeholder="Ex : Crédit Agricole Toulouse 31" value="' + esc(s.orgName || '') + '"><div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Affiché sur l\'écran de connexion.</div></div>';
             html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">URL de la Galerie</label><input class="admin-input" id="set-gallery" style="width:100%;" placeholder="https://…" value="' + esc(s.galleryUrl || '') + '"></div>';
@@ -1361,12 +1369,23 @@
             html += '<div class="admin-card"><div class="admin-card-title"><h3>🌐 Champs site web</h3></div>';
             html += '<label class="admin-label">Typologie(s) de com déclenchant les champs site web</label>';
             html += '<input class="admin-input" id="set-sitewebtrigger" style="width:100%;" placeholder="Ex : Reprise Natio" value="' + esc((Array.isArray(s.siteWebComTypologies) ? s.siteWebComTypologies : ['Reprise Natio']).join(', ')) + '">';
-            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5;">Une ou plusieurs valeurs de la liste « Typologies de communication », séparées par des virgules. Quand un canal a l\'une de ces typologies, les champs « zone site web » (marché, dates, URL Tic et Tac / Com Store…) s\'affichent automatiquement à la création d\'une campagne.</div>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:4px;margin-bottom:14px;line-height:1.5;">Une ou plusieurs valeurs de la liste « Typologies de communication », séparées par des virgules. Quand un canal a l\'une de ces typologies, les champs « zone site web » (marché, dates, URL Tic et Tac / Com Store…) s\'affichent automatiquement à la création d\'une campagne.</div>';
+            var DAY_NAMES = [['1', 'Lundi'], ['2', 'Mardi'], ['3', 'Mercredi'], ['4', 'Jeudi'], ['5', 'Vendredi'], ['6', 'Samedi'], ['0', 'Dimanche']];
+            var curDay = (typeof s.webSlotStartDay === 'number') ? String(s.webSlotStartDay) : '1';
+            html += '<label class="admin-label">Jour de début des créneaux site web</label>';
+            html += '<select class="admin-select" id="set-webslotday">' + DAY_NAMES.map(function (d) { return '<option value="' + d[0] + '"' + (d[0] === curDay ? ' selected' : '') + '>' + d[1] + '</option>'; }).join('') + '</select>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5;">Les dates saisies pour une zone site web sont automatiquement ramenées au ' + esc((DAY_NAMES.filter(function (d) { return d[0] === curDay; })[0] || DAY_NAMES[0])[1]) + ' le plus proche (créneaux hebdomadaires).</div>';
             html += '</div>';
-            html += '<div class="admin-card"><div class="admin-card-title"><h3>Couleurs des rôles</h3></div><div style="display:flex;flex-wrap:wrap;gap:18px;">';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Rôles : libellés &amp; couleurs</h3></div>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Le libellé affiché de chaque équipe est modifiable ; l\'appartenance à une équipe (utilisée par le moteur de campagne) ne change pas.</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:18px;">';
             roles.forEach(function (r) {
-                html += '<label style="display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;color:var(--muted);">' + esc(r[1])
-                    + '<input type="color" data-rolecolor="' + r[0] + '" value="' + (rc[r[0]] || '#64748b') + '" style="width:60px;height:36px;border:1px solid var(--line);border-radius:8px;cursor:pointer;padding:2px;"></label>';
+                html += '<div style="display:flex;flex-direction:column;gap:5px;">'
+                    + (r[2]
+                        ? '<input type="text" class="admin-input" data-rolelabel="' + r[0] + '" value="' + esc(r[1]) + '" style="width:120px;font-size:12px;padding:6px 8px;">'
+                        : '<span style="font-size:12px;font-weight:600;color:var(--muted);">' + esc(r[1]) + '</span>')
+                    + '<input type="color" data-rolecolor="' + r[0] + '" value="' + (rc[r[0]] || '#64748b') + '" style="width:120px;height:36px;border:1px solid var(--line);border-radius:8px;cursor:pointer;padding:2px;">'
+                    + '</div>';
             });
             html += '</div></div>';
             html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-settings">💾 Enregistrer les paramètres</button></div>';
@@ -1381,13 +1400,20 @@
                     dueSoonDays: parseInt(document.getElementById('set-soon').value, 10) || 0,
                     notifSound: !!document.getElementById('set-notif-sound').checked,
                     notifPopup: !!document.getElementById('set-notif-popup').checked,
-                    siteWebComTypologies: (document.getElementById('set-sitewebtrigger').value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean)
+                    siteWebComTypologies: (document.getElementById('set-sitewebtrigger').value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean),
+                    webSlotStartDay: parseInt(document.getElementById('set-webslotday').value, 10)
                 };
                 if (!settings.siteWebComTypologies.length) settings.siteWebComTypologies = ['Reprise Natio'];
                 var roleColors = {};
                 cont.querySelectorAll('[data-rolecolor]').forEach(function (inp) { roleColors[inp.getAttribute('data-rolecolor')] = inp.value; });
-                saveConfig({ settings: settings, roleColors: roleColors }, 'Paramètres enregistrés.').then(function () {
-                    if (adminConfig.applyConfig) adminConfig.applyConfig({ settings: settings, roleColors: roleColors });
+                var roleLabels = {};
+                cont.querySelectorAll('[data-rolelabel]').forEach(function (inp) {
+                    var v = (inp.value || '').trim();
+                    if (v) roleLabels[inp.getAttribute('data-rolelabel')] = v;
+                });
+                saveConfig({ settings: settings, roleColors: roleColors, roleLabels: roleLabels }, 'Paramètres enregistrés.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ settings: settings, roleColors: roleColors, roleLabels: roleLabels });
+                    renderPeople();
                 });
             });
         }
