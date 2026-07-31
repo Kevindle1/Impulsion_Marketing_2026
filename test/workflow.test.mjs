@@ -648,3 +648,104 @@ test('reopenChannelStep — motif obligatoire enregistré, autres canaux intacts
   // Le canal 1 ne doit pas être affecté
   assert.equal(data.workflow.channelSteps[1].ebf_bat, 'validated', 'le canal 1 doit rester intact');
 });
+
+// ─────────────────────────────────────────────────────────
+// WORKFLOW CONFIGURABLE PAR CANAL (Administration ▸ Workflow)
+// ─────────────────────────────────────────────────────────
+function withConfig(cfg, fn) {
+  const prev = globalThis.window.ImpulsionMarketing.config;
+  globalThis.window.ImpulsionMarketing.config = cfg;
+  try { fn(); } finally { globalThis.window.ImpulsionMarketing.config = prev; }
+}
+
+test('isStepApplicable — sans config, toute étape est applicable à tout canal', () => {
+  assert.equal(workflow.isStepApplicable('MAIL', 'data_ciblage'), true);
+  assert.equal(workflow.isStepApplicable(undefined, 'ebf_bat'), true);
+});
+
+test('isStepApplicable — un canal non configuré reste à flux complet par défaut', () => {
+  withConfig({ CANAL_STEPS: { MAIL: ['ebf_bat', 'po_validation_bat'] } }, () => {
+    assert.equal(workflow.isStepApplicable('MAIL', 'data_ciblage'), false, 'MAIL est explicitement restreint');
+    assert.equal(workflow.isStepApplicable('SMS', 'data_ciblage'), true, 'SMS non configuré = flux complet (sécurité pour un nouveau canal)');
+  });
+});
+
+test('canal restreint type LP — test en prod débloqué directement après le BAT, sans ciblage', () => {
+  const cfg = { CANAL_STEPS: { LP: ['com_maquette', 'po_validation_maquette', 'ebf_bat', 'po_validation_bat', 'ebf_test_prod', 'po_validation_test_prod', 'ebf_mise_en_prod'] } };
+  withConfig(cfg, () => {
+    const data = makeCampaign(['Com', 'EBF', 'Data'], [{ deliverableName: 'Landing', content: 'LP' }]);
+    workflow.advanceStep(data, 'manager_affectation', 'validated');
+    workflow.advanceStep(data, 'po_kickoff', 'validated');
+    assert.equal(ch0(data).data_ciblage, 'locked', 'le ciblage ne doit jamais se débloquer pour ce canal');
+    workflow.advanceChannelStep(data, 0, 'com_maquette', 'submitted');
+    workflow.validateChannelStep(data, 'po_validation_maquette', 0);
+    workflow.advanceChannelStep(data, 0, 'ebf_bat', 'submitted');
+    workflow.validateChannelStep(data, 'po_validation_bat', 0);
+    let cs = ch0(data);
+    assert.equal(cs.ebf_test_prod, 'pending', 'le test en prod doit se débloquer directement après le BAT');
+    assert.equal(cs.data_lancement_test, 'locked', 'le lancement test ne s\'applique pas à ce canal');
+    workflow.advanceChannelStep(data, 0, 'ebf_test_prod', 'submitted');
+    workflow.validateChannelStep(data, 'po_validation_test_prod', 0);
+    cs = ch0(data);
+    assert.equal(cs.ebf_mise_en_prod, 'pending');
+    assert.equal(cs.data_mise_en_prod, 'locked', 'la mise en prod Data ne s\'applique pas à ce canal');
+    cs.ebf_mise_en_prod = 'completed';
+    assert.equal(workflow.isChannelCompleted(ch0(data), data.requiredTeams, 'LP', false), true);
+  });
+});
+
+test('canal restreint type MDC — ciblage débloqué dès le kick-off, mise en prod directe après le ciblage', () => {
+  const cfg = { CANAL_STEPS: { MDC: ['data_ciblage', 'po_validation_ciblage', 'data_mise_en_prod'] } };
+  withConfig(cfg, () => {
+    const data = makeCampaign(['Com', 'EBF', 'Data'], [{ deliverableName: 'Message MDC', content: 'MDC' }]);
+    workflow.advanceStep(data, 'manager_affectation', 'validated');
+    workflow.advanceStep(data, 'po_kickoff', 'validated');
+    const cs = ch0(data);
+    assert.equal(cs.data_ciblage, 'pending', 'le ciblage doit se débloquer dès le kick-off pour ce canal');
+    assert.equal(cs.com_maquette, 'locked', 'la maquette ne s\'applique pas à ce canal');
+    assert.equal(cs.ebf_bat, 'locked', 'le BAT ne s\'applique pas à ce canal');
+    workflow.advanceChannelStep(data, 0, 'data_ciblage', 'submitted');
+    workflow.validateChannelStep(data, 'po_validation_ciblage', 0);
+    assert.equal(ch0(data).data_mise_en_prod, 'pending', 'la mise en prod doit se débloquer directement après le ciblage (pas de test en prod pour ce canal)');
+  });
+});
+
+test('channelStepIds — EBF seul (sans Data), canal non restreint : pas d\'étape de test en prod', () => {
+  // Flux « EBF seul » : kickoff → BAT → val.BAT → fin (pas de ciblage, pas de
+  // lancement test, pas de test en prod — cf. commentaire de recalcChannelUnlocks).
+  const ids = workflow.channelStepIds(['EBF'], undefined, false);
+  assert.deepEqual(ids, ['ebf_bat', 'po_validation_bat']);
+});
+
+test('channelStepIds — flux complet inclut bien le test en prod (EBF+Data)', () => {
+  const ids = workflow.channelStepIds(['Com', 'EBF', 'Data'], undefined, false);
+  assert.ok(ids.indexOf('ebf_test_prod') !== -1, 'ebf_test_prod doit être atteignable quand EBF et Data sont requis');
+  assert.ok(ids.indexOf('data_lancement_test') !== -1);
+});
+
+test('canal restreint sans BAT (type « relevé de compte ») — ciblage requis mais pas le BAT avant le test en prod', () => {
+  const cfg = { CANAL_STEPS: { RELEVE: ['data_ciblage', 'po_validation_ciblage', 'ebf_test_prod', 'po_validation_test_prod', 'data_mise_en_prod'] } };
+  withConfig(cfg, () => {
+    const data = makeCampaign(['Com', 'EBF', 'Data'], [{ deliverableName: 'Relevé', content: 'RELEVE' }]);
+    workflow.advanceStep(data, 'manager_affectation', 'validated');
+    workflow.advanceStep(data, 'po_kickoff', 'validated');
+    let cs = ch0(data);
+    assert.equal(cs.com_maquette, 'locked', 'la maquette ne s\'applique pas à ce canal');
+    assert.equal(cs.ebf_bat, 'locked', 'le BAT ne s\'applique pas à ce canal');
+    assert.equal(cs.data_ciblage, 'pending', 'le ciblage doit se débloquer dès le kick-off');
+    // Le test en prod ne doit PAS se débloquer avant le ciblage, même sans BAT.
+    assert.equal(cs.ebf_test_prod, 'locked');
+    workflow.advanceChannelStep(data, 0, 'data_ciblage', 'submitted');
+    workflow.validateChannelStep(data, 'po_validation_ciblage', 0);
+    cs = ch0(data);
+    assert.equal(cs.ebf_test_prod, 'pending', 'le test en prod doit se débloquer directement après le ciblage (pas de BAT pour ce canal)');
+  });
+});
+
+test('stepLabel / stepActor — surchargeables depuis la config (Administration ▸ Workflow)', () => {
+  withConfig({ WORKFLOW_STEPS: [{ id: 'ebf_bat', label: 'Fabrication BAT', actor: 'data' }] }, () => {
+    assert.equal(workflow.stepLabel('ebf_bat'), 'Fabrication BAT');
+    assert.equal(workflow.stepActor('ebf_bat'), 'data');
+    assert.equal(workflow.stepLabel('data_ciblage'), 'Ciblage Data', 'les étapes non surchargées gardent leur libellé par défaut');
+  });
+});

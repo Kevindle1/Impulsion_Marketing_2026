@@ -125,6 +125,15 @@ window.ImpulsionMarketing.adminConfig = (function () {
     if (Array.isArray(cfg.marchesSiteWeb) && cfg.marchesSiteWeb.length && Array.isArray(IM.config.MARCHES_SITE_WEB)) {
       spliceInPlace(IM.config.MARCHES_SITE_WEB, cfg.marchesSiteWeb);
     }
+    // Workflow (étapes + applicabilité par canal — Administration ▸ Workflow)
+    if (cfg.workflow && typeof cfg.workflow === 'object') {
+      if (Array.isArray(cfg.workflow.steps) && cfg.workflow.steps.length && Array.isArray(IM.config.WORKFLOW_STEPS)) {
+        spliceInPlace(IM.config.WORKFLOW_STEPS, cfg.workflow.steps);
+      }
+      if (cfg.workflow.canalSteps && typeof cfg.workflow.canalSteps === 'object') {
+        assignInPlace(IM.config.CANAL_STEPS, cfg.workflow.canalSteps);
+      }
+    }
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
     assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);

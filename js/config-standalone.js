@@ -125,6 +125,18 @@ window.ImpulsionMarketing.config = (function() {
   const LOTS = _arr('lots');
 
   // ========================================
+  // Workflow (Administration ▸ Workflow)
+  // ========================================
+
+  // Étapes du workflow canal (libellé/acteur/ordre) — surcharge de la base
+  // codée dans js/workflow-standalone.js. Source : _config.json workflow.steps.
+  const WORKFLOW_STEPS = (_cfgCache.workflow && Array.isArray(_cfgCache.workflow.steps)) ? JSON.parse(JSON.stringify(_cfgCache.workflow.steps)) : [];
+  // Applicabilité des étapes par canal : { "<canal>": ["stepId", ...] }. Un
+  // canal absent de cet objet applique toutes les étapes (repli sûr par défaut).
+  // Source : _config.json workflow.canalSteps.
+  const CANAL_STEPS = (_cfgCache.workflow && _cfgCache.workflow.canalSteps && typeof _cfgCache.workflow.canalSteps === 'object') ? JSON.parse(JSON.stringify(_cfgCache.workflow.canalSteps)) : {};
+
+  // ========================================
   // Autres données pilotées par _config.json (objets/listes mutés en place par adminConfig)
   // ========================================
   const APP_SETTINGS     = (_cfgCache.settings && typeof _cfgCache.settings === 'object') ? _cfgCache.settings : {};
@@ -320,6 +332,8 @@ window.ImpulsionMarketing.config = (function() {
     APP_SETTINGS: APP_SETTINGS,
     ROLE_COLORS: ROLE_COLORS,
     ROLE_LABELS: ROLE_LABELS,
+    WORKFLOW_STEPS: WORKFLOW_STEPS,
+    CANAL_STEPS: CANAL_STEPS,
     WEB_ZONES: WEB_ZONES,
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,

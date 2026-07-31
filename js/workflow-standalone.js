@@ -71,6 +71,54 @@ window.ImpulsionMarketing.workflow = (function () {
   var DEFAULT_ASSIGNMENTS = { manager: '', com: '', ebf: '', data: '' };
 
   // ─────────────────────────────────────────────────────────
+  // CONFIGURATION DU WORKFLOW (Administration ▸ Workflow)
+  // ─────────────────────────────────────────────────────────
+  // Le libellé/acteur/ordre de chaque étape et l'applicabilité de chaque étape
+  // par canal sont pilotés par _config.json (clé "workflow"), éditables depuis
+  // l'Administration — avec repli complet sur STEPS/CHANNEL_STEP_IDS ci-dessus
+  // si la config est absente. C'est notamment le cas en environnement de test
+  // (test/workflow.test.mjs charge ce module isolément, sans IM.config).
+  function _cfg() {
+    return (window.ImpulsionMarketing && window.ImpulsionMarketing.config) || null;
+  }
+  // Étape « effective » (fusion base + surcharge admin) pour un id donné.
+  // L'id, l'icône et la description restent fixes (structurels) ; le libellé,
+  // l'acteur et l'ordre d'affichage sont surchargeables.
+  function _stepDef(id) {
+    var base = null, baseIdx = -1;
+    for (var i = 0; i < STEPS.length; i++) { if (STEPS[i].id === id) { base = STEPS[i]; baseIdx = i; break; } }
+    var c = _cfg();
+    var overrides = (c && Array.isArray(c.WORKFLOW_STEPS)) ? c.WORKFLOW_STEPS : null;
+    var o = null;
+    if (overrides) {
+      for (var j = 0; j < overrides.length; j++) { if (overrides[j] && overrides[j].id === id) { o = overrides[j]; break; } }
+    }
+    return {
+      id: id,
+      label: (o && o.label) || (base && base.label) || id,
+      actor: (o && o.actor) || (base && base.actor),
+      icon: base && base.icon,
+      description: base && base.description,
+      order: (o && typeof o.order === 'number') ? o.order : baseIdx
+    };
+  }
+  function stepLabel(id) { return _stepDef(id).label; }
+  function stepActor(id) { return _stepDef(id).actor; }
+
+  // Applicabilité d'une étape pour un CANAL donné (channel.content, ex. « MAIL »,
+  // « ZAC », « LP »…) — pilotée par _config.json workflow.canalSteps. Un canal
+  // absent de la config (ou config elle-même absente) applique TOUTES les
+  // étapes : réglage par défaut le plus sûr, un nouveau canal (ou une nouvelle
+  // caisse régionale qui n'a pas encore paramétré ses canaux) garde le flux complet.
+  function isStepApplicable(channelContent, stepId) {
+    var c = _cfg();
+    var cs = c && c.CANAL_STEPS;
+    if (!cs || !channelContent || !Object.prototype.hasOwnProperty.call(cs, channelContent)) return true;
+    var list = cs[channelContent];
+    return Array.isArray(list) ? (list.indexOf(stepId) !== -1) : true;
+  }
+
+  // ─────────────────────────────────────────────────────────
   // HELPERS
   // ─────────────────────────────────────────────────────────
 
@@ -212,8 +260,8 @@ window.ImpulsionMarketing.workflow = (function () {
       }
 
       // Recalculer les déblocages pour ce canal
-      var chType = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
-      cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chType, juridiqueRequired(campaignData));
+      var chContent = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].content;
+      cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chContent, juridiqueRequired(campaignData));
     }
 
     if (!campaignData.kickoffDate) campaignData.kickoffDate = '';
@@ -263,41 +311,43 @@ window.ImpulsionMarketing.workflow = (function () {
    * EBF seul (sans Data): kickoff → BAT → val.BAT → fin
    * Data seul          : kickoff → ciblage → val.ciblage → MEP
    */
-  function recalcChannelUnlocks(cs, globalSteps, requiredTeams, channelType, juridiqueRequired) {
+  function recalcChannelUnlocks(cs, globalSteps, requiredTeams, channelContent, juridiqueRequired) {
     var reqCom  = isTeamRequired(requiredTeams, 'Com');
     var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
     var reqData = isTeamRequired(requiredTeams, 'Data');
-    var isLP    = channelType === 'LP';
+    function ok(id) { return isStepApplicable(channelContent, id); }
 
     var kickoffDone = globalSteps && (globalSteps.po_kickoff === 'validated');
 
     // ── Après kickoff : débloquer les premières étapes ──
     if (kickoffDone) {
-      if (reqCom  && cs.com_maquette === 'locked') cs.com_maquette = 'pending';
-      if (reqData && cs.data_ciblage === 'locked') cs.data_ciblage = 'pending';
-      // EBF sans Com → BAT se débloque directement après kickoff
-      if (reqEbf && !reqCom && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
+      if (reqCom  && ok('com_maquette') && cs.com_maquette === 'locked') cs.com_maquette = 'pending';
+      if (reqData && ok('data_ciblage') && cs.data_ciblage === 'locked') cs.data_ciblage = 'pending';
+      // EBF sans Com (ou Com non applicable à ce canal) → BAT se débloque directement après kickoff
+      if (reqEbf && (!reqCom || !ok('com_maquette')) && ok('ebf_bat') && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
     }
 
     // ── Chaîne Com ──
-    if (reqCom && cs.com_maquette === 'submitted' && cs.po_validation_maquette === 'locked') {
+    if (reqCom && ok('po_validation_maquette') && cs.com_maquette === 'submitted' && cs.po_validation_maquette === 'locked') {
       cs.po_validation_maquette = 'pending';
     }
     // Validation juridique (Com) : débloquée après validation PO de la maquette,
-    // uniquement si la campagne requiert une validation juridique et conformité.
-    if (reqCom && juridiqueRequired) {
+    // uniquement si la campagne requiert une validation juridique et conformité
+    // ET si cette étape s'applique à ce canal.
+    if (reqCom && juridiqueRequired && ok('com_juridique')) {
       var maquetteValForJur = cs.po_validation_maquette === 'validated' || cs.po_validation_maquette === 'completed';
       if (maquetteValForJur && cs.com_juridique === 'locked') cs.com_juridique = 'pending';
     }
 
     // ── Chaîne EBF ──
     // ebf_bat se débloque quand :
-    // - Com requise sans juridique : après po_validation_maquette validée
-    // - Com requise avec juridique : après com_juridique validée (par la Com)
-    // - Com non requise : déjà géré ci-dessus (après kickoff)
-    if (reqEbf && reqCom) {
+    // - Com requise (et applicable) sans juridique : après po_validation_maquette validée
+    // - Com requise (et applicable) avec juridique (et applicable) : après com_juridique validée
+    // - Com non requise ou non applicable à ce canal : déjà géré ci-dessus (après kickoff)
+    if (reqEbf && reqCom && ok('com_maquette') && ok('ebf_bat')) {
       var comValidated = cs.po_validation_maquette === 'validated' || cs.po_validation_maquette === 'completed';
-      var canStartBat = juridiqueRequired
+      var needsJuridiqueGate = juridiqueRequired && ok('com_juridique');
+      var canStartBat = needsJuridiqueGate
         ? (cs.com_juridique === 'validated' || cs.com_juridique === 'completed')
         : comValidated;
       if (canStartBat && cs.ebf_bat === 'locked') cs.ebf_bat = 'pending';
@@ -305,54 +355,66 @@ window.ImpulsionMarketing.workflow = (function () {
       // le BAT ne doit pas être ouvert. On re-verrouille un ebf_bat resté/passé
       // à 'pending' (état hérité d'avant l'ajout du juridique, ou recalcul) —
       // sans toucher un BAT déjà commencé (submitted/validated/completed).
-      if (juridiqueRequired && !canStartBat && cs.ebf_bat === 'pending') {
+      if (needsJuridiqueGate && !canStartBat && cs.ebf_bat === 'pending') {
         cs.ebf_bat = 'locked';
       }
     }
-    if (reqEbf && cs.ebf_bat === 'submitted' && cs.po_validation_bat === 'locked') {
+    if (reqEbf && ok('po_validation_bat') && cs.ebf_bat === 'submitted' && cs.po_validation_bat === 'locked') {
       cs.po_validation_bat = 'pending';
     }
 
-    // ── Chaîne Data ──
-    if (reqData && cs.data_ciblage === 'submitted' && cs.po_validation_ciblage === 'locked') {
+    // ── Chaîne Data (ciblage) ──
+    if (reqData && ok('po_validation_ciblage') && cs.data_ciblage === 'submitted' && cs.po_validation_ciblage === 'locked') {
       cs.po_validation_ciblage = 'pending';
     }
 
-    // ── Canal LP : Test en prod EBF déverrouillé directement après BAT, puis MEP EBF ──
-    if (isLP && reqEbf) {
-      var batDoneLP = cs.po_validation_bat === 'validated' || cs.po_validation_bat === 'completed';
-      if (batDoneLP && cs.ebf_test_prod === 'locked') cs.ebf_test_prod = 'pending';
-      if (cs.ebf_test_prod === 'submitted' && cs.po_validation_test_prod === 'locked') {
-        cs.po_validation_test_prod = 'pending';
-      }
-      var testProdValidatedLP = cs.po_validation_test_prod === 'validated' || cs.po_validation_test_prod === 'completed';
-      if (testProdValidatedLP && cs.ebf_mise_en_prod === 'locked') cs.ebf_mise_en_prod = 'pending';
-    }
+    // ── Test en prod : le BAT et/ou le ciblage alimentent le test en prod selon
+    // ce qui s'applique à ce canal (un volet non applicable est considéré acquis
+    // d'office — il ne bloque pas les autres). Flux standard (lancement test
+    // applicable) : lancement test → test en prod, une fois le(s) volet(s) amont
+    // validé(s). Flux réduit (lancement test non applicable à ce canal, ex. LP ou
+    // canal sans étape de ciblage) : test en prod débloqué directement dès que
+    // le(s) volet(s) amont applicable(s) (BAT et/ou ciblage) sont validés.
+    var batApplicable = reqEbf && ok('po_validation_bat');
+    var batDone = !batApplicable || cs.po_validation_bat === 'validated' || cs.po_validation_bat === 'completed';
+    var ciblageApplicable = reqData && ok('data_ciblage');
+    var ciblageDone = !ciblageApplicable || cs.po_validation_ciblage === 'validated' || cs.po_validation_ciblage === 'completed';
+    // Si ni le BAT ni le ciblage ne s'appliquent à ce canal, le seul verrou
+    // restant est le kick-off (sinon le test en prod se débloquerait sans
+    // aucune condition, dès l'initialisation du canal).
+    var upstreamDone = (batApplicable || ciblageApplicable) ? (batDone && ciblageDone) : kickoffDone;
 
-    // ── Étapes communes EBF+Data (hors LP) ──
-    if (reqEbf && reqData && !isLP) {
-      var batDone     = cs.po_validation_bat     === 'validated' || cs.po_validation_bat     === 'completed';
-      var ciblageDone = cs.po_validation_ciblage === 'validated' || cs.po_validation_ciblage === 'completed';
-      if (batDone && ciblageDone && cs.data_lancement_test === 'locked') {
+    if (ok('data_lancement_test')) {
+      if (reqEbf && reqData && upstreamDone && cs.data_lancement_test === 'locked') {
         cs.data_lancement_test = 'pending';
       }
       var ltDone = cs.data_lancement_test === 'submitted' || cs.data_lancement_test === 'validated' || cs.data_lancement_test === 'completed';
-      if (ltDone && cs.ebf_test_prod === 'locked') {
+      if (reqEbf && ok('ebf_test_prod') && ltDone && cs.ebf_test_prod === 'locked') {
         cs.ebf_test_prod = 'pending';
       }
-      if (cs.ebf_test_prod === 'submitted' && cs.po_validation_test_prod === 'locked') {
-        cs.po_validation_test_prod = 'pending';
-      }
-      var testProdValidated = cs.po_validation_test_prod === 'validated' || cs.po_validation_test_prod === 'completed';
-      if (testProdValidated && cs.data_mise_en_prod === 'locked') {
-        cs.data_mise_en_prod = 'pending';
-      }
+    } else if (reqEbf && ok('ebf_test_prod') && upstreamDone && cs.ebf_test_prod === 'locked') {
+      cs.ebf_test_prod = 'pending';
     }
 
-    // ── MEP : Data seul (sans EBF) → après po_validation_ciblage ──
-    if (reqData && !reqEbf) {
-      var ciblageDone2 = cs.po_validation_ciblage === 'validated' || cs.po_validation_ciblage === 'completed';
-      if (ciblageDone2 && cs.data_mise_en_prod === 'locked') {
+    if (reqEbf && ok('po_validation_test_prod') && cs.ebf_test_prod === 'submitted' && cs.po_validation_test_prod === 'locked') {
+      cs.po_validation_test_prod = 'pending';
+    }
+    var testProdValidated = cs.po_validation_test_prod === 'validated' || cs.po_validation_test_prod === 'completed';
+
+    // ── Mise en production : Data et/ou EBF, selon les étapes applicables à ce canal ──
+    if (reqData && ok('data_mise_en_prod') && testProdValidated && cs.data_mise_en_prod === 'locked') {
+      cs.data_mise_en_prod = 'pending';
+    }
+    if (reqEbf && ok('ebf_mise_en_prod') && testProdValidated && cs.ebf_mise_en_prod === 'locked') {
+      cs.ebf_mise_en_prod = 'pending';
+    }
+
+    // ── MEP : flux réduit Data (EBF non requis, OU le test en prod EBF ne
+    // s'applique pas à ce canal — ex. canal sans étape de fabrication/test) →
+    // mise en prod directement après le(s) volet(s) amont applicable(s), sans
+    // attendre un test en prod qui ne surviendra jamais pour ce canal.
+    if (reqData && ok('data_mise_en_prod') && (!reqEbf || !ok('ebf_test_prod')) && !testProdValidated) {
+      if (upstreamDone && cs.data_mise_en_prod === 'locked') {
         cs.data_mise_en_prod = 'pending';
       }
     }
@@ -385,8 +447,8 @@ window.ImpulsionMarketing.workflow = (function () {
     var numChannels = Math.max((campaignData.channels || []).length, 1);
     for (var i = 0; i < numChannels; i++) {
       if (cs[i]) {
-        var chTypeG = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
-        cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chTypeG, juridiqueRequired(campaignData));
+        var chContentG = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].content;
+        cs[i] = recalcChannelUnlocks(cs[i], campaignData.workflow.steps, campaignData.requiredTeams, chContentG, juridiqueRequired(campaignData));
       }
     }
     return campaignData;
@@ -401,8 +463,8 @@ window.ImpulsionMarketing.workflow = (function () {
     var cs = campaignData.workflow.channelSteps;
     if (!cs[channelIdx]) cs[channelIdx] = Object.assign({}, DEFAULT_CHANNEL_STEPS);
     cs[channelIdx][stepId] = newStatus;
-    var chTypeC = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].type;
-    cs[channelIdx] = recalcChannelUnlocks(cs[channelIdx], campaignData.workflow.steps, campaignData.requiredTeams, chTypeC, juridiqueRequired(campaignData));
+    var chContentC = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].content;
+    cs[channelIdx] = recalcChannelUnlocks(cs[channelIdx], campaignData.workflow.steps, campaignData.requiredTeams, chContentC, juridiqueRequired(campaignData));
     return campaignData;
   }
 
@@ -490,8 +552,8 @@ window.ImpulsionMarketing.workflow = (function () {
     if (!campaignData.workflow.channelRevisionComments[channelIdx]) campaignData.workflow.channelRevisionComments[channelIdx] = {};
     campaignData.workflow.channelRevisionComments[channelIdx][targetStepId] = reason || '';
     _pushRevisionLog(campaignData, channelIdx, targetStepId, reason, author, when);
-    var chType = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].type;
-    cs[channelIdx] = recalcChannelUnlocks(ch, campaignData.workflow.steps, campaignData.requiredTeams, chType, juridiqueRequired(campaignData));
+    var chContentR = campaignData.channels && campaignData.channels[channelIdx] && campaignData.channels[channelIdx].content;
+    cs[channelIdx] = recalcChannelUnlocks(ch, campaignData.workflow.steps, campaignData.requiredTeams, chContentR, juridiqueRequired(campaignData));
     return campaignData;
   }
 
@@ -553,26 +615,30 @@ window.ImpulsionMarketing.workflow = (function () {
   /**
    * Vérifie si UN canal est terminé selon les requiredTeams
    */
-  function isChannelCompleted(channelSteps, requiredTeams, channelType, juridiqueRequired) {
+  function isChannelCompleted(channelSteps, requiredTeams, channelContent, juridiqueRequired) {
     var reqCom  = isTeamRequired(requiredTeams, 'Com');
     var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
     var reqData = isTeamRequired(requiredTeams, 'Data');
-    var isLP    = channelType === 'LP';
+    function ok(id) { return isStepApplicable(channelContent, id); }
 
-    if (isLP && reqEbf) {
+    // Flux type LP : la mise en production est portée par l'EBF (pas par la
+    // Data) — canal dont l'étape « Mise en prod LP » s'applique mais pas
+    // « Mise en prod » (Data). Généralise l'ancien cas spécial isLP.
+    if (reqEbf && ok('ebf_mise_en_prod') && !ok('data_mise_en_prod')) {
       return channelSteps.ebf_mise_en_prod === 'completed';
     }
-    if (reqData) {
+    if (reqData && ok('data_mise_en_prod')) {
       return channelSteps.data_mise_en_prod === 'completed';
     }
-    if (reqEbf) {
+    if (reqEbf && ok('po_validation_bat')) {
       return channelSteps.po_validation_bat === 'validated' || channelSteps.po_validation_bat === 'completed';
     }
-    if (reqCom) {
-      // Canal Com seul (sans EBF ni Data) : terminé après validation de la
-      // maquette par le PO — et, si requis, après la validation juridique Com.
+    if (reqCom && ok('po_validation_maquette')) {
+      // Canal Com seul (sans EBF ni Data applicables) : terminé après
+      // validation de la maquette par le PO — et, si requis, après la
+      // validation juridique Com.
       var maquetteOk = channelSteps.po_validation_maquette === 'validated' || channelSteps.po_validation_maquette === 'completed';
-      if (juridiqueRequired) {
+      if (juridiqueRequired && ok('com_juridique')) {
         return maquetteOk && (channelSteps.com_juridique === 'validated' || channelSteps.com_juridique === 'completed');
       }
       return maquetteOk;
@@ -589,8 +655,8 @@ window.ImpulsionMarketing.workflow = (function () {
     if (!cs) return false;
     var numChannels = Math.max((campaignData.channels || []).length, 1);
     for (var i = 0; i < numChannels; i++) {
-      var chTypeI = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].type;
-      if (!cs[i] || !isChannelCompleted(cs[i], campaignData.requiredTeams, chTypeI, juridiqueRequired(campaignData))) return false;
+      var chContentI = campaignData.channels && campaignData.channels[i] && campaignData.channels[i].content;
+      if (!cs[i] || !isChannelCompleted(cs[i], campaignData.requiredTeams, chContentI, juridiqueRequired(campaignData))) return false;
     }
     return true;
   }
@@ -626,9 +692,9 @@ window.ImpulsionMarketing.workflow = (function () {
         // alors terminée (sinon on affiche « En validation : … » à tort).
         if (status === 'submitted' && vId && (cs[ci][vId] === 'validated' || cs[ci][vId] === 'completed')) continue;
         if (status === 'pending' || status === 'submitted' || status === 'revision_requested') {
-          if (status === 'submitted')          return 'En validation : ' + STEPS[si].label;
-          if (status === 'revision_requested') return 'Révision : ' + STEPS[si].label;
-          return STEPS[si].label;
+          if (status === 'submitted')          return 'En validation : ' + stepLabel(stepId);
+          if (status === 'revision_requested') return 'Révision : ' + stepLabel(stepId);
+          return stepLabel(stepId);
         }
       }
     }
@@ -641,22 +707,36 @@ window.ImpulsionMarketing.workflow = (function () {
   var _STEP_LABEL = {};
   STEPS.forEach(function (s) { _STEP_LABEL[s.id] = s.label; });
 
-  // Étapes pertinentes pour un canal selon les équipes requises et le type (LP).
-  // Reproduit la visibilité des zones de la fiche canal.
-  function _channelStepIds(requiredTeams, channelType, juridiqueReq) {
+  // Étapes pertinentes pour un canal selon les équipes requises, le juridique,
+  // et l'applicabilité de l'étape à ce canal (Administration ▸ Workflow).
+  // Source UNIQUE de « quelles étapes s'appliquent » — utilisée par le moteur
+  // (recalcChannelUnlocks/isChannelCompleted en découlent) ET par l'interface
+  // (pages/details.html), pour éviter toute divergence entre les deux.
+  function _channelStepIds(requiredTeams, channelContent, juridiqueReq) {
     var reqCom  = isTeamRequired(requiredTeams, 'Com');
     var reqEbf  = isTeamRequired(requiredTeams, 'EBF');
     var reqData = isTeamRequired(requiredTeams, 'Data');
-    var isLP    = channelType === 'LP';
-    var ids = [];
-    if (reqCom) { ids.push('com_maquette', 'po_validation_maquette'); if (juridiqueReq) ids.push('com_juridique'); }
-    if (reqEbf) { ids.push('ebf_bat', 'po_validation_bat'); }
-    if (reqData && !isLP) { ids.push('data_ciblage', 'po_validation_ciblage'); }
-    if (reqEbf && reqData && !isLP) { ids.push('data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod'); }
-    else if (reqEbf && isLP) { ids.push('ebf_test_prod', 'po_validation_test_prod'); }
-    if (reqData && !isLP) ids.push('data_mise_en_prod');
-    if (isLP && reqEbf) ids.push('ebf_mise_en_prod');
-    return ids;
+    function ok(id) { return isStepApplicable(channelContent, id); }
+    var ids = CHANNEL_STEP_IDS.filter(function (id) {
+      if (!ok(id)) return false;
+      switch (id) {
+        case 'com_maquette': case 'po_validation_maquette': return reqCom;
+        case 'com_juridique': return reqCom && !!juridiqueReq;
+        case 'ebf_bat': case 'po_validation_bat': return reqEbf;
+        case 'data_ciblage': case 'po_validation_ciblage': return reqData;
+        case 'data_lancement_test': return reqEbf && reqData;
+        // Le test en prod (et sa validation/MEP LP) n'est atteignable que par le
+        // flux standard (lancement test applicable à ce canal ET Data requise)
+        // ou le flux réduit (lancement test non applicable à ce canal, ex. LP) —
+        // sinon (EBF seul, sans Data, canal à flux standard) il n'y a pas de
+        // test en prod du tout (le flux s'arrête au BAT).
+        case 'ebf_test_prod': case 'po_validation_test_prod': case 'ebf_mise_en_prod':
+          return reqEbf && (!ok('data_lancement_test') || reqData);
+        case 'data_mise_en_prod': return reqData;
+        default: return true;
+      }
+    });
+    return ids.sort(function (a, b) { return _stepDef(a).order - _stepDef(b).order; });
   }
 
   // Une étape de dépôt est "faite" dès que sa validation PO associée est acquise.
@@ -683,9 +763,9 @@ window.ImpulsionMarketing.workflow = (function () {
     var channels = campaignData.channels || [];
     return channels.map(function (ch, i) {
       var steps = cs[i] || {};
-      var type  = ch && ch.type;
-      var done  = isChannelCompleted(steps, campaignData.requiredTeams, type, jur);
-      var ids   = _channelStepIds(campaignData.requiredTeams, type, jur);
+      var content = ch && ch.content;
+      var done  = isChannelCompleted(steps, campaignData.requiredTeams, content, jur);
+      var ids   = _channelStepIds(campaignData.requiredTeams, content, jur);
       function eff(id) {
         var raw = steps[id] || 'locked';
         var v = _DEPOT_VALIDATION[id];
@@ -697,7 +777,7 @@ window.ImpulsionMarketing.workflow = (function () {
         var stt = eff(ids[k]);
         if (stt === 'validated' || stt === 'completed') { doneCount++; continue; }
         if (!label) {
-          var lbl = _STEP_LABEL[ids[k]] || ids[k];
+          var lbl = stepLabel(ids[k]);
           if (stt === 'submitted')               { label = 'En validation : ' + lbl; key = 'valid'; }
           else if (stt === 'revision_requested') { label = 'Révision : ' + lbl;       key = 'urgent'; }
           else                                   { label = lbl;                        key = _stepColorKey(ids[k]); }
@@ -877,16 +957,17 @@ window.ImpulsionMarketing.workflow = (function () {
 
     STEPS.slice(3).forEach(function (step) {
       if (seenSteps[step.id]) return;
+      var actor = stepActor(step.id); // surcharge admin éventuelle (Administration ▸ Workflow)
       for (var ci = 0; ci < numChannels; ci++) {
         if (!cs[ci]) continue;
         var status = cs[ci][step.id] || 'locked';
         if (status !== 'pending' && status !== 'revision_requested') continue;
         var actorMatch = false;
-        if (step.actor === 'po') {
+        if (actor === 'po') {
           actorMatch = isPoName(campaignData, currentUser.name);
         } else {
           // Assignés effectifs de CE canal (base campagne + renfort du canal).
-          actorMatch = channelAssignees(campaignData, ci, step.actor).indexOf(currentUser.name) !== -1;
+          actorMatch = channelAssignees(campaignData, ci, actor).indexOf(currentUser.name) !== -1;
         }
         if (actorMatch) {
           seenSteps[step.id] = true;
@@ -1237,6 +1318,10 @@ window.ImpulsionMarketing.workflow = (function () {
     STEPS:                    STEPS,
     CHANNEL_STEP_IDS:         CHANNEL_STEP_IDS,
     GLOBAL_STEP_IDS:          GLOBAL_STEP_IDS,
+    isStepApplicable:         isStepApplicable,
+    stepLabel:                stepLabel,
+    stepActor:                stepActor,
+    channelStepIds:           _channelStepIds,
     isTeamRequired:           isTeamRequired,
     isChannelCompleted:       isChannelCompleted,
     buildSearchBlob:          buildSearchBlob,

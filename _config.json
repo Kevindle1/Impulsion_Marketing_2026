@@ -554,5 +554,132 @@
     "ebf": "EBF",
     "data": "Data",
     "superadmin": "Super Admin"
+  },
+  "workflow": {
+    "steps": [
+      {
+        "id": "com_maquette",
+        "label": "Maquette Com",
+        "actor": "com",
+        "order": 0
+      },
+      {
+        "id": "po_validation_maquette",
+        "label": "Validation maquette",
+        "actor": "po",
+        "order": 1
+      },
+      {
+        "id": "com_juridique",
+        "label": "Validation juridique",
+        "actor": "com",
+        "order": 2
+      },
+      {
+        "id": "ebf_bat",
+        "label": "Réalisation BAT",
+        "actor": "ebf",
+        "order": 3
+      },
+      {
+        "id": "po_validation_bat",
+        "label": "Validation BAT",
+        "actor": "po",
+        "order": 4
+      },
+      {
+        "id": "data_ciblage",
+        "label": "Ciblage Data",
+        "actor": "data",
+        "order": 5
+      },
+      {
+        "id": "po_validation_ciblage",
+        "label": "Validation ciblage",
+        "actor": "po",
+        "order": 6
+      },
+      {
+        "id": "data_lancement_test",
+        "label": "Lancement test",
+        "actor": "data",
+        "order": 7
+      },
+      {
+        "id": "ebf_test_prod",
+        "label": "Test en prod",
+        "actor": "ebf",
+        "order": 8
+      },
+      {
+        "id": "po_validation_test_prod",
+        "label": "Validation test",
+        "actor": "po",
+        "order": 9
+      },
+      {
+        "id": "data_mise_en_prod",
+        "label": "Mise en prod",
+        "actor": "data",
+        "order": 10
+      },
+      {
+        "id": "ebf_mise_en_prod",
+        "label": "Mise en prod LP",
+        "actor": "ebf",
+        "order": 11
+      }
+    ],
+    "canalSteps": {
+      "LP": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "ebf_test_prod",
+        "po_validation_test_prod",
+        "ebf_mise_en_prod"
+      ],
+      "MDC": [
+        "data_ciblage",
+        "po_validation_ciblage",
+        "data_mise_en_prod"
+      ],
+      "Bandeau Hero": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "data_mise_en_prod"
+      ],
+      "ZAC HOME PAGE": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "data_mise_en_prod"
+      ],
+      "Menu Burger": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "data_mise_en_prod"
+      ],
+      "PERSO MA BANQUE": [
+        "ebf_bat",
+        "po_validation_bat",
+        "data_ciblage",
+        "po_validation_ciblage",
+        "data_lancement_test",
+        "ebf_test_prod",
+        "po_validation_test_prod",
+        "data_mise_en_prod"
+      ]
+    }
   }
 }

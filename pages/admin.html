@@ -103,6 +103,19 @@
         .empty-hint { color: var(--muted-2); font-size: 14px; padding: 16px 0; }
         .toggle-label { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; }
 
+        /* Workflow — étapes + matrice canal × étape */
+        .wf-step-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--line-2); flex-wrap: wrap; }
+        .wf-step-row:last-child { border-bottom: none; }
+        .wf-step-order { font-size: 11px; font-weight: 800; color: var(--muted-2); width: 24px; flex-shrink: 0; }
+        .wf-step-hint { font-size: 11.5px; color: var(--muted-2); flex-basis: 100%; margin-left: 34px; line-height: 1.4; }
+        .wf-matrix-wrap { overflow-x: auto; }
+        .wf-matrix { border-collapse: collapse; font-size: 12.5px; white-space: nowrap; }
+        .wf-matrix th, .wf-matrix td { padding: 7px 9px; text-align: center; border-bottom: 1px solid var(--line-2); }
+        .wf-matrix th { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; color: var(--muted); vertical-align: bottom; }
+        .wf-matrix-canal { text-align: left !important; font-weight: 650; color: var(--ink); white-space: nowrap; }
+        .wf-matrix tbody tr:hover { background: var(--line-2); }
+        .wf-matrix input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+
         /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
         .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
         .lot-status-a_venir, .dev-status-a_venir { background: #eef0f2; color: #64748b; }
@@ -166,6 +179,7 @@
                         <button class="admin-nav-item" data-tab="autoassign"><span class="admin-nav-ic">🤖</span><span class="admin-nav-label">Affectation automatique</span></button>
                         <button class="admin-nav-item" data-tab="webzones"><span class="admin-nav-ic">🌐</span><span class="admin-nav-label">Zones site web</span></button>
                         <button class="admin-nav-item" data-tab="marchessiteweb"><span class="admin-nav-ic">🗺️</span><span class="admin-nav-label">Marchés site web</span></button>
+                        <button class="admin-nav-item" data-tab="workflow"><span class="admin-nav-ic">🔀</span><span class="admin-nav-label">Workflow</span></button>
                         <button class="admin-nav-item" data-tab="bilan"><span class="admin-nav-ic">📊</span><span class="admin-nav-label">Bilan (suivi .xlsx)</span></button>
                         <!-- Les pages de listes de choix sont injectées ici par le script -->
                     </div>
@@ -206,6 +220,10 @@
                     <section class="admin-section" id="tab-marchessiteweb">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🗺️</div><div><h2>Marchés site web</h2><p>Marchés proposés sur les onglets et cases à cocher du planning site web (Comité éditorial).</p></div></div>
                         <div id="marchessiteweb-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-workflow">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🔀</div><div><h2>Workflow</h2><p>Étapes du circuit de validation et applicabilité de chaque étape par canal.</p></div></div>
+                        <div id="workflow-container"></div>
                     </section>
                     <section class="admin-section" id="tab-bilan">
                         <div class="admin-sec-head"><div class="admin-sec-ic">📊</div><div><h2>Bilan (suivi .xlsx)</h2><p>Correspondance des colonnes et indicateurs du fichier de suivi.</p></div></div>
@@ -275,6 +293,8 @@
         var segmentsGroups = [];  // copie éditable des segments groupés
         var webZonesState = { zones: [], bpOnlyZones: [], zonesMulti: {} }; // copie éditable des zones site web
         var marchesSiteWebState = [];   // copie éditable des marchés site web (matrice Comité éditorial)
+        var workflowStepsState = [];    // copie éditable des étapes (libellé/acteur/ordre)
+        var canalStepsState = {};       // copie éditable de l'applicabilité des étapes par canal
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
@@ -1098,12 +1118,14 @@
                 zonesMulti: (wz.zonesMulti && typeof wz.zonesMulti === 'object') ? JSON.parse(JSON.stringify(wz.zonesMulti)) : {}
             };
             marchesSiteWebState = (config && Array.isArray(config.MARCHES_SITE_WEB)) ? JSON.parse(JSON.stringify(config.MARCHES_SITE_WEB)) : [];
+            workflowStepsState = (config && Array.isArray(config.WORKFLOW_STEPS) && config.WORKFLOW_STEPS.length) ? JSON.parse(JSON.stringify(config.WORKFLOW_STEPS)) : defaultWorkflowSteps();
+            canalStepsState = (config && config.CANAL_STEPS && typeof config.CANAL_STEPS === 'object') ? JSON.parse(JSON.stringify(config.CANAL_STEPS)) : {};
             reponseStatutsState = (config && Array.isArray(config.REPONSE_STATUTS)) ? JSON.parse(JSON.stringify(config.REPONSE_STATUTS)) : [];
             whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
             bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
             autoAssignState = (config && Array.isArray(config.AUTO_ASSIGN_RULES)) ? JSON.parse(JSON.stringify(config.AUTO_ASSIGN_RULES)) : [];
         }
-        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderWorkflow(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
 
         // Chips réutilisables (liste éditable de chaînes).
         function chipsHtml(arr, delAttr) {
@@ -1495,6 +1517,127 @@
                     if (adminConfig.applyConfig) adminConfig.applyConfig({ marchesSiteWeb: clean });
                     marchesSiteWebState = JSON.parse(JSON.stringify(clean));
                     renderMarchesSiteWeb();
+                });
+            });
+        }
+
+        // ── WORKFLOW (étapes + applicabilité par canal) ──
+        var WF_ROLES = [['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data'], ['po', 'PO']];
+        // Explication en lecture seule de la condition de déblocage de chaque étape
+        // (la logique elle-même reste dans le moteur — trop de nuances métier pour
+        // être éditable sans risque de configuration invalide ou incohérente).
+        var WF_STEP_HINTS = {
+            com_maquette:             'Débloquée après le kick-off.',
+            po_validation_maquette:   'Débloquée quand la maquette Com est déposée.',
+            com_juridique:            'Débloquée après validation de la maquette — uniquement si la validation juridique est requise sur la campagne.',
+            ebf_bat:                  'Débloquée après validation de la maquette (ou du juridique si requis), ou directement après le kick-off si la maquette Com ne s\'applique pas à ce canal.',
+            po_validation_bat:        'Débloquée quand le BAT est déposé.',
+            data_ciblage:             'Débloquée après le kick-off.',
+            po_validation_ciblage:    'Débloquée quand le ciblage est déposé.',
+            data_lancement_test:      'Débloquée quand le BAT et le ciblage sont validés (les deux, si les deux s\'appliquent à ce canal).',
+            ebf_test_prod:            'Débloquée après le lancement test — ou directement après le BAT validé si le ciblage/lancement test ne s\'applique pas à ce canal (flux réduit, ex. LP).',
+            po_validation_test_prod: 'Débloquée quand le test en prod est déposé.',
+            data_mise_en_prod:        'Débloquée après validation du test en prod — ou directement après le ciblage si le test en prod ne s\'applique pas à ce canal.',
+            ebf_mise_en_prod:         'Débloquée après validation du test en prod (flux type LP, porté par l\'EBF plutôt que par la Data).'
+        };
+        function defaultWorkflowSteps() {
+            var base = (IM.workflow && Array.isArray(IM.workflow.STEPS)) ? IM.workflow.STEPS.slice(3) : [];
+            return base.map(function (s, i) { return { id: s.id, label: s.label, actor: s.actor, order: i }; });
+        }
+        function renderWorkflow() {
+            var cont = document.getElementById('workflow-container');
+            if (!cont) return;
+            var steps = workflowStepsState.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+            var canaux = (lists.canaux || []).slice();
+
+            var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>'
+                + 'Le <strong>libellé</strong>, l\'<strong>équipe responsable</strong> et l\'<strong>ordre</strong> de chaque étape sont modifiables. '
+                + 'Un canal absent de la grille ci-dessous suit le <strong>flux complet</strong> (toutes les étapes) — c\'est le réglage le plus sûr : ajoutez d\'abord le canal dans « Types de livrables / canaux » si besoin, il apparaît alors automatiquement ici, prêt à être personnalisé.'
+                + '</div></div>';
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Étapes</h3><span class="count-pill">' + steps.length + '</span></div>';
+            steps.forEach(function (s) {
+                var idx = workflowStepsState.indexOf(s);
+                html += '<div class="wf-step-row">'
+                    + '<span class="wf-step-order">#' + esc(String(workflowStepsState.indexOf(s) + 1)) + '</span>'
+                    + '<input class="admin-input" data-wfs-label="' + idx + '" value="' + esc(s.label || '') + '" style="flex:1;min-width:170px;">'
+                    + '<select class="admin-select" data-wfs-actor="' + idx + '">' + WF_ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (s.actor === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'
+                    + '<input type="number" class="admin-input" data-wfs-order="' + idx + '" value="' + (typeof s.order === 'number' ? s.order : 0) + '" title="Ordre d\'affichage" style="width:70px;">'
+                    + '<span class="wf-step-hint">' + esc(WF_STEP_HINTS[s.id] || '') + '</span>'
+                    + '</div>';
+            });
+            html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="wf-reset-steps">↩ Réinitialiser les étapes aux valeurs par défaut</button></div>';
+            html += '</div>';
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Étapes actives par canal</h3><span class="count-pill">' + canaux.length + '</span></div>';
+            if (!canaux.length) {
+                html += '<div class="empty-hint">Aucun canal. Ajoutez-en dans « Types de livrables / canaux ».</div>';
+            } else {
+                html += '<div class="wf-matrix-wrap"><table class="wf-matrix"><thead><tr><th>Canal</th>'
+                    + steps.map(function (s) { return '<th title="' + esc(s.label) + '">' + esc(s.label) + '</th>'; }).join('')
+                    + '<th></th></tr></thead><tbody>';
+                canaux.forEach(function (canal) {
+                    var active = canalStepsState[canal]; // absent = flux complet (toutes les étapes)
+                    html += '<tr><td class="wf-matrix-canal">' + esc(canal) + '</td>';
+                    steps.forEach(function (s) {
+                        var checked = !active || active.indexOf(s.id) !== -1;
+                        html += '<td><input type="checkbox" data-wfc="' + esc(canal) + '" data-wfc-step="' + esc(s.id) + '"' + (checked ? ' checked' : '') + '></td>';
+                    });
+                    html += '<td>' + (active ? '<button type="button" class="icon-del" data-wfc-reset="' + esc(canal) + '" title="Revenir au flux complet">↺</button>' : '') + '</td>';
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+            }
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-workflow">💾 Enregistrer le workflow</button></div>';
+            html += '</div>';
+
+            cont.innerHTML = html;
+
+            cont.querySelectorAll('[data-wfs-label]').forEach(function (inp) { var i = +inp.getAttribute('data-wfs-label'); inp.addEventListener('input', function () { workflowStepsState[i].label = inp.value; }); });
+            cont.querySelectorAll('[data-wfs-actor]').forEach(function (sel) { var i = +sel.getAttribute('data-wfs-actor'); sel.addEventListener('change', function () { workflowStepsState[i].actor = sel.value; }); });
+            cont.querySelectorAll('[data-wfs-order]').forEach(function (inp) { var i = +inp.getAttribute('data-wfs-order'); inp.addEventListener('input', function () { workflowStepsState[i].order = parseInt(inp.value, 10) || 0; }); });
+            var resetStepsBtn = document.getElementById('wf-reset-steps');
+            if (resetStepsBtn) resetStepsBtn.addEventListener('click', function () {
+                if (!confirm('Réinitialiser les libellés, équipes et ordre des étapes aux valeurs par défaut ?')) return;
+                workflowStepsState = defaultWorkflowSteps();
+                renderWorkflow();
+            });
+
+            cont.querySelectorAll('[data-wfc]').forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    var canal = cb.getAttribute('data-wfc');
+                    var stepId = cb.getAttribute('data-wfc-step');
+                    // Ne matérialise (et ne stocke) la ligne complète qu'au premier
+                    // changement — les canaux non personnalisés restent absents de la
+                    // config (flux complet par défaut, sans entrée à maintenir).
+                    if (!canalStepsState[canal]) canalStepsState[canal] = steps.map(function (s) { return s.id; });
+                    var list = canalStepsState[canal];
+                    var pos = list.indexOf(stepId);
+                    if (cb.checked && pos === -1) list.push(stepId);
+                    if (!cb.checked && pos !== -1) list.splice(pos, 1);
+                });
+            });
+            cont.querySelectorAll('[data-wfc-reset]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    delete canalStepsState[b.getAttribute('data-wfc-reset')];
+                    renderWorkflow();
+                });
+            });
+
+            document.getElementById('save-workflow').addEventListener('click', function () {
+                var cleanSteps = workflowStepsState.map(function (s) {
+                    return { id: s.id, label: (s.label || '').trim() || s.id, actor: s.actor, order: (typeof s.order === 'number') ? s.order : 0 };
+                });
+                var cleanCanalSteps = {};
+                Object.keys(canalStepsState).forEach(function (k) {
+                    if (Array.isArray(canalStepsState[k])) cleanCanalSteps[k] = canalStepsState[k].slice();
+                });
+                var payload = { steps: cleanSteps, canalSteps: cleanCanalSteps };
+                saveConfig({ workflow: payload }, 'Workflow enregistré.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ workflow: payload });
+                    workflowStepsState = JSON.parse(JSON.stringify(cleanSteps));
+                    canalStepsState = JSON.parse(JSON.stringify(cleanCanalSteps));
+                    renderWorkflow();
                 });
             });
         }

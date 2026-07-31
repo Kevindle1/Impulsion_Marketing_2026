@@ -1154,41 +1154,45 @@
         var isAssignedEbf  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'ebf').indexOf(currentUser.name)  !== -1);
         var isAssignedData = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'data').indexOf(currentUser.name) !== -1);
 
-        var reqCom  = isTeamRequired(data, 'Com');
-        var reqEbf  = isTeamRequired(data, 'EBF');
-        var reqData = isTeamRequired(data, 'Data');
-        var isLP    = ch.type === 'LP';
+        // Étapes actives pour CE canal : source unique (moteur workflow), pilotée
+        // par les équipes requises, le juridique et l'applicabilité par canal
+        // (Administration ▸ Workflow) — remplace l'ancien flag isLP en dur, qui
+        // ne gérait qu'un seul canal spécial. Élimine toute divergence entre la
+        // page et le moteur (recalcChannelUnlocks/isChannelCompleted en découlent).
+        var jur = !!(data.juridique && data.juridique.required);
+        var activeStepIds = workflow.channelStepIds(data.requiredTeams, ch.content, jur);
+        function stepActive(id) { return activeStepIds.indexOf(id) !== -1; }
 
-        // Zone 1 : Maquette Com — visible seulement si Com requis
-        if (reqCom) {
+        // Zone 1 : Maquette Com
+        if (stepActive('com_maquette')) {
             var comActive = cs.com_maquette === 'pending' || cs.com_maquette === 'revision_requested';
             html += buildComChannelSection(data, ch, idx, cs, isAssignedCom && comActive);
             html += buildReopenControl('com_maquette', idx, data);
         }
 
-        // Zone 1.5 : Validation juridique Com — visible si juridique requis et déverrouillée
-        if (reqCom && data.juridique && data.juridique.required && cs.com_juridique && cs.com_juridique !== 'locked') {
+        // Zone 1.5 : Validation juridique Com — visible si applicable et déverrouillée
+        if (stepActive('com_juridique') && cs.com_juridique && cs.com_juridique !== 'locked') {
             var jurEditable = isAssignedCom && cs.com_juridique === 'pending';
             html += buildJuridiqueChannelSection(data, ch, idx, cs, jurEditable);
             html += buildReopenControl('com_juridique', idx, data);
         }
 
-        // Zone 2 : BAT EBF — visible seulement si EBF requis
-        if (reqEbf) {
+        // Zone 2 : BAT EBF
+        if (stepActive('ebf_bat')) {
             var ebfBatActive = cs.ebf_bat === 'pending' || cs.ebf_bat === 'revision_requested';
             html += buildEbfBatChannelSection(data, ch, idx, cs, isAssignedEbf && ebfBatActive);
             html += buildReopenControl('ebf_bat', idx, data);
         }
 
-        // Zone 3 : Ciblage Data — non visible pour canal LP
-        if (reqData && !isLP) {
+        // Zone 3 : Ciblage Data
+        if (stepActive('data_ciblage')) {
             var dataActive = cs.data_ciblage === 'pending' || cs.data_ciblage === 'revision_requested';
             html += buildDataChannelSection(data, ch, idx, cs, 'data_ciblage', 'Ciblage Data', isAssignedData && dataActive);
             html += buildReopenControl('data_ciblage', idx, data);
         }
 
-        // Zone 4 : Lancement test — non visible pour canal LP
-        if (reqData && reqEbf && !isLP && cs.data_lancement_test !== 'locked') {
+        // Zone 4 : Lancement test
+        if (stepActive('data_lancement_test') && cs.data_lancement_test !== 'locked') {
             var ltActive = cs.data_lancement_test === 'pending' || cs.data_lancement_test === 'revision_requested';
             html += buildDataLancementTestSection(data, ch, idx, cs, isAssignedData && ltActive);
             html += buildReopenControl('data_lancement_test', idx, data);
@@ -1197,21 +1201,21 @@
         // Zone 5 : Test en prod — déposé par l'EBF assigné OU un destinataire du
         // test sélectionné à l'étape « Lancement test » ; validé séparément par
         // le PO (M21 — comme le BAT). isAssignedEbf inclut déjà le super-admin.
-        if (reqEbf && (reqData || isLP)) {
+        if (stepActive('ebf_test_prod')) {
             var ebfTpActive = cs.ebf_test_prod === 'pending' || cs.ebf_test_prod === 'revision_requested';
             var _isTestReceiver = currentUser && (ch.testReceivers || []).indexOf(currentUser.name) !== -1;
             html += buildEbfTestProdChannelSection(data, ch, idx, cs, (isAssignedEbf || _isTestReceiver) && ebfTpActive);
             html += buildReopenControl('ebf_test_prod', idx, data);
         }
 
-        // Zone 6 : MEP Data — non visible pour canal LP
-        if (reqData && !isLP && cs.data_mise_en_prod !== 'locked') {
+        // Zone 6 : MEP Data
+        if (stepActive('data_mise_en_prod') && cs.data_mise_en_prod !== 'locked') {
             var mepActive = cs.data_mise_en_prod === 'pending';
             html += buildDataMepSection(data, ch, idx, cs, isAssignedData && mepActive);
         }
 
-        // Zone 6 LP : MEP EBF — uniquement pour canal LP
-        if (isLP && reqEbf && cs.ebf_mise_en_prod !== 'locked') {
+        // Zone 6 bis : MEP EBF (ex. flux type LP — piloté par la config du canal)
+        if (stepActive('ebf_mise_en_prod') && cs.ebf_mise_en_prod !== 'locked') {
             var ebfMepActive = cs.ebf_mise_en_prod === 'pending';
             html += buildEbfMepSection(data, ch, idx, cs, isAssignedEbf && ebfMepActive);
         }
@@ -1829,37 +1833,33 @@
         html += '</div>';
 
         // ── Étapes par canal (v2) ──
-        var reqCom  = isTeamRequired(data, 'Com');
-        var reqEbf  = isTeamRequired(data, 'EBF');
-        var reqData = isTeamRequired(data, 'Data');
-        var channelStepDefs = workflow.STEPS.slice(3).filter(function(step) {
-            if (step.id === 'com_maquette' || step.id === 'po_validation_maquette') return reqCom;
-            if (step.id === 'com_juridique') return reqCom && !!(data.juridique && data.juridique.required);
-            if (step.id === 'ebf_bat' || step.id === 'po_validation_bat') return reqEbf;
-            if (step.id === 'data_ciblage' || step.id === 'po_validation_ciblage') return reqData;
-            if (step.id === 'data_lancement_test' || step.id === 'ebf_test_prod' || step.id === 'po_validation_test_prod') return reqEbf && reqData;
-            if (step.id === 'data_mise_en_prod') return reqData;
-            return true;
-        });
+        // Étapes actives par canal : même source unique que renderChannelPage
+        // (workflow.channelStepIds), pour que le stepper du bilan et le contenu
+        // de la fiche canal soient toujours cohérents (chaque canal peut avoir
+        // un jeu d'étapes différent — Administration ▸ Workflow).
+        var jurReq = !!(data.juridique && data.juridique.required);
 
-        if (numCh > 0 && channelStepDefs.length > 0) {
+        if (numCh > 0) {
             channels.forEach(function(ch, ci) {
                 var cs = channelSteps[ci] || {};
-                var chCompleted = isCompleted || workflow.isChannelCompleted(cs, data.requiredTeams, ch.type, !!(data.juridique && data.juridique.required));
+                var chStepIds = workflow.channelStepIds(data.requiredTeams, ch.content, jurReq);
+                if (!chStepIds.length) return;
+                var chStepDefs = chStepIds.map(function(id) { return { id: id, label: workflow.stepLabel(id) }; });
+                var chCompleted = isCompleted || workflow.isChannelCompleted(cs, data.requiredTeams, ch.content, jurReq);
                 // Badge d'état courant du canal
                 var badge = 'En cours', badgeCls = '';
                 if (chCompleted) { badge = '🏁 Terminé'; badgeCls = 'done'; }
                 else {
-                    for (var i = 0; i < channelStepDefs.length; i++) {
-                        var st = channelStepStatus(cs, channelStepDefs[i].id);
-                        if (st === 'pending')            { badge = channelStepDefs[i].label; badgeCls = 'wait'; break; }
-                        if (st === 'submitted')          { badge = 'En validation : ' + channelStepDefs[i].label; badgeCls = 'val'; break; }
-                        if (st === 'revision_requested') { badge = 'Révision : ' + channelStepDefs[i].label; badgeCls = 'rev'; break; }
+                    for (var i = 0; i < chStepDefs.length; i++) {
+                        var st = channelStepStatus(cs, chStepDefs[i].id);
+                        if (st === 'pending')            { badge = chStepDefs[i].label; badgeCls = 'wait'; break; }
+                        if (st === 'submitted')          { badge = 'En validation : ' + chStepDefs[i].label; badgeCls = 'val'; break; }
+                        if (st === 'revision_requested') { badge = 'Révision : ' + chStepDefs[i].label; badgeCls = 'rev'; break; }
                     }
                 }
                 html += '<div class="wf-block"><div class="wf-head"><span class="wf-title">📡 ' + security.escapeHtml(ch.deliverableName || ('Canal ' + (ci + 1))) + '</span><span class="wf-badge ' + badgeCls + '">' + security.escapeHtml(badge) + '</span></div>';
                 html += '<div class="wf-chan-date">📅 Date de réception client demandée : <strong>' + security.escapeHtml(ch.sendDate || 'non renseignée') + '</strong></div>';
-                html += wfStepper(channelStepDefs, function(step) { return chCompleted ? 'completed' : channelStepStatus(cs, step.id); }, ci);
+                html += wfStepper(chStepDefs, function(step) { return chCompleted ? 'completed' : channelStepStatus(cs, step.id); }, ci);
                 html += '</div>';
             });
         }
