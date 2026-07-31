@@ -268,10 +268,15 @@ Si l'accès au dossier racine est perdu (changement de chemin réseau, permissio
 
 ## Déploiement
 
-Le déploiement consiste simplement à copier le dossier sur le lecteur réseau `V://`. Aucune compilation, aucun build.
+Sur `V://`, le déploiement est scindé en deux dossiers indépendants (voir le [README](../README.md#structure-du-dossier-sur-v)) :
+- `Application/` — le code (ce que contient ce dépôt, hors outillage dev) : **remplacé intégralement** à chaque montée de version.
+- `Données de production/` — `_config.json`, `Campagnes/`, `Données/`, `docs/USER_GUIDE.md` : **jamais touché** par un déploiement.
+
+Déployer une nouvelle version = remplacer le contenu de `Application/` par le nouveau. Aucune compilation, aucun build côté V:// (seul `npm run build` doit avoir été lancé avant, côté dépôt de code).
 
 Checklist avant déploiement :
-- [ ] `bundle.js` est à jour (lancer le rebuild)
-- [ ] Tester en ouvrant `Impulsion-Marketing.html` depuis Edge pointant sur `V://`
-- [ ] Vérifier que le dossier `Campagnes/` est accessible et que `_index.json` existe (sinon, cliquer "Reconstruire l'index" au premier lancement)
-- [ ] Vérifier `_notifications.json` à la racine de `Campagnes/` (créé automatiquement si absent)
+- [ ] `Application/js/bundle.js` est à jour (lancer `npm run build`)
+- [ ] Tester en ouvrant `Application/Impulsion-Marketing.html` depuis Edge pointant sur `V://`
+- [ ] Vérifier que `Données de production/Campagnes/` est accessible et que `_index.json` existe (sinon, cliquer "Reconstruire l'index" au premier lancement)
+- [ ] Vérifier `_notifications.json` à la racine de `Données de production/Campagnes/` (créé automatiquement si absent)
+- [ ] Ne **jamais** copier/écraser `Données de production/` lors d'un déploiement

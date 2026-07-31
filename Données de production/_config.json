@@ -377,7 +377,7 @@
   "settings": {
     "orgName": "Crédit Agricole Toulouse 31",
     "galleryUrl": "https://e.ca-toulouse31.fr/images/index.php",
-    "defaultRootPath": "V:/Impulsion Marketing/Historique des Campagnes",
+    "defaultRootPath": "V:/Impulsion Marketing/Données de production",
     "volumeAlertThreshold": 100000,
     "urgentThresholdDays": 7,
     "dueSoonDays": 2,

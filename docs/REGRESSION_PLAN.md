@@ -59,9 +59,9 @@ Le dashboard ne montre des campagnes que si un utilisateur est sélectionné. V�
 ## Étape 3 — Une action ne se sauvegarde pas (erreur à l'écriture)
 
 1. Vérifier que le lecteur `V://` est accessible (ouvrir l'explorateur de fichiers)
-2. Vérifier les droits en écriture : tenter de créer manuellement un fichier texte dans `Campagnes/`
+2. Vérifier les droits en écriture : tenter de créer manuellement un fichier texte dans `Données de production/Campagnes/`
 3. Si droits OK → ouvrir la Console DevTools et noter le message d'erreur exact
-4. Vérifier que le dossier de la campagne existe bien dans `Campagnes/<Nom>/`
+4. Vérifier que le dossier de la campagne existe bien dans `Données de production/Campagnes/<Nom>/`
 5. Si le nom de la campagne contient des caractères inhabituels (emoji, slashes…), le dossier peut ne pas être trouvé → renommer le dossier en supprimant ces caractères
 
 ---
@@ -140,7 +140,7 @@ Un fichier JSON sur `V://` est corrompu (écriture incomplète lors d'une coupur
 
 ### Les notifications ne s'affichent pas
 
-1. Vérifier que `_notifications.json` existe à la racine de `Campagnes/`
+1. Vérifier que `_notifications.json` existe à la racine de `Données de production/Campagnes/`
 2. Si absent → il sera créé automatiquement lors du prochain événement déclencheur (conflit forcé, approbation…)
 3. Si présent mais malformé → le remplacer par `[]` (tableau vide)
 

@@ -1,5 +1,5 @@
 /**
- * build-bundle.mjs — Génération de js/bundle.js
+ * build-bundle.mjs — Génération de Application/js/bundle.js
  *
  * Concatène, dans l'ordre, les 10 modules standalone en un seul fichier chargé
  * par les pages. Remplace l'ancienne concaténation manuelle (cat)
@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
-const JS_DIR = join(ROOT, 'js');
+const JS_DIR = join(ROOT, 'Application', 'js');
 const OUTPUT = join(JS_DIR, 'bundle.js');
 
 // Ordre de concaténation — NE PAS modifier sans raison (dépendances entre modules).

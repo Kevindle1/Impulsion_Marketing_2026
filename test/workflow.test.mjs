@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 // ── Chargement du module dans un shim window ──
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 globalThis.window = globalThis.window || {};
-const src = await readFile(join(ROOT, 'js', 'workflow-standalone.js'), 'utf8');
+const src = await readFile(join(ROOT, 'Application', 'js', 'workflow-standalone.js'), 'utf8');
 // eslint-disable-next-line no-new-func
 new Function(src)();
 const workflow = globalThis.window.ImpulsionMarketing.workflow;

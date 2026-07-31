@@ -10,58 +10,71 @@ Pas de Node.js, pas de build step, pas de bundler automatique. Le déploiement c
 
 ## Structure des dossiers
 
+Le déploiement (sur `V://`) est scindé en deux dossiers indépendants : `Application/` (le code, remplacé intégralement à chaque montée de version) et `Données de production/` (jamais touché par un déploiement). Voir le [README](../README.md#structure-du-dossier-sur-v) pour le détail de cette séparation.
+
 ```
-Impulsion Marketing/         ← racine de l'app (= lecteur réseau V://)
+Impulsion Marketing/                 ← racine sur le lecteur réseau V://
 │
-├── login.html              ← écran de connexion (page d'entrée : identité + chargement du dossier)
-├── Impulsion-Marketing.html ← tableau de bord
-├── build-bundle.mjs         ← génération de bundle.js (npm run build)
+├── Application/              ← LIVRÉ à chaque montée de version (= ce dépôt de code, hors outillage dev)
+│   ├── login.html            ← écran de connexion (page d'entrée : identité + chargement du dossier)
+│   ├── Impulsion-Marketing.html ← tableau de bord
+│   ├── Impulsion Marketing.vbs  ← lanceur
+│   ├── impulsion.ico
+│   │
+│   ├── pages/
+│   │   ├── campaign.html        ← création / édition de campagne (multi-étapes)
+│   │   ├── details.html         ← détail d'une campagne + workflow acteurs + documents
+│   │   ├── visualization.html   ← liste filtrée de toutes les campagnes
+│   │   ├── pilotage.html        ← vue manager / statistiques globales
+│   │   ├── comite-editorial.html ← Gantt zones site web, gestion conflits
+│   │   ├── admin.html           ← espace Administration (paramétrage, workflow, signalements)
+│   │   └── guide.html           ← guide utilisateur (lit Données de production/docs/USER_GUIDE.md en direct)
+│   │
+│   ├── css/
+│   │   ├── dashboard-layout.css ← layout principal (sidebar fixe 280px, top-header sticky)
+│   │   ├── styles.css           ← typographie, variables CSS
+│   │   ├── components.css       ← boutons, badges, cartes
+│   │   └── theme.css            ← couleurs de thème
+│   │
+│   └── js/
+│       ├── bundle.js                    ← ⚠️ FICHIER GÉNÉRÉ — ne pas éditer manuellement
+│       ├── config-standalone.js         ← constantes, config admin-éditable
+│       ├── security-standalone.js       ← escapeHtml, sanitizeName
+│       ├── errors-standalone.js         ← toasts, gestion erreurs
+│       ├── performance-standalone.js    ← MetadataCache, IndexCache (IndexedDB)
+│       ├── directoryStorage-standalone.js ← handle FS, IndexedDB
+│       ├── users-standalone.js          ← utilisateur courant, rôles
+│       ├── workflow-standalone.js       ← machine à états, index, sauvegarde
+│       ├── help-standalone.js           ← aide contextuelle
+│       ├── incident-standalone.js       ← signalements (tickets)
+│       ├── admin-standalone.js          ← chargement/application de _config.json
+│       └── topbar-standalone.js         ← en-tête, notifications, « Quoi de neuf »
 │
-├── pages/
-│   ├── campaign.html        ← création / édition de campagne (multi-étapes)
-│   ├── details.html         ← détail d'une campagne + workflow acteurs + documents
-│   ├── visualization.html   ← liste filtrée de toutes les campagnes
-│   ├── pilotage.html        ← vue manager / statistiques globales
-│   └── comite-editorial.html ← Gantt zones site web, gestion conflits
-│
-├── css/
-│   ├── dashboard-layout.css ← layout principal (sidebar fixe 280px, top-header sticky)
-│   ├── styles.css           ← typographie, variables CSS
-│   ├── components.css       ← boutons, badges, cartes
-│   └── theme.css            ← couleurs de thème
-│
-├── js/
-│   ├── bundle.js                    ← ⚠️ FICHIER GÉNÉRÉ — ne pas éditer manuellement
-│   ├── config-standalone.js         ← constantes, liste utilisateurs
-│   ├── security-standalone.js       ← escapeHtml, sanitizeName
-│   ├── errors-standalone.js         ← toasts, gestion erreurs
-│   ├── performance-standalone.js    ← MetadataCache, IndexCache (IndexedDB)
-│   ├── directoryStorage-standalone.js ← handle FS, IndexedDB
-│   ├── users-standalone.js          ← utilisateur courant, rôles
-│   ├── workflow-standalone.js       ← machine à états, index, sauvegarde
-│   ├── themes-standalone.js         ← gestion thèmes visuels
-│   └── help-standalone.js           ← aide contextuelle
-│
-├── docs/                    ← documentation développeur
-│
-└── Campagnes/               ← données (créé par l'utilisateur sur V://)
-    ├── _index.json          ← index léger de toutes les campagnes
-    ├── _notifications.json  ← notifications inter-utilisateurs (conflits, validations)
-    └── <Nom Campagne>/
-        ├── campagne.json    ← données complètes de la campagne
-        ├── discussion.json  ← fil de discussion
-        ├── documents/       ← espace documentaire (sous-dossiers libres + fichiers)
-        └── <Canal>/         ← un sous-dossier par canal
-            ├── depotcom.json
-            ├── depotebf.json
-            ├── depotebf_test.json
-            ├── depotdata.json
-            ├── depotdata_test.json   ← données lancement test (data_lancement_test)
-            ├── depotdata_mep.json
-            ├── maquette_canal_0.pdf
-            ├── bat_canal_0.pdf
-            └── testprod_canal_0.png
+└── Données de production/    ← NE CHANGE JAMAIS lors d'un déploiement
+    ├── _config.json          ← paramétrage admin-éditable (source unique)
+    ├── docs/
+    │   └── USER_GUIDE.md     ← guide utilisateur, lu en direct par pages/guide.html
+    ├── Données/              ← signalements (incidents.json, signalement_lots.json…)
+    └── Campagnes/            ← données (créé par l'utilisateur sur V://)
+        ├── _index.json          ← index léger de toutes les campagnes
+        ├── _notifications.json  ← notifications inter-utilisateurs (conflits, validations)
+        └── <Nom Campagne>/
+            ├── campagne.json    ← données complètes de la campagne
+            ├── discussion.json  ← fil de discussion
+            ├── documents/       ← espace documentaire (sous-dossiers libres + fichiers)
+            └── <Canal>/         ← un sous-dossier par canal
+                ├── depotcom.json
+                ├── depotebf.json
+                ├── depotebf_test.json
+                ├── depotdata.json
+                ├── depotdata_test.json   ← données lancement test (data_lancement_test)
+                ├── depotdata_mep.json
+                ├── maquette_canal_0.pdf
+                ├── bat_canal_0.pdf
+                └── testprod_canal_0.png
 ```
+
+Les outils de développement (`build-bundle.mjs`, `test/`, `package.json`, `docs/` hors `USER_GUIDE.md`) restent à la racine du **dépôt de code** — ils ne sont pas concernés par le déploiement et n'existent pas sur `V://`.
 
 ---
 

@@ -23,7 +23,7 @@ Ce document s'adresse aux utilisateurs (COM, EBF, Data, Manager, PO). Il décrit
 
 **En mode dégradé :**
 1. Déposer directement le fichier maquette (PDF ou image) dans le dossier de la campagne sur `V://` :
-   `V://Campagnes/<Nom Campagne>/<Nom Canal>/`
+   `V://Impulsion Marketing/Données de production/Campagnes/<Nom Campagne>/<Nom Canal>/`
 2. Envoyer un email au PO de la campagne avec :
    - Objet : `[MAQUETTE] <Nom Campagne> — <Nom Canal>`
    - Corps : URL Figma, nombre d'images, validation juridique (Oui/Non), chemin du fichier déposé
@@ -46,7 +46,7 @@ Ce document s'adresse aux utilisateurs (COM, EBF, Data, Manager, PO). Il décrit
 **Dans l'app :** formulaire avec webmaster, code com, ref paracom, fichier BAT.
 
 **En mode dégradé :**
-1. Déposer le fichier BAT dans `V://Campagnes/<Nom Campagne>/<Nom Canal>/`
+1. Déposer le fichier BAT dans `V://Impulsion Marketing/Données de production/Campagnes/<Nom Campagne>/<Nom Canal>/`
 2. Envoyer un email au PO avec :
    - Objet : `[BAT] <Nom Campagne> — <Nom Canal>`
    - Corps : Webmaster, Code Com, Ref Paracom, nombre de CTA, URLs CTA, chemin du fichier
@@ -65,7 +65,7 @@ Ce document s'adresse aux utilisateurs (COM, EBF, Data, Manager, PO). Il décrit
 ### 6. Confirmer le test en production (EBF)
 
 **En mode dégradé :**
-1. Déposer la capture d'écran dans `V://Campagnes/<Nom Campagne>/<Nom Canal>/`
+1. Déposer la capture d'écran dans `V://Impulsion Marketing/Données de production/Campagnes/<Nom Campagne>/<Nom Canal>/`
 2. Envoyer email au PO :
    - Objet : `[TEST PROD] <Nom Campagne> — <Nom Canal>`
    - Corps : confirmation + chemin de la capture
