@@ -108,20 +108,30 @@
         .wf-step-row:last-child { border-bottom: none; }
         .wf-step-order { font-size: 11px; font-weight: 800; color: var(--muted-2); width: 24px; flex-shrink: 0; }
         .wf-step-hint { font-size: 11.5px; color: var(--muted-2); flex-basis: 100%; margin-left: 34px; line-height: 1.4; }
-        .wf-matrix-wrap { overflow-x: auto; }
-        .wf-matrix { border-collapse: collapse; font-size: 12.5px; white-space: nowrap; }
-        .wf-matrix th, .wf-matrix td { padding: 7px 9px; text-align: center; border-bottom: 1px solid var(--line-2); }
-        .wf-matrix th { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .3px; color: var(--muted); vertical-align: bottom; }
-        .wf-matrix-canal { text-align: left !important; font-weight: 650; color: var(--ink); white-space: normal; vertical-align: top; max-width: 260px; }
-        .wf-matrix tbody tr:hover { background: var(--line-2); }
-        .wf-matrix input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
         .wf-canal-badge { font-size: 9.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
         .wf-canal-badge.default { background: var(--line-2); color: var(--muted-2); }
         .wf-canal-badge.custom { background: var(--blue-50,#e8f0fe); color: var(--blue,#2563EB); }
-        .wf-row-preview { font-size: 10.5px; color: var(--muted-2); font-weight: 400; margin-top: 3px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
-        .wf-row-warning { font-size: 11px; color: #c0392b; font-weight: 600; margin-top: 4px; max-width: 260px; white-space: normal; line-height: 1.4; }
-        .wf-matrix tr.wf-row-warn { background: var(--red-50,#fdeaec); }
-        .wf-matrix tr.wf-row-warn:hover { background: #fbdadd; }
+        .wf-row-warning { font-size: 11px; color: #c0392b; font-weight: 600; line-height: 1.4; }
+        /* Liste des canaux (page « Étapes actives par canal ») */
+        .wf-canal-list-row { display: flex; align-items: center; gap: 12px; padding: 13px 10px; border-bottom: 1px solid var(--line-2); cursor: pointer; transition: background .12s; }
+        .wf-canal-list-row:last-child { border-bottom: none; }
+        .wf-canal-list-row:hover { background: var(--line-2); }
+        .wf-canal-list-row.warn { background: var(--red-50,#fdeaec); }
+        .wf-canal-list-row.warn:hover { background: #fbdadd; }
+        .wf-canal-list-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .wf-canal-list-name { font-weight: 650; color: var(--ink); font-size: 14px; }
+        .wf-canal-list-meta { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+        .wf-canal-list-arrow { color: var(--muted-2); font-size: 16px; flex-shrink: 0; }
+        /* Sous-page d'un canal */
+        .wf-canal-detail-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        .wf-canal-detail-head h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--ink); }
+        .wf-canal-step { border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; transition: opacity .15s, background .15s; }
+        .wf-canal-step.off { opacity: .55; background: var(--line-2); }
+        .wf-canal-step-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .wf-canal-step-label { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 650; color: var(--ink); cursor: pointer; }
+        .wf-canal-step-label input[type="checkbox"] { width: 17px; height: 17px; cursor: pointer; }
+        .wf-canal-step-actor { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+        .wf-canal-step .wf-step-hint { margin: 6px 0 0 26px; flex-basis: auto; }
 
         /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
         .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
@@ -303,6 +313,7 @@
         var workflowStepsState = [];    // copie éditable des étapes (libellé/acteur/ordre)
         var canalStepsState = {};       // copie éditable de l'applicabilité des étapes par canal
         var canalActorOverridesState = []; // copie éditable des exceptions d'acteur par canal : [{canal, stepId, actor}]
+        var wfActiveCanal = null;       // nom du canal ouvert dans la sous-page « Étapes actives par canal » (null = liste)
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
@@ -1619,6 +1630,71 @@
             return warnings;
         }
 
+        // Liste des canaux (page d'accueil de « Étapes actives par canal ») — chaque
+        // ligne est cliquable et ouvre la sous-page de personnalisation du canal.
+        function renderCanalListHtml(steps, canaux, labelById) {
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Étapes actives par canal</h3><span class="count-pill">' + canaux.length + '</span></div>';
+            if (!canaux.length) {
+                html += '<div class="empty-hint">Aucun canal. Ajoutez-en dans « Types de livrables / canaux ».</div>';
+            } else {
+                canaux.forEach(function (canal) {
+                    var active = canalStepsState[canal]; // absent = flux complet (toutes les étapes)
+                    var activeIds = wfActiveIds(canal, steps);
+                    var warnings = wfWarnings(activeIds, labelById);
+                    var overrideCount = canalActorOverridesState.filter(function (o) { return o.canal === canal; }).length;
+                    html += '<div class="wf-canal-list-row' + (warnings.length ? ' warn' : '') + '" data-wf-open-canal="' + esc(canal) + '">'
+                        + '<div class="wf-canal-list-main"><span class="wf-canal-list-name">' + esc(canal) + '</span>'
+                        + '<span class="wf-canal-badge ' + (active ? 'custom' : 'default') + '">' + (active ? 'Personnalisé' : 'Flux complet') + '</span>'
+                        + (overrideCount ? '<span class="wf-canal-badge custom" title="Acteur personnalisé sur ' + overrideCount + ' étape(s)">⚙️ acteur</span>' : '')
+                        + (warnings.length ? '<span class="wf-row-warning">⚠️ à vérifier</span>' : '')
+                        + '</div>'
+                        + '<span class="wf-canal-list-meta">' + activeIds.length + '/' + steps.length + ' étapes actives</span>'
+                        + '<span class="wf-canal-list-arrow">→</span>'
+                        + '</div>';
+                });
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // Sous-page d'un canal : les étapes s'affichent en liste verticale (libellé,
+        // explication et acteur toujours visibles côte à côte — plus de tableau large
+        // dont les en-têtes disparaissent au défilement).
+        function renderCanalDetailHtml(canal, steps, canaux, labelById) {
+            var active = canalStepsState[canal];
+            var activeIds = wfActiveIds(canal, steps);
+            var warnings = wfWarnings(activeIds, labelById);
+            var overridesForCanal = {};
+            canalActorOverridesState.forEach(function (o) { if (o.canal === canal) overridesForCanal[o.stepId] = o.actor; });
+
+            var html = '<div class="admin-card">';
+            html += '<div class="wf-canal-detail-head">'
+                + '<button type="button" class="btn-back-lots" id="wf-back-to-canaux">← Tous les canaux</button>'
+                + '<h3>📦 ' + esc(canal) + '</h3>'
+                + '<span class="wf-canal-badge ' + (active ? 'custom' : 'default') + '">' + (active ? 'Personnalisé' : 'Flux complet') + '</span>'
+                + (active ? '<button type="button" class="btn btn-secondary" id="wf-canal-reset" style="margin-left:auto;">↺ Revenir au flux complet</button>' : '')
+                + '</div>';
+            if (warnings.length) {
+                html += '<div class="admin-note" style="background:var(--red-50,#fdeaec);border-color:#f5c2c7;"><span class="admin-note-ic">⚠️</span><div>' + esc(warnings.join(' ')) + '</div></div>';
+            }
+            steps.forEach(function (s) {
+                var checked = !active || active.indexOf(s.id) !== -1;
+                var overrideActor = overridesForCanal[s.id] || '';
+                html += '<div class="wf-canal-step' + (checked ? '' : ' off') + '">'
+                    + '<div class="wf-canal-step-top">'
+                    + '<label class="wf-canal-step-label"><input type="checkbox" data-wfc="' + esc(canal) + '" data-wfc-step="' + esc(s.id) + '"' + (checked ? ' checked' : '') + '> ' + esc(s.label) + '</label>'
+                    + '<span class="wf-canal-step-actor">Acteur : <select class="admin-select" data-wfao-canal="' + esc(canal) + '" data-wfao-step="' + esc(s.id) + '" style="padding:4px 8px;font-size:12px;">'
+                    +   '<option value="">' + esc((WF_ROLES.filter(function (r) { return r[0] === s.actor; })[0] || [s.actor, s.actor])[1]) + ' (par défaut)</option>'
+                    +   WF_ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (overrideActor === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('')
+                    + '</select></span>'
+                    + '</div>'
+                    + '<div class="wf-step-hint">' + esc(WF_STEP_HINTS[s.id] || '') + '</div>'
+                    + '</div>';
+            });
+            html += '</div>';
+            return html;
+        }
+
         function renderWorkflow() {
             var cont = document.getElementById('workflow-container');
             if (!cont) return;
@@ -1629,7 +1705,7 @@
 
             var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>'
                 + 'Le <strong>libellé</strong>, l\'<strong>équipe responsable</strong> et l\'<strong>ordre</strong> de chaque étape sont modifiables. '
-                + 'Un canal absent de la grille ci-dessous suit le <strong>flux complet</strong> (toutes les étapes) — c\'est le réglage le plus sûr : ajoutez d\'abord le canal dans « Types de livrables / canaux » si besoin, il apparaît alors automatiquement ici, prêt à être personnalisé.'
+                + 'Un canal absent de la liste ci-dessous suit le <strong>flux complet</strong> (toutes les étapes) — c\'est le réglage le plus sûr : ajoutez d\'abord le canal dans « Types de livrables / canaux » si besoin, il apparaît alors automatiquement ici, prêt à être personnalisé.'
                 + '</div></div>';
 
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Étapes</h3><span class="count-pill">' + steps.length + '</span></div>';
@@ -1646,60 +1722,8 @@
             html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="wf-reset-steps">↩ Réinitialiser les étapes aux valeurs par défaut</button></div>';
             html += '</div>';
 
-            html += '<div class="admin-card"><div class="admin-card-title"><h3>Étapes actives par canal</h3><span class="count-pill">' + canaux.length + '</span></div>';
-            if (!canaux.length) {
-                html += '<div class="empty-hint">Aucun canal. Ajoutez-en dans « Types de livrables / canaux ».</div>';
-            } else {
-                var flagged = [];
-                canaux.forEach(function (canal) {
-                    if (wfWarnings(wfActiveIds(canal, steps), labelById).length) flagged.push(canal);
-                });
-                if (flagged.length) {
-                    html += '<div class="admin-note" style="background:var(--red-50,#fdeaec);border-color:#f5c2c7;"><span class="admin-note-ic">⚠️</span><div>'
-                        + '<strong>' + flagged.length + ' canal' + (flagged.length > 1 ? 'aux' : '') + ' à vérifier</strong> — détail en rouge sur ' + (flagged.length > 1 ? 'leurs lignes' : 'sa ligne') + ' ci-dessous : ' + esc(flagged.join(', ')) + '.'
-                        + '</div></div>';
-                }
-                html += '<div class="wf-matrix-wrap"><table class="wf-matrix"><thead><tr><th>Canal</th>'
-                    + steps.map(function (s) { return '<th title="' + esc(s.label) + '">' + esc(s.label) + '</th>'; }).join('')
-                    + '<th></th></tr></thead><tbody>';
-                canaux.forEach(function (canal) {
-                    var active = canalStepsState[canal]; // absent = flux complet (toutes les étapes)
-                    var activeIds = wfActiveIds(canal, steps);
-                    var warnings = wfWarnings(activeIds, labelById);
-                    var preview = activeIds.map(function (id) { return labelById[id] || id; }).join(' → ') || '—';
-                    html += '<tr' + (warnings.length ? ' class="wf-row-warn"' : '') + '><td class="wf-matrix-canal">'
-                        + '<div>' + esc(canal) + ' <span class="wf-canal-badge ' + (active ? 'custom' : 'default') + '">' + (active ? 'Personnalisé' : 'Flux complet') + '</span></div>'
-                        + '<div class="wf-row-preview" title="' + esc(preview) + '">' + esc(preview) + '</div>'
-                        + (warnings.length ? '<div class="wf-row-warning">⚠️ ' + esc(warnings.join(' ')) + '</div>' : '')
-                        + '</td>';
-                    steps.forEach(function (s) {
-                        var checked = !active || active.indexOf(s.id) !== -1;
-                        html += '<td><input type="checkbox" data-wfc="' + esc(canal) + '" data-wfc-step="' + esc(s.id) + '"' + (checked ? ' checked' : '') + '></td>';
-                    });
-                    html += '<td>' + (active ? '<button type="button" class="icon-del" data-wfc-reset="' + esc(canal) + '" title="Revenir au flux complet">↺</button>' : '') + '</td>';
-                    html += '</tr>';
-                });
-                html += '</tbody></table></div>';
-            }
-            html += '</div>';
-
-            html += '<div class="admin-card"><div class="admin-card-title"><h3>Acteur spécifique par canal (exceptions)</h3><span class="count-pill">' + canalActorOverridesState.length + '</span></div>';
-            html += '<div style="font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;">Pour un canal donné, autorise une équipe différente de l\'équipe habituelle à agir sur une étape (ex. la Com peut déposer le test en prod pour le Courrier, en plus de l\'EBF). N\'affecte que <strong>qui peut agir</strong> — le déblocage des étapes n\'est pas modifié.</div>';
-            if (!canaux.length) {
-                html += '<div class="empty-hint">Ajoutez d\'abord un canal dans « Types de livrables / canaux ».</div>';
-            } else {
-                if (!canalActorOverridesState.length) html += '<div class="empty-hint">Aucune exception.</div>';
-                canalActorOverridesState.forEach(function (o, i) {
-                    html += '<div class="person-row" style="flex-wrap:wrap;">'
-                        + '<select class="admin-select" data-wfao-canal="' + i + '" style="min-width:150px;">' + canaux.map(function (c) { return '<option value="' + esc(c) + '"' + (o.canal === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>'
-                        + '<select class="admin-select" data-wfao-step="' + i + '" style="min-width:180px;">' + steps.map(function (s) { return '<option value="' + esc(s.id) + '"' + (o.stepId === s.id ? ' selected' : '') + '>' + esc(s.label) + '</option>'; }).join('') + '</select>'
-                        + '<span style="font-size:12px;color:var(--muted);">acteur autorisé :</span>'
-                        + '<select class="admin-select" data-wfao-actor="' + i + '">' + WF_ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (o.actor === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'
-                        + '<button class="icon-del" data-wfao-del="' + i + '">🗑</button></div>';
-                });
-                html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="wfao-add">+ Ajouter une exception</button></div>';
-            }
-            html += '</div>';
+            if (wfActiveCanal && canaux.indexOf(wfActiveCanal) === -1) wfActiveCanal = null; // canal supprimé entre-temps
+            html += wfActiveCanal ? renderCanalDetailHtml(wfActiveCanal, steps, canaux, labelById) : renderCanalListHtml(steps, canaux, labelById);
 
             html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-workflow">💾 Enregistrer le workflow</button></div>';
 
@@ -1717,6 +1741,16 @@
 
             // Case cochée/décochée : mise à jour immédiate de l'état + de la ligne
             // (badge, aperçu, avertissements) sans perdre le focus sur toute la grille.
+            // Liste : ouvrir la sous-page d'un canal.
+            cont.querySelectorAll('[data-wf-open-canal]').forEach(function (row) {
+                row.addEventListener('click', function () { wfActiveCanal = row.getAttribute('data-wf-open-canal'); renderWorkflow(); });
+            });
+            // Sous-page : retour à la liste.
+            var backBtn = document.getElementById('wf-back-to-canaux');
+            if (backBtn) backBtn.addEventListener('click', function () { wfActiveCanal = null; renderWorkflow(); });
+
+            // Case cochée/décochée : mise à jour immédiate de l'état + réaffichage de
+            // la sous-page (badge, avertissements) sans revenir à la liste.
             cont.querySelectorAll('[data-wfc]').forEach(function (cb) {
                 cb.addEventListener('change', function () {
                     var canal = cb.getAttribute('data-wfc');
@@ -1732,23 +1766,28 @@
                     renderWorkflow();
                 });
             });
-            cont.querySelectorAll('[data-wfc-reset]').forEach(function (b) {
-                b.addEventListener('click', function () {
-                    var canal = b.getAttribute('data-wfc-reset');
-                    if (!confirm('Revenir au flux complet pour « ' + canal + '» ? La personnalisation de ce canal sera perdue (jusqu\'au prochain enregistrement).')) return;
-                    delete canalStepsState[canal];
-                    renderWorkflow();
-                });
+            var canalResetBtn = document.getElementById('wf-canal-reset');
+            if (canalResetBtn) canalResetBtn.addEventListener('click', function () {
+                if (!confirm('Revenir au flux complet pour « ' + wfActiveCanal + ' » ? La personnalisation de ce canal sera perdue (jusqu\'au prochain enregistrement).')) return;
+                delete canalStepsState[wfActiveCanal];
+                renderWorkflow();
             });
 
-            cont.querySelectorAll('[data-wfao-canal]').forEach(function (sel) { var i = +sel.getAttribute('data-wfao-canal'); sel.addEventListener('change', function () { canalActorOverridesState[i].canal = sel.value; }); });
-            cont.querySelectorAll('[data-wfao-step]').forEach(function (sel) { var i = +sel.getAttribute('data-wfao-step'); sel.addEventListener('change', function () { canalActorOverridesState[i].stepId = sel.value; }); });
-            cont.querySelectorAll('[data-wfao-actor]').forEach(function (sel) { var i = +sel.getAttribute('data-wfao-actor'); sel.addEventListener('change', function () { canalActorOverridesState[i].actor = sel.value; }); });
-            cont.querySelectorAll('[data-wfao-del]').forEach(function (b) { b.addEventListener('click', function () { canalActorOverridesState.splice(+b.getAttribute('data-wfao-del'), 1); renderWorkflow(); }); });
-            var addAoBtn = document.getElementById('wfao-add');
-            if (addAoBtn) addAoBtn.addEventListener('click', function () {
-                canalActorOverridesState.push({ canal: canaux[0], stepId: steps[0] ? steps[0].id : '', actor: 'com' });
-                renderWorkflow();
+            // Acteur par étape (sous-page canal) : « (par défaut) » retire l'exception,
+            // toute autre valeur crée/met à jour l'exception pour ce canal + cette étape.
+            cont.querySelectorAll('[data-wfao-canal][data-wfao-step]').forEach(function (sel) {
+                sel.addEventListener('change', function () {
+                    var canal = sel.getAttribute('data-wfao-canal');
+                    var stepId = sel.getAttribute('data-wfao-step');
+                    var existing = canalActorOverridesState.filter(function (o) { return o.canal === canal && o.stepId === stepId; })[0];
+                    if (!sel.value) {
+                        if (existing) canalActorOverridesState.splice(canalActorOverridesState.indexOf(existing), 1);
+                    } else if (existing) {
+                        existing.actor = sel.value;
+                    } else {
+                        canalActorOverridesState.push({ canal: canal, stepId: stepId, actor: sel.value });
+                    }
+                });
             });
 
             document.getElementById('save-workflow').addEventListener('click', function () {
