@@ -1973,6 +1973,9 @@
                         } else if (step === 4) {
                             var numCh = parseInt((document.querySelector('input[name="numChannels"]:checked') || {}).value) || 0;
                             for (var _c = 1; _c <= numCh && !cfStepErrors.length; _c++) {
+                                var cfContBaseC = document.getElementById('cfCanalBaseFields' + _c);
+                                cfStepErrors = cfMod.validateValues('creation.step3.canal.base', cfMod.collectValues(cfContBaseC, 'creation.step3.canal.base'));
+                                if (cfStepErrors.length) break;
                                 var cfContC = document.getElementById('cfCanalFields' + _c);
                                 var cType = (document.getElementById('channelContent' + _c) || {}).value || '';
                                 cfStepErrors = cfMod.validateValues('creation.step3.canal', cfMod.collectValues(cfContC, 'creation.step3.canal', cType), cType);
@@ -2317,14 +2320,10 @@
                 // Types de livrable / canaux : repris de la config (éditable via
                 // l'Administration), avec repli sur la liste par défaut si indisponible.
                 var cfgCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.config;
-                const channels = (cfgCampaign && Array.isArray(cfgCampaign.CANAUX) && cfgCampaign.CANAUX.length)
-                    ? cfgCampaign.CANAUX.slice()
-                    : ["LP", "MAIL", "COURRIER", "SMS", "MDC", "PUSH / NOTIF MA BANQUE", "PERSO MA BANQUE", "Zone de Gauche ( synthese des comptes)", "Zone de Gauche ( Authentification)", "Bandeau Hero", "ZAC HOME PAGE", "E-message", "Zone de droite ( synthese des comptes)", "Article", "Newsletter", "ZAC", "Menu Burger", "MAIL + E-MESSAGE"];
-                // Types de com : repris de la config (éditable via l'Administration),
-                // avec repli sur la liste par défaut si indisponible.
-                const typesCom = (cfgCampaign && Array.isArray(cfgCampaign.TYPES_COM) && cfgCampaign.TYPES_COM.length)
-                    ? cfgCampaign.TYPES_COM.slice()
-                    : ["Commerciales", "Gestion", "Réglementaire"];
+                // Type de livrable, type de Com, typologie de com, nom du livrable et
+                // lien LCCX : rendus par le bloc « socle » du canal (cfCanalBaseFields,
+                // champs migrés, même clé de stockage) juste après l'insertion du canal
+                // dans le DOM, voir plus bas.
                 const universBesoins = (cfgCampaign && Array.isArray(cfgCampaign.UNIVERS_BESOINS)) ? cfgCampaign.UNIVERS_BESOINS.slice() : [];
                 // Zones site web : reprises de la config (Administration → Zones site web).
                 const webZonesCfg = (cfgCampaign && cfgCampaign.WEB_ZONES && typeof cfgCampaign.WEB_ZONES === 'object') ? cfgCampaign.WEB_ZONES : {};
@@ -2344,40 +2343,14 @@
                     div.className = "form-group";
                     div.innerHTML = `
                         <h4>Canal ${i}</h4>
+                        <div id="cfCanalBaseFields${i}"></div>
                         <div class="form-group">
-                            <label for="channelContent${i}">Type de livrable :</label>
-                            <select id="channelContent${i}" required>
-                                <option value="">Choisir...</option>
-                                ${channels.map(c => `<option value="${c}">${c}</option>`).join("")}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="deliverableLabel${i}">Nom du livrable :</label>
-                            <input type="text" id="deliverableLabel${i}" placeholder="Ex: Offre été, Bannière rentrée..." required>
-                            <small style="display:block;color:var(--muted,#666);font-size:11px;margin-top:3px;">Le nom final est standardisé : <strong>Type de livrable - votre saisie</strong>. Il doit rester <strong>unique</strong> pour chaque canal.</small>
-                            <input type="text" id="deliverableName${i}" readonly style="margin-top:6px;background:var(--line-2,#f0f4f1);color:var(--muted,#666);cursor:not-allowed;">
+                            <input type="text" id="deliverableName${i}" readonly style="background:var(--line-2,#f0f4f1);color:var(--muted,#666);cursor:not-allowed;">
                         </div>
                         <div class="form-group">
                             <label for="sendDate${i}">Date de réception client :</label>
                             <input type="date" id="sendDate${i}">
                             <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:#666;margin-top:4px;cursor:pointer;"><input type="checkbox" class="sendDateFree-cb" data-i="${i}"> Délai / condition à la place d'une date (ex : « J+3 après ouverture de compte »)</label>
-                        </div>
-                        <div class="form-group">
-                            <label for="comType${i}">Type de Com :</label>
-                            <select id="comType${i}" required>
-                                <option value="">Choisir...</option>
-                                ${typesCom.map(t => `<option value="${t}">${t}</option>`).join("")}
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="targetingCriteria${i}">Critére ciblage :</label>
-                            <input type="text" id="targetingCriteria${i}" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Typologie de communication:</label>
-                            <div class="radio-group">
-                                ${(window.ImpulsionMarketing.config.COM_TYPOLOGIES || []).map(function(t, ti){ var v = String(t).replace(/"/g,'&quot;'); return '<label><input type="radio" name="comTypology' + i + '" value="' + v + '"' + (ti === 0 ? ' required' : '') + '> ' + v + '</label>'; }).join('')}
-                            </div>
                         </div>
                         <div class="form-group">
                             <label>Univers de besoin de ce livrable <small style="font-weight:400;color:#888;">(facultatif — si vide, celui de la campagne s'applique)</small></label>
@@ -2416,10 +2389,6 @@
                             <label for="urlTicTac${i}">URL Tic et Tac / CA NOUS (optionnel):</label>
                             <input type="url" id="urlTicTac${i}" placeholder="https://...">
                         </div>
-                        <div class="form-group">
-                            <label for="urlLccx${i}">Lien LCCX (optionnel) :</label>
-                            <input type="url" id="urlLccx${i}" placeholder="https://...">
-                        </div>
                         <div class="conditional-field" id="urlComStoreGroup${i}" style="display: none;">
                             <label>URLs Com Store <small style="font-weight:400;">(optionnel — une ou plusieurs)</small></label>
                             <div id="urlComStoreList${i}">
@@ -2433,6 +2402,19 @@
                         <div id="cfCanalFields${i}"></div>
                     `;
                     container.appendChild(div);
+
+                    // Champs « socle » du canal (Type de livrable, Nom du livrable, Type de
+                    // Com, Critère ciblage, Typologie de com, Lien LCCX) — champs déjà en
+                    // place avant l'admin « Champs personnalisés », migrés vers le moteur
+                    // générique (même clé de stockage). Rendus UNE SEULE FOIS ici (jamais
+                    // filtrés par canalTypes, donc pas besoin de les régénérer au changement
+                    // de type de livrable — contrairement aux champs additionnels ci-dessous).
+                    const cfModuleCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                    const cfBaseCont = document.getElementById(`cfCanalBaseFields${i}`);
+                    if (cfModuleCampaign && cfBaseCont) {
+                        cfBaseCont.innerHTML = cfModuleCampaign.renderFields('creation.step3.canal.base', {}, { idSuffix: i });
+                        cfModuleCampaign.wireFields(cfBaseCont, 'creation.step3.canal.base', {});
+                    }
 
                     // Show/hide siteWeb fields based on channel content selection
                     // (zones + zones réservées BP reprises de la config Administration).
@@ -2518,7 +2500,6 @@
                     // ce canal — certains peuvent être restreints à certains types de livrable
                     // (canalTypes) : on réaffiche donc le bloc à chaque changement de type, en
                     // conservant les valeurs déjà saisies pour les champs qui restent visibles.
-                    const cfModuleCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
                     const applyCustomFieldsCanal = function(val) {
                         if (!cfModuleCampaign) return;
                         const cfCont = document.getElementById(`cfCanalFields${i}`);

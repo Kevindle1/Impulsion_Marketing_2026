@@ -213,6 +213,35 @@ test('renderFields — idPrefix omis : préfixe auto-généré (comportement par
   });
 });
 
+test('renderFields — idSuffix : id DOM = field.id + suffixe, sans séparateur (migration d\'un champ répété par canal)', () => {
+  withConfig({ CUSTOM_FIELDS: { 'creation.step3.canal': [{ id: 'channelContent', label: 'Type de livrable', type: 'select', options: ['MAIL'] }] } }, () => {
+    const html = cf.renderFields('creation.step3.canal', {}, { idSuffix: '2' });
+    assert.match(html, /id="channelContent2"/);
+    assert.doesNotMatch(html, /id="channelContent-2"/);
+  });
+});
+
+test('getFields — creation.step3.canal.base : repli DEFAULT_FIELDS (6 champs socle) sans config sauvegardée, jamais filtré par canalType', () => {
+  withConfig({}, () => {
+    var ids = cf.getFields('creation.step3.canal.base').map(f => f.id);
+    assert.deepEqual(ids, ['channelContent', 'deliverableLabel', 'comType', 'targetingCriteria', 'comTypology', 'urlLccx']);
+    // Pas de canalTypes sur ces champs socle : présents même avec un canalType précis.
+    assert.deepEqual(cf.getFields('creation.step3.canal.base', 'MDC').map(f => f.id), ids);
+  });
+});
+
+test('renderFields — creation.step3.canal.base avec idSuffix : tous les id/name DOM matchent la convention existante (pas de préfixe)', () => {
+  withConfig({ COM_TYPOLOGIES: ['Création Caisse', 'Reprise Natio'] }, () => {
+    const html = cf.renderFields('creation.step3.canal.base', {}, { idSuffix: 3 });
+    assert.match(html, /id="channelContent3"/);
+    assert.match(html, /id="deliverableLabel3"/);
+    assert.match(html, /id="comType3"/);
+    assert.match(html, /id="targetingCriteria3"/);
+    assert.match(html, /name="comTypology3"/);
+    assert.match(html, /id="urlLccx3"/);
+  });
+});
+
 test('renderFields — l\'attribut data-cf-showif (JSON, plein de guillemets) reste bien formé', () => {
   // Régression : IM.security.escapeHtml échappe <, > et & mais PAS les guillemets
   // doubles (safe pour du texte, pas pour une valeur d'attribut) — un

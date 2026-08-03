@@ -526,3 +526,113 @@ test.describe('creation.step3 — migration sans casser les campagnes existantes
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lot 4 : creation.step3.canal.base (socle de chaque canal — Type de livrable,
+// Nom du livrable, Type de Com, Critère ciblage, Typologie de com, Lien LCCX).
+// Cas le plus sensible : ces champs pilotent aussi le nom de dossier de dépôt
+// (deliverableName) et des logiques conditionnelles annexes (site web, reprise
+// natio) qui restent, elles, en dur — seule la RESTITUTION de ces 6 champs
+// passe par le moteur générique, la clé de stockage JSON (data.channels[i].*)
+// est strictement inchangée.
+// ─────────────────────────────────────────────────────────────
+test.describe('creation.step3.canal.base — migration sans casser les campagnes existantes', () => {
+  const EXISTING_CAMPAIGN = {
+    id: 'CampagneCanalExistante', description: 'x', po: PO_USER.name, launchDate: '2026-10-15', instantiation: '2026-08-01',
+    typology: 'Commerciale', market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing'],
+    channels: [
+      { content: 'MAIL', deliverableLabel: 'Offre été', deliverableName: 'MAIL - Offre été', comType: 'Commerciales', targetingCriteria: 'Tous clients', comTypology: 'Création Caisse', urlLccx: 'https://lccx.example.com/x' }
+    ],
+    actif: true
+  };
+  const CANAL_CFG = { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'], canaux: ['MAIL', 'MDC'], typesCom: ['Commerciales', 'Gestion'], comTypologies: ['Création Caisse', 'Reprise Natio'] };
+
+  test('campagne existante (1 canal MAIL), config customFields absente : pré-remplissage correct + sauvegarde inchangée', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, CANAL_CFG);
+    await installFakeDirectory(page, { [EXISTING_CAMPAIGN.id]: EXISTING_CAMPAIGN });
+    await page.goto(url('pages/campaign.html?edit=' + encodeURIComponent(EXISTING_CAMPAIGN.id)));
+    await expect(page.locator('#taskName')).toHaveValue(EXISTING_CAMPAIGN.id, { timeout: 10000 });
+    await page.evaluate(() => {
+      document.querySelector('.form-step[data-step="1"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="4"]').classList.add('active');
+    });
+
+    await expect(page.locator('#channelContent1')).toHaveValue('MAIL', { timeout: 10000 });
+    await expect(page.locator('#deliverableLabel1')).toHaveValue('Offre été');
+    await expect(page.locator('#deliverableName1')).toHaveValue('MAIL - Offre été');
+    await expect(page.locator('#comType1')).toHaveValue('Commerciales');
+    await expect(page.locator('#targetingCriteria1')).toHaveValue('Tous clients');
+    await expect(page.locator('input[name="comTypology1"][value="Création Caisse"]')).toBeChecked();
+    await expect(page.locator('#urlLccx1')).toHaveValue('https://lccx.example.com/x');
+
+    await page.locator('#targetingCriteria1').fill('Tous clients + prospects');
+    await page.evaluate(() => window.createCampaign());
+    await page.waitForTimeout(800);
+
+    const savedJson = await page.evaluate(() => window.__campaignFiles[Object.keys(window.__campaignFiles)[0]].getFile().then((f) => f.text()));
+    const saved = JSON.parse(savedJson);
+    expect(saved.channels[0].content).toBe('MAIL');
+    expect(saved.channels[0].deliverableName).toBe('MAIL - Offre été');
+    expect(saved.channels[0].targetingCriteria).toBe('Tous clients + prospects');
+    expect(saved.channels[0].comTypology).toBe('Création Caisse');
+    expect(saved.channels[0].urlLccx).toBe('https://lccx.example.com/x');
+    // Pas de stockage redondant : le socle du canal n'est jamais collecté dans
+    // customFieldValues (seuls les champs additionnels propres au canal le sont).
+    expect(saved.channels[0].customFieldValues && saved.channels[0].customFieldValues['creation.step3.canal.base']).toBeUndefined();
+
+    console.log('errors (migration creation.step3.canal.base, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('nouveau canal : champs vides par défaut, validateStep bloque l\'étape 4 tant que le socle n\'est pas rempli', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, CANAL_CFG);
+    await installFakeDirectory(page, {});
+    await page.goto(url('pages/campaign.html'));
+    await page.locator('#taskName').waitFor({ state: 'attached', timeout: 10000 });
+
+    await page.evaluate(() => window.generateChannelFields(1));
+    await page.locator('#deliverableLabel1').waitFor({ state: 'attached', timeout: 10000 });
+    await expect(page.locator('#channelContent1')).toHaveValue('');
+    await expect(page.locator('#deliverableLabel1')).toHaveValue('');
+    expect(await page.locator('input[name="comTypology1"]:checked').count()).toBe(0);
+
+    await page.evaluate(() => {
+      document.querySelector('.form-step[data-step="1"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="4"]').classList.add('active');
+      document.querySelector('input[name="numChannels"][value="1"]').checked = true;
+    });
+    const blocked = await page.evaluate(() => window.validateStep(4));
+    expect(blocked).toBe(false);
+    console.log('errors (nouveau canal, socle vide bloque validateStep):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('changement de type de livrable ne réinitialise pas les autres champs du socle déjà saisis', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, CANAL_CFG);
+    await installFakeDirectory(page, {});
+    await page.goto(url('pages/campaign.html'));
+    await page.locator('#taskName').waitFor({ state: 'attached', timeout: 10000 });
+    await page.evaluate(() => {
+      document.querySelector('.form-step[data-step="1"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="4"]').classList.add('active');
+    });
+    await expect(page.locator('.form-step[data-step="4"]')).toHaveClass(/active/, { timeout: 10000 });
+    await page.evaluate(() => window.generateChannelFields(1));
+    await page.locator('#deliverableLabel1').waitFor({ state: 'visible', timeout: 10000 });
+
+    await page.locator('#deliverableLabel1').fill('Bannière rentrée');
+    await page.locator('#targetingCriteria1').fill('Clients premium');
+    await page.locator('#channelContent1').selectOption('MAIL');
+    await expect(page.locator('#deliverableName1')).toHaveValue('MAIL - Bannière rentrée', { timeout: 10000 });
+    await page.locator('#channelContent1').selectOption('MDC');
+    await expect(page.locator('#deliverableName1')).toHaveValue('MDC - Bannière rentrée', { timeout: 10000 });
+
+    await expect(page.locator('#deliverableLabel1')).toHaveValue('Bannière rentrée');
+    await expect(page.locator('#targetingCriteria1')).toHaveValue('Clients premium');
+    console.log('errors (changement channelContent, valeurs du socle préservées):', errors);
+    expect(errors).toEqual([]);
+  });
+});

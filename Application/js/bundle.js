@@ -3327,7 +3327,10 @@ window.ImpulsionMarketing.workflow = (function () {
  * Un point d'attache identifie où un champ s'affiche : les id d'étape du workflow
  * (mêmes id que js/workflow-standalone.js, ex. 'ebf_bat'), ou l'un des emplacements
  * du formulaire de création : 'creation.step1' (Informations générales),
- * 'creation.step2' (Segmentation), 'creation.step3.canal' (par canal ajouté).
+ * 'creation.step2' (Segmentation), 'creation.step3' (Détails produit),
+ * 'creation.step3.canal.base' (socle de chaque canal, jamais filtré par type de
+ * livrable), 'creation.step3.canal' (champs additionnels par canal, filtrables
+ * par type de livrable via canalTypes).
  *
  * Ce module ne connaît PAS le stockage sur disque (dépôts, fichiers) : il lit/écrit
  * uniquement dans l'objet `values` qu'on lui passe. C'est à l'appelant (details.html,
@@ -3396,6 +3399,17 @@ window.ImpulsionMarketing.customFields = (function () {
       { id: 'parcoursSimulateur', label: 'Parcours simulateur', type: 'radio', order: 6, options: ['Oui', 'Non'] },
       { id: 'transfo', label: 'Transfo', type: 'radio', order: 7, options: ['Oui', 'Non'], required: true },
       { id: 'lotNumber', label: 'Numéro de Lot', type: 'select', order: 8, configRef: 'LOTS', showIf: { field: 'transfo', op: 'eq', value: 'Oui' } }
+    ],
+    // Champs « socle » de chaque canal — présents une seule fois par canal,
+    // JAMAIS filtrés par canalTypes (contrairement à 'creation.step3.canal' qui
+    // reste réservé aux champs additionnels propres à certains types de livrable).
+    'creation.step3.canal.base': [
+      { id: 'channelContent', label: 'Type de livrable', type: 'select', order: 1, required: true, configRef: 'CANAUX' },
+      { id: 'deliverableLabel', label: 'Nom du livrable', type: 'text', order: 2, required: true, help: 'Le nom final est standardisé : Type de livrable - votre saisie. Il doit rester unique pour chaque canal.' },
+      { id: 'comType', label: 'Type de Com', type: 'select', order: 3, required: true, configRef: 'TYPES_COM' },
+      { id: 'targetingCriteria', label: 'Critère ciblage', type: 'text', order: 4, required: true },
+      { id: 'comTypology', label: 'Typologie de communication', type: 'radio', order: 5, required: true, configRef: 'COM_TYPOLOGIES' },
+      { id: 'urlLccx', label: 'Lien LCCX (optionnel)', type: 'url', order: 6 }
     ]
   };
 
@@ -3530,12 +3544,16 @@ window.ImpulsionMarketing.customFields = (function () {
     // perso). idPrefix explicitement '' → PAS de préfixe, l'id DOM est field.id tel
     // quel — utilisé pour migrer un champ déjà existant sans changer son id (du
     // code externe au module peut le référencer directement, ex. document.getElementById('launchDate')).
+    // idSuffix : variante SUFFIXE (field.id + suffixe, sans séparateur) — utilisée
+    // pour migrer un champ déjà existant répété par canal (ex. 'channelContent' + i
+    // → 'channelContent1'), convention déjà en place dans tout le formulaire de
+    // création pour les champs par canal (jamais préfixée).
     var idPrefix = (opts.idPrefix !== undefined) ? opts.idPrefix : ('cf-' + attachPoint.replace(/[^a-zA-Z0-9]/g, '-'));
     var html = '';
     fields.forEach(function (f) {
       var visible = evalShowIf(f, values);
       var marked = isSimpleRequired(f) || !!requiredGroup(f);
-      var domId = idPrefix ? (idPrefix + '-' + f.id) : f.id;
+      var domId = (opts.idSuffix !== undefined) ? (f.id + opts.idSuffix) : (idPrefix ? (idPrefix + '-' + f.id) : f.id);
       html += '<div class="cf-field" data-cf-row="' + escAttr(f.id) + '"'
         + (f.showIf ? ' data-cf-showif="' + escAttr(JSON.stringify(f.showIf)) + '"' : '')
         + (visible ? '' : ' style="display:none;"') + '>';
