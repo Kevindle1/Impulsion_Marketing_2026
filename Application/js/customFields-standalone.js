@@ -65,6 +65,16 @@ window.ImpulsionMarketing.customFields = (function () {
       { id: 'cibleProspect', label: 'Cible aussi des prospects', type: 'checkbox', order: 1 },
       { id: 'prospectSource', label: 'Source / précision', type: 'text', order: 2, showIf: { field: 'cibleProspect', op: 'checked' }, help: 'Ex : courriers refus EER, listes entreprises…' },
       { id: 'persona', label: 'Persona', type: 'text', order: 3 }
+    ],
+    'creation.step3': [
+      { id: 'productUrl', label: 'URL fiche produit', type: 'url', order: 1 },
+      { id: 'offrePromo', label: 'Offre promotionnelle', type: 'radio', order: 2, options: ['Oui', 'Non'] },
+      { id: 'offerValidityDate', label: 'Date de mise en vigueur de l\'offre', type: 'date', order: 3, showIf: { field: 'offrePromo', op: 'eq', value: 'Oui' } },
+      { id: 'offerEndDate', label: 'Date de fin de validité', type: 'date', order: 4, showIf: { field: 'offrePromo', op: 'eq', value: 'Oui' } },
+      { id: 'parcoursSelfcare', label: 'Parcours selfcare', type: 'radio', order: 5, options: ['Oui', 'Non'] },
+      { id: 'parcoursSimulateur', label: 'Parcours simulateur', type: 'radio', order: 6, options: ['Oui', 'Non'] },
+      { id: 'transfo', label: 'Transfo', type: 'radio', order: 7, options: ['Oui', 'Non'], required: true },
+      { id: 'lotNumber', label: 'Numéro de Lot', type: 'select', order: 8, configRef: 'LOTS', showIf: { field: 'transfo', op: 'eq', value: 'Oui' } }
     ]
   };
 

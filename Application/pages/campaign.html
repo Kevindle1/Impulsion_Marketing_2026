@@ -1081,10 +1081,6 @@
                         <p class="step-description">Informations sur le produit et l'offre</p>
 
                         <div class="form-group fg-full">
-                            <label for="productUrl">URL FICHE PRODUIT :</label>
-                            <input type="url" id="productUrl">
-                        </div>
-                        <div class="form-group fg-full">
                             <label>Produits ciblés <small style="font-weight:400;color:var(--muted);">(choisir un univers puis un produit ; plusieurs univers possibles)</small></label>
                             <div id="targetProductsContainer" style="margin-top:8px;">
                                 <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -1100,51 +1096,13 @@
                                 <div id="productLoadNote" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Offre promotionnelle :</label>
-                            <div class="radio-group">
-                                <label><input type="radio" name="offrePromo" value="Oui"> Oui</label>
-                                <label><input type="radio" name="offrePromo" value="Non"> Non</label>
-                            </div>
-                        </div>
-                        <div class="conditional-field" id="offrePromoFields" style="display:none;">
-                            <div style="font-weight:600;font-size:12px;color:#15803d;margin-bottom:8px;">🎁 Conditions de l'offre promotionnelle</div>
-                            <div class="form-group">
-                                <label for="offerValidityDate">Date de mise en vigueur de l'offre :</label>
-                                <input type="date" id="offerValidityDate">
-                            </div>
-                            <div class="form-group">
-                                <label for="offerEndDate">Date de fin de validité :</label>
-                                <input type="date" id="offerEndDate">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Parcours selfcare :</label>
-                            <div class="radio-group">
-                                <label><input type="radio" name="parcoursSelfcare" value="Oui"> Oui</label>
-                                <label><input type="radio" name="parcoursSelfcare" value="Non"> Non</label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Parcours simulateur :</label>
-                            <div class="radio-group">
-                                <label><input type="radio" name="parcoursSimulateur" value="Oui"> Oui</label>
-                                <label><input type="radio" name="parcoursSimulateur" value="Non"> Non</label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Transfo :</label>
-                            <div class="radio-group">
-                                <label><input type="radio" name="transfo" value="Oui" required> Oui</label>
-                                <label><input type="radio" name="transfo" value="Non"> Non</label>
-                            </div>
-                        </div>
-                        <div class="form-group" id="lotNumberGroup" style="display: none;">
-                            <label for="lotNumber">Numéro de Lot :</label>
-                            <select id="lotNumber">
-                                <option value="">Choisir...</option>
-                            </select>
-                        </div>
+
+                        <!-- Champs éditables depuis Administration ▸ Champs personnalisés ▸ Création —
+                        Détails produit : URL fiche produit, offre promotionnelle (+ dates conditionnelles),
+                        parcours selfcare/simulateur, transfo (+ numéro de lot conditionnel) — déjà en
+                        place, migrés avec la MÊME clé de stockage. Produits ciblés reste codé en dur
+                        (cascade univers→produit alimentée par un CSV, logique trop spécifique). -->
+                        <div id="cfStep3Fields" class="fg-full"></div>
 
                         <div class="step-navigation">
                             <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
@@ -1405,6 +1363,20 @@
                     persona: data.persona || ''
                 };
             };
+            var STEP3_MIGRATED_IDS = ['productUrl', 'offrePromo', 'offerValidityDate', 'offerEndDate', 'parcoursSelfcare', 'parcoursSimulateur', 'transfo', 'lotNumber'];
+            var STEP3_MIGRATED_DEFAULTS = function (data) {
+                data = data || {};
+                return {
+                    productUrl: data.productUrl || '',
+                    offrePromo: data.offrePromo || '',
+                    offerValidityDate: data.offerValidityDate || '',
+                    offerEndDate: data.offerEndDate || '',
+                    parcoursSelfcare: data.parcoursSelfcare || '',
+                    parcoursSimulateur: data.parcoursSimulateur || '',
+                    transfo: data.transfo || 'Non',
+                    lotNumber: data.lotNumber || ''
+                };
+            };
             function renderCreationCustomFields(data) {
                 data = data || {};
                 var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
@@ -1421,6 +1393,12 @@
                     var step2Values = Object.assign(STEP2_MIGRATED_DEFAULTS(data), cfValues['creation.step2'] || {});
                     cont2.innerHTML = cf.renderFields('creation.step2', step2Values, { idPrefix: '' });
                     cf.wireFields(cont2, 'creation.step2', {});
+                }
+                var cont3 = document.getElementById('cfStep3Fields');
+                if (cont3) {
+                    var step3Values = Object.assign(STEP3_MIGRATED_DEFAULTS(data), cfValues['creation.step3'] || {});
+                    cont3.innerHTML = cf.renderFields('creation.step3', step3Values, { idPrefix: '' });
+                    cf.wireFields(cont3, 'creation.step3', {});
                 }
             }
 
@@ -1483,37 +1461,14 @@
                 // (champs migrés, même clé de stockage) — la conditionnalité (showIf) est
                 // calculée directement à partir de `data` au rendu, pas besoin d'événement.
 
-                // Produit
-                if (data.productUrl) $("#productUrl").value = data.productUrl;
-                // Produits ciblés (multi). Rétro-compat : ancien champ texte `targetProduct`.
+                // Produit — productUrl/offrePromo/offerValidityDate/offerEndDate/parcoursSelfcare/
+                // parcoursSimulateur/transfo/lotNumber : rendus par renderCreationCustomFields()
+                // (champs migrés). Produits ciblés (multi) reste géré ici (cascade univers→produit
+                // alimentée par CSV, hors périmètre de la migration). Rétro-compat : ancien champ
+                // texte `targetProduct`.
                 var _prods = Array.isArray(data.targetProducts) ? data.targetProducts
                            : (data.targetProduct ? [data.targetProduct] : []);
                 if (window.setSelectedProducts) window.setSelectedProducts(_prods);
-                if (data.offerValidityDate) $("#offerValidityDate").value = data.offerValidityDate;
-                if (data.offerEndDate && $("#offerEndDate")) $("#offerEndDate").value = data.offerEndDate;
-                ['offrePromo', 'parcoursSelfcare', 'parcoursSimulateur'].forEach(function(name) {
-                    if (data[name]) {
-                        var r = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]');
-                        if (r) r.checked = true;
-                    }
-                });
-                // Révèle les dates d'offre si « Offre promotionnelle = Oui ».
-                var _opChecked = document.querySelector('input[name="offrePromo"]:checked');
-                if (_opChecked) _opChecked.dispatchEvent(new Event('change'));
-
-                // Transfo — default to "Non" if missing to avoid blocking step 3 validation
-                const transfoValue = data.transfo || "Non";
-                const transfoRadio = document.querySelector(`input[name="transfo"][value="${transfoValue}"]`);
-                if (transfoRadio) {
-                    transfoRadio.checked = true;
-                    transfoRadio.dispatchEvent(new Event('change'));
-                }
-                if (data.lotNumber) {
-                    setTimeout(() => {
-                        const lotNumberField = $("#lotNumber");
-                        if (lotNumberField) lotNumberField.value = data.lotNumber;
-                    }, 100);
-                }
 
                 // Canaux
                 if (data.channels && data.channels.length > 0) {
@@ -1786,39 +1741,16 @@
                 });
             });
 
-            document.querySelectorAll('input[name="transfo"]').forEach(radio => {
-                radio.addEventListener("change", (e) => {
-                    $("#lotNumberGroup").style.display = e.target.value === "Oui" ? "block" : "none";
-                });
-            });
-
-            // « Cible prospects » → affichage de la source : géré par la conditionnalité
-            // (showIf) du moteur générique de champs personnalisés (creation.step2),
-            // ce champ étant désormais rendu par renderCreationCustomFields().
+            // kickoffNeeded → kickoffDate, offrePromo → dates d'offre, transfo → lotNumber,
+            // cibleProspect → prospectSource : géré par la conditionnalité (showIf) du moteur
+            // générique de champs personnalisés, ces champs étant tous rendus par
+            // renderCreationCustomFields() (creation.step1/step2/step3).
 
             // Date de saisie = date du jour (automatique, non modifiable).
             (function () {
                 var inst = document.getElementById('instantiation');
                 if (inst && !inst.value) inst.value = new Date().toISOString().slice(0, 10);
             })();
-
-            // Kick-off Oui/Non → affiche la date de kick-off.
-            function _toggleKickoff() {
-                var checked = document.querySelector('input[name="kickoffNeeded"]:checked');
-                var g = document.getElementById('kickoffDateGroup');
-                if (g) g.style.display = (checked && checked.value === 'Oui') ? 'block' : 'none';
-            }
-            document.querySelectorAll('input[name="kickoffNeeded"]').forEach(function (r) { r.addEventListener('change', _toggleKickoff); });
-
-            // Offre promotionnelle = Oui → affiche les dates de mise en vigueur / fin de validité.
-            function _toggleOffrePromo() {
-                var checked = document.querySelector('input[name="offrePromo"]:checked');
-                var g = document.getElementById('offrePromoFields');
-                if (g) g.style.display = (checked && checked.value === 'Oui') ? 'block' : 'none';
-            }
-            document.querySelectorAll('input[name="offrePromo"]').forEach(function (r) {
-                r.addEventListener('change', _toggleOffrePromo);
-            });
 
             // « Date de réception client » : bascule date ↔ texte libre (délai / condition).
             document.addEventListener('change', function (e) {
@@ -2035,6 +1967,9 @@
                         } else if (step === 2) {
                             var cfCont2 = document.getElementById('cfStep2Fields');
                             cfStepErrors = cfMod.validateValues('creation.step2', cfMod.collectValues(cfCont2, 'creation.step2'));
+                        } else if (step === 3) {
+                            var cfCont3 = document.getElementById('cfStep3Fields');
+                            cfStepErrors = cfMod.validateValues('creation.step3', cfMod.collectValues(cfCont3, 'creation.step3'));
                         } else if (step === 4) {
                             var numCh = parseInt((document.querySelector('input[name="numChannels"]:checked') || {}).value) || 0;
                             for (var _c = 1; _c <= numCh && !cfStepErrors.length; _c++) {
@@ -2856,7 +2791,8 @@
                         if (!cf) return {};
                         return {
                             'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
-                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS)
+                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS),
+                            'creation.step3': stripMigratedIds(cf.collectValues(document.getElementById('cfStep3Fields'), 'creation.step3'), STEP3_MIGRATED_IDS)
                         };
                     })(),
                     channels: []
@@ -3063,7 +2999,8 @@
                         if (!cf) return {};
                         return {
                             'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
-                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS)
+                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS),
+                            'creation.step3': stripMigratedIds(cf.collectValues(document.getElementById('cfStep3Fields'), 'creation.step3'), STEP3_MIGRATED_IDS)
                         };
                     })(),
                     channels: [],

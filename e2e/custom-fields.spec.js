@@ -475,3 +475,54 @@ test.describe('creation.step2 — migration sans casser les campagnes existantes
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lot 3 : creation.step3 (offre promotionnelle, parcours, transfo/lot).
+// ─────────────────────────────────────────────────────────────
+test.describe('creation.step3 — migration sans casser les campagnes existantes', () => {
+  const EXISTING_CAMPAIGN = {
+    id: 'CampagneProduitExistante', description: 'x', po: PO_USER.name, launchDate: '2026-10-15', instantiation: '2026-08-01',
+    typology: 'Commerciale', market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing'],
+    productUrl: 'https://produit.example.com', offrePromo: 'Oui', offerValidityDate: '2026-09-01', offerEndDate: '2026-12-31',
+    parcoursSelfcare: 'Oui', parcoursSimulateur: 'Non', transfo: 'Oui', lotNumber: 'Lot 3',
+    channels: [], actif: true
+  };
+
+  test('campagne existante (offrePromo=Oui, transfo=Oui), config customFields absente : pré-remplissage + conditionnalité corrects', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'], lots: ['Lot 3', 'Lot 4'] });
+    await installFakeDirectory(page, { [EXISTING_CAMPAIGN.id]: EXISTING_CAMPAIGN });
+    await page.goto(url('pages/campaign.html?edit=' + encodeURIComponent(EXISTING_CAMPAIGN.id)));
+    await expect(page.locator('#taskName')).toHaveValue(EXISTING_CAMPAIGN.id, { timeout: 10000 });
+    await page.evaluate(() => {
+      document.querySelector('.form-step[data-step="1"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="3"]').classList.add('active');
+    });
+
+    await expect(page.locator('#productUrl')).toHaveValue(EXISTING_CAMPAIGN.productUrl);
+    await expect(page.locator('input[name="offrePromo"][value="Oui"]')).toBeChecked();
+    await expect(page.locator('#offerValidityDate')).toBeVisible();
+    await expect(page.locator('#offerValidityDate')).toHaveValue(EXISTING_CAMPAIGN.offerValidityDate);
+    await expect(page.locator('#offerEndDate')).toHaveValue(EXISTING_CAMPAIGN.offerEndDate);
+    await expect(page.locator('input[name="parcoursSelfcare"][value="Oui"]')).toBeChecked();
+    await expect(page.locator('input[name="transfo"][value="Oui"]')).toBeChecked();
+    await expect(page.locator('#lotNumber')).toBeVisible();
+    await expect(page.locator('#lotNumber')).toHaveValue(EXISTING_CAMPAIGN.lotNumber);
+    console.log('errors (migration creation.step3, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('nouvelle campagne : transfo="Non" par défaut (comme avant), champ requis bloque l\'étape 3', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'], lots: ['Lot 3'] });
+    await installFakeDirectory(page, {});
+    await page.goto(url('pages/campaign.html'));
+    await page.locator('#taskName').waitFor({ state: 'attached', timeout: 10000 });
+
+    await expect(page.locator('input[name="transfo"][value="Non"]')).toBeChecked();
+    await expect(page.locator('#offerValidityDate')).toBeHidden();
+    await expect(page.locator('#lotNumber')).toBeHidden();
+    console.log('errors (nouvelle campagne, step3 defaults):', errors);
+    expect(errors).toEqual([]);
+  });
+});
