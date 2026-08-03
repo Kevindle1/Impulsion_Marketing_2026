@@ -1028,6 +1028,8 @@
                             </div>
                         </div>
 
+                        <div id="cfStep1Fields" class="fg-full"></div>
+
                         <div class="step-navigation">
                             <div></div>
                             <button type="button" class="btn btn-next" onclick="nextStep()">Suivant →</button>
@@ -1112,6 +1114,8 @@
                             <label for="persona">Persona :</label>
                             <input type="text" id="persona" placeholder="Ex : Primo-accédant, Retraité, Jeune actif...">
                         </div>
+
+                        <div id="cfStep2Fields"></div>
 
                         <div class="step-navigation">
                             <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
@@ -1407,6 +1411,21 @@
                 }
             }
 
+            // Champs personnalisés (Administration ▸ Champs personnalisés) des étapes 1 et 2
+            // du formulaire de création — rendu générique, avec valeurs existantes en
+            // édition/duplication (data.customFieldValues) ou vides à la création.
+            function renderCreationCustomFields(values) {
+                var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                if (!cf) return;
+                values = values || {};
+                [['creation.step1', 'cfStep1Fields'], ['creation.step2', 'cfStep2Fields']].forEach(function (pair) {
+                    var cont = document.getElementById(pair[1]);
+                    if (!cont) return;
+                    cont.innerHTML = cf.renderFields(pair[0], values[pair[0]] || {}, { idPrefix: pair[1] });
+                    cf.wireFields(cont, pair[0], {});
+                });
+            }
+
             // Fonction pour pré-remplir le formulaire avec les données existantes
             function populateForm(data) {
                 // Informations générales
@@ -1469,6 +1488,8 @@
                 }
 
                 if (data.persona) $("#persona").value = data.persona;
+
+                renderCreationCustomFields(data.customFieldValues);
 
                 // Prospect (bloc en tête de Segmentation)
                 if (data.cibleProspect) {
@@ -1656,6 +1677,18 @@
                                     if (dateDebut && channel.siteWeb.dateDebut) dateDebut.value = channel.siteWeb.dateDebut;
                                     const dateFin = document.getElementById(`siteWebDateFin${idx}`);
                                     if (dateFin && channel.siteWeb.dateFin) dateFin.value = channel.siteWeb.dateFin;
+                                }, 200);
+                            }
+                            // Champs personnalisés propres à ce canal (Administration ▸ Champs
+                            // personnalisés) — réaffichés avec les valeurs déjà enregistrées.
+                            var cfChan = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                            if (cfChan) {
+                                setTimeout(() => {
+                                    var cfContChan = document.getElementById(`cfCanalFields${idx}`);
+                                    if (!cfContChan) return;
+                                    var savedCfValues = (channel.customFieldValues && channel.customFieldValues['creation.step3.canal']) || {};
+                                    cfContChan.innerHTML = cfChan.renderFields('creation.step3.canal', savedCfValues, { canalType: channel.content, idPrefix: 'cf-canal-' + idx });
+                                    cfChan.wireFields(cfContChan, 'creation.step3.canal', { canalType: channel.content });
                                 }, 200);
                             }
                         });
@@ -2007,6 +2040,33 @@
                             return false;
                         }
                         _seen[_nv] = nameEls[_n2];
+                    }
+                }
+
+                // Champs personnalisés (Administration ▸ Champs personnalisés) : requis
+                // simples + groupes « au moins un », déjà conditionnés par showIf.
+                if (allValid) {
+                    var cfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                    if (cfMod) {
+                        var cfStepErrors = [];
+                        if (step === 1) {
+                            var cfCont1 = document.getElementById('cfStep1Fields');
+                            cfStepErrors = cfMod.validateValues('creation.step1', cfMod.collectValues(cfCont1, 'creation.step1'));
+                        } else if (step === 2) {
+                            var cfCont2 = document.getElementById('cfStep2Fields');
+                            cfStepErrors = cfMod.validateValues('creation.step2', cfMod.collectValues(cfCont2, 'creation.step2'));
+                        } else if (step === 4) {
+                            var numCh = parseInt((document.querySelector('input[name="numChannels"]:checked') || {}).value) || 0;
+                            for (var _c = 1; _c <= numCh && !cfStepErrors.length; _c++) {
+                                var cfContC = document.getElementById('cfCanalFields' + _c);
+                                var cType = (document.getElementById('channelContent' + _c) || {}).value || '';
+                                cfStepErrors = cfMod.validateValues('creation.step3.canal', cfMod.collectValues(cfContC, 'creation.step3.canal', cType), cType);
+                            }
+                        }
+                        if (cfStepErrors.length) {
+                            allValid = false;
+                            notify(cfStepErrors[0].message, 'warning');
+                        }
                     }
                 }
 
@@ -2455,6 +2515,7 @@
                             </div>
                             <button type="button" onclick="addComStoreRow(${i})" style="margin-top:4px;background:var(--blue-50);color:#0369a1;border:1px solid var(--blue);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;">+ Ajouter une URL</button>
                         </div>
+                        <div id="cfCanalFields${i}"></div>
                     `;
                     container.appendChild(div);
 
@@ -2538,15 +2599,31 @@
                         if (emailGroup) emailGroup.style.display = MAIL_CHANNELS.includes(val) ? 'block' : 'none';
                     };
 
+                    // Champs personnalisés (Administration ▸ Champs personnalisés) propres à
+                    // ce canal — certains peuvent être restreints à certains types de livrable
+                    // (canalTypes) : on réaffiche donc le bloc à chaque changement de type, en
+                    // conservant les valeurs déjà saisies pour les champs qui restent visibles.
+                    const cfModuleCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                    const applyCustomFieldsCanal = function(val) {
+                        if (!cfModuleCampaign) return;
+                        const cfCont = document.getElementById(`cfCanalFields${i}`);
+                        if (!cfCont) return;
+                        const existingValues = cfModuleCampaign.collectValues(cfCont, 'creation.step3.canal') || {};
+                        cfCont.innerHTML = cfModuleCampaign.renderFields('creation.step3.canal', existingValues, { canalType: val, idPrefix: 'cf-canal-' + i });
+                        cfModuleCampaign.wireFields(cfCont, 'creation.step3.canal', { canalType: val });
+                    };
+
                     const channelSel = document.getElementById(`channelContent${i}`);
                     if (channelSel) {
                         channelSel.addEventListener('change', function() {
                             applySiteWebConstraints(this.value);
                             applyMailConstraints(this.value);
+                            applyCustomFieldsCanal(this.value);
                         });
                         // Init on render (in case pre-filled)
                         applySiteWebConstraints(channelSel.value);
                         applyMailConstraints(channelSel.value);
+                        applyCustomFieldsCanal(channelSel.value);
                     }
 
                     // Nom du livrable standardisé : « Type de livrable - saisie utilisateur ».
@@ -2794,6 +2871,14 @@
                     offerEndDate: ($("#offerEndDate") || {}).value || '',
                     transfo: document.querySelector('input[name="transfo"]:checked')?.value,
                     lotNumber: $("#lotNumber").value,
+                    customFieldValues: (function() {
+                        var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                        if (!cf) return {};
+                        return {
+                            'creation.step1': cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'),
+                            'creation.step2': cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2')
+                        };
+                    })(),
                     channels: []
                 };
 
@@ -2837,6 +2922,12 @@
                                 dateDebut: ($(`#siteWebDateDebut${i}`) || {}).value || '',
                                 dateFin: ($(`#siteWebDateFin${i}`) || {}).value || ''
                             };
+                        })(),
+                        customFieldValues: (function() {
+                            var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                            if (!cf) return {};
+                            var cType = $(`#channelContent${i}`) ? $(`#channelContent${i}`).value : '';
+                            return { 'creation.step3.canal': cf.collectValues(document.getElementById('cfCanalFields' + i), 'creation.step3.canal', cType) };
                         })()
                     });
                 }
@@ -2987,6 +3078,14 @@
                     transfo: document.querySelector('input[name="transfo"]:checked')?.value,
                     lotNumber: $("#lotNumber").value,
                     numChannels: document.querySelector('input[name="numChannels"]:checked')?.value,
+                    customFieldValues: (function() {
+                        var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                        if (!cf) return {};
+                        return {
+                            'creation.step1': cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'),
+                            'creation.step2': cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2')
+                        };
+                    })(),
                     channels: [],
                     actif: true
                 };
@@ -3037,6 +3136,12 @@
                                 dateDebut: ($(`#siteWebDateDebut${i}`) || {}).value || '',
                                 dateFin: ($(`#siteWebDateFin${i}`) || {}).value || ''
                             };
+                        })(),
+                        customFieldValues: (function() {
+                            var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                            if (!cf) return {};
+                            var cType = $(`#channelContent${i}`) ? $(`#channelContent${i}`).value : '';
+                            return { 'creation.step3.canal': cf.collectValues(document.getElementById('cfCanalFields' + i), 'creation.step3.canal', cType) };
                         })()
                     });
                 }
@@ -3233,6 +3338,10 @@
                 // (toujours disponible). Les champs sont ainsi garantis présents sans
                 // dépendre d'un accès disque / d'une demande de permission.
                 buildChoiceLists();
+
+                // Champs personnalisés (étapes 1 et 2) — rendu par défaut (vide), écrasé
+                // par populateForm() si une campagne existante est chargée (édition/duplication).
+                renderCreationCustomFields();
 
                 // Mettre à jour les restrictions équipes si PO déjà renseigné
                 updateTeamRestrictions();
