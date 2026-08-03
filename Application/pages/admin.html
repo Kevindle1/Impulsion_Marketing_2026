@@ -133,6 +133,25 @@
         .wf-canal-step-actor { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
         .wf-canal-step .wf-step-hint { margin: 6px 0 0 26px; flex-basis: auto; }
 
+        /* Champs personnalisés — carte d'édition d'un champ (admin) */
+        .cf-admin-card { border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .cf-admin-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .cf-admin-mini { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+        .cf-admin-mini-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+        .cf-admin-id { color: var(--muted); }
+
+        /* Champs personnalisés — rendu générique côté utilisateur (details.html / campaign.html) */
+        .cf-fields-block { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+        .cf-field { display: flex; flex-direction: column; gap: 5px; }
+        .cf-label { font-size: 13px; font-weight: 650; color: var(--ink); }
+        .cf-required { color: var(--red, #e2001a); }
+        .cf-help { font-size: 11.5px; color: var(--muted-2); }
+        .cf-richtext { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-height: 60px; font-size: 13px; background: #fff; }
+        .cf-radio-opt, .cf-checkbox-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-right: 14px; }
+        .cf-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .cf-list-row input { flex: 1; }
+        .cf-file-current { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+
         /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
         .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
         .lot-status-a_venir, .dev-status-a_venir { background: #eef0f2; color: #64748b; }
@@ -197,6 +216,7 @@
                         <button class="admin-nav-item" data-tab="webzones"><span class="admin-nav-ic">🌐</span><span class="admin-nav-label">Zones site web</span></button>
                         <button class="admin-nav-item" data-tab="marchessiteweb"><span class="admin-nav-ic">🗺️</span><span class="admin-nav-label">Marchés site web</span></button>
                         <button class="admin-nav-item" data-tab="workflow"><span class="admin-nav-ic">🔀</span><span class="admin-nav-label">Workflow</span></button>
+                        <button class="admin-nav-item" data-tab="customfields"><span class="admin-nav-ic">🧩</span><span class="admin-nav-label">Champs personnalisés</span></button>
                         <button class="admin-nav-item" data-tab="bilan"><span class="admin-nav-ic">📊</span><span class="admin-nav-label">Bilan (suivi .xlsx)</span></button>
                         <!-- Les pages de listes de choix sont injectées ici par le script -->
                     </div>
@@ -241,6 +261,10 @@
                     <section class="admin-section" id="tab-workflow">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🔀</div><div><h2>Workflow</h2><p>Étapes du circuit de validation et applicabilité de chaque étape par canal.</p></div></div>
                         <div id="workflow-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-customfields">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🧩</div><div><h2>Champs personnalisés</h2><p>Ajoutez, modifiez ou retirez des champs sur le formulaire de création et les étapes de production — y compris les champs déjà en place.</p></div></div>
+                        <div id="customfields-container"></div>
                     </section>
                     <section class="admin-section" id="tab-bilan">
                         <div class="admin-sec-head"><div class="admin-sec-ic">📊</div><div><h2>Bilan (suivi .xlsx)</h2><p>Correspondance des colonnes et indicateurs du fichier de suivi.</p></div></div>
@@ -327,6 +351,8 @@
         var canalStepsState = {};       // copie éditable de l'applicabilité des étapes par canal
         var canalActorOverridesState = []; // copie éditable des exceptions d'acteur par canal : [{canal, stepId, actor}]
         var wfActiveCanal = null;       // nom du canal ouvert dans la sous-page « Étapes actives par canal » (null = liste)
+        var customFieldsState = {};     // copie éditable { <point d'attache>: [ {id,label,type,...}, ... ] }
+        var cfActivePoint = null;       // point d'attache ouvert dans la sous-page « Champs personnalisés » (null = liste)
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
@@ -1157,8 +1183,9 @@
             whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
             bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
             autoAssignState = (config && Array.isArray(config.AUTO_ASSIGN_RULES)) ? JSON.parse(JSON.stringify(config.AUTO_ASSIGN_RULES)) : [];
+            customFieldsState = (config && config.CUSTOM_FIELDS && typeof config.CUSTOM_FIELDS === 'object') ? JSON.parse(JSON.stringify(config.CUSTOM_FIELDS)) : {};
         }
-        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderWorkflow(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderWorkflow(); renderCustomFields(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
 
         // Chips réutilisables (liste éditable de chaînes).
         function chipsHtml(arr, delAttr) {
@@ -1814,6 +1841,209 @@
                     canalStepsState = JSON.parse(JSON.stringify(cleanCanalSteps));
                     canalActorOverridesState = flattenActorOverrides(cleanActorOverrides);
                     renderWorkflow();
+                });
+            });
+        }
+
+        // ── CHAMPS PERSONNALISÉS (formulaire de création + étapes de production) ──
+        // Points d'attache : les étapes de production (mêmes id que le Workflow) +
+        // les emplacements du formulaire de création. Un point « canalScoped » peut
+        // restreindre certains de ses champs à des types de canal précis.
+        var CF_CREATION_POINTS = [
+            { id: 'creation.step1', label: 'Création — Informations générales', canalScoped: false },
+            { id: 'creation.step2', label: 'Création — Segmentation', canalScoped: false },
+            { id: 'creation.step3.canal', label: 'Création — Par canal ajouté', canalScoped: true }
+        ];
+        var CF_SHOWIF_OPS = [['eq', 'égal à'], ['neq', 'différent de'], ['in', 'dans la liste'], ['checked', 'coché'], ['unchecked', 'décoché']];
+        function cfAttachPointsList() {
+            var stepPoints = workflowStepsState.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); })
+                .map(function (s) { return { id: s.id, label: s.label, canalScoped: true }; });
+            return stepPoints.concat(CF_CREATION_POINTS);
+        }
+        function cfPointMeta(id) { return cfAttachPointsList().filter(function (p) { return p.id === id; })[0] || { id: id, label: id, canalScoped: false }; }
+        function cfFieldsFor(point) {
+            if (!Array.isArray(customFieldsState[point])) customFieldsState[point] = [];
+            return customFieldsState[point];
+        }
+        function cfDefaultField() { return { id: 'champ_' + Math.random().toString(36).slice(2, 8), label: '', type: 'text', order: 0 }; }
+        function cfUpdateShowIf(field, key, value) {
+            field.showIf = field.showIf || { field: '', op: 'eq', value: '' };
+            field.showIf[key] = value;
+            if (!field.showIf.field) delete field.showIf;
+        }
+
+        function renderCfListHtml(points) {
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Points d\'attache</h3><span class="count-pill">' + points.length + '</span></div>';
+            points.forEach(function (p) {
+                var n = Array.isArray(customFieldsState[p.id]) ? customFieldsState[p.id].length : 0;
+                html += '<div class="wf-canal-list-row" data-cf-open-point="' + esc(p.id) + '">'
+                    + '<div class="wf-canal-list-main"><span class="wf-canal-list-name">' + esc(p.label) + '</span>'
+                    + '<span class="wf-canal-badge ' + (n ? 'custom' : 'default') + '">' + (n ? (n + ' champ' + (n > 1 ? 's' : '') + ' perso') : 'Aucun champ perso') + '</span></div>'
+                    + '<span class="wf-canal-list-arrow">→</span></div>';
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function cfFieldCardHtml(f, i, canalScoped) {
+            var group = (f.required && typeof f.required === 'object' && f.required.group) ? f.required.group : '';
+            var reqMode = f.required === true ? 'yes' : (group ? 'group' : 'no');
+            var isChoiceType = ['select', 'radio', 'checkbox-group'].indexOf(f.type) !== -1;
+            var isListType = f.type === 'list';
+            var typeLabels = (IM.customFields && IM.customFields.TYPE_LABELS) || {};
+            var html = '<div class="cf-admin-card">';
+            html += '<div class="cf-admin-row">'
+                + '<input class="admin-input cf-admin-id" data-cfid="' + i + '" value="' + esc(f.id || '') + '" placeholder="id technique" title="Identifiant de stockage — le modifier masque les valeurs déjà saisies sous l\'ancien id (elles restent dans le fichier, rien n\'est supprimé)." style="width:130px;font-family:monospace;font-size:12px;">'
+                + '<input class="admin-input" data-cfl="' + i + '" value="' + esc(f.label || '') + '" placeholder="Libellé affiché" style="flex:2;min-width:160px;">'
+                + '<select class="admin-select" data-cft="' + i + '" style="flex:1;min-width:150px;">' + Object.keys(typeLabels).map(function (t) {
+                    return '<option value="' + t + '"' + (f.type === t ? ' selected' : '') + '>' + esc(typeLabels[t]) + '</option>';
+                }).join('') + '</select>'
+                + '<input type="number" class="admin-input" data-cfo="' + i + '" value="' + (typeof f.order === 'number' ? f.order : 0) + '" title="Ordre" style="width:64px;">'
+                + '<button type="button" class="icon-del" data-cfdel="' + i + '" title="Supprimer">🗑</button>'
+                + '</div>';
+            html += '<div class="cf-admin-row">'
+                + '<label class="cf-admin-mini">Obligatoire : <select class="admin-select" data-cfreq="' + i + '" style="width:auto;">'
+                +   '<option value="no"' + (reqMode === 'no' ? ' selected' : '') + '>Non</option>'
+                +   '<option value="yes"' + (reqMode === 'yes' ? ' selected' : '') + '>Oui</option>'
+                +   '<option value="group"' + (reqMode === 'group' ? ' selected' : '') + '>Au moins un d\'un groupe</option>'
+                + '</select></label>'
+                + (reqMode === 'group' ? '<input class="admin-input" data-cfgroup="' + i + '" value="' + esc(group) + '" placeholder="Nom du groupe" style="width:160px;">' : '')
+                + '</div>';
+            if (isChoiceType) {
+                html += '<div class="cf-admin-row">'
+                    + '<input class="admin-input" data-cfopts="' + i + '" value="' + esc((f.options || []).join(', ')) + '" placeholder="Options séparées par des virgules" style="flex:1;">'
+                    + '<input class="admin-input" data-cfref="' + i + '" value="' + esc(f.configRef || '') + '" placeholder="… ou liste existante (ex : CANAUX, MARCHES)" style="flex:1;">'
+                    + '</div>';
+            }
+            if (isListType) {
+                html += '<div class="cf-admin-row"><label class="cf-admin-mini">Type d\'élément : <select class="admin-select" data-cfitemtype="' + i + '" style="width:auto;">'
+                    + '<option value="url"' + (f.itemType !== 'text' ? ' selected' : '') + '>URL</option>'
+                    + '<option value="text"' + (f.itemType === 'text' ? ' selected' : '') + '>Texte</option>'
+                    + '</select></label></div>';
+            }
+            if (canalScoped) {
+                html += '<div class="cf-admin-row">'
+                    + '<input class="admin-input" data-cfcanaux="' + i + '" value="' + esc((f.canalTypes || []).join(', ')) + '" placeholder="Restreindre à ces canaux (optionnel, virgules — vide = tous)" style="flex:1;">'
+                    + '</div>';
+            }
+            html += '<div class="cf-admin-row">'
+                + '<span class="cf-admin-mini-label">Condition d\'affichage (optionnel) :</span>'
+                + '<input class="admin-input" data-cfsifield="' + i + '" value="' + esc((f.showIf && f.showIf.field) || '') + '" placeholder="id du champ déclencheur" style="width:150px;">'
+                + '<select class="admin-select" data-cfsiop="' + i + '" style="width:auto;">'
+                +   CF_SHOWIF_OPS.map(function (o) { return '<option value="' + o[0] + '"' + ((f.showIf && f.showIf.op) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
+                + '</select>'
+                + '<input class="admin-input" data-cfsival="' + i + '" value="' + esc(f.showIf && f.showIf.value !== undefined ? (Array.isArray(f.showIf.value) ? f.showIf.value.join(', ') : f.showIf.value) : '') + '" placeholder="valeur (ou liste, virgules, si « dans la liste »)" style="flex:1;min-width:140px;">'
+                + '</div>';
+            html += '<div class="cf-admin-row">'
+                + '<input class="admin-input" data-cfhelp="' + i + '" value="' + esc(f.help || '') + '" placeholder="Texte d\'aide affiché sous le champ (optionnel)" style="flex:1;">'
+                + '</div>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderCfDetailHtml(point) {
+            var meta = cfPointMeta(point);
+            var fields = cfFieldsFor(point);
+            var html = '<div class="admin-card">';
+            html += '<div class="wf-canal-detail-head">'
+                + '<button type="button" class="btn-back-lots" id="cf-back-to-points">← Tous les points d\'attache</button>'
+                + '<h3>🧩 ' + esc(meta.label) + '</h3>'
+                + '</div>';
+            if (!fields.length) {
+                html += '<div class="empty-hint">Aucun champ personnalisé ici pour le moment.</div>';
+            } else {
+                fields.forEach(function (f, i) { html += cfFieldCardHtml(f, i, meta.canalScoped); });
+            }
+            html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="cf-add-field">+ Ajouter un champ</button></div>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderCustomFields() {
+            var cont = document.getElementById('customfields-container');
+            if (!cont) return;
+            var points = cfAttachPointsList();
+            if (cfActivePoint && points.map(function (p) { return p.id; }).indexOf(cfActivePoint) === -1) cfActivePoint = null;
+
+            var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>'
+                + 'Chaque champ ajouté ici s\'affiche <strong>en plus</strong> des champs déjà présents sur le formulaire — le libellé, le type, l\'ordre et les conditions restent modifiables à tout moment, y compris pour un champ déjà en place.'
+                + '</div></div>';
+            html += cfActivePoint ? renderCfDetailHtml(cfActivePoint) : renderCfListHtml(points);
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-customfields">💾 Enregistrer les champs personnalisés</button></div>';
+            cont.innerHTML = html;
+
+            wireDrilldown(cont, 'data-cf-open-point', 'cf-back-to-points', function (v) { cfActivePoint = v; }, renderCustomFields);
+
+            if (cfActivePoint) {
+                var fields = cfFieldsFor(cfActivePoint);
+                cont.querySelectorAll('[data-cfid]').forEach(function (inp) { var i = +inp.getAttribute('data-cfid'); inp.addEventListener('input', function () { fields[i].id = inp.value.trim(); }); });
+                cont.querySelectorAll('[data-cfl]').forEach(function (inp) { var i = +inp.getAttribute('data-cfl'); inp.addEventListener('input', function () { fields[i].label = inp.value; }); });
+                cont.querySelectorAll('[data-cft]').forEach(function (sel) { var i = +sel.getAttribute('data-cft'); sel.addEventListener('change', function () { fields[i].type = sel.value; renderCustomFields(); }); });
+                cont.querySelectorAll('[data-cfo]').forEach(function (inp) { var i = +inp.getAttribute('data-cfo'); inp.addEventListener('input', function () { fields[i].order = parseInt(inp.value, 10) || 0; }); });
+                cont.querySelectorAll('[data-cfdel]').forEach(function (b) { b.addEventListener('click', function () {
+                    var i = +b.getAttribute('data-cfdel');
+                    if (!confirm('Supprimer ce champ personnalisé ? Les valeurs déjà saisies par les utilisateurs ne seront plus affichées (elles restent dans le fichier).')) return;
+                    fields.splice(i, 1);
+                    renderCustomFields();
+                }); });
+                cont.querySelectorAll('[data-cfreq]').forEach(function (sel) { var i = +sel.getAttribute('data-cfreq'); sel.addEventListener('change', function () {
+                    if (sel.value === 'yes') fields[i].required = true;
+                    else if (sel.value === 'group') fields[i].required = { group: '' };
+                    else delete fields[i].required;
+                    renderCustomFields();
+                }); });
+                cont.querySelectorAll('[data-cfgroup]').forEach(function (inp) { var i = +inp.getAttribute('data-cfgroup'); inp.addEventListener('input', function () { fields[i].required = { group: inp.value }; }); });
+                cont.querySelectorAll('[data-cfopts]').forEach(function (inp) { var i = +inp.getAttribute('data-cfopts'); inp.addEventListener('input', function () {
+                    fields[i].options = inp.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+                }); });
+                cont.querySelectorAll('[data-cfref]').forEach(function (inp) { var i = +inp.getAttribute('data-cfref'); inp.addEventListener('input', function () { fields[i].configRef = inp.value.trim(); }); });
+                cont.querySelectorAll('[data-cfitemtype]').forEach(function (sel) { var i = +sel.getAttribute('data-cfitemtype'); sel.addEventListener('change', function () { fields[i].itemType = sel.value; }); });
+                cont.querySelectorAll('[data-cfcanaux]').forEach(function (inp) { var i = +inp.getAttribute('data-cfcanaux'); inp.addEventListener('input', function () {
+                    fields[i].canalTypes = inp.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+                }); });
+                cont.querySelectorAll('[data-cfsifield]').forEach(function (inp) { var i = +inp.getAttribute('data-cfsifield'); inp.addEventListener('input', function () { cfUpdateShowIf(fields[i], 'field', inp.value.trim()); }); });
+                cont.querySelectorAll('[data-cfsiop]').forEach(function (sel) { var i = +sel.getAttribute('data-cfsiop'); sel.addEventListener('change', function () { cfUpdateShowIf(fields[i], 'op', sel.value); }); });
+                cont.querySelectorAll('[data-cfsival]').forEach(function (inp) { var i = +inp.getAttribute('data-cfsival'); inp.addEventListener('input', function () {
+                    var op = fields[i].showIf && fields[i].showIf.op;
+                    var val = op === 'in' ? inp.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : inp.value;
+                    cfUpdateShowIf(fields[i], 'value', val);
+                }); });
+                cont.querySelectorAll('[data-cfhelp]').forEach(function (inp) { var i = +inp.getAttribute('data-cfhelp'); inp.addEventListener('input', function () { fields[i].help = inp.value; }); });
+
+                var addBtn = document.getElementById('cf-add-field');
+                if (addBtn) addBtn.addEventListener('click', function () { fields.push(cfDefaultField()); renderCustomFields(); });
+            }
+
+            document.getElementById('save-customfields').addEventListener('click', function () {
+                var clean = {};
+                var dupError = null;
+                Object.keys(customFieldsState).forEach(function (point) {
+                    var seen = {};
+                    var list = (customFieldsState[point] || [])
+                        .filter(function (f) { return (f.label || '').trim() && (f.id || '').trim(); })
+                        .map(function (f, idx) {
+                            var out = { id: f.id.trim(), label: f.label.trim(), type: f.type || 'text', order: typeof f.order === 'number' ? f.order : idx };
+                            if (f.required === true) out.required = true;
+                            else if (f.required && f.required.group) out.required = { group: f.required.group };
+                            if (Array.isArray(f.options) && f.options.length) out.options = f.options.slice();
+                            if (f.configRef) out.configRef = f.configRef;
+                            if (f.itemType) out.itemType = f.itemType;
+                            if (Array.isArray(f.canalTypes) && f.canalTypes.length) out.canalTypes = f.canalTypes.slice();
+                            if (f.showIf && f.showIf.field) out.showIf = { field: f.showIf.field, op: f.showIf.op || 'eq', value: f.showIf.value };
+                            if (f.help) out.help = f.help;
+                            return out;
+                        });
+                    list.forEach(function (f) {
+                        if (seen[f.id]) dupError = 'Identifiant technique en double « ' + f.id + ' » sur « ' + cfPointMeta(point).label + ' ». Corrigez avant d\'enregistrer.';
+                        seen[f.id] = true;
+                    });
+                    if (list.length) clean[point] = list;
+                });
+                if (dupError) { alert(dupError); return; }
+                saveConfig({ customFields: clean }, 'Champs personnalisés enregistrés.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ customFields: clean });
+                    customFieldsState = JSON.parse(JSON.stringify(clean));
+                    renderCustomFields();
                 });
             });
         }

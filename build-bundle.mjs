@@ -1,7 +1,7 @@
 /**
  * build-bundle.mjs — Génération de Application/js/bundle.js
  *
- * Concatène, dans l'ordre, les 10 modules standalone en un seul fichier chargé
+ * Concatène, dans l'ordre, les modules standalone en un seul fichier chargé
  * par les pages. Remplace l'ancienne concaténation manuelle (cat)
  * pour éviter toute dérive entre les sources et le bundle.
  *
@@ -24,6 +24,7 @@ const MODULES = [
   'directoryStorage-standalone.js',
   'users-standalone.js',
   'workflow-standalone.js',
+  'customFields-standalone.js',
   'help-standalone.js',
   'incident-standalone.js',
   'admin-standalone.js',

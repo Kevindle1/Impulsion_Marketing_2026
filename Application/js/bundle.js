@@ -145,6 +145,17 @@ window.ImpulsionMarketing.config = (function() {
   const CANAL_ACTOR_OVERRIDES = (_cfgCache.workflow && _cfgCache.workflow.canalActorOverrides && typeof _cfgCache.workflow.canalActorOverrides === 'object') ? JSON.parse(JSON.stringify(_cfgCache.workflow.canalActorOverrides)) : {};
 
   // ========================================
+  // Champs personnalisés (Administration ▸ Champs personnalisés)
+  // ========================================
+
+  // { "<point d'attache>": [ { id, label, type, ... }, ... ] } — points d'attache :
+  // les 12 étapes du workflow (mêmes id que WORKFLOW_STEPS) + 'creation.step1' /
+  // 'creation.step2' / 'creation.step3' / 'creation.step3.canal' (formulaire de
+  // création). Absent/vide = aucun champ personnalisé (repli sûr par défaut).
+  // Source : _config.json customFields.
+  const CUSTOM_FIELDS = (_cfgCache.customFields && typeof _cfgCache.customFields === 'object') ? JSON.parse(JSON.stringify(_cfgCache.customFields)) : {};
+
+  // ========================================
   // Autres données pilotées par _config.json (objets/listes mutés en place par adminConfig)
   // ========================================
   const APP_SETTINGS     = (_cfgCache.settings && typeof _cfgCache.settings === 'object') ? _cfgCache.settings : {};
@@ -343,6 +354,7 @@ window.ImpulsionMarketing.config = (function() {
     WORKFLOW_STEPS: WORKFLOW_STEPS,
     CANAL_STEPS: CANAL_STEPS,
     CANAL_ACTOR_OVERRIDES: CANAL_ACTOR_OVERRIDES,
+    CUSTOM_FIELDS: CUSTOM_FIELDS,
     WEB_ZONES: WEB_ZONES,
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,
@@ -3308,6 +3320,342 @@ window.ImpulsionMarketing.workflow = (function () {
   };
 })();
 /**
+ * Champs personnalisés — Impulsion Marketing
+ * Moteur générique : définitions de champ par « point d'attache », rendu HTML,
+ * câblage (conditionnalité, listes répétables), collecte des valeurs, validation.
+ *
+ * Un point d'attache identifie où un champ s'affiche : les id d'étape du workflow
+ * (mêmes id que js/workflow-standalone.js, ex. 'ebf_bat'), ou l'un des emplacements
+ * du formulaire de création : 'creation.step1' (Informations générales),
+ * 'creation.step2' (Segmentation), 'creation.step3.canal' (par canal ajouté).
+ *
+ * Ce module ne connaît PAS le stockage sur disque (dépôts, fichiers) : il lit/écrit
+ * uniquement dans l'objet `values` qu'on lui passe. C'est à l'appelant (details.html,
+ * campaign.html) de faire le lien avec les bonnes clés de campagne.json.
+ */
+
+window.ImpulsionMarketing = window.ImpulsionMarketing || {};
+
+window.ImpulsionMarketing.customFields = (function () {
+  'use strict';
+
+  var IM = window.ImpulsionMarketing;
+
+  function esc(s) { var sec = IM.security; return (sec && sec.escapeHtml) ? sec.escapeHtml(s) : String(s == null ? '' : s); }
+  function isValidUrl(u) { var sec = IM.security; return (sec && sec.isValidUrl) ? sec.isValidUrl(u) : /^https?:\/\/.+/i.test(u || ''); }
+
+  var TYPE_LABELS = {
+    text: 'Texte court',
+    textarea: 'Texte long',
+    url: 'URL',
+    number: 'Nombre',
+    date: 'Date',
+    select: 'Liste déroulante',
+    radio: 'Choix unique (radio)',
+    checkbox: 'Case à cocher',
+    'checkbox-group': 'Cases à cocher multiples',
+    list: 'Liste répétable (URLs ou textes)',
+    richtext: 'Texte enrichi',
+    file: 'Fichier'
+  };
+
+  // ── Lecture de la config ──
+  function allDefs() {
+    return (IM.config && IM.config.CUSTOM_FIELDS && typeof IM.config.CUSTOM_FIELDS === 'object') ? IM.config.CUSTOM_FIELDS : {};
+  }
+
+  function attachPoints() {
+    return Object.keys(allDefs());
+  }
+
+  // Champs définis pour un point d'attache, filtrés par type de canal (si le champ
+  // restreint canalTypes) et triés par ordre d'affichage.
+  function getFields(attachPoint, canalType) {
+    var list = allDefs()[attachPoint];
+    if (!Array.isArray(list)) return [];
+    return list
+      .filter(function (f) { return f && f.id && f.type; })
+      .filter(function (f) { return !Array.isArray(f.canalTypes) || !f.canalTypes.length || !canalType || f.canalTypes.indexOf(canalType) !== -1; })
+      .slice()
+      .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+  }
+
+  // Options d'un champ select/radio/checkbox-group : soit une liste en dur
+  // (field.options), soit une liste déjà pilotée par l'admin (field.configRef,
+  // ex. 'CANAUX', 'MARCHES' → réutilise IM.config.<REF>).
+  function fieldOptions(field) {
+    if (Array.isArray(field.options)) return field.options;
+    if (field.configRef && IM.config && Array.isArray(IM.config[field.configRef])) return IM.config[field.configRef];
+    return [];
+  }
+
+  function isSimpleRequired(f) { return f.required === true; }
+  function requiredGroup(f) { return (f.required && typeof f.required === 'object' && f.required.group) ? f.required.group : null; }
+
+  // Condition d'affichage : { field: <id du champ déclencheur>, op: 'eq'|'neq'|'in'|'checked'|'unchecked', value }
+  function evalShowIf(field, values) {
+    if (!field || !field.showIf || !field.showIf.field) return true;
+    var cond = field.showIf;
+    var v = values ? values[cond.field] : undefined;
+    switch (cond.op) {
+      case 'neq': return v !== cond.value;
+      case 'in': return Array.isArray(cond.value) && cond.value.indexOf(v) !== -1;
+      case 'checked': return v === true || v === 'true';
+      case 'unchecked': return !(v === true || v === 'true');
+      case 'eq':
+      default: return v === cond.value;
+    }
+  }
+
+  // ── Rendu HTML ──
+
+  function inputHtml(field, value, domId) {
+    value = value == null ? '' : value;
+    switch (field.type) {
+      case 'textarea':
+        return '<textarea class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '">' + esc(value) + '</textarea>';
+      case 'richtext':
+        return '<div class="cf-richtext" id="' + domId + '" data-cf-field="' + esc(field.id) + '" contenteditable="true">' + (value || '') + '</div>';
+      case 'url':
+        return '<input type="url" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '" placeholder="https://...">';
+      case 'number':
+        return '<input type="number" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '" min="0">';
+      case 'date':
+        return '<input type="date" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '">';
+      case 'select': {
+        var opts = fieldOptions(field);
+        var html = '<select class="admin-select cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '"><option value="">Choisir…</option>';
+        opts.forEach(function (o) { html += '<option value="' + esc(o) + '"' + (value === o ? ' selected' : '') + '>' + esc(o) + '</option>'; });
+        return html + '</select>';
+      }
+      case 'radio': {
+        var ropts = fieldOptions(field);
+        return ropts.map(function (o) {
+          return '<label class="cf-radio-opt"><input type="radio" name="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(o) + '"' + (value === o ? ' checked' : '') + '> ' + esc(o) + '</label>';
+        }).join(' ');
+      }
+      case 'checkbox':
+        return '<label class="cf-checkbox-opt"><input type="checkbox" id="' + domId + '" data-cf-field="' + esc(field.id) + '"' + (value === true || value === 'true' ? ' checked' : '') + '> ' + esc(field.checkboxLabel || 'Oui') + '</label>';
+      case 'checkbox-group': {
+        var gopts = fieldOptions(field);
+        var vals = Array.isArray(value) ? value : [];
+        return gopts.map(function (o) {
+          return '<label class="cf-checkbox-opt"><input type="checkbox" data-cf-field="' + esc(field.id) + '" data-cf-group-value="' + esc(o) + '"' + (vals.indexOf(o) !== -1 ? ' checked' : '') + '> ' + esc(o) + '</label>';
+        }).join(' ');
+      }
+      case 'list': {
+        var itemType = field.itemType === 'text' ? 'text' : 'url';
+        var items = Array.isArray(value) && value.length ? value : [''];
+        var rows = items.map(function (v) {
+          return '<div class="cf-list-row"><input type="' + itemType + '" class="admin-input cf-input cf-list-item" data-cf-field="' + esc(field.id) + '" value="' + esc(v) + '" placeholder="' + (itemType === 'url' ? 'https://...' : '') + '">'
+            + '<button type="button" class="icon-del cf-list-remove" data-cf-field="' + esc(field.id) + '" title="Retirer">✕</button></div>';
+        }).join('');
+        return '<div class="cf-list" data-cf-list="' + esc(field.id) + '" data-cf-item-type="' + itemType + '">' + rows
+          + '<button type="button" class="btn btn-secondary cf-list-add" data-cf-field="' + esc(field.id) + '">+ Ajouter</button></div>';
+      }
+      case 'file':
+        return '<input type="file" class="cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '">'
+          + (typeof value === 'string' && value ? '<div class="cf-file-current">Fichier actuel : ' + esc(value) + '</div>' : '');
+      case 'text':
+      default:
+        return '<input type="text" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '">';
+    }
+  }
+
+  function renderFields(attachPoint, values, opts) {
+    opts = opts || {};
+    values = values || {};
+    var fields = getFields(attachPoint, opts.canalType);
+    if (!fields.length) return '';
+    var idPrefix = opts.idPrefix || 'cf-' + attachPoint.replace(/[^a-zA-Z0-9]/g, '-');
+    var html = '';
+    fields.forEach(function (f) {
+      var visible = evalShowIf(f, values);
+      var marked = isSimpleRequired(f) || !!requiredGroup(f);
+      html += '<div class="cf-field" data-cf-row="' + esc(f.id) + '"'
+        + (f.showIf ? ' data-cf-showif="' + esc(JSON.stringify(f.showIf)) + '"' : '')
+        + (visible ? '' : ' style="display:none;"') + '>';
+      if (f.type !== 'checkbox') {
+        html += '<label class="cf-label">' + esc(f.label) + (marked ? ' <span class="cf-required">*</span>' : '') + '</label>';
+      }
+      html += inputHtml(f, values[f.id], idPrefix + '-' + f.id);
+      if (f.help) html += '<div class="cf-help">' + esc(f.help) + '</div>';
+      html += '</div>';
+    });
+    return '<div class="cf-fields-block" data-cf-attach="' + esc(attachPoint) + '">' + html + '</div>';
+  }
+
+  // ── Câblage DOM ──
+
+  function findBlock(cont, attachPoint) {
+    if (!cont) return null;
+    if (cont.classList && cont.classList.contains('cf-fields-block')) return cont;
+    return cont.querySelector('.cf-fields-block[data-cf-attach="' + attachPoint + '"]');
+  }
+
+  function collectValues(cont, attachPoint, canalType) {
+    var block = findBlock(cont, attachPoint);
+    var values = {};
+    if (!block) return values;
+    getFields(attachPoint, canalType).forEach(function (f) {
+      switch (f.type) {
+        case 'checkbox': {
+          var cb = block.querySelector('input[type="checkbox"][data-cf-field="' + f.id + '"]:not([data-cf-group-value])');
+          values[f.id] = !!(cb && cb.checked);
+          break;
+        }
+        case 'checkbox-group': {
+          var vals = [];
+          block.querySelectorAll('input[data-cf-field="' + f.id + '"][data-cf-group-value]').forEach(function (cb) {
+            if (cb.checked) vals.push(cb.getAttribute('data-cf-group-value'));
+          });
+          values[f.id] = vals;
+          break;
+        }
+        case 'radio': {
+          var checked = block.querySelector('input[data-cf-field="' + f.id + '"]:checked');
+          values[f.id] = checked ? checked.value : '';
+          break;
+        }
+        case 'list': {
+          var items = [];
+          block.querySelectorAll('.cf-list-item[data-cf-field="' + f.id + '"]').forEach(function (inp) {
+            if (inp.value.trim()) items.push(inp.value.trim());
+          });
+          values[f.id] = items;
+          break;
+        }
+        case 'richtext': {
+          var rt = block.querySelector('[data-cf-field="' + f.id + '"]');
+          values[f.id] = rt ? rt.innerHTML : '';
+          break;
+        }
+        case 'file': {
+          var fi = block.querySelector('input[type="file"][data-cf-field="' + f.id + '"]');
+          values[f.id] = (fi && fi.files && fi.files[0]) ? fi.files[0] : (values[f.id] || null);
+          break;
+        }
+        default: {
+          var el = block.querySelector('[data-cf-field="' + f.id + '"]');
+          values[f.id] = el ? el.value : '';
+        }
+      }
+    });
+    return values;
+  }
+
+  // Câble la conditionnalité (showIf) et les listes répétables sur un bloc déjà
+  // inséré dans le DOM. `onChange(values)` est appelé (optionnel) à chaque saisie.
+  function wireFields(cont, attachPoint, opts) {
+    opts = opts || {};
+    var block = findBlock(cont, attachPoint);
+    if (!block) return;
+
+    function refreshVisibility() {
+      var values = collectValues(block, attachPoint, opts.canalType);
+      block.querySelectorAll('.cf-field[data-cf-showif]').forEach(function (row) {
+        var cond = null;
+        try { cond = JSON.parse(row.getAttribute('data-cf-showif')); } catch (e) { cond = null; }
+        row.style.display = evalShowIf({ showIf: cond }, values) ? '' : 'none';
+      });
+      if (typeof opts.onChange === 'function') opts.onChange(values);
+    }
+
+    block.addEventListener('input', refreshVisibility);
+    block.addEventListener('change', refreshVisibility);
+
+    block.addEventListener('click', function (e) {
+      var addBtn = e.target.closest && e.target.closest('.cf-list-add');
+      if (addBtn) {
+        var fieldId = addBtn.getAttribute('data-cf-field');
+        var listEl = block.querySelector('.cf-list[data-cf-list="' + fieldId + '"]');
+        if (!listEl) return;
+        var itemType = listEl.getAttribute('data-cf-item-type') || 'url';
+        var row = document.createElement('div');
+        row.className = 'cf-list-row';
+        row.innerHTML = '<input type="' + itemType + '" class="admin-input cf-input cf-list-item" data-cf-field="' + esc(fieldId) + '" value="" placeholder="' + (itemType === 'url' ? 'https://...' : '') + '">'
+          + '<button type="button" class="icon-del cf-list-remove" data-cf-field="' + esc(fieldId) + '" title="Retirer">✕</button>';
+        listEl.insertBefore(row, addBtn);
+        return;
+      }
+      var rmBtn = e.target.closest && e.target.closest('.cf-list-remove');
+      if (rmBtn) {
+        var r = rmBtn.closest('.cf-list-row');
+        var lst = rmBtn.closest('.cf-list');
+        if (r && lst) {
+          if (lst.querySelectorAll('.cf-list-row').length > 1) r.remove();
+          else { var inp = r.querySelector('input'); if (inp) inp.value = ''; }
+        }
+        refreshVisibility();
+      }
+    });
+  }
+
+  // ── Validation ──
+
+  function validateValues(attachPoint, values, canalType) {
+    values = values || {};
+    var errors = [];
+    var fields = getFields(attachPoint, canalType).filter(function (f) { return evalShowIf(f, values); });
+
+    function hasValue(f) {
+      var v = values[f.id];
+      if (f.type === 'checkbox-group' || f.type === 'list') return Array.isArray(v) && v.length > 0;
+      if (f.type === 'checkbox') return v === true || v === 'true';
+      return v !== undefined && v !== null && String(v).trim() !== '';
+    }
+
+    fields.forEach(function (f) {
+      if (isSimpleRequired(f) && !hasValue(f)) {
+        errors.push({ fieldId: f.id, message: '« ' + f.label + ' » est obligatoire.' });
+      }
+    });
+
+    var groups = {};
+    fields.forEach(function (f) {
+      var g = requiredGroup(f);
+      if (!g) return;
+      groups[g] = groups[g] || { fields: [], satisfied: false };
+      groups[g].fields.push(f);
+      if (hasValue(f)) groups[g].satisfied = true;
+    });
+    Object.keys(groups).forEach(function (g) {
+      if (!groups[g].satisfied && groups[g].fields.length) {
+        var labels = groups[g].fields.map(function (f) { return f.label; }).join(', ');
+        errors.push({ fieldId: groups[g].fields[0].id, message: 'Au moins un de ces champs doit être renseigné : ' + labels });
+      }
+    });
+
+    fields.forEach(function (f) {
+      if (f.type === 'url' && hasValue(f) && !isValidUrl(values[f.id])) {
+        errors.push({ fieldId: f.id, message: '« ' + f.label + ' » doit être une URL valide (http:// ou https://).' });
+      }
+      if (f.type === 'list' && f.itemType !== 'text' && Array.isArray(values[f.id])) {
+        values[f.id].forEach(function (u) {
+          if (u && !isValidUrl(u)) errors.push({ fieldId: f.id, message: '« ' + f.label + ' » contient une URL invalide : ' + u });
+        });
+      }
+    });
+
+    return errors;
+  }
+
+  // ── API Publique ──
+  return {
+    TYPE_LABELS: TYPE_LABELS,
+    attachPoints: attachPoints,
+    getFields: getFields,
+    fieldOptions: fieldOptions,
+    isSimpleRequired: isSimpleRequired,
+    requiredGroup: requiredGroup,
+    evalShowIf: evalShowIf,
+    renderFields: renderFields,
+    wireFields: wireFields,
+    collectValues: collectValues,
+    validateValues: validateValues
+  };
+})();
+/**
  * Module d'Aide Contextuel - Interface Impulsion Marketing
  *
  * Gère l'affichage des modals d'instructions pour chaque page de l'application.
@@ -3847,6 +4195,10 @@ window.ImpulsionMarketing.adminConfig = (function () {
       if (cfg.workflow.canalActorOverrides && typeof cfg.workflow.canalActorOverrides === 'object') {
         assignInPlace(IM.config.CANAL_ACTOR_OVERRIDES, cfg.workflow.canalActorOverrides);
       }
+    }
+    // Champs personnalisés par point d'attache (Administration ▸ Champs personnalisés)
+    if (cfg.customFields && typeof cfg.customFields === 'object') {
+      assignInPlace(IM.config.CUSTOM_FIELDS, cfg.customFields);
     }
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);

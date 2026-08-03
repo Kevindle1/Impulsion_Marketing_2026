@@ -137,6 +137,10 @@ window.ImpulsionMarketing.adminConfig = (function () {
         assignInPlace(IM.config.CANAL_ACTOR_OVERRIDES, cfg.workflow.canalActorOverrides);
       }
     }
+    // Champs personnalisés par point d'attache (Administration ▸ Champs personnalisés)
+    if (cfg.customFields && typeof cfg.customFields === 'object') {
+      assignInPlace(IM.config.CUSTOM_FIELDS, cfg.customFields);
+    }
     // Objets pilotés par _config.json (mutés en place pour préserver les références partagées)
     assignInPlace(IM.config.APP_SETTINGS, cfg.settings);
     assignInPlace(IM.config.ROLE_COLORS, cfg.roleColors);
