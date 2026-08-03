@@ -162,18 +162,23 @@ window.ImpulsionMarketing.customFields = (function () {
     values = values || {};
     var fields = getFields(attachPoint, opts.canalType);
     if (!fields.length) return '';
-    var idPrefix = opts.idPrefix || 'cf-' + attachPoint.replace(/[^a-zA-Z0-9]/g, '-');
+    // idPrefix OMIS (undefined) → préfixe auto-généré (cas normal, nouveaux champs
+    // perso). idPrefix explicitement '' → PAS de préfixe, l'id DOM est field.id tel
+    // quel — utilisé pour migrer un champ déjà existant sans changer son id (du
+    // code externe au module peut le référencer directement, ex. document.getElementById('launchDate')).
+    var idPrefix = (opts.idPrefix !== undefined) ? opts.idPrefix : ('cf-' + attachPoint.replace(/[^a-zA-Z0-9]/g, '-'));
     var html = '';
     fields.forEach(function (f) {
       var visible = evalShowIf(f, values);
       var marked = isSimpleRequired(f) || !!requiredGroup(f);
+      var domId = idPrefix ? (idPrefix + '-' + f.id) : f.id;
       html += '<div class="cf-field" data-cf-row="' + escAttr(f.id) + '"'
         + (f.showIf ? ' data-cf-showif="' + escAttr(JSON.stringify(f.showIf)) + '"' : '')
         + (visible ? '' : ' style="display:none;"') + '>';
       if (f.type !== 'checkbox') {
-        html += '<label class="cf-label">' + esc(f.label) + (marked ? ' <span class="cf-required">*</span>' : '') + '</label>';
+        html += '<label class="cf-label" for="' + escAttr(domId) + '">' + esc(f.label) + (marked ? ' <span class="cf-required">*</span>' : '') + '</label>';
       }
-      html += inputHtml(f, values[f.id], idPrefix + '-' + f.id);
+      html += inputHtml(f, values[f.id], domId);
       if (f.help) html += '<div class="cf-help">' + esc(f.help) + '</div>';
       html += '</div>';
     });

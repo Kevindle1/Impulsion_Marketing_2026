@@ -198,6 +198,21 @@ test('renderFields — un champ masqué (showIf faux) est rendu avec display:non
   });
 });
 
+test('renderFields — idPrefix explicitement vide (\'\') : id DOM = field.id tel quel (migration d\'un champ existant, référencé par ailleurs)', () => {
+  withConfig({ CUSTOM_FIELDS: { 'creation.step1': [{ id: 'launchDate', label: 'Date Envoi client', type: 'date' }] } }, () => {
+    const html = cf.renderFields('creation.step1', {}, { idPrefix: '' });
+    assert.match(html, /id="launchDate"/);
+    assert.doesNotMatch(html, /id="cf-/);
+  });
+});
+
+test('renderFields — idPrefix omis : préfixe auto-généré (comportement par défaut, nouveaux champs perso)', () => {
+  withConfig({ CUSTOM_FIELDS: { com_maquette: [{ id: 'x', label: 'X', type: 'text' }] } }, () => {
+    const html = cf.renderFields('com_maquette', {});
+    assert.match(html, /id="cf-com-maquette-x"/);
+  });
+});
+
 test('renderFields — l\'attribut data-cf-showif (JSON, plein de guillemets) reste bien formé', () => {
   // Régression : IM.security.escapeHtml échappe <, > et & mais PAS les guillemets
   // doubles (safe pour du texte, pas pour une valeur d'attribut) — un
