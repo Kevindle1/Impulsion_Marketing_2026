@@ -820,3 +820,88 @@ test.describe('com_maquette — migration sans casser les campagnes existantes',
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lot 9 (details.html) : ebf_bat — Objet de l'email (canal mail uniquement) et
+// Code Com migrent. C'est le lot le plus sensible du dépôt EBF : ces deux
+// valeurs sont relues ensuite par mirrorChannelCodes() (index de recherche,
+// fiche canal) DEPUIS L'OBJET dépôt déjà collecté par collectEbfDepot(), pas
+// depuis le DOM — la preuve à apporter est donc que collectEbfDepot() (code
+// non générique, inchangé) retrouve toujours bien les champs migrés via leur
+// id DOM exact (idSuffix). Webmaster (liste dynamique d'utilisateurs) et Ref
+// Paracom (contrainte maxlength) restent en dur.
+// ─────────────────────────────────────────────────────────────
+test.describe('ebf_bat — migration sans casser les campagnes existantes', () => {
+  function ebfBatCampaign() {
+    return {
+      id: 'CF EbfBat', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing', 'EBF'],
+      channels: [
+        { content: 'MAIL', deliverableLabel: 'Test', deliverableName: 'MAIL - Test', comType: 'Commerciales', targetingCriteria: 'Tous', comTypology: 'Création Caisse' }
+      ],
+      workflow: {
+        steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' },
+        assignments: { ebf: [PO_USER.name] },
+        channelSteps: { 0: { ebf_bat: 'pending', po_validation_bat: 'locked' } },
+        channelDates: {}, channelRevisionComments: {}
+      }
+    };
+  }
+
+  test('canal MAIL, config customFields absente : Objet de l\'email + Code Com s\'affichent, se collectent (collectEbfDepot) et alimentent mirrorChannelCodes comme avant', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectory(page, { [ebfBatCampaign().id]: ebfBatCampaign() });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent('CF EbfBat')));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(400);
+
+    // Canal MAIL : l'objet de l'email doit être visible (canalTypes).
+    await expect(page.locator('#ebf-emailobject-0')).toHaveCount(1, { timeout: 10000 });
+    await expect(page.locator('#ebf-codecom-0')).toHaveCount(1);
+
+    await page.locator('#ebf-emailobject-0').fill('Découvrez notre offre exclusive');
+    await page.locator('#ebf-codecom-0').fill('COM-2026-042');
+    await page.locator('.btn-save-ebf[data-ch="0"]').click();
+
+    const readonly = page.locator('#ebf-readonly-0');
+    await expect(readonly).toBeVisible({ timeout: 10000 });
+    await expect(readonly).toContainText('COM-2026-042');
+    await expect(readonly).toContainText('Découvrez notre offre exclusive');
+
+    // Preuve directe que collectEbfDepot() (code non générique) retrouve bien
+    // le champ migré, exactement comme mirrorChannelCodes() le lit en aval.
+    const collected = await page.evaluate(() => window.collectEbfDepot(0));
+    expect(collected.codeCom).toBe('COM-2026-042');
+    expect(collected.emailObject).toBe('Découvrez notre offre exclusive');
+    const mirrored = await page.evaluate(() => {
+      window.mirrorChannelCodes(0, { codeCom: 'COM-2026-042', emailObject: 'Découvrez notre offre exclusive' });
+      return window.currentCampaignData.channels[0].codeCom;
+    });
+    expect(mirrored).toBe('COM-2026-042');
+
+    console.log('errors (migration ebf_bat, canal MAIL):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('canal SMS : l\'objet de l\'email (canalTypes MAIL) n\'apparaît pas, Code Com reste', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    var camp = ebfBatCampaign();
+    camp.channels[0].content = 'SMS';
+    camp.channels[0].deliverableName = 'SMS - Test';
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectory(page, { [camp.id]: camp });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent(camp.id)));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(400);
+
+    await expect(page.locator('#ebf-codecom-0')).toHaveCount(1, { timeout: 10000 });
+    expect(await page.locator('#ebf-emailobject-0').count()).toBe(0);
+
+    console.log('errors (ebf_bat, canal SMS, objet email masqué):', errors);
+    expect(errors).toEqual([]);
+  });
+});

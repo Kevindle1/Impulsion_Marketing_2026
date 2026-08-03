@@ -95,6 +95,10 @@ window.ImpulsionMarketing.customFields = (function () {
     // idPrefix) — un seul canal est affiché à la fois dans le DOM, mais le code
     // de collecte du dépôt (hors moteur générique, ex. collectDataMepDepot)
     // référence encore l'id complet 'data-mepdate-' + idx directement.
+    'ebf_bat': [
+      { id: 'ebf-emailobject-', label: 'Objet de l\'email', type: 'text', order: 1, canalTypes: ['MAIL', 'MAIL + E-MESSAGE'], help: 'Ex : Découvrez notre offre exclusive...' },
+      { id: 'ebf-codecom-', label: 'Code Com', type: 'text', order: 2 }
+    ],
     'com_maquette': [
       { id: 'com-depot-date-', label: 'Date de dépôt maquette', type: 'date', order: 1 },
       { id: 'com-figma-', label: 'URL Figma', type: 'url', order: 2 },

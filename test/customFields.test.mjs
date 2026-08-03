@@ -37,7 +37,10 @@ function withConfig(cfg, fn) {
 
 test('getFields — renvoie [] pour un point d\'attache absent de la config', () => {
   withConfig({ CUSTOM_FIELDS: {} }, () => {
-    assert.deepEqual(cf.getFields('ebf_bat'), []);
+    // po_validation_maquette : étape sans aucun champ migrable (repli
+    // DEFAULT_FIELDS volontairement absent) — cf. ebf_bat plus bas qui, lui,
+    // a un repli et n'est donc plus un bon exemple de « point vide ».
+    assert.deepEqual(cf.getFields('po_validation_maquette'), []);
   });
 });
 
@@ -185,7 +188,7 @@ test('validateValues — liste (type list) : chaque URL est vérifiée', () => {
 
 test('renderFields — [] si aucun champ défini pour ce point d\'attache', () => {
   withConfig({ CUSTOM_FIELDS: {} }, () => {
-    assert.equal(cf.renderFields('ebf_bat', {}), '');
+    assert.equal(cf.renderFields('po_validation_maquette', {}), '');
   });
 });
 
@@ -239,6 +242,17 @@ test('renderFields — creation.step3.canal.base avec idSuffix : tous les id/nam
     assert.match(html, /id="targetingCriteria3"/);
     assert.match(html, /name="comTypology3"/);
     assert.match(html, /id="urlLccx3"/);
+  });
+});
+
+test('getFields — ebf_bat : repli DEFAULT_FIELDS (objet email + code Com), objet email restreint aux canaux mail (canalTypes)', () => {
+  withConfig({}, () => {
+    assert.deepEqual(cf.getFields('ebf_bat').map(f => f.id), ['ebf-emailobject-', 'ebf-codecom-']);
+    // Sans canalType précisé (repli permissif) : tous les champs, y compris l'objet email.
+    assert.deepEqual(cf.getFields('ebf_bat').map(f => f.id), cf.getFields('ebf_bat', undefined).map(f => f.id));
+    // Canal SMS : l'objet email (canalTypes MAIL uniquement) est filtré, code Com reste.
+    assert.deepEqual(cf.getFields('ebf_bat', 'SMS').map(f => f.id), ['ebf-codecom-']);
+    assert.deepEqual(cf.getFields('ebf_bat', 'MAIL').map(f => f.id), ['ebf-emailobject-', 'ebf-codecom-']);
   });
 });
 

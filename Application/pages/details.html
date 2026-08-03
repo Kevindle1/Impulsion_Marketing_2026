@@ -1440,19 +1440,21 @@
             h += '<div class="form-row"><label>Webmaster / Resp. EBF</label><select id="ebf-webmaster-' + idx + '" class="form-control"><option value="">-- Choisir --</option>';
             ebfUsers.forEach(function(u) { h += '<option value="' + security.escapeHtml(u.name) + '">' + security.escapeHtml(u.name) + '</option>'; });
             h += '</select></div>';
-            // Objet de l'email : saisi à la réalisation du BAT (mail uniquement),
-            // remonté ensuite dans la validation BAT du PO et sur la fiche canal.
-            if (['MAIL', 'MAIL + E-MESSAGE'].indexOf((ch && ch.content) || '') !== -1) {
-                h += '<div class="form-row"><label>Objet de l\'email</label><input type="text" id="ebf-emailobject-' + idx + '" class="form-control" placeholder="Ex : Découvrez notre offre exclusive..."></div>';
-            }
-            h += '<div class="form-row"><label>Code Com</label><input type="text" id="ebf-codecom-' + idx + '" class="form-control"></div>';
             h += '<div class="form-row"><label>Ref Paracom <small style="font-weight:normal">(max 32 car.)</small></label><input type="text" id="ebf-refpara-' + idx + '" maxlength="32" class="form-control"></div>';
             h += '<div class="form-row"><label>Nombre de CTA</label><input type="number" id="ebf-numcta-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="ebf-cta-urls-' + idx + '"></div>';
             h += '<p style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
             h += '<div class="form-row"><label>Fichier BAT (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées au BAT.</small></div>';
             h += '</div>';
-            h += customFieldsSectionHtml('ebf_bat', ch);
+            // Objet de l'email (mail uniquement, canalTypes) et Code Com : champs
+            // déjà en place, migrés vers le moteur générique (même clé de stockage
+            // — voir DEFAULT_FIELDS['ebf_bat']). mirrorChannelCodes/l'index de
+            // recherche/le rapprochement Bilan lisent depot.codeCom en aval de
+            // collectEbfDepot (toujours un document.getElementById direct, id
+            // inchangé par idSuffix) — aucun de ces lecteurs n'est affecté.
+            // Webmaster (liste dynamique d'utilisateurs) et Ref Paracom (contrainte
+            // maxlength non supportée par le moteur) restent en dur.
+            h += customFieldsSectionHtml('ebf_bat', ch, null, { idSuffix: idx });
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-ebf" data-ch="' + idx + '" data-step="ebf_bat">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '">📤 Déposer et soumettre</button>';
