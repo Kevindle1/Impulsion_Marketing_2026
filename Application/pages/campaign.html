@@ -980,18 +980,6 @@
                             </small>
                         </div>
 
-                        <div class="form-group fg-full">
-                            <label>Validation juridique et conformité <span style="font-weight:400;color:#888;">(optionnel)</span></label>
-                            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-                                <input type="checkbox" id="juridiqueRequired" style="width:18px;height:18px;cursor:pointer;">
-                                <span>Cette campagne nécessite une validation juridique et conformité</span>
-                            </label>
-                            <div id="juridiqueCommentGroup" style="display:none;margin-top:10px;">
-                                <label for="juridiqueComment">Commentaire juridique :</label>
-                                <textarea id="juridiqueComment" rows="2" placeholder="Instructions, contraintes, points de vigilance..."></textarea>
-                            </div>
-                        </div>
-
                         <div class="step-navigation">
                             <div></div>
                             <button type="button" class="btn btn-next" onclick="nextStep()">Suivant →</button>
@@ -1332,7 +1320,7 @@
             //    avec une clé existante, l'admin choisit un id propre à son champ).
             // idPrefix:'' préserve les id DOM déjà utilisés ailleurs (validateStep,
             // récapitulatif...) pour les champs migrés.
-            var STEP1_MIGRATED_IDS = ['taskName', 'description', 'launchDate', 'kickoffNeeded', 'kickoffDate', 'typology', 'market', 'recurrence'];
+            var STEP1_MIGRATED_IDS = ['taskName', 'description', 'launchDate', 'kickoffNeeded', 'kickoffDate', 'typology', 'market', 'recurrence', 'juridiqueRequired', 'juridiqueComment'];
             // Retire les champs migrés d'un objet de valeurs collecté génériquement — ils
             // sont déjà sauvegardés à leur emplacement d'origine (data.id, data.launchDate...),
             // les stocker aussi dans customFieldValues serait une copie redondante.
@@ -1351,7 +1339,9 @@
                     kickoffDate: data.kickoffDate || '',
                     typology: data.typology || '',
                     market: data.market || '',
-                    recurrence: data.recurrence || ''
+                    recurrence: data.recurrence || '',
+                    juridiqueRequired: !!(data.juridique && data.juridique.required),
+                    juridiqueComment: (data.juridique && data.juridique.comment) || ''
                 };
             };
             var STEP2_MIGRATED_IDS = ['cibleProspect', 'prospectSource', 'persona'];
@@ -1424,13 +1414,10 @@
                 }
                 if (data.instantiation) $("#instantiation").value = data.instantiation;
                 if (data.campagneLiee) $("#campagneLiee").value = data.campagneLiee;
-                if (data.juridique && data.juridique.required) {
-                    const jurReq = document.getElementById('juridiqueRequired');
-                    if (jurReq) { jurReq.checked = true; jurReq.dispatchEvent(new Event('change')); }
-                    if (data.juridique.comment) {
-                        setTimeout(() => { const el = $("#juridiqueComment"); if (el) el.value = data.juridique.comment; }, 50);
-                    }
-                }
+                // juridiqueRequired/juridiqueComment : rendus par renderCreationCustomFields()
+                // (champs migrés, même clé de stockage data.juridique.{required,comment}) —
+                // la conditionnalité (showIf) est calculée directement à partir de `data`
+                // au rendu, pas besoin d'événement.
 
                 // Équipes requises
                 if (data.requiredTeams && Array.isArray(data.requiredTeams)) {
@@ -2082,10 +2069,8 @@
                 summaryContainer.innerHTML = html;
             }
 
-            // ── Toggle juridique ──
-            document.getElementById('juridiqueRequired').addEventListener('change', function() {
-                document.getElementById('juridiqueCommentGroup').style.display = this.checked ? 'block' : 'none';
-            });
+            // juridiqueRequired → afficher juridiqueComment : géré par le moteur
+            // générique (showIf), voir DEFAULT_FIELDS['creation.step1'].
 
             // ── Segments : "Tout sélectionner" par groupe (Particuliers / Pro / Agri) ──
             // (lié après génération des cases depuis la config — voir buildChoiceLists)

@@ -62,10 +62,12 @@ window.ImpulsionMarketing.customFields = (function () {
       { id: 'kickoffDate', label: 'Date de kick-off', type: 'date', order: 5, showIf: { field: 'kickoffNeeded', op: 'eq', value: 'Oui' } },
       { id: 'typology', label: 'Typologie', type: 'select', order: 6, required: true, configRef: 'TYPOLOGIES' },
       { id: 'market', label: 'Marché', type: 'select', order: 7, required: true, configRef: 'MARCHES' },
-      { id: 'recurrence', label: 'Récurrence', type: 'select', order: 8, required: true, configRef: 'RECURRENCES' }
+      { id: 'recurrence', label: 'Récurrence', type: 'select', order: 8, required: true, configRef: 'RECURRENCES' },
+      { id: 'juridiqueRequired', label: 'Validation juridique et conformité', checkboxLabel: 'Cette campagne nécessite une validation juridique et conformité', type: 'checkbox', order: 9 },
+      { id: 'juridiqueComment', label: 'Commentaire juridique', type: 'textarea', order: 10, showIf: { field: 'juridiqueRequired', op: 'checked' }, help: 'Instructions, contraintes, points de vigilance...' }
     ],
     'creation.step2': [
-      { id: 'cibleProspect', label: 'Cible aussi des prospects', type: 'checkbox', order: 1 },
+      { id: 'cibleProspect', label: 'Cible aussi des prospects', checkboxLabel: 'Cible aussi des prospects', type: 'checkbox', order: 1 },
       { id: 'prospectSource', label: 'Source / précision', type: 'text', order: 2, showIf: { field: 'cibleProspect', op: 'checked' }, help: 'Ex : courriers refus EER, listes entreprises…' },
       { id: 'persona', label: 'Persona', type: 'text', order: 3 }
     ],

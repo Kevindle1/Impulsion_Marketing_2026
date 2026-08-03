@@ -224,6 +224,31 @@ test('renderFields — idSuffix : id DOM = field.id + suffixe, sans séparateur 
   });
 });
 
+test('getFields — creation.step1 inclut juridiqueRequired/juridiqueComment (validation juridique et conformité, migrée depuis data.juridique.{required,comment})', () => {
+  withConfig({}, () => {
+    var ids = cf.getFields('creation.step1').map(f => f.id);
+    assert.ok(ids.indexOf('juridiqueRequired') !== -1);
+    assert.ok(ids.indexOf('juridiqueComment') !== -1);
+  });
+});
+
+test('renderFields — juridiqueRequired (checkbox) affiche checkboxLabel, pas le libellé du groupe (limitation du type checkbox)', () => {
+  withConfig({}, () => {
+    const html = cf.renderFields('creation.step1', {}, { idPrefix: '' });
+    assert.match(html, /Cette campagne nécessite une validation juridique et conformité/);
+    assert.match(html, /id="juridiqueRequired"/);
+  });
+});
+
+test('evalShowIf — juridiqueComment masqué tant que juridiqueRequired n\'est pas coché', () => {
+  withConfig({}, () => {
+    var fields = cf.getFields('creation.step1');
+    var commentField = fields.filter(f => f.id === 'juridiqueComment')[0];
+    assert.equal(cf.evalShowIf(commentField, { juridiqueRequired: false }), false);
+    assert.equal(cf.evalShowIf(commentField, { juridiqueRequired: true }), true);
+  });
+});
+
 test('getFields — creation.step3.canal.base : repli DEFAULT_FIELDS (6 champs socle) sans config sauvegardée, jamais filtré par canalType', () => {
   withConfig({}, () => {
     var ids = cf.getFields('creation.step3.canal.base').map(f => f.id);

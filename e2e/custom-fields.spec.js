@@ -413,6 +413,63 @@ test.describe('creation.step1 — migration sans casser les campagnes existantes
     console.log('errors (validateStep blocage champ migré):', errors);
     expect(errors).toEqual([]);
   });
+
+  // juridiqueRequired/juridiqueComment : migrés depuis data.juridique.{required,
+  // comment} (objet imbriqué, contrairement aux autres champs de step1 qui sont
+  // à plat) — la reconstruction en objet imbriqué au moment de la sauvegarde
+  // (collectFormData/createCampaign) n'a pas été touchée : elle continue de lire
+  // #juridiqueRequired/#juridiqueComment par leur id DOM exact (idPrefix:'').
+  const JURIDIQUE_CAMPAIGN = {
+    id: 'CampagneJuridiqueExistante', description: 'x', po: PO_USER.name,
+    launchDate: '2026-10-15', instantiation: '2026-08-01', typology: 'Commerciale',
+    market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing'],
+    juridique: { required: true, comment: 'Vérifier les mentions légales', status: 'pending' },
+    channels: [], actif: true
+  };
+
+  test('campagne existante (juridique.required=true), config customFields absente : pré-remplissage + conditionnalité + sauvegarde en objet imbriqué inchangés', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'] });
+    await installFakeDirectory(page, { [JURIDIQUE_CAMPAIGN.id]: JURIDIQUE_CAMPAIGN });
+    await page.goto(url('pages/campaign.html?edit=' + encodeURIComponent(JURIDIQUE_CAMPAIGN.id)));
+    await expect(page.locator('#taskName')).toHaveValue(JURIDIQUE_CAMPAIGN.id, { timeout: 10000 });
+
+    await expect(page.locator('#juridiqueRequired')).toBeChecked();
+    await expect(page.locator('#juridiqueComment')).toBeVisible();
+    await expect(page.locator('#juridiqueComment')).toHaveValue(JURIDIQUE_CAMPAIGN.juridique.comment);
+
+    await page.locator('#juridiqueComment').fill('Mentions légales mises à jour');
+    await page.evaluate(() => window.createCampaign());
+    await page.waitForTimeout(800);
+
+    const savedJson = await page.evaluate(() => window.__campaignFiles[Object.keys(window.__campaignFiles)[0]].getFile().then((f) => f.text()));
+    const saved = JSON.parse(savedJson);
+    expect(saved.juridique).toEqual({ required: true, comment: 'Mentions légales mises à jour', status: 'pending' });
+    // Pas de copie redondante des champs migrés dans customFieldValues.
+    expect(saved.customFieldValues && saved.customFieldValues['creation.step1']).toEqual({});
+
+    console.log('errors (migration juridique, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('nouvelle campagne : juridique décoché par défaut → data.juridique = null à la sauvegarde (comme avant)', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'] });
+    await installFakeDirectory(page, {});
+    await page.goto(url('pages/campaign.html'));
+    await page.locator('#taskName').waitFor({ state: 'attached', timeout: 10000 });
+
+    await expect(page.locator('#juridiqueRequired')).not.toBeChecked();
+    await expect(page.locator('#juridiqueComment')).toBeHidden();
+
+    await page.locator('#juridiqueRequired').check();
+    await expect(page.locator('#juridiqueComment')).toBeVisible();
+    await page.locator('#juridiqueRequired').uncheck();
+    await expect(page.locator('#juridiqueComment')).toBeHidden();
+
+    console.log('errors (nouvelle campagne, juridique showIf):', errors);
+    expect(errors).toEqual([]);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────
