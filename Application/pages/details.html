@@ -407,11 +407,45 @@
     var help             = window.ImpulsionMarketing.help;
     var users            = window.ImpulsionMarketing.users;
     var workflow         = window.ImpulsionMarketing.workflow;
+    var customFields     = window.ImpulsionMarketing.customFields;
 
     // Notification (remplace alert) — repli sur alert si le module n'est pas chargé.
     function notify(message, type) {
         if (errors && errors.showNotification) errors.showNotification(message, type || 'info');
         else alert(message);
+    }
+
+    // ── Champs personnalisés (Administration ▸ Champs personnalisés) : rendu +
+    // câblage + collecte partagés par toutes les sections d'étape ci-dessous.
+    // `values` doit refléter ce qui est déjà enregistré pour CETTE étape+canal
+    // (dépôt JSON pour les étapes de dépôt, ch.customFieldValues pour les
+    // étapes de validation PO / juridique — deux emplacements de stockage
+    // différents selon l'étape, cf. renvoi de la fonction appelante).
+    function customFieldsSectionHtml(stepId, ch, values) {
+        if (!customFields) return '';
+        return customFields.renderFields(stepId, values || {}, { canalType: ch && ch.content });
+    }
+    function wireCustomFieldsSection(stepId, ch) {
+        if (!customFields) return;
+        customFields.wireFields(document, stepId, { canalType: ch && ch.content });
+    }
+    // Collecte + valide les champs perso saisis dans le DOM pour cette étape.
+    // Renvoie { values, errors } — errors est un tableau de {fieldId, message}.
+    function collectCustomFields(stepId, ch) {
+        if (!customFields) return { values: {}, errors: [] };
+        var values = customFields.collectValues(document, stepId, ch && ch.content);
+        var errs = customFields.validateValues(stepId, values, ch && ch.content);
+        return { values: values, errors: errs };
+    }
+    // Étapes de DÉPÔT (com/ebf/data) : attache les valeurs des champs perso à
+    // l'objet `depot` avant sa sauvegarde (même fichier JSON que le reste du
+    // dépôt). Renvoie les erreurs de validation (à vérifier avant une soumission
+    // — un brouillon peut toujours être enregistré incomplet).
+    function attachCustomFieldsToDepot(depot, stepId, idx) {
+        var ch = currentCampaignData.channels[idx];
+        var r = collectCustomFields(stepId, ch);
+        depot.customFieldValues = r.values;
+        return r.errors;
     }
 
     // Petite modale de saisie texte (remplace prompt). Appelle onConfirm(valeur) à la validation.
@@ -1307,6 +1341,7 @@
             h += '<div id="com-img-urls-' + idx + '"></div>';
             h += '<div class="form-row"><label>Déposer votre maquette ici (PDF ou image)</label><input type="file" id="com-pdf-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
             h += '</div>';
+            h += customFieldsSectionHtml('com_maquette', ch);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-com" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-com" data-ch="' + idx + '">📤 Soumettre ce canal</button>';
@@ -1346,6 +1381,7 @@
             h += '<div class="actor-form">';
             h += '<div class="form-row"><label>Motif (obligatoire en cas de refus)</label><textarea id="juri-refuse-reason-' + idx + '" class="form-control" rows="2" placeholder="Ex : mention légale manquante, mentions tarifaires à corriger..."></textarea></div>';
             h += '</div>';
+            h += customFieldsSectionHtml('com_juridique', ch, ch.customFieldValues && ch.customFieldValues.com_juridique);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-submit btn-juridique-validate-canal" data-ch="' + idx + '">✅ Valider juridiquement</button>';
             h += '<button type="button" class="btn-actor-save btn-juridique-refuse-canal" data-ch="' + idx + '" style="background:var(--amber);color:#fff;">❌ Refuser (retour Com)</button>';
@@ -1409,6 +1445,7 @@
             h += '<p style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin:14px 0 10px;">BAT</p>';
             h += '<div class="form-row"><label>Fichier BAT (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-bat-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées au BAT.</small></div>';
             h += '</div>';
+            h += customFieldsSectionHtml('ebf_bat', ch);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-ebf" data-ch="' + idx + '" data-step="ebf_bat">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '">📤 Déposer et soumettre</button>';
@@ -1470,6 +1507,7 @@
             h += '<div class="actor-form">';
             h += '<div class="form-row"><label>Fichier test en production (PDF, image, HTML ou MHTML)</label><input type="file" id="ebf-pdf-testprod-' + idx + '" class="form-control" accept=".pdf,.html,.htm,.mht,.mhtml,image/*,text/html" multiple><small style="display:block;color:var(--muted);font-size:11px;margin-top:4px;">Mail HTML : sélectionnez le <strong>.html ET ses images</strong> (Ctrl/⌘ + clic) — ou un seul fichier <strong>.mhtml</strong> (archive web mono-fichier). Les images seront intégrées.</small></div>';
             h += '</div>';
+            h += customFieldsSectionHtml('ebf_test_prod', ch);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-ebf" data-ch="' + idx + '" data-step="ebf_test_prod">📤 Déposer et soumettre</button>';
@@ -1533,6 +1571,7 @@
                 h += '<p style="font-size:14px;color:var(--gray-700);margin-bottom:8px;">Confirmez la mise en production de ce canal.</p>';
             }
             h += '</div>';
+            if (isCiblage) h += customFieldsSectionHtml('data_ciblage', ch);
             h += '<div class="actor-submit-row">';
             var submitLabel = isMep ? '🚀 Confirmer MEP de ce canal' : '📤 Déposer et soumettre';
             var submitClass = isMep ? 'btn-actor-submit btn-actor-submit--mep' : 'btn-actor-submit';
@@ -1567,6 +1606,7 @@
             h += '<div class="form-row"><label>Date du premier envoi</label><input type="date" id="data-mepfirstsend-' + idx + '" class="form-control"></div>';
             h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="data-mepcomment-' + idx + '" class="form-control" placeholder="Ex : routage déclenché à 9h00"></div>';
             h += '</div>';
+            h += customFieldsSectionHtml('data_mise_en_prod', ch);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-datamep" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';
@@ -1601,6 +1641,7 @@
             h += '<div class="form-row"><label>Date de mise en production effective</label><input type="date" id="ebf-mepdate-' + idx + '" class="form-control"></div>';
             h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="ebf-mepcomment-' + idx + '" class="form-control" placeholder="Ex : LP mise en ligne à 9h00"></div>';
             h += '</div>';
+            h += customFieldsSectionHtml('ebf_mise_en_prod', ch);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-ebfmep" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-ebf-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';
@@ -1656,6 +1697,7 @@
             });
             h += '</div></div>';
             h += '</div>';
+            h += customFieldsSectionHtml('data_lancement_test', ch);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-datatest" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-datatest" data-ch="' + idx + '" data-step="data_lancement_test">🧪 Confirmer le lancement test</button>';
@@ -1735,6 +1777,7 @@
         }
         var chAttr = (channelIdx !== undefined) ? (' data-ch="' + channelIdx + '"') : '';
         var uid = poStepId + (channelIdx !== undefined ? ('-' + channelIdx) : '');
+        var ch = (channelIdx !== undefined && currentCampaignData.channels) ? currentCampaignData.channels[channelIdx] : null;
         var h = '<div style="background:var(--blue-50);border:1px solid var(--blue);border-radius:8px;padding:12px 14px;margin-top:12px;">';
         h += '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">';
         h += '<span style="font-size:13px;font-weight:600;color:var(--blue);">📤 En attente de votre validation</span>';
@@ -1750,10 +1793,9 @@
             h += '<input type="file" id="po-ch-img-' + uid + '" class="form-control" accept="image/*">';
             h += '<div id="po-ch-img-preview-' + uid + '" style="margin-top:8px;"></div>';
             h += '</div>';
-            h += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
-        } else {
-            h += '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
         }
+        if (ch) h += customFieldsSectionHtml(poStepId, ch, ch.customFieldValues && ch.customFieldValues[poStepId]);
+        h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">';
         h += '<button class="btn-po-validate-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:var(--green-600);color:#fff;border:none;border-radius:6px;padding:7px 16px;font-weight:600;cursor:pointer;">✅ Valider ce canal</button>';
         if (canRevise) {
             h += '<button class="btn-po-ask-revision-ch" data-step="' + poStepId + '"' + chAttr + ' style="background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-weight:600;cursor:pointer;">🔄 Demander modification</button>';
@@ -2334,11 +2376,33 @@
     // ─────────────────────────────────────────────
     // FILL FORMS + READONLY (inchangé)
     // ─────────────────────────────────────────────
+    // Les champs personnalisés d'une étape de DÉPÔT sont rendus vides au premier
+    // rendu synchrone (le dépôt n'est pas encore chargé) — une fois le JSON de
+    // dépôt lu (async), on reconstruit le bloc avec les valeurs réelles et on le
+    // recâble. Remplace le bloc existant dans le DOM plutôt que de le vider champ
+    // par champ (plus simple, réutilise directement renderFields/wireFields).
+    function fillCustomFieldsFromDepot(stepId, idx, values) {
+        if (!customFields) return;
+        var ch = currentCampaignData.channels[idx];
+        if (!ch) return;
+        var old = document.querySelector('.cf-fields-block[data-cf-attach="' + stepId + '"]');
+        if (!old || !old.parentNode) return;
+        var html = customFields.renderFields(stepId, values || {}, { canalType: ch.content });
+        if (!html) return;
+        var wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        var fresh = wrapper.firstElementChild;
+        if (!fresh) return;
+        old.parentNode.replaceChild(fresh, old);
+        wireCustomFieldsSection(stepId, ch);
+    }
+
     function fillComForm(idx, d) {
         setVal('com-depot-date-' + idx, d.depotMaquetteDate || '');
         setVal('com-figma-' + idx, d.figmaUrl);
         setVal('com-numimages-' + idx, d.numImages || 0);
         updateComImageUrls(idx, d.numImages || 0, d.imageUrls);
+        fillCustomFieldsFromDepot('com_maquette', idx, d.customFieldValues);
     }
     function fillEbfForm(idx, d) {
         setVal('ebf-webmaster-' + idx, d.webmaster);
@@ -2347,6 +2411,7 @@
         setVal('ebf-emailobject-' + idx, d.emailObject);
         setVal('ebf-numcta-' + idx, d.numCta || 0);
         updateEbfCtaUrls(idx, d.numCta || 0, d.ctaUrls);
+        fillCustomFieldsFromDepot('ebf_bat', idx, d.customFieldValues);
     }
     function fillDataForm(idx, d) {
         setVal('data-codeproj-' + idx, d.codeProjet);
@@ -2355,6 +2420,7 @@
         setVal('data-chemin-' + idx, d.cheminRequete);
         setVal('data-urlechantillon-' + idx, d.urlEchantillon);
         setVal('data-testreceivers-' + idx, d.testReceivers);
+        fillCustomFieldsFromDepot('data_ciblage', idx, d.customFieldValues);
     }
 
     // M13 : dépôt en 2 temps (Enregistrer / Soumettre à validation). Un dépôt
@@ -2992,13 +3058,13 @@
             else { var ee = document.getElementById('ebf-empty-' + idx);  if (ee) ee.style.display = 'block'; }
             if (cache.data)    { fillDataForm(idx, cache.data); renderDataReadonly(idx, cache.data); }
             else { var de = document.getElementById('data-empty-' + idx); if (de) de.style.display = 'block'; }
-            if (cache.datamep) { renderDataMepReadonly(idx, cache.datamep); }
+            if (cache.datamep) { renderDataMepReadonly(idx, cache.datamep); fillCustomFieldsFromDepot('data_mise_en_prod', idx, cache.datamep.customFieldValues); }
             else { var dme = document.getElementById('data-mep-empty-' + idx); if (dme) dme.style.display = 'block'; }
-            if (cache.ebftest) { renderEbfTestProdReadonly(idx, cache.ebftest); if (cache.ebftest.pdfTestProdSavedName) loadTestProdImagePreview(idx, folder, cache.ebftest.pdfTestProdSavedName); }
+            if (cache.ebftest) { renderEbfTestProdReadonly(idx, cache.ebftest); if (cache.ebftest.pdfTestProdSavedName) loadTestProdImagePreview(idx, folder, cache.ebftest.pdfTestProdSavedName); fillCustomFieldsFromDepot('ebf_test_prod', idx, cache.ebftest.customFieldValues); }
             else { var ete = document.getElementById('ebf-testprod-empty-' + idx); if (ete) ete.style.display = 'block'; }
-            if (cache.datatest) { renderDataLancementTestReadonly(idx, cache.datatest); }
+            if (cache.datatest) { renderDataLancementTestReadonly(idx, cache.datatest); fillCustomFieldsFromDepot('data_lancement_test', idx, cache.datatest.customFieldValues); }
             else { var dte = document.getElementById('data-testlaunch-empty-' + idx); if (dte) dte.style.display = 'block'; }
-            if (cache.ebfmep) { renderEbfMepReadonly(idx, cache.ebfmep); }
+            if (cache.ebfmep) { renderEbfMepReadonly(idx, cache.ebfmep); fillCustomFieldsFromDepot('ebf_mise_en_prod', idx, cache.ebfmep.customFieldValues); }
             else { var eme = document.getElementById('ebf-mep-empty-' + idx); if (eme) eme.style.display = 'block'; }
             return;
         }
@@ -3047,6 +3113,7 @@
                 loadedDepots[idx].ebftest = d;
                 renderEbfTestProdReadonly(idx, d);
                 if (d.pdfTestProdSavedName) loadTestProdImagePreview(idx, folder, d.pdfTestProdSavedName);
+                fillCustomFieldsFromDepot('ebf_test_prod', idx, d.customFieldValues);
             })
             .catch(function() {
                 var el = document.getElementById('ebf-testprod-empty-' + idx);
@@ -3057,6 +3124,7 @@
             .then(function(d) {
                 loadedDepots[idx].datamep = d;
                 renderDataMepReadonly(idx, d);
+                fillCustomFieldsFromDepot('data_mise_en_prod', idx, d.customFieldValues);
             })
             .catch(function() {
                 var el = document.getElementById('data-mep-empty-' + idx);
@@ -3067,6 +3135,7 @@
             .then(function(d) {
                 loadedDepots[idx].datatest = d;
                 renderDataLancementTestReadonly(idx, d);
+                fillCustomFieldsFromDepot('data_lancement_test', idx, d.customFieldValues);
             })
             .catch(function() {
                 var el = document.getElementById('data-testlaunch-empty-' + idx);
@@ -3077,6 +3146,7 @@
             .then(function(d) {
                 loadedDepots[idx].ebfmep = d;
                 renderEbfMepReadonly(idx, d);
+                fillCustomFieldsFromDepot('ebf_mise_en_prod', idx, d.customFieldValues);
             })
             .catch(function() {
                 var el = document.getElementById('ebf-mep-empty-' + idx);
@@ -3087,7 +3157,18 @@
     // ─────────────────────────────────────────────
     // EVENTS : PAGE CANAL (par canal)
     // ─────────────────────────────────────────────
+    // Les 12 id d'étape par canal (mêmes id que js/workflow-standalone.js) — sert à
+    // câbler les champs personnalisés sur toutes les étapes en une seule boucle,
+    // sans savoir à l'avance lesquelles sont actives pour ce canal (wireFields est
+    // un no-op silencieux si l'étape n'a pas de bloc dans le DOM).
+    var ALL_STEP_IDS = ['com_maquette', 'po_validation_maquette', 'com_juridique', 'ebf_bat', 'po_validation_bat',
+        'data_ciblage', 'po_validation_ciblage', 'data_lancement_test', 'ebf_test_prod', 'po_validation_test_prod',
+        'data_mise_en_prod', 'ebf_mise_en_prod'];
+
     function setupChannelPageEvents(idx) {
+        var chForCfWire = currentCampaignData.channels[idx];
+        ALL_STEP_IDS.forEach(function (sid) { wireCustomFieldsSection(sid, chForCfWire); });
+
         // COM : numImages → dynamic URL inputs
         var numImgInput = document.getElementById('com-numimages-' + idx);
         if (numImgInput) {
@@ -3111,6 +3192,7 @@
                 var folder = getChannelFolder(idx);
                 var depot  = collectComDepot(idx);
                 depot.status = 'draft';
+                attachCustomFieldsToDepot(depot, 'com_maquette', idx);
                 var comFileEl = document.getElementById('com-pdf-' + idx);
                 var comFileToSave = comFileEl && comFileEl.files[0];
                 if (comFileToSave) {
@@ -3170,6 +3252,8 @@
                     var comExt = comFileToSave.name.split('.').pop().toLowerCase();
                     depot.pdfComSavedName = 'maquette_canal_' + idx + '.' + comExt;
                 }
+                var cfErrsCom = attachCustomFieldsToDepot(depot, 'com_maquette', idx);
+                if (cfErrsCom.length) { notify(cfErrsCom[0].message, 'warning'); return; }
                 disableBtn(btnSubmitCom, 'Envoi...');
                 saveDepotFile(currentCampaignName, folder, 'depotcom.json', depot)
                     .then(function() {
@@ -3210,6 +3294,7 @@
                 prepareEbfDepotFile(inputEl && inputEl.files).then(function(prepared) {
                     var depot = isTestProd ? collectEbfTestProdDepot(idx) : collectEbfDepot(idx);
                     depot.status = 'draft';
+                    attachCustomFieldsToDepot(depot, stepId, idx);
                     var savedName = null;
                     if (prepared) {
                         savedName = (isTestProd ? 'testprod_canal_' : 'bat_canal_') + idx + '.' + prepared.ext;
@@ -3249,6 +3334,8 @@
                 if (!depotUrlGuard(btn)) return;
                 var stepId      = btn.getAttribute('data-step') || 'ebf_bat';
                 var isTestProd  = stepId === 'ebf_test_prod';
+                var cfResultEbf = collectCustomFields(stepId, currentCampaignData.channels[idx]);
+                if (cfResultEbf.errors.length) { notify(cfResultEbf.errors[0].message, 'warning'); return; }
                 var folder      = getChannelFolder(idx);
                 var depotFile   = isTestProd ? 'depotebf_test.json' : 'depotebf.json';
                 var btnLabel    = '📤 Soumettre ce canal';
@@ -3259,6 +3346,7 @@
                 prepareEbfDepotFile(inputEl && inputEl.files).then(function(prepared) {
                     var depot = isTestProd ? collectEbfTestProdDepot(idx) : collectEbfDepot(idx);
                     depot.status = 'submitted';
+                    depot.customFieldValues = cfResultEbf.values;
                     var savedName = null;
                     if (prepared) {
                         savedName = (isTestProd ? 'testprod_canal_' : 'bat_canal_') + idx + '.' + prepared.ext;
@@ -3360,9 +3448,14 @@
                     var objChk = document.getElementById('po-obj-ok-' + channelIdx);
                     if (objChk && !objChk.checked) { notify('Veuillez vérifier et valider l\'objet du mail avant de valider le BAT.', 'warning'); return; }
                 }
+                var chForCf = currentCampaignData.channels[channelIdx];
+                var cfResult = collectCustomFields(stepId, chForCf);
+                if (cfResult.errors.length) { notify(cfResult.errors[0].message, 'warning'); return; }
                 var imgInput   = document.getElementById('po-ch-img-' + uid);
                 var imgFile    = imgInput && imgInput.files && imgInput.files[0];
                 disableBtn(btn, 'Validation...');
+                chForCf.customFieldValues = chForCf.customFieldValues || {};
+                chForCf.customFieldValues[stepId] = cfResult.values;
                 workflow.validateChannelStep(currentCampaignData, stepId, channelIdx);
                 // M8 : mémorise la date/heure de validation de CHAQUE étape (affichée sur le canal).
                 currentCampaignData.workflow.channelDates = currentCampaignData.workflow.channelDates || {};
@@ -3446,6 +3539,7 @@
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataDepot(idx, 'data_ciblage');
                 depot.status = 'draft';
+                attachCustomFieldsToDepot(depot, 'data_ciblage', idx);
                 var volInput = document.getElementById('data-volume-' + idx);
                 if (volInput && currentCampaignData.channels && currentCampaignData.channels[idx] !== undefined) {
                     currentCampaignData.channels[idx].volumeCible = parseInt(volInput.value) || 0;
@@ -3485,9 +3579,12 @@
                         return;
                     }
                 }
+                var cfResultData = collectCustomFields(stepId, currentCampaignData.channels[idx]);
+                if (cfResultData.errors.length) { errors.showNotification(cfResultData.errors[0].message, 'warning'); return; }
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataDepot(idx, stepId);
                 depot.status = isMep ? 'completed' : 'submitted';
+                depot.customFieldValues = cfResultData.values;
                 var btnLabel = isMep ? '🚀 Confirmer MEP de ce canal' : '📤 Soumettre ce canal';
                 mirrorChannelCodes(idx, depot); // #27 : indexer les codes saisis (Code Projet/Action)
                 // Sauvegarder le volumeCible saisi par Data dans campagne.json
@@ -3525,6 +3622,7 @@
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataLancementTestDepot(idx);
                 depot.status = 'draft';
+                attachCustomFieldsToDepot(depot, 'data_lancement_test', idx);
                 if (currentCampaignData.channels && currentCampaignData.channels[idx] !== undefined) {
                     currentCampaignData.channels[idx].testReceivers = _collectTestReceivers(idx);
                 }
@@ -3548,9 +3646,12 @@
         var btnDataTest = document.querySelector('.btn-submit-canal-datatest[data-ch="' + idx + '"]');
         if (btnDataTest) {
             btnDataTest.addEventListener('click', function() {
+                var cfResultDt = collectCustomFields('data_lancement_test', currentCampaignData.channels[idx]);
+                if (cfResultDt.errors.length) { errors.showNotification(cfResultDt.errors[0].message, 'warning'); return; }
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataLancementTestDepot(idx);
                 depot.status = 'submitted';
+                depot.customFieldValues = cfResultDt.values;
                 if (currentCampaignData.channels && currentCampaignData.channels[idx] !== undefined) {
                     currentCampaignData.channels[idx].testReceivers = _collectTestReceivers(idx);
                 }
@@ -3578,6 +3679,7 @@
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataMepDepot(idx);
                 depot.status = 'draft';
+                attachCustomFieldsToDepot(depot, 'data_mise_en_prod', idx);
                 disableBtn(btnSaveDataMep, 'Enregistrement...');
                 saveDepotFile(currentCampaignName, folder, 'depotdata_mep.json', depot)
                     .then(function() {
@@ -3595,8 +3697,11 @@
         var btnMep = document.querySelector('.btn-submit-mep[data-ch="' + idx + '"]');
         if (btnMep) {
             btnMep.addEventListener('click', function() {
+                var cfResultMep = collectCustomFields('data_mise_en_prod', currentCampaignData.channels[idx]);
+                if (cfResultMep.errors.length) { errors.showNotification(cfResultMep.errors[0].message, 'warning'); return; }
                 var folder = getChannelFolder(idx);
                 var depot  = collectDataMepDepot(idx);
+                depot.customFieldValues = cfResultMep.values;
                 disableBtn(btnMep, 'Envoi...');
                 saveDepotFile(currentCampaignName, folder, 'depotdata_mep.json', depot)
                     .then(function() {
@@ -3620,6 +3725,7 @@
                 var dateVal = (document.getElementById('ebf-mepdate-' + idx) || {}).value || '';
                 var comment = (document.getElementById('ebf-mepcomment-' + idx) || {}).value || '';
                 var depot   = { date: dateVal, comment: comment, status: 'draft', savedAt: new Date().toISOString() };
+                attachCustomFieldsToDepot(depot, 'ebf_mise_en_prod', idx);
                 disableBtn(btnSaveEbfMep, 'Enregistrement...');
                 saveDepotFile(currentCampaignName, folder, 'depotebf_mep.json', depot)
                     .then(function() {
@@ -3637,10 +3743,12 @@
         var btnEbfMep = document.querySelector('.btn-submit-ebf-mep[data-ch="' + idx + '"]');
         if (btnEbfMep) {
             btnEbfMep.addEventListener('click', function() {
+                var cfResultEbfMep = collectCustomFields('ebf_mise_en_prod', currentCampaignData.channels[idx]);
+                if (cfResultEbfMep.errors.length) { errors.showNotification(cfResultEbfMep.errors[0].message, 'warning'); return; }
                 var folder  = getChannelFolder(idx);
                 var dateVal = (document.getElementById('ebf-mepdate-' + idx) || {}).value || '';
                 var comment = (document.getElementById('ebf-mepcomment-' + idx) || {}).value || '';
-                var depot   = { date: dateVal, comment: comment, status: 'completed', savedAt: new Date().toISOString() };
+                var depot   = { date: dateVal, comment: comment, status: 'completed', savedAt: new Date().toISOString(), customFieldValues: cfResultEbfMep.values };
                 disableBtn(btnEbfMep, 'Envoi...');
                 saveDepotFile(currentCampaignName, folder, 'depotebf_mep.json', depot)
                     .then(function() {
@@ -3658,6 +3766,11 @@
         document.querySelectorAll('.btn-juridique-validate-canal').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var channelIdx = parseInt(btn.getAttribute('data-ch'), 10);
+                var chJuri = currentCampaignData.channels[channelIdx];
+                var cfResultJuri = collectCustomFields('com_juridique', chJuri);
+                if (cfResultJuri.errors.length) { notify(cfResultJuri.errors[0].message, 'warning'); return; }
+                chJuri.customFieldValues = chJuri.customFieldValues || {};
+                chJuri.customFieldValues.com_juridique = cfResultJuri.values;
                 disableBtn(btn, 'Validation...');
                 workflow.advanceChannelStep(currentCampaignData, channelIdx, 'com_juridique', 'validated');
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
