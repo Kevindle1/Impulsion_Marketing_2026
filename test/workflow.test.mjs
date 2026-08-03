@@ -17,7 +17,6 @@ import { dirname, join } from 'node:path';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 globalThis.window = globalThis.window || {};
 const src = await readFile(join(ROOT, 'Application', 'js', 'workflow-standalone.js'), 'utf8');
-// eslint-disable-next-line no-new-func
 new Function(src)();
 const workflow = globalThis.window.ImpulsionMarketing.workflow;
 

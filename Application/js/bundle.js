@@ -2881,7 +2881,6 @@ window.ImpulsionMarketing.workflow = (function () {
 
     var actions = [];
     var globalSteps = campaignData.workflow.steps;
-    var assignments = campaignData.workflow.assignments || {};
 
     // Étapes globales
     STEPS.slice(0, 3).forEach(function (step) {
@@ -4132,15 +4131,6 @@ window.ImpulsionMarketing.adminConfig = (function () {
       var visible = list.filter(function (e) { return inAudience(e, name); }).sort(byNewest);
       if (!visible.length) { renderWhatsNewModal([{ type: 'improve', title: 'Aucune annonce pour le moment', text: '', dateLabel: '' }], []); return; }
       renderWhatsNewModal(visible, visible.map(function (e) { return e.id; }));
-    });
-  }
-  function loadAndShowWhatsNew() {
-    readWhatsNew().then(function (list) {
-      _whatsNewCache = list;
-      updateWhatsNewDot();
-      var name = currentUserName();
-      var unseen = list.filter(function (e) { return inAudience(e, name) && !isSeenBy(e, name); }).sort(byNewest);
-      if (unseen.length) renderWhatsNewModal(unseen, unseen.map(function (e) { return e.id; }));
     });
   }
   function wireWhatsNew() {

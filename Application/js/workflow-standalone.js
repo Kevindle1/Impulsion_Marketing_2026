@@ -943,7 +943,6 @@ window.ImpulsionMarketing.workflow = (function () {
 
     var actions = [];
     var globalSteps = campaignData.workflow.steps;
-    var assignments = campaignData.workflow.assignments || {};
 
     // Étapes globales
     STEPS.slice(0, 3).forEach(function (step) {

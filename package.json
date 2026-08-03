@@ -6,6 +6,11 @@
   "type": "module",
   "scripts": {
     "build": "node build-bundle.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-plugin-html": "^8.1.4"
   }
 }

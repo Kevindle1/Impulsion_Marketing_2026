@@ -212,15 +212,6 @@
       renderWhatsNewModal(visible, visible.map(function (e) { return e.id; }));
     });
   }
-  function loadAndShowWhatsNew() {
-    readWhatsNew().then(function (list) {
-      _whatsNewCache = list;
-      updateWhatsNewDot();
-      var name = currentUserName();
-      var unseen = list.filter(function (e) { return inAudience(e, name) && !isSeenBy(e, name); }).sort(byNewest);
-      if (unseen.length) renderWhatsNewModal(unseen, unseen.map(function (e) { return e.id; }));
-    });
-  }
   function wireWhatsNew() {
     var btn = $('topbar-whatsnew');
     if (btn) btn.addEventListener('click', openWhatsNewManually);

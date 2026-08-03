@@ -80,27 +80,29 @@ Les outils de développement (`build-bundle.mjs`, `test/`, `package.json`, `docs
 
 ## Modules JS (bundle.js)
 
-Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js` est la concaténation ordonnée des **9 fichiers standalone** (dans cet ordre exact) :
+Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js` est la concaténation ordonnée des **11 fichiers standalone** (dans cet ordre exact — voir `MODULES` dans `build-bundle.mjs`) :
 
 | Ordre | Module | Namespace | Rôle |
 |-------|--------|-----------|------|
-| 1 | `config-standalone.js` | `config` | Constantes globales, liste des utilisateurs, rôles |
+| 1 | `config-standalone.js` | `config` | Constantes globales, listes admin-éditables (`CANAUX`, `WORKFLOW_STEPS`…) |
 | 2 | `security-standalone.js` | `security` | `escapeHtml`, `sanitizeName`, validation XSS |
 | 3 | `errors-standalone.js` | `errors` | Notifications toast, gestion centralisée des erreurs |
 | 4 | `performance-standalone.js` | `performance` | `MetadataCache` (campagne.json), `IndexCache` (_index.json) |
 | 5 | `directoryStorage-standalone.js` | `directoryStorage` | Handle racine FS, persistance IndexedDB |
-| 6 | `users-standalone.js` | `users` | Utilisateur courant, `isManager`, `isCurrentUserTeamManager` |
+| 6 | `users-standalone.js` | `users` | Utilisateur courant, rôles, `isCurrentUserPO`, `canAccessAdmin` |
 | 7 | `workflow-standalone.js` | `workflow` | Machine à états, `STEPS`, `advanceStep`, `extractIndexEntry` |
-| 8 | `themes-standalone.js` | `themes` | Gestion des thèmes visuels |
-| 9 | `help-standalone.js` | `help` | Système d'aide contextuelle |
+| 8 | `help-standalone.js` | `help` | Système d'aide contextuelle |
+| 9 | `incident-standalone.js` | `incident` | Signalements (tickets) — logique partagée hors admin.html |
+| 10 | `admin-standalone.js` | `adminConfig` | Chargement/application de `_config.json`, lien menu Administration |
+| 11 | `topbar-standalone.js` | `topbar` | En-tête, notifications, « Quoi de neuf » |
 
 > **Après toute modification d'un fichier standalone**, régénérer `bundle.js` :
 > ```bash
 > npm run build
 > ```
-> Le script `build-bundle.mjs`
-> concatène les 10 modules dans l'ordre ci-dessus. `bundle.js` est un **fichier généré** :
-> ne jamais l'éditer à la main.
+> Le script `build-bundle.mjs` concatène les modules dans l'ordre ci-dessus. `bundle.js` est un **fichier généré** : ne jamais l'éditer à la main.
+>
+> `js/suivi-xlsx.js` n'est **pas** dans `bundle.js` : c'est un script autonome chargé séparément, seulement par `pages/details.html` (lecture du fichier de suivi .xlsx pour le Bilan).
 
 ---
 
