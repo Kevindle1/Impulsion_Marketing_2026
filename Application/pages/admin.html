@@ -286,6 +286,19 @@
         var users = IM.users, config = IM.config, adminConfig = IM.adminConfig, errors = IM.errors;
         var esc = (IM.security && IM.security.escapeHtml) ? IM.security.escapeHtml : function (s) { return String(s == null ? '' : s); };
 
+        // Câblage commun au motif « liste → sous-page » (Signalements ▸ Lots à dev,
+        // Workflow ▸ Étapes actives par canal) : une ligne cliquable ouvre la sous-page
+        // d'un élément, un bouton retour la referme — sans jamais toucher au rendu HTML
+        // lui-même (propre à chaque page). Sans effet si l'attribut/bouton est absent du
+        // DOM courant (liste OU détail), donc appelable après les deux rendus sans condition.
+        function wireDrilldown(cont, openAttr, backBtnId, setActive, rerender) {
+            cont.querySelectorAll('[' + openAttr + ']').forEach(function (el) {
+                el.addEventListener('click', function () { setActive(el.getAttribute(openAttr)); rerender(); });
+            });
+            var backBtn = document.getElementById(backBtnId);
+            if (backBtn) backBtn.addEventListener('click', function () { setActive(null); rerender(); });
+        }
+
         // Les CLÉS de rôle sont structurelles au moteur de workflow (kick-off → maquette
         // COM → BAT/test EBF → ciblage Data) et restent fixes. Seuls les LIBELLÉS affichés
         // sont éditables via Administration ▸ Paramètres généraux ▸ Rôles (IM.config.ROLE_LABELS) —
@@ -767,7 +780,7 @@
             }
             html += '</div>';
             cont.innerHTML = html;
-            cont.querySelectorAll('[data-openlot]').forEach(function (b) { b.addEventListener('click', function () { activeLot = b.getAttribute('data-openlot'); renderIncidents(); }); });
+            wireDrilldown(cont, 'data-openlot', 'back-to-lots', function (v) { activeLot = v; }, renderIncidents);
         }
         function lotTicketCardHtml(it) {
             var i = incidents.indexOf(it);
@@ -790,7 +803,7 @@
                 html += '</div>';
             }
             cont.innerHTML = html;
-            document.getElementById('back-to-lots').addEventListener('click', function () { activeLot = null; renderIncidents(); });
+            wireDrilldown(cont, 'data-openlot', 'back-to-lots', function (v) { activeLot = v; }, renderIncidents);
             document.getElementById('lot-statut-sel').addEventListener('change', function (e) {
                 ensureLot(nom).statut = e.target.value;
                 saveLots().then(function () { renderIncidents(); });
@@ -1739,15 +1752,8 @@
                 renderWorkflow();
             });
 
-            // Case cochée/décochée : mise à jour immédiate de l'état + de la ligne
-            // (badge, aperçu, avertissements) sans perdre le focus sur toute la grille.
-            // Liste : ouvrir la sous-page d'un canal.
-            cont.querySelectorAll('[data-wf-open-canal]').forEach(function (row) {
-                row.addEventListener('click', function () { wfActiveCanal = row.getAttribute('data-wf-open-canal'); renderWorkflow(); });
-            });
-            // Sous-page : retour à la liste.
-            var backBtn = document.getElementById('wf-back-to-canaux');
-            if (backBtn) backBtn.addEventListener('click', function () { wfActiveCanal = null; renderWorkflow(); });
+            // Liste : ouvrir la sous-page d'un canal. Sous-page : retour à la liste.
+            wireDrilldown(cont, 'data-wf-open-canal', 'wf-back-to-canaux', function (v) { wfActiveCanal = v; }, renderWorkflow);
 
             // Case cochée/décochée : mise à jour immédiate de l'état + réaffichage de
             // la sous-page (badge, avertissements) sans revenir à la liste.
