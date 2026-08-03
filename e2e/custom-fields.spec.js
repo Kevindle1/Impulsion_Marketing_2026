@@ -74,10 +74,15 @@ async function installFakeDirectory(page, campaignsByName) {
         }
       };
     }
+    var indexFile = makeFakeFile('{}');
     function campagnesDir() {
       return {
         getDirectoryHandle: function (name) { return Promise.resolve(campaignDir(name)); },
-        getFileHandle: function () { return Promise.reject(new Error('n/a')); }
+        getFileHandle: function (fname, opts) {
+          if (fname === '_index.json') return Promise.resolve(indexFile);
+          if (opts && opts.create) return Promise.resolve(makeFakeFile(''));
+          return Promise.reject(new Error('not found: ' + fname));
+        }
       };
     }
     var fakeRoot = {
@@ -317,6 +322,95 @@ test.describe('campaign.html — champs personnalisés', () => {
     await page.waitForTimeout(300);
     expect(await page.locator('[data-cf-field="mdcField"]').count()).toBe(0);
     console.log('errors (campaign.html canalTypes filter):', errors);
+    expect(errors).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Sécurité de la migration des champs déjà en place (creation.step1) : le
+// scénario le plus critique — une campagne réelle, créée AVANT ce chantier, sur
+// une config _config.json qui n'a JAMAIS entendu parler de customFields (« Données
+// de production » ne se redéploie pas avec le code). Elle doit continuer à
+// s'ouvrir, s'afficher et se sauvegarder EXACTEMENT comme avant.
+// ─────────────────────────────────────────────────────────────
+test.describe('creation.step1 — migration sans casser les campagnes existantes', () => {
+  const EXISTING_CAMPAIGN = {
+    id: 'CampagneExistanteProd',
+    description: 'Une vraie campagne déjà créée avant la migration',
+    po: PO_USER.name,
+    launchDate: '2026-10-15',
+    instantiation: '2026-08-01',
+    kickoffDate: '2026-09-01',
+    typology: 'Commerciale',
+    market: 'part',
+    recurrence: 'Ponctuelle',
+    requiredTeams: ['Marketing', 'Com'],
+    channels: [],
+    actif: true
+  };
+
+  test('une campagne au format à plat (sans customFieldValues), config customFields absente, se pré-remplit et se sauvegarde à l\'identique', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    // Aucune clé "customFields" dans la config — simule un _config.json de prod
+    // qui n'a jamais été mis à jour pour cette fonctionnalité.
+    await seedUser(page, PO_USER, { typologies: ['Commerciale', 'Gestion'], marches: ['part', 'pro'], recurrences: ['Ponctuelle', 'Récurrente'] });
+    await installFakeDirectory(page, { [EXISTING_CAMPAIGN.id]: EXISTING_CAMPAIGN });
+    await page.goto(url('pages/campaign.html?edit=' + encodeURIComponent(EXISTING_CAMPAIGN.id)));
+    // Attend le champ généré (plutôt qu'un délai fixe) : plus robuste sous charge
+    // (exécution parallèle de la suite complète).
+    await expect(page.locator('#taskName')).toHaveValue(EXISTING_CAMPAIGN.id, { timeout: 10000 });
+    await expect(page.locator('#description')).toHaveValue(EXISTING_CAMPAIGN.description);
+    await expect(page.locator('#launchDate')).toHaveValue(EXISTING_CAMPAIGN.launchDate);
+    await expect(page.locator('#kickoffDate')).toHaveValue(EXISTING_CAMPAIGN.kickoffDate);
+    await expect(page.locator('#typology')).toHaveValue(EXISTING_CAMPAIGN.typology);
+    await expect(page.locator('#market')).toHaveValue(EXISTING_CAMPAIGN.market);
+    await expect(page.locator('#recurrence')).toHaveValue(EXISTING_CAMPAIGN.recurrence);
+    await expect(page.locator('input[name="kickoffNeeded"][value="Oui"]')).toBeChecked();
+    await expect(page.locator('#kickoffDate')).toBeVisible();
+
+    await page.locator('#description').fill('Description modifiée par le test');
+    await page.evaluate(() => window.createCampaign());
+    await page.waitForTimeout(800);
+
+    const savedJson = await page.evaluate(() => window.__campaignFiles[Object.keys(window.__campaignFiles)[0]].getFile().then((f) => f.text()));
+    const saved = JSON.parse(savedJson);
+    expect(saved.description).toBe('Description modifiée par le test');
+    expect(saved.id).toBe(EXISTING_CAMPAIGN.id);
+    expect(saved.launchDate).toBe(EXISTING_CAMPAIGN.launchDate);
+    expect(saved.typology).toBe(EXISTING_CAMPAIGN.typology);
+    // Pas de copie redondante des champs migrés dans customFieldValues.
+    expect(saved.customFieldValues && saved.customFieldValues['creation.step1']).toEqual({});
+
+    console.log('errors (migration creation.step1, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('nouvelle campagne (création) : kick-off "Non" pré-coché par défaut, champs vides', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'] });
+    await installFakeDirectory(page, {});
+    await page.goto(url('pages/campaign.html'));
+    await page.locator('#taskName').waitFor({ state: 'attached', timeout: 10000 });
+
+    await expect(page.locator('input[name="kickoffNeeded"][value="Non"]')).toBeChecked({ timeout: 10000 });
+    await expect(page.locator('#kickoffDate')).toBeHidden();
+    await expect(page.locator('#taskName')).toHaveValue('');
+    console.log('errors (nouvelle campagne, defaults):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('validateStep bloque toujours l\'étape 1 si un champ migré obligatoire est vide', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'] });
+    await installFakeDirectory(page, {});
+    await page.goto(url('pages/campaign.html'));
+    await page.locator('#taskName').waitFor({ state: 'attached', timeout: 10000 });
+
+    // taskName vide → doit rester bloqué sur l'étape 1.
+    await page.locator('.form-step[data-step="1"] button.btn-next').click({ timeout: 10000 });
+    await page.waitForTimeout(300);
+    await expect(page.locator('.form-step[data-step="1"]')).toHaveClass(/active/);
+    console.log('errors (validateStep blocage champ migré):', errors);
     expect(errors).toEqual([]);
   });
 });

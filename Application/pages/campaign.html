@@ -922,15 +922,14 @@
                         <h3 class="step-title">📋 Informations générales</h3>
                         <p class="step-description">Renseignez les informations de base de la campagne</p>
 
-                        <div class="form-group">
-                            <label for="taskName">Nom de la tache planner (ID) :</label>
-                            <input type="text" id="taskName" required>
-                        </div>
-                        
-                        <div class="form-group fg-full">
-                            <label for="description">DESCRIPTION :</label>
-                            <textarea id="description" required></textarea>
-                        </div>
+                        <!-- Champs éditables depuis Administration ▸ Champs personnalisés ▸ Création —
+                        Informations générales : nom de la tâche, description, date d'envoi, kick-off
+                        (+ date conditionnelle), typologie, marché, récurrence — déjà en place, migrés
+                        vers le moteur générique avec la MÊME clé de stockage qu'avant
+                        (data.id/description/launchDate/...), aucune campagne existante à convertir —
+                        + tout nouveau champ ajouté par l'admin pour cette étape. -->
+                        <div id="cfStep1Fields" class="fg-full"></div>
+
                         <div class="form-group fg-full">
                             <label>PO :</label>
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -947,45 +946,10 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="launchDate">Date Envoi client :</label>
-                            <input type="date" id="launchDate" required>
-                        </div>
-                        <div class="form-group">
                             <label for="instantiation">Date de saisie : <span style="font-weight:400;color:#888;">(automatique)</span></label>
                             <input type="date" id="instantiation" readonly style="background:var(--line-2);cursor:not-allowed;">
                         </div>
                         <div class="form-group">
-                            <label>Kick-off :</label>
-                            <div class="radio-group">
-                                <label><input type="radio" name="kickoffNeeded" value="Oui"> Oui</label>
-                                <label><input type="radio" name="kickoffNeeded" value="Non" checked> Non</label>
-                            </div>
-                        </div>
-                        <div class="conditional-field" id="kickoffDateGroup" style="display:none;">
-                            <div class="form-group" style="margin:0;">
-                                <label for="kickoffDate">Date de kick-off :</label>
-                                <input type="date" id="kickoffDate">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="typology">Typologie :</label>
-                            <select id="typology" required>
-                                <option value="">Choisir...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="market">Marché :</label>
-                            <select id="market" required>
-                                <option value="">Choisir...</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="recurrence">Récurrence :</label>
-                            <select id="recurrence" required>
-                                <option value="">Choisir...</option>
-                            </select>
-                        </div> 
-<div class="form-group">
                             <label for="campagneLiee">Campagne liée <span style="font-weight:400;color:#888;">(optionnel)</span></label>
                             <input type="text" id="campagneLiee" list="campagnesListData" placeholder="Choisir ou saisir une campagne...">
                             <datalist id="campagnesListData"></datalist>
@@ -1027,8 +991,6 @@
                                 <textarea id="juridiqueComment" rows="2" placeholder="Instructions, contraintes, points de vigilance..."></textarea>
                             </div>
                         </div>
-
-                        <div id="cfStep1Fields" class="fg-full"></div>
 
                         <div class="step-navigation">
                             <div></div>
@@ -1411,26 +1373,65 @@
                 }
             }
 
-            // Champs personnalisés (Administration ▸ Champs personnalisés) des étapes 1 et 2
-            // du formulaire de création — rendu générique, avec valeurs existantes en
-            // édition/duplication (data.customFieldValues) ou vides à la création.
-            function renderCreationCustomFields(values) {
+            // Champs des étapes 1 et 2 du formulaire de création, rendus par le moteur
+            // générique (Administration ▸ Champs personnalisés). Deux catégories
+            // coexistent dans le même bloc, distinguées uniquement par leur clé de
+            // stockage :
+            //  - champs DÉJÀ EN PLACE, migrés : même clé que toujours (data.id,
+            //    data.launchDate...) — STEP1_MIGRATED_DEFAULTS en fait la liste.
+            //  - nouveaux champs ajoutés par l'admin : rangés dans
+            //    data.customFieldValues['creation.step1'] (aucune collision possible
+            //    avec une clé existante, l'admin choisit un id propre à son champ).
+            // idPrefix:'' préserve les id DOM déjà utilisés ailleurs (validateStep,
+            // récapitulatif...) pour les champs migrés.
+            var STEP1_MIGRATED_IDS = ['taskName', 'description', 'launchDate', 'kickoffNeeded', 'kickoffDate', 'typology', 'market', 'recurrence'];
+            // Retire les champs migrés d'un objet de valeurs collecté génériquement — ils
+            // sont déjà sauvegardés à leur emplacement d'origine (data.id, data.launchDate...),
+            // les stocker aussi dans customFieldValues serait une copie redondante.
+            function stripMigratedIds(values, migratedIds) {
+                var out = {};
+                Object.keys(values || {}).forEach(function (k) { if (migratedIds.indexOf(k) === -1) out[k] = values[k]; });
+                return out;
+            }
+            var STEP1_MIGRATED_DEFAULTS = function (data) {
+                data = data || {};
+                return {
+                    taskName: data.id || '',
+                    description: data.description || '',
+                    launchDate: data.launchDate || '',
+                    kickoffNeeded: data.kickoffNeeded || (data.kickoffDate ? 'Oui' : 'Non'),
+                    kickoffDate: data.kickoffDate || '',
+                    typology: data.typology || '',
+                    market: data.market || '',
+                    recurrence: data.recurrence || ''
+                };
+            };
+            function renderCreationCustomFields(data) {
+                data = data || {};
                 var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
                 if (!cf) return;
-                values = values || {};
-                [['creation.step1', 'cfStep1Fields'], ['creation.step2', 'cfStep2Fields']].forEach(function (pair) {
-                    var cont = document.getElementById(pair[1]);
-                    if (!cont) return;
-                    cont.innerHTML = cf.renderFields(pair[0], values[pair[0]] || {}, { idPrefix: pair[1] });
-                    cf.wireFields(cont, pair[0], {});
-                });
+                var cfValues = data.customFieldValues || {};
+                var cont1 = document.getElementById('cfStep1Fields');
+                if (cont1) {
+                    var step1Values = Object.assign(STEP1_MIGRATED_DEFAULTS(data), cfValues['creation.step1'] || {});
+                    cont1.innerHTML = cf.renderFields('creation.step1', step1Values, { idPrefix: '' });
+                    cf.wireFields(cont1, 'creation.step1', {});
+                }
+                var cont2 = document.getElementById('cfStep2Fields');
+                if (cont2) {
+                    cont2.innerHTML = cf.renderFields('creation.step2', cfValues['creation.step2'] || {}, { idPrefix: 'cfStep2Fields' });
+                    cf.wireFields(cont2, 'creation.step2', {});
+                }
             }
 
             // Fonction pour pré-remplir le formulaire avec les données existantes
             function populateForm(data) {
-                // Informations générales
-                if (data.id) $("#taskName").value = data.id;
-                if (data.description) $("#description").value = data.description;
+                // Informations générales : taskName/description/launchDate/kickoffNeeded/
+                // kickoffDate/typology/market/recurrence — rendu générique EN PREMIER (champs
+                // migrés, même clé de stockage qu'avant) : ces éléments n'existent dans le DOM
+                // qu'une fois cet appel fait.
+                renderCreationCustomFields(data);
+
                 // PO : sélection équipe puis personne
                 if (data.po) {
                     var usersModule = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
@@ -1443,16 +1444,7 @@
                         }
                     }
                 }
-                if (data.launchDate) $("#launchDate").value = data.launchDate;
                 if (data.instantiation) $("#instantiation").value = data.instantiation;
-                if (data.kickoffDate) $("#kickoffDate").value = data.kickoffDate;
-                // Kick-off Oui/Non : rétro-compat — Oui si une date de kick-off existe.
-                var _kn = data.kickoffNeeded || (data.kickoffDate ? 'Oui' : 'Non');
-                var _knRadio = document.querySelector('input[name="kickoffNeeded"][value="' + _kn + '"]');
-                if (_knRadio) { _knRadio.checked = true; _knRadio.dispatchEvent(new Event('change')); }
-                if (data.typology) $("#typology").value = data.typology;
-                if (data.market) $("#market").value = data.market;
-                if (data.recurrence) $("#recurrence").value = data.recurrence;
                 if (data.campagneLiee) $("#campagneLiee").value = data.campagneLiee;
                 if (data.juridique && data.juridique.required) {
                     const jurReq = document.getElementById('juridiqueRequired');
@@ -1488,8 +1480,6 @@
                 }
 
                 if (data.persona) $("#persona").value = data.persona;
-
-                renderCreationCustomFields(data.customFieldValues);
 
                 // Prospect (bloc en tête de Segmentation)
                 if (data.cibleProspect) {
@@ -2875,7 +2865,7 @@
                         var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
                         if (!cf) return {};
                         return {
-                            'creation.step1': cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'),
+                            'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
                             'creation.step2': cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2')
                         };
                     })(),
@@ -3082,7 +3072,7 @@
                         var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
                         if (!cf) return {};
                         return {
-                            'creation.step1': cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'),
+                            'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
                             'creation.step2': cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2')
                         };
                     })(),

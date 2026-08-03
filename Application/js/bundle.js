@@ -3364,9 +3364,37 @@ window.ImpulsionMarketing.customFields = (function () {
     file: 'Fichier'
   };
 
+  // Champs déjà en place avant l'admin « Champs personnalisés », migrés vers le
+  // moteur générique — repli utilisé UNIQUEMENT pour un point d'attache que
+  // l'admin n'a PAS ENCORE configuré (même principe que workflow.steps : la
+  // config stockée sur V:// prévaut dès qu'elle existe, point d'attache par
+  // point d'attache). Indispensable pour ne jamais perdre un champ existant
+  // après une mise à jour de code SANS mise à jour synchrone de _config.json —
+  // "Données de production" ne se redéploie jamais avec le code.
+  var DEFAULT_FIELDS = {
+    'creation.step1': [
+      { id: 'taskName', label: 'Nom de la tache planner (ID)', type: 'text', order: 1, required: true },
+      { id: 'description', label: 'DESCRIPTION', type: 'textarea', order: 2, required: true },
+      { id: 'launchDate', label: 'Date Envoi client', type: 'date', order: 3, required: true },
+      { id: 'kickoffNeeded', label: 'Kick-off', type: 'radio', order: 4, options: ['Oui', 'Non'] },
+      { id: 'kickoffDate', label: 'Date de kick-off', type: 'date', order: 5, showIf: { field: 'kickoffNeeded', op: 'eq', value: 'Oui' } },
+      { id: 'typology', label: 'Typologie', type: 'select', order: 6, required: true, configRef: 'TYPOLOGIES' },
+      { id: 'market', label: 'Marché', type: 'select', order: 7, required: true, configRef: 'MARCHES' },
+      { id: 'recurrence', label: 'Récurrence', type: 'select', order: 8, required: true, configRef: 'RECURRENCES' }
+    ]
+  };
+
   // ── Lecture de la config ──
+  // Fusionne les définitions par défaut (DEFAULT_FIELDS) et celles stockées dans
+  // _config.json — la config l'emporte ENTIÈREMENT, point d'attache par point
+  // d'attache, dès qu'elle existe (un admin qui édite « Informations générales »
+  // sauvegarde sa version complète, qui remplace alors le repli par défaut).
   function allDefs() {
-    return (IM.config && IM.config.CUSTOM_FIELDS && typeof IM.config.CUSTOM_FIELDS === 'object') ? IM.config.CUSTOM_FIELDS : {};
+    var cfg = (IM.config && IM.config.CUSTOM_FIELDS && typeof IM.config.CUSTOM_FIELDS === 'object') ? IM.config.CUSTOM_FIELDS : {};
+    var out = {};
+    Object.keys(DEFAULT_FIELDS).forEach(function (k) { out[k] = DEFAULT_FIELDS[k]; });
+    Object.keys(cfg).forEach(function (k) { out[k] = cfg[k]; });
+    return out;
   }
 
   function attachPoints() {

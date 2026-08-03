@@ -1183,7 +1183,18 @@
             whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
             bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
             autoAssignState = (config && Array.isArray(config.AUTO_ASSIGN_RULES)) ? JSON.parse(JSON.stringify(config.AUTO_ASSIGN_RULES)) : [];
-            customFieldsState = (config && config.CUSTOM_FIELDS && typeof config.CUSTOM_FIELDS === 'object') ? JSON.parse(JSON.stringify(config.CUSTOM_FIELDS)) : {};
+            // Pour un point d'attache pas encore configuré (aucune clé dans
+            // config.CUSTOM_FIELDS), on initialise à partir des valeurs par défaut du
+            // moteur (IM.customFields.getFields) plutôt qu'une liste vide — les champs
+            // déjà en place (migrés) doivent apparaître prêts à éditer dès l'ouverture,
+            // pas seulement après un premier enregistrement.
+            var savedCf = (config && config.CUSTOM_FIELDS && typeof config.CUSTOM_FIELDS === 'object') ? config.CUSTOM_FIELDS : {};
+            customFieldsState = {};
+            cfAttachPointsList().forEach(function (p) {
+                customFieldsState[p.id] = savedCf[p.id]
+                    ? JSON.parse(JSON.stringify(savedCf[p.id]))
+                    : ((IM.customFields ? IM.customFields.getFields(p.id) : []).map(function (f) { return JSON.parse(JSON.stringify(f)); }));
+            });
         }
         function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderWorkflow(); renderCustomFields(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
 
