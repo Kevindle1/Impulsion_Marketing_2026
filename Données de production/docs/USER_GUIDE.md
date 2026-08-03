@@ -214,7 +214,7 @@ Chaque campagne dispose d'un espace documentaire accessible via l'onglet **📁 
 - **Uploader des fichiers** : sélectionner le dossier cible, cliquer "+ Fichiers" et sélectionner un ou plusieurs fichiers
 - **Parcourir** : cliquer sur un dossier pour naviguer, sur un fichier pour l'ouvrir
 
-Les fichiers sont stockés directement dans `V://Campagnes/<Nom>/documents/`.
+Les fichiers sont stockés directement dans `V://Impulsion Marketing/Données de production/Campagnes/<Nom>/documents/`.
 
 ---
 
@@ -275,7 +275,7 @@ Chaque campagne dispose d'un fil de discussion accessible depuis l'onglet **Info
 → Vérifier que vous êtes bien la personne assignée à ce canal (votre nom doit figurer dans l'affectation faite par le Manager).
 
 **Mon dépôt a disparu après navigation.**
-→ Normal si vous venez de changer d'onglet — les données sont rechargées depuis `V://`. Si le fichier n'apparaît plus du tout, vérifier qu'il existe dans `V://Campagnes/<Nom>/<Canal>/`.
+→ Normal si vous venez de changer d'onglet — les données sont rechargées depuis `V://`. Si le fichier n'apparaît plus du tout, vérifier qu'il existe dans `V://Impulsion Marketing/Données de production/Campagnes/<Nom>/<Canal>/`.
 
 **Les dates de zone site web se décalent automatiquement.**
 → Normal — les dates sont snappées au lundi de la semaine sélectionnée (contrainte de planning hebdomadaire).
