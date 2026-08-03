@@ -115,7 +115,12 @@ test.describe('Administration ▸ Champs personnalisés', () => {
 
     await page.locator('[data-tab="customfields"]').click();
     await page.waitForTimeout(300);
-    await page.locator('[data-cf-open-point]').first().click();
+    // po_validation_maquette : point d'attache sans aucun champ migré (repli
+    // DEFAULT_FIELDS volontairement absent, cf. Lots 5-11) — contrairement à
+    // .first() (com_maquette depuis la migration, 3 champs déjà présents), on
+    // part ici d'une liste garantie vide, condition nécessaire à l'assertion
+    // "12 champs au total" plus bas.
+    await page.locator('[data-cf-open-point="po_validation_maquette"]').click();
     await page.waitForTimeout(200);
 
     const types = ['text', 'textarea', 'url', 'number', 'date', 'select', 'radio', 'checkbox', 'checkbox-group', 'list', 'richtext', 'file'];
@@ -141,7 +146,11 @@ test.describe('Administration ▸ Champs personnalisés', () => {
     await page.waitForTimeout(1200);
     await page.locator('[data-tab="customfields"]').click();
     await page.waitForTimeout(300);
-    await page.locator('[data-cf-open-point]').first().click();
+    // po_validation_maquette : point d'attache sans aucun champ migré, voir
+    // commentaire du test précédent — les index [data-cfid="0"]/[1] ci-dessous
+    // doivent viser les 2 champs qu'on vient d'ajouter, pas des champs migrés
+    // préexistants.
+    await page.locator('[data-cf-open-point="po_validation_maquette"]').click();
     await page.waitForTimeout(200);
 
     for (let i = 0; i < 2; i++) {
@@ -457,7 +466,7 @@ test.describe('creation.step1 — migration sans casser les campagnes existantes
     await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'] });
     await installFakeDirectory(page, {});
     await page.goto(url('pages/campaign.html'));
-    await page.locator('#taskName').waitFor({ state: 'attached', timeout: 10000 });
+    await page.locator('#juridiqueRequired').waitFor({ state: 'visible', timeout: 10000 });
 
     await expect(page.locator('#juridiqueRequired')).not.toBeChecked();
     await expect(page.locator('#juridiqueComment')).toBeHidden();
