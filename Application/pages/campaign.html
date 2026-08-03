@@ -1003,16 +1003,13 @@
                         <h3 class="step-title">🎯 Segmentation</h3>
                         <p class="step-description">Définissez les segments et univers de besoin</p>
 
-                        <div class="form-group" style="background:var(--green-50,#e8f6ef);border:1px solid var(--green-100,#cdeede);border-radius:8px;padding:12px 14px;">
-                            <label style="display:flex;align-items:center;gap:9px;cursor:pointer;">
-                                <input type="checkbox" id="cibleProspect" style="width:17px;height:17px;cursor:pointer;">
-                                <span>Cible aussi des <strong>prospects</strong></span>
-                            </label>
-                            <div id="prospectSourceGroup" style="display:none;margin-top:10px;">
-                                <label for="prospectSource" style="font-size:13px;">Source / précision <span style="font-weight:400;color:#888;">(ex : courriers refus EER, listes entreprises…)</span></label>
-                                <input type="text" id="prospectSource" placeholder="Préciser la source des prospects...">
-                            </div>
-                        </div>
+                        <!-- Champs éditables depuis Administration ▸ Champs personnalisés ▸ Création —
+                        Segmentation : cible prospects (+ source conditionnelle) et persona — déjà en
+                        place, migrés avec la MÊME clé de stockage (data.cibleProspect/prospectSource/
+                        persona). Segments et Univers de besoin restent gérés ci-dessous : ils ont déjà
+                        leur propre surface d'admin dédiée (Administration ▸ Segments / listes simples),
+                        les dupliquer ici créerait deux façons différentes d'éditer la même liste. -->
+                        <div id="cfStep2Fields"></div>
 
                         <div class="form-group">
                             <label>Segments <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
@@ -1071,13 +1068,6 @@
                                 <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Monétique"> Monétique</label>
                             </div>
                         </div>
-
-                        <div class="form-group">
-                            <label for="persona">Persona :</label>
-                            <input type="text" id="persona" placeholder="Ex : Primo-accédant, Retraité, Jeune actif...">
-                        </div>
-
-                        <div id="cfStep2Fields"></div>
 
                         <div class="step-navigation">
                             <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
@@ -1406,6 +1396,15 @@
                     recurrence: data.recurrence || ''
                 };
             };
+            var STEP2_MIGRATED_IDS = ['cibleProspect', 'prospectSource', 'persona'];
+            var STEP2_MIGRATED_DEFAULTS = function (data) {
+                data = data || {};
+                return {
+                    cibleProspect: !!data.cibleProspect,
+                    prospectSource: data.prospectSource || '',
+                    persona: data.persona || ''
+                };
+            };
             function renderCreationCustomFields(data) {
                 data = data || {};
                 var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
@@ -1419,7 +1418,8 @@
                 }
                 var cont2 = document.getElementById('cfStep2Fields');
                 if (cont2) {
-                    cont2.innerHTML = cf.renderFields('creation.step2', cfValues['creation.step2'] || {}, { idPrefix: 'cfStep2Fields' });
+                    var step2Values = Object.assign(STEP2_MIGRATED_DEFAULTS(data), cfValues['creation.step2'] || {});
+                    cont2.innerHTML = cf.renderFields('creation.step2', step2Values, { idPrefix: '' });
                     cf.wireFields(cont2, 'creation.step2', {});
                 }
             }
@@ -1479,14 +1479,9 @@
                     });
                 }
 
-                if (data.persona) $("#persona").value = data.persona;
-
-                // Prospect (bloc en tête de Segmentation)
-                if (data.cibleProspect) {
-                    var cpCb = document.getElementById('cibleProspect');
-                    if (cpCb) { cpCb.checked = true; cpCb.dispatchEvent(new Event('change')); }
-                    if (data.prospectSource) { var ps = $("#prospectSource"); if (ps) ps.value = data.prospectSource; }
-                }
+                // persona/cibleProspect/prospectSource : rendus par renderCreationCustomFields()
+                // (champs migrés, même clé de stockage) — la conditionnalité (showIf) est
+                // calculée directement à partir de `data` au rendu, pas besoin d'événement.
 
                 // Produit
                 if (data.productUrl) $("#productUrl").value = data.productUrl;
@@ -1797,14 +1792,9 @@
                 });
             });
 
-            // Affiche le champ « source » quand la cible prospects est cochée
-            var cibleProspectCb = document.getElementById('cibleProspect');
-            if (cibleProspectCb) {
-                cibleProspectCb.addEventListener('change', function (e) {
-                    var g = document.getElementById('prospectSourceGroup');
-                    if (g) g.style.display = e.target.checked ? 'block' : 'none';
-                });
-            }
+            // « Cible prospects » → affichage de la source : géré par la conditionnalité
+            // (showIf) du moteur générique de champs personnalisés (creation.step2),
+            // ce champ étant désormais rendu par renderCreationCustomFields().
 
             // Date de saisie = date du jour (automatique, non modifiable).
             (function () {
@@ -2866,7 +2856,7 @@
                         if (!cf) return {};
                         return {
                             'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
-                            'creation.step2': cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2')
+                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS)
                         };
                     })(),
                     channels: []
@@ -3073,7 +3063,7 @@
                         if (!cf) return {};
                         return {
                             'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
-                            'creation.step2': cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2')
+                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS)
                         };
                     })(),
                     channels: [],

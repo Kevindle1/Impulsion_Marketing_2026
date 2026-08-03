@@ -60,6 +60,11 @@ window.ImpulsionMarketing.customFields = (function () {
       { id: 'typology', label: 'Typologie', type: 'select', order: 6, required: true, configRef: 'TYPOLOGIES' },
       { id: 'market', label: 'Marché', type: 'select', order: 7, required: true, configRef: 'MARCHES' },
       { id: 'recurrence', label: 'Récurrence', type: 'select', order: 8, required: true, configRef: 'RECURRENCES' }
+    ],
+    'creation.step2': [
+      { id: 'cibleProspect', label: 'Cible aussi des prospects', type: 'checkbox', order: 1 },
+      { id: 'prospectSource', label: 'Source / précision', type: 'text', order: 2, showIf: { field: 'cibleProspect', op: 'checked' }, help: 'Ex : courriers refus EER, listes entreprises…' },
+      { id: 'persona', label: 'Persona', type: 'text', order: 3 }
     ]
   };
 
@@ -289,8 +294,15 @@ window.ImpulsionMarketing.customFields = (function () {
       if (typeof opts.onChange === 'function') opts.onChange(values);
     }
 
-    block.addEventListener('input', refreshVisibility);
-    block.addEventListener('change', refreshVisibility);
+    // Écoute en phase de CAPTURE (3e argument true), pas de bulle (par défaut) :
+    // le reste de l'appli redéclenche parfois la conditionnalité d'un champ migré
+    // via new Event('change') SANS l'option bubbles (convention déjà en place
+    // partout ailleurs dans ces pages, ex. restauration d'un brouillon ou
+    // pré-remplissage en édition) — un tel événement ne remonte jamais jusqu'à ce
+    // conteneur délégué, mais la phase de capture, elle, traverse toujours les
+    // ancêtres jusqu'à la cible, événement bouillonnant ou non.
+    block.addEventListener('input', refreshVisibility, true);
+    block.addEventListener('change', refreshVisibility, true);
 
     block.addEventListener('click', function (e) {
       var addBtn = e.target.closest && e.target.closest('.cf-list-add');

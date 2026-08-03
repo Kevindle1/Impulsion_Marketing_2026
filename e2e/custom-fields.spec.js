@@ -414,3 +414,64 @@ test.describe('creation.step1 — migration sans casser les campagnes existantes
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lot 2 : creation.step2 (cibleProspect, prospectSource, persona).
+// ─────────────────────────────────────────────────────────────
+test.describe('creation.step2 — migration sans casser les campagnes existantes', () => {
+  const EXISTING_CAMPAIGN = {
+    id: 'CampagneSegExistante',
+    description: 'x', po: PO_USER.name, launchDate: '2026-10-15', instantiation: '2026-08-01',
+    typology: 'Commerciale', market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing'],
+    cibleProspect: true, prospectSource: 'Courriers refus EER', persona: 'Primo-accédant',
+    channels: [], actif: true
+  };
+
+  test('campagne existante (cibleProspect=true), config customFields absente : pré-remplissage + conditionnalité corrects', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'] });
+    await installFakeDirectory(page, { [EXISTING_CAMPAIGN.id]: EXISTING_CAMPAIGN });
+    await page.goto(url('pages/campaign.html?edit=' + encodeURIComponent(EXISTING_CAMPAIGN.id)));
+    await expect(page.locator('#taskName')).toHaveValue(EXISTING_CAMPAIGN.id, { timeout: 10000 });
+    // Étape 2 pas encore active par défaut (la page ouvre sur l'étape 1) — un champ
+    // sur une étape inactive est masqué par le CSS du wizard, sans rapport avec la
+    // conditionnalité (showIf) qu'on veut vérifier ici.
+    await page.locator('.form-step[data-step="1"] button.btn-next').click();
+
+    await expect(page.locator('#cibleProspect')).toBeChecked();
+    await expect(page.locator('#prospectSource')).toBeVisible();
+    await expect(page.locator('#prospectSource')).toHaveValue(EXISTING_CAMPAIGN.prospectSource);
+    await expect(page.locator('#persona')).toHaveValue(EXISTING_CAMPAIGN.persona);
+    console.log('errors (migration creation.step2, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+
+  test('la restauration de brouillon (new Event("change") sans bubbles) déclenche bien la conditionnalité (phase de capture)', async ({ page }) => {
+    // Reproduit exactement le mécanisme existant de applyDraft() (autosave) :
+    // el.dispatchEvent(new Event('change')) SANS {bubbles:true} — vérifie que la
+    // correction (écoute en phase de capture dans wireFields) fonctionne pour un
+    // événement déclenché par du code externe au moteur, pas par un vrai clic.
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, { typologies: ['Commerciale'], marches: ['part'], recurrences: ['Ponctuelle'] });
+    await installFakeDirectory(page, {});
+    await page.goto(url('pages/campaign.html'));
+    await page.locator('#cibleProspect').waitFor({ state: 'attached', timeout: 10000 });
+    // Active directement l'étape 2 (on ne teste pas ici la navigation du wizard,
+    // seulement la conditionnalité showIf — l'étape 1 est vide et bloquerait un
+    // vrai clic sur "Suivant").
+    await page.evaluate(() => {
+      document.querySelector('.form-step[data-step="1"]').classList.remove('active');
+      document.querySelector('.form-step[data-step="2"]').classList.add('active');
+    });
+
+    await expect(page.locator('#prospectSource')).toBeHidden();
+    await page.evaluate(() => {
+      var el = document.getElementById('cibleProspect');
+      el.checked = true;
+      el.dispatchEvent(new Event('change')); // pas de {bubbles:true}, comme applyDraft()
+    });
+    await expect(page.locator('#prospectSource')).toBeVisible();
+    console.log('errors (dispatchEvent non-bouillonnant, phase de capture):', errors);
+    expect(errors).toEqual([]);
+  });
+});
