@@ -62,6 +62,20 @@ test('getFields — filtre par canalTypes (champ restreint à certains canaux)',
   });
 });
 
+test('getFields — canalType fourni mais vide (\'\') : un champ restreint reste exclu (formulaire de création, aucun type encore choisi)', () => {
+  // Régression : contrairement à canalType OMIS (undefined, contexte admin —
+  // permissif), une chaîne vide est un contexte utilisateur réel où rien n'est
+  // encore sélectionné. Un champ ne devrait pas apparaître puis disparaître au
+  // premier choix de canal dans campaign.html.
+  withConfig({ CUSTOM_FIELDS: { 'creation.step3.canal': [
+    { id: 'mdcOnly', label: 'Champ MDC', type: 'text', canalTypes: ['MDC'] },
+    { id: 'tous', label: 'Champ général', type: 'text' }
+  ] } }, () => {
+    assert.deepEqual(cf.getFields('creation.step3.canal', '').map(f => f.id), ['tous']);
+    assert.deepEqual(cf.getFields('creation.step3.canal', 'MDC').map(f => f.id), ['mdcOnly', 'tous']);
+  });
+});
+
 // ── fieldOptions ──
 
 test('fieldOptions — options en dur', () => {
@@ -181,6 +195,22 @@ test('renderFields — un champ masqué (showIf faux) est rendu avec display:non
   ] } }, () => {
     const html = cf.renderFields('com_maquette', { avecNote: false });
     assert.match(html, /display:none/);
+  });
+});
+
+test('renderFields — l\'attribut data-cf-showif (JSON, plein de guillemets) reste bien formé', () => {
+  // Régression : IM.security.escapeHtml échappe <, > et & mais PAS les guillemets
+  // doubles (safe pour du texte, pas pour une valeur d'attribut) — un
+  // JSON.stringify(showIf) brut y romprait l'attribut HTML et ferait fuir le
+  // reste du JSON comme attributs bidon sur la balise.
+  withConfig({ CUSTOM_FIELDS: { com_maquette: [
+    { id: 'note', label: 'Note', type: 'text', showIf: { field: 'avecNote', op: 'eq', value: 'Oui "spécial"' } }
+  ] } }, () => {
+    const html = cf.renderFields('com_maquette', {});
+    const m = html.match(/data-cf-showif="([^"]*)"/);
+    assert.ok(m, 'attribut data-cf-showif bien délimité par des guillemets (pas rompu en plein milieu)');
+    const parsed = JSON.parse(m[1].replace(/&quot;/g, '"'));
+    assert.deepEqual(parsed, { field: 'avecNote', op: 'eq', value: 'Oui "spécial"' });
   });
 });
 

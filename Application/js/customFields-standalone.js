@@ -21,6 +21,11 @@ window.ImpulsionMarketing.customFields = (function () {
   var IM = window.ImpulsionMarketing;
 
   function esc(s) { var sec = IM.security; return (sec && sec.escapeHtml) ? sec.escapeHtml(s) : String(s == null ? '' : s); }
+  // IM.security.escapeHtml échappe pour un contexte TEXTE (<, >, &) mais pas les
+  // guillemets doubles — insuffisant pour une valeur placée dans un attribut
+  // HTML="...", où un " dans la valeur (ex. JSON.stringify, texte saisi par
+  // l'utilisateur) romprait l'attribut. escAttr() complète l'échappement pour ce cas.
+  function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
   function isValidUrl(u) { var sec = IM.security; return (sec && sec.isValidUrl) ? sec.isValidUrl(u) : /^https?:\/\/.+/i.test(u || ''); }
 
   var TYPE_LABELS = {
@@ -49,12 +54,23 @@ window.ImpulsionMarketing.customFields = (function () {
 
   // Champs définis pour un point d'attache, filtrés par type de canal (si le champ
   // restreint canalTypes) et triés par ordre d'affichage.
+  //
+  // `canalType` OMIS (undefined) = contexte sans canal précis (ex. listing admin) →
+  // repli permissif, tous les champs sont renvoyés (cohérent avec CANAL_STEPS :
+  // absent = flux complet). `canalType` fourni mais vide ('') = contexte utilisateur
+  // réel où aucun type n'est encore choisi → un champ restreint doit rester masqué
+  // (sinon il apparaîtrait puis disparaîtrait au premier choix, effet de bord gênant
+  // dans le formulaire de création).
   function getFields(attachPoint, canalType) {
     var list = allDefs()[attachPoint];
     if (!Array.isArray(list)) return [];
     return list
       .filter(function (f) { return f && f.id && f.type; })
-      .filter(function (f) { return !Array.isArray(f.canalTypes) || !f.canalTypes.length || !canalType || f.canalTypes.indexOf(canalType) !== -1; })
+      .filter(function (f) {
+        if (!Array.isArray(f.canalTypes) || !f.canalTypes.length) return true;
+        if (canalType === undefined) return true;
+        return f.canalTypes.indexOf(canalType) !== -1;
+      })
       .slice()
       .sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
   }
@@ -92,52 +108,52 @@ window.ImpulsionMarketing.customFields = (function () {
     value = value == null ? '' : value;
     switch (field.type) {
       case 'textarea':
-        return '<textarea class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '">' + esc(value) + '</textarea>';
+        return '<textarea class="admin-input cf-input" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '">' + esc(value) + '</textarea>';
       case 'richtext':
-        return '<div class="cf-richtext" id="' + domId + '" data-cf-field="' + esc(field.id) + '" contenteditable="true">' + (value || '') + '</div>';
+        return '<div class="cf-richtext" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '" contenteditable="true">' + (value || '') + '</div>';
       case 'url':
-        return '<input type="url" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '" placeholder="https://...">';
+        return '<input type="url" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '" value="' + escAttr(value) + '" placeholder="https://...">';
       case 'number':
-        return '<input type="number" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '" min="0">';
+        return '<input type="number" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '" value="' + escAttr(value) + '" min="0">';
       case 'date':
-        return '<input type="date" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '">';
+        return '<input type="date" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '" value="' + escAttr(value) + '">';
       case 'select': {
         var opts = fieldOptions(field);
-        var html = '<select class="admin-select cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '"><option value="">Choisir…</option>';
-        opts.forEach(function (o) { html += '<option value="' + esc(o) + '"' + (value === o ? ' selected' : '') + '>' + esc(o) + '</option>'; });
+        var html = '<select class="admin-select cf-input" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '"><option value="">Choisir…</option>';
+        opts.forEach(function (o) { html += '<option value="' + escAttr(o) + '"' + (value === o ? ' selected' : '') + '>' + esc(o) + '</option>'; });
         return html + '</select>';
       }
       case 'radio': {
         var ropts = fieldOptions(field);
         return ropts.map(function (o) {
-          return '<label class="cf-radio-opt"><input type="radio" name="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(o) + '"' + (value === o ? ' checked' : '') + '> ' + esc(o) + '</label>';
+          return '<label class="cf-radio-opt"><input type="radio" name="' + domId + '" data-cf-field="' + escAttr(field.id) + '" value="' + escAttr(o) + '"' + (value === o ? ' checked' : '') + '> ' + esc(o) + '</label>';
         }).join(' ');
       }
       case 'checkbox':
-        return '<label class="cf-checkbox-opt"><input type="checkbox" id="' + domId + '" data-cf-field="' + esc(field.id) + '"' + (value === true || value === 'true' ? ' checked' : '') + '> ' + esc(field.checkboxLabel || 'Oui') + '</label>';
+        return '<label class="cf-checkbox-opt"><input type="checkbox" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '"' + (value === true || value === 'true' ? ' checked' : '') + '> ' + esc(field.checkboxLabel || 'Oui') + '</label>';
       case 'checkbox-group': {
         var gopts = fieldOptions(field);
         var vals = Array.isArray(value) ? value : [];
         return gopts.map(function (o) {
-          return '<label class="cf-checkbox-opt"><input type="checkbox" data-cf-field="' + esc(field.id) + '" data-cf-group-value="' + esc(o) + '"' + (vals.indexOf(o) !== -1 ? ' checked' : '') + '> ' + esc(o) + '</label>';
+          return '<label class="cf-checkbox-opt"><input type="checkbox" data-cf-field="' + escAttr(field.id) + '" data-cf-group-value="' + escAttr(o) + '"' + (vals.indexOf(o) !== -1 ? ' checked' : '') + '> ' + esc(o) + '</label>';
         }).join(' ');
       }
       case 'list': {
         var itemType = field.itemType === 'text' ? 'text' : 'url';
         var items = Array.isArray(value) && value.length ? value : [''];
         var rows = items.map(function (v) {
-          return '<div class="cf-list-row"><input type="' + itemType + '" class="admin-input cf-input cf-list-item" data-cf-field="' + esc(field.id) + '" value="' + esc(v) + '" placeholder="' + (itemType === 'url' ? 'https://...' : '') + '">'
-            + '<button type="button" class="icon-del cf-list-remove" data-cf-field="' + esc(field.id) + '" title="Retirer">✕</button></div>';
+          return '<div class="cf-list-row"><input type="' + itemType + '" class="admin-input cf-input cf-list-item" data-cf-field="' + escAttr(field.id) + '" value="' + escAttr(v) + '" placeholder="' + (itemType === 'url' ? 'https://...' : '') + '">'
+            + '<button type="button" class="icon-del cf-list-remove" data-cf-field="' + escAttr(field.id) + '" title="Retirer">✕</button></div>';
         }).join('');
-        return '<div class="cf-list" data-cf-list="' + esc(field.id) + '" data-cf-item-type="' + itemType + '">' + rows
-          + '<button type="button" class="btn btn-secondary cf-list-add" data-cf-field="' + esc(field.id) + '">+ Ajouter</button></div>';
+        return '<div class="cf-list" data-cf-list="' + escAttr(field.id) + '" data-cf-item-type="' + itemType + '">' + rows
+          + '<button type="button" class="btn btn-secondary cf-list-add" data-cf-field="' + escAttr(field.id) + '">+ Ajouter</button></div>';
       }
       case 'file':
-        return '<input type="file" class="cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '">'
+        return '<input type="file" class="cf-input" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '">'
           + (typeof value === 'string' && value ? '<div class="cf-file-current">Fichier actuel : ' + esc(value) + '</div>' : '');
       case 'text':
       default:
-        return '<input type="text" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + esc(field.id) + '" value="' + esc(value) + '">';
+        return '<input type="text" class="admin-input cf-input" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '" value="' + escAttr(value) + '">';
     }
   }
 
@@ -151,8 +167,8 @@ window.ImpulsionMarketing.customFields = (function () {
     fields.forEach(function (f) {
       var visible = evalShowIf(f, values);
       var marked = isSimpleRequired(f) || !!requiredGroup(f);
-      html += '<div class="cf-field" data-cf-row="' + esc(f.id) + '"'
-        + (f.showIf ? ' data-cf-showif="' + esc(JSON.stringify(f.showIf)) + '"' : '')
+      html += '<div class="cf-field" data-cf-row="' + escAttr(f.id) + '"'
+        + (f.showIf ? ' data-cf-showif="' + escAttr(JSON.stringify(f.showIf)) + '"' : '')
         + (visible ? '' : ' style="display:none;"') + '>';
       if (f.type !== 'checkbox') {
         html += '<label class="cf-label">' + esc(f.label) + (marked ? ' <span class="cf-required">*</span>' : '') + '</label>';
@@ -161,7 +177,7 @@ window.ImpulsionMarketing.customFields = (function () {
       if (f.help) html += '<div class="cf-help">' + esc(f.help) + '</div>';
       html += '</div>';
     });
-    return '<div class="cf-fields-block" data-cf-attach="' + esc(attachPoint) + '">' + html + '</div>';
+    return '<div class="cf-fields-block" data-cf-attach="' + escAttr(attachPoint) + '">' + html + '</div>';
   }
 
   // ── Câblage DOM ──
@@ -252,8 +268,8 @@ window.ImpulsionMarketing.customFields = (function () {
         var itemType = listEl.getAttribute('data-cf-item-type') || 'url';
         var row = document.createElement('div');
         row.className = 'cf-list-row';
-        row.innerHTML = '<input type="' + itemType + '" class="admin-input cf-input cf-list-item" data-cf-field="' + esc(fieldId) + '" value="" placeholder="' + (itemType === 'url' ? 'https://...' : '') + '">'
-          + '<button type="button" class="icon-del cf-list-remove" data-cf-field="' + esc(fieldId) + '" title="Retirer">✕</button>';
+        row.innerHTML = '<input type="' + itemType + '" class="admin-input cf-input cf-list-item" data-cf-field="' + escAttr(fieldId) + '" value="" placeholder="' + (itemType === 'url' ? 'https://...' : '') + '">'
+          + '<button type="button" class="icon-del cf-list-remove" data-cf-field="' + escAttr(fieldId) + '" title="Retirer">✕</button>';
         listEl.insertBefore(row, addBtn);
         return;
       }
