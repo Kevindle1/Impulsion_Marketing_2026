@@ -1338,14 +1338,17 @@
         h += '<div id="com-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
 
         if (editable) {
+            // Date de dépôt maquette / URL Figma / Nombre d'images : champs déjà en
+            // place, migrés vers le moteur générique (même clé de stockage — voir
+            // DEFAULT_FIELDS['com_maquette']). Le nombre d'images continue de piloter
+            // la liste d'URL dynamique (updateComImageUrls, hors périmètre du moteur
+            // générique — pas de type « liste » adapté à un compteur externe) via le
+            // même id DOM 'com-numimages-<idx>', inchangé par la migration.
+            h += customFieldsSectionHtml('com_maquette', ch, { 'com-numimages-': 0 }, { idSuffix: idx });
             h += '<div class="actor-form">';
-            h += '<div class="form-row"><label>Date de dépôt maquette</label><input type="date" id="com-depot-date-' + idx + '" class="form-control"></div>';
-            h += '<div class="form-row"><label>URL Figma</label><input type="url" id="com-figma-' + idx + '" class="form-control" placeholder="https://figma.com/..."></div>';
-            h += '<div class="form-row"><label>Nombre d\'images</label><input type="number" id="com-numimages-' + idx + '" class="form-control" min="0" value="0" data-ch="' + idx + '"></div>';
             h += '<div id="com-img-urls-' + idx + '"></div>';
             h += '<div class="form-row"><label>Déposer votre maquette ici (PDF ou image)</label><input type="file" id="com-pdf-' + idx + '" class="form-control" accept=".pdf,image/*"></div>';
             h += '</div>';
-            h += customFieldsSectionHtml('com_maquette', ch);
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-com" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-com" data-ch="' + idx + '">📤 Soumettre ce canal</button>';

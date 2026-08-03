@@ -95,6 +95,11 @@ window.ImpulsionMarketing.customFields = (function () {
     // idPrefix) — un seul canal est affiché à la fois dans le DOM, mais le code
     // de collecte du dépôt (hors moteur générique, ex. collectDataMepDepot)
     // référence encore l'id complet 'data-mepdate-' + idx directement.
+    'com_maquette': [
+      { id: 'com-depot-date-', label: 'Date de dépôt maquette', type: 'date', order: 1 },
+      { id: 'com-figma-', label: 'URL Figma', type: 'url', order: 2 },
+      { id: 'com-numimages-', label: 'Nombre d\'images', type: 'number', order: 3 }
+    ],
     'data_lancement_test': [
       { id: 'data-cibletest-', label: 'Cible du test', type: 'text', order: 1, help: 'Ex : 50 clients segment X' }
     ],

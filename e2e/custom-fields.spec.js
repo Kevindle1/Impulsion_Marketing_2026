@@ -761,3 +761,62 @@ test.describe('data_lancement_test — migration sans casser les campagnes exist
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lot 8 (details.html) : com_maquette — date de dépôt maquette, URL Figma,
+// nombre d'images migrent (même clé de stockage). imageUrls (liste dynamique
+// pilotée par le nombre d'images) et le dépôt de fichier restent en dur.
+// ─────────────────────────────────────────────────────────────
+test.describe('com_maquette — migration sans casser les campagnes existantes', () => {
+  function comCampaign() {
+    return {
+      id: 'CF ComMaquette', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing', 'Com'],
+      channels: [
+        { content: 'MAIL', deliverableLabel: 'Test', deliverableName: 'MAIL - Test', comType: 'Commerciales', targetingCriteria: 'Tous', comTypology: 'Création Caisse' }
+      ],
+      workflow: {
+        steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' },
+        assignments: { com: [PO_USER.name] },
+        channelSteps: { 0: { com_maquette: 'pending', po_validation_maquette: 'locked' } },
+        channelDates: {}, channelRevisionComments: {}
+      }
+    };
+  }
+
+  test('config customFields absente : date dépôt / URL Figma / nombre d\'images s\'affichent, la liste d\'URL dynamique continue de réagir, la sauvegarde reste au même format', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectory(page, { [comCampaign().id]: comCampaign() });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent('CF ComMaquette')));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(400);
+
+    await expect(page.locator('#com-depot-date-0')).toHaveCount(1, { timeout: 10000 });
+    await expect(page.locator('#com-figma-0')).toHaveValue('');
+    await expect(page.locator('#com-numimages-0')).toHaveValue('0');
+
+    // Le compteur d'images continue de piloter la liste d'URL dynamique
+    // (updateComImageUrls, hors moteur générique) via le même id DOM.
+    await page.locator('#com-numimages-0').fill('2');
+    await page.locator('#com-numimages-0').dispatchEvent('input');
+    await expect(page.locator('#com-img-0-0')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('#com-img-0-1')).toBeVisible();
+
+    await page.locator('#com-depot-date-0').fill('2026-09-05');
+    await page.locator('#com-figma-0').fill('https://figma.com/file/xyz');
+    await page.locator('#com-img-0-0').fill('https://img.example.com/1.png');
+    await page.locator('#com-img-0-1').fill('https://img.example.com/2.png');
+    await page.locator('.btn-save-com[data-ch="0"]').click();
+
+    const readonly = page.locator('#com-readonly-0');
+    await expect(readonly).toBeVisible({ timeout: 10000 });
+    await expect(readonly).toContainText('2026-09-05');
+    await expect(readonly).toContainText('2');
+
+    console.log('errors (migration com_maquette, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+});

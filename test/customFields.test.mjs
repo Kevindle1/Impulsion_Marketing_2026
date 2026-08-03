@@ -255,6 +255,21 @@ test('getFields — data_lancement_test : repli DEFAULT_FIELDS (« Cible du test
   });
 });
 
+test('getFields — com_maquette : repli DEFAULT_FIELDS (date dépôt / URL Figma / nombre d\'images), imageUrls et le fichier restent en dur', () => {
+  withConfig({}, () => {
+    assert.deepEqual(cf.getFields('com_maquette').map(f => f.id), ['com-depot-date-', 'com-figma-', 'com-numimages-']);
+  });
+});
+
+test('renderFields — com_maquette avec idSuffix : id DOM = id complet déjà référencé par collectComDepot / updateComImageUrls', () => {
+  withConfig({}, () => {
+    const html = cf.renderFields('com_maquette', { 'com-numimages-': 0 }, { idSuffix: 1 });
+    assert.match(html, /id="com-depot-date-1"/);
+    assert.match(html, /id="com-figma-1"/);
+    assert.match(html, /id="com-numimages-1"[^>]*value="0"/);
+  });
+});
+
 test('renderFields — data_mise_en_prod avec idSuffix : id DOM = id complet déjà référencé par collectDataMepDepot (document.getElementById direct)', () => {
   withConfig({}, () => {
     const html = cf.renderFields('data_mise_en_prod', {}, { idSuffix: 2 });
