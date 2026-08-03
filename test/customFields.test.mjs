@@ -256,6 +256,12 @@ test('getFields — ebf_bat : repli DEFAULT_FIELDS (objet email + code Com), obj
   });
 });
 
+test('getFields — data_ciblage : repli DEFAULT_FIELDS (codeProjet/codeAction/codeMK/chemin/urlEchantillon), volumeCible reste en dur', () => {
+  withConfig({}, () => {
+    assert.deepEqual(cf.getFields('data_ciblage').map(f => f.id), ['data-codeproj-', 'data-codeaction-', 'data-codemk-', 'data-chemin-', 'data-urlechantillon-']);
+  });
+});
+
 test('getFields — data_mise_en_prod / ebf_mise_en_prod : repli DEFAULT_FIELDS sans config sauvegardée (étapes de production, details.html)', () => {
   withConfig({}, () => {
     assert.deepEqual(cf.getFields('data_mise_en_prod').map(f => f.id), ['data-mepdate-', 'data-mepfirstsend-', 'data-mepcomment-']);

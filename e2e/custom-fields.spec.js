@@ -905,3 +905,69 @@ test.describe('ebf_bat — migration sans casser les campagnes existantes', () =
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lot 10 (details.html) : data_ciblage — Code Projet / Code Action / Code MK /
+// Chemin de la requête / URL de l'échantillon migrent. Volume cible RESTE EN
+// DUR (son libellé affiche le seuil d'alerte configurable par caisse,
+// APP_SETTINGS.volumeAlertThreshold — une donnée dynamique qu'un champ
+// générique statique ne peut pas exprimer). Comme ebf_bat, codeProjet/
+// codeAction/codeMK sont relus par mirrorChannelCodes() DEPUIS L'OBJET dépôt
+// déjà collecté par collectDataDepot() (pas depuis le DOM) — vérifié
+// explicitement ci-dessous.
+// ─────────────────────────────────────────────────────────────
+test.describe('data_ciblage — migration sans casser les campagnes existantes', () => {
+  function dataCiblageCampaign() {
+    return {
+      id: 'CF DataCiblage', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing', 'Data'],
+      channels: [
+        { content: 'MAIL', deliverableLabel: 'Test', deliverableName: 'MAIL - Test', comType: 'Commerciales', targetingCriteria: 'Tous', comTypology: 'Création Caisse', volumeCible: 12000 }
+      ],
+      workflow: {
+        steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' },
+        assignments: { data: [PO_USER.name] },
+        channelSteps: { 0: { data_ciblage: 'pending', po_validation_ciblage: 'locked' } },
+        channelDates: {}, channelRevisionComments: {}
+      }
+    };
+  }
+
+  test('config customFields absente : volume cible (en dur) pré-rempli depuis ch.volumeCible, codes migrés collectés/mirrorés comme avant', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectory(page, { [dataCiblageCampaign().id]: dataCiblageCampaign() });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent('CF DataCiblage')));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(400);
+
+    // Volume cible : toujours en dur, pré-rempli depuis ch.volumeCible.
+    await expect(page.locator('#data-volume-0')).toHaveValue('12000', { timeout: 10000 });
+    await expect(page.locator('#data-codeproj-0')).toHaveCount(1);
+    await expect(page.locator('#data-codeaction-0')).toHaveCount(1);
+    await expect(page.locator('#data-codemk-0')).toHaveCount(1);
+    await expect(page.locator('#data-chemin-0')).toHaveCount(1);
+    await expect(page.locator('#data-urlechantillon-0')).toHaveCount(1);
+
+    await page.locator('#data-codeproj-0').fill('PRJ-2026-01');
+    await page.locator('#data-codeaction-0').fill('ACT-2026-01');
+    await page.locator('.btn-save-ciblage[data-ch="0"]').click();
+
+    const readonly = page.locator('#data-readonly-0');
+    await expect(readonly).toBeVisible({ timeout: 10000 });
+    await expect(readonly).toContainText('PRJ-2026-01');
+    await expect(readonly).toContainText('ACT-2026-01');
+
+    // Preuve directe que collectDataDepot() (code non générique) retrouve bien
+    // les champs migrés — exactement ce que mirrorChannelCodes() lit en aval
+    // pour l'index de recherche et le rapprochement Bilan/xlsx.
+    const collected = await page.evaluate(() => window.collectDataDepot(0, 'data_ciblage'));
+    expect(collected.codeProjet).toBe('PRJ-2026-01');
+    expect(collected.codeAction).toBe('ACT-2026-01');
+
+    console.log('errors (migration data_ciblage, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+});

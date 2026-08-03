@@ -1568,19 +1568,31 @@
         h += '<div id="data-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune donnée déposée pour ce canal.</div>';
 
         if (editable) {
-            h += '<div class="actor-form">';
             if (isCiblage) {
+                // Volume cible : reste en dur — son libellé affiche le seuil d'alerte
+                // configurable par caisse (APP_SETTINGS.volumeAlertThreshold), une
+                // donnée dynamique que le moteur générique (libellés statiques) ne
+                // peut pas exprimer sans la coder en dur, ce qui casserait le
+                // white-label. Sa collecte (document.getElementById direct) n'est de
+                // toute façon pas affectée par la migration des champs voisins.
+                h += '<div class="actor-form">';
                 h += '<div class="form-row"><label>Volume cible <small style="font-weight:normal;color:var(--muted);">(nb de destinataires — alerte si &gt; ' + ((window.ImpulsionMarketing.config.APP_SETTINGS.volumeAlertThreshold || 100000).toLocaleString('fr-FR')) + ')</small></label><input type="number" id="data-volume-' + idx + '" class="form-control" min="0" placeholder="Ex : 50000" value="' + (ch.volumeCible || '') + '"></div>';
-                h += '<div class="form-row"><label>Code Projet</label><input type="text" id="data-codeproj-' + idx + '" class="form-control"></div>';
-                h += '<div class="form-row"><label>Code Action</label><input type="text" id="data-codeaction-' + idx + '" class="form-control"></div>';
-                h += '<div class="form-row"><label>Code MK</label><input type="text" id="data-codemk-' + idx + '" class="form-control"></div>';
-                h += '<div class="form-row"><label>Chemin de la Requête</label><input type="text" id="data-chemin-' + idx + '" class="form-control"></div>';
-                h += '<div class="form-row"><label>URL de l\'échantillon à valider <small style="font-weight:normal;color:var(--muted);">(lien vers l\'échantillon)</small></label><input type="url" id="data-urlechantillon-' + idx + '" class="form-control" placeholder="https://..."></div>';
+                h += '</div>';
+                // Code Projet / Code Action / Code MK / Chemin de la requête / URL de
+                // l'échantillon : champs déjà en place, migrés vers le moteur générique
+                // (même clé de stockage — voir DEFAULT_FIELDS['data_ciblage']).
+                // collectDataDepot(), fillDataForm() et le contrôle « au moins un champ
+                // rempli avant soumission » continuent de fonctionner sans modification
+                // : ils retrouvent ces champs par leur id DOM exact (idSuffix).
+                // mirrorChannelCodes() (index de recherche, rapprochement Bilan) lit
+                // codeProjet/codeAction/codeMK depuis l'objet dépôt déjà collecté par
+                // collectDataDepot(), donc non affecté non plus.
+                h += customFieldsSectionHtml('data_ciblage', ch, null, { idSuffix: idx });
             } else if (isMep) {
+                h += '<div class="actor-form">';
                 h += '<p style="font-size:14px;color:var(--gray-700);margin-bottom:8px;">Confirmez la mise en production de ce canal.</p>';
+                h += '</div>';
             }
-            h += '</div>';
-            if (isCiblage) h += customFieldsSectionHtml('data_ciblage', ch);
             h += '<div class="actor-submit-row">';
             var submitLabel = isMep ? '🚀 Confirmer MEP de ce canal' : '📤 Déposer et soumettre';
             var submitClass = isMep ? 'btn-actor-submit btn-actor-submit--mep' : 'btn-actor-submit';

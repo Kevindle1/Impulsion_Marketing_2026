@@ -3420,6 +3420,15 @@ window.ImpulsionMarketing.customFields = (function () {
       { id: 'ebf-emailobject-', label: 'Objet de l\'email', type: 'text', order: 1, canalTypes: ['MAIL', 'MAIL + E-MESSAGE'], help: 'Ex : Découvrez notre offre exclusive...' },
       { id: 'ebf-codecom-', label: 'Code Com', type: 'text', order: 2 }
     ],
+    // Volume cible reste en dur (libellé avec seuil d'alerte configurable par
+    // caisse, non exprimable dans une définition de champ statique).
+    'data_ciblage': [
+      { id: 'data-codeproj-', label: 'Code Projet', type: 'text', order: 1 },
+      { id: 'data-codeaction-', label: 'Code Action', type: 'text', order: 2 },
+      { id: 'data-codemk-', label: 'Code MK', type: 'text', order: 3 },
+      { id: 'data-chemin-', label: 'Chemin de la Requête', type: 'text', order: 4 },
+      { id: 'data-urlechantillon-', label: 'URL de l\'échantillon à valider', type: 'url', order: 5, help: 'Lien vers l\'échantillon' }
+    ],
     'com_maquette': [
       { id: 'com-depot-date-', label: 'Date de dépôt maquette', type: 'date', order: 1 },
       { id: 'com-figma-', label: 'URL Figma', type: 'url', order: 2 },
