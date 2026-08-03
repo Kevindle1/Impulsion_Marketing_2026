@@ -4,6 +4,12 @@ dist/
 *.log
 npm-debug.log*
 
+# Artefacts des tests de fumée Playwright (npm run test:e2e)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
 # Secrets / configuration locale
 .env
 .env.*

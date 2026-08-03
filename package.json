@@ -7,9 +7,11 @@
   "scripts": {
     "build": "node build-bundle.mjs",
     "test": "node --test",
+    "test:e2e": "playwright test",
     "lint": "eslint ."
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "eslint": "^9.39.5",
     "eslint-plugin-html": "^8.1.4"
   }

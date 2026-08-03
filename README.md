@@ -60,7 +60,7 @@ Impulsion Marketing/
 
 **Pour amorcer un nouveau déploiement** (ex. une autre caisse régionale) : copier le contenu de `Application/` tel quel, et copier le contenu du dossier `Données de production/` de ce dépôt (dépourvu de vraies données — `_config.json` de base + `docs/USER_GUIDE.md`) comme point de départ, avant de le personnaliser depuis l'espace Administration.
 
-Dans **ce dépôt de code**, les outils de développement (`test/`, `build-bundle.mjs`, `package.json`, `docs/` — hors `USER_GUIDE.md`) restent à la racine : ils ne font partie ni de `Application/` ni de `Données de production/` et ne sont jamais déployés sur `V://`.
+Dans **ce dépôt de code**, les outils de développement (`test/`, `e2e/`, `build-bundle.mjs`, `eslint.config.js`, `playwright.config.js`, `package.json`, `docs/` — hors `USER_GUIDE.md`) restent à la racine : ils ne font partie ni de `Application/` ni de `Données de production/` et ne sont jamais déployés sur `V://`.
 
 ---
 

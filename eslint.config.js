@@ -39,7 +39,9 @@ export default [
       'Application/js/suivi-xlsx.js', // bibliothèque tierce vendorisée, non maintenue ici
       'node_modules/**',
       'docs/**',
-      'Données de production/**'
+      'Données de production/**',
+      'test-results/**',
+      'playwright-report/**'
     ]
   },
 
@@ -89,7 +91,7 @@ export default [
 
   // ── Outillage de développement Node (ESM). ──
   {
-    files: ['build-bundle.mjs', 'test/**/*.mjs', 'eslint.config.js'],
+    files: ['build-bundle.mjs', 'test/**/*.mjs', 'eslint.config.js', 'playwright.config.js', 'e2e/**/*.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

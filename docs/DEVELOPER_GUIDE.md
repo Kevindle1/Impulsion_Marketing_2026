@@ -81,10 +81,24 @@ Ordre de concaténation (respecter les dépendances) :
 5. `directoryStorage-standalone.js`
 6. `users-standalone.js`
 7. `workflow-standalone.js`
-8. `themes-standalone.js`
-9. `help-standalone.js`
+8. `help-standalone.js`
+9. `incident-standalone.js`
+10. `admin-standalone.js`
+11. `topbar-standalone.js`
+
+`js/suivi-xlsx.js` (bibliothèque tierce vendorisée) n'entre pas dans le bundle — il est chargé séparément par `pages/details.html`.
 
 > **Ne jamais éditer `bundle.js` directement** — les modifications seraient écrasées à la prochaine régénération.
+
+---
+
+## Tests
+
+Deux suites, toutes deux outils de développement uniquement (aucune n'est déployée sur `V://`) :
+
+- **`npm test`** — tests unitaires (`node --test`) de la logique pure du workflow (`test/workflow.test.mjs`), sans navigateur.
+- **`npm run test:e2e`** — tests de fumée UI (Playwright + Chromium, `e2e/smoke.spec.js`) : chaque page se charge sans erreur JS, et la garde de session (redirection vers `login.html` sans utilisateur connecté) fonctionne. L'app n'ayant pas de backend — toute donnée réelle vient d'un dossier choisi via `showDirectoryPicker`, impossible à simuler en headless —, ce ne sont pas des tests bout-en-bout : ils ne couvrent pas les parcours qui nécessitent un vrai dossier de travail.
+- **`npm run lint`** — ESLint (voir `eslint.config.js`), signal de style/bugs évidents, ne bloque rien.
 
 ---
 
