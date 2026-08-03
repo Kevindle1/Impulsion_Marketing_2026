@@ -249,6 +249,12 @@ test('getFields — data_mise_en_prod / ebf_mise_en_prod : repli DEFAULT_FIELDS 
   });
 });
 
+test('getFields — data_lancement_test : repli DEFAULT_FIELDS (« Cible du test » uniquement, destinataires du test restent en dur)', () => {
+  withConfig({}, () => {
+    assert.deepEqual(cf.getFields('data_lancement_test').map(f => f.id), ['data-cibletest-']);
+  });
+});
+
 test('renderFields — data_mise_en_prod avec idSuffix : id DOM = id complet déjà référencé par collectDataMepDepot (document.getElementById direct)', () => {
   withConfig({}, () => {
     const html = cf.renderFields('data_mise_en_prod', {}, { idSuffix: 2 });

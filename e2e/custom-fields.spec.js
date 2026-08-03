@@ -707,3 +707,57 @@ test.describe('data_mise_en_prod / ebf_mise_en_prod — migration sans casser le
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lot 7 (details.html) : data_lancement_test — seul « Cible du test » migre
+// (même clé de stockage, depotdata_test.json / cibleTest). « Destinataires du
+// test en prod » reste en dur (liste dynamique d'utilisateurs, hors périmètre
+// du moteur générique).
+// ─────────────────────────────────────────────────────────────
+test.describe('data_lancement_test — migration sans casser les campagnes existantes', () => {
+  function launchTestCampaign() {
+    return {
+      id: 'CF LancementTest', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing', 'EBF', 'Data'],
+      channels: [
+        { content: 'MAIL', deliverableLabel: 'Test', deliverableName: 'MAIL - Test', comType: 'Commerciales', targetingCriteria: 'Tous', comTypology: 'Création Caisse' }
+      ],
+      workflow: {
+        steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' },
+        assignments: { ebf: [PO_USER.name], data: [PO_USER.name] },
+        channelSteps: {
+          0: {
+            ebf_bat: 'completed', po_validation_bat: 'completed',
+            data_ciblage: 'completed', po_validation_ciblage: 'completed',
+            data_lancement_test: 'pending',
+            ebf_test_prod: 'locked', po_validation_test_prod: 'locked',
+            data_mise_en_prod: 'locked', ebf_mise_en_prod: 'locked'
+          }
+        },
+        channelDates: {}, channelRevisionComments: {}
+      }
+    };
+  }
+
+  test('config customFields absente : « Cible du test » s\'affiche, se sauvegarde et se ré-affiche au même format qu\'avant', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectory(page, { [launchTestCampaign().id]: launchTestCampaign() });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent('CF LancementTest')));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(400);
+
+    await expect(page.locator('#data-cibletest-0')).toHaveCount(1, { timeout: 10000 });
+    await page.locator('#data-cibletest-0').fill('50 clients segment premium');
+    await page.locator('.btn-save-datatest[data-ch="0"]').click();
+
+    const readonly = page.locator('#data-testlaunch-readonly-0');
+    await expect(readonly).toBeVisible({ timeout: 10000 });
+    await expect(readonly).toContainText('50 clients segment premium');
+
+    console.log('errors (migration data_lancement_test, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+});

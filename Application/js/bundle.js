@@ -3416,6 +3416,9 @@ window.ImpulsionMarketing.customFields = (function () {
     // idPrefix) — un seul canal est affiché à la fois dans le DOM, mais le code
     // de collecte du dépôt (hors moteur générique, ex. collectDataMepDepot)
     // référence encore l'id complet 'data-mepdate-' + idx directement.
+    'data_lancement_test': [
+      { id: 'data-cibletest-', label: 'Cible du test', type: 'text', order: 1, help: 'Ex : 50 clients segment X' }
+    ],
     'data_mise_en_prod': [
       { id: 'data-mepdate-', label: 'Date de mise en production effective', type: 'date', order: 1 },
       { id: 'data-mepfirstsend-', label: 'Date du premier envoi', type: 'date', order: 2 },

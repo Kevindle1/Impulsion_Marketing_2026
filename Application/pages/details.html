@@ -1685,10 +1685,11 @@
 
         if (editable) {
             h += '<div class="actor-form">';
-            h += '<div class="form-row"><label>Cible du test <small style="font-weight:normal;">(ex : 50 clients segment X)</small></label><input type="text" id="data-cibletest-' + idx + '" class="form-control" placeholder="Décrivez la cible du test..."></div>';
             // Destinataires du test en prod : les personnes sélectionnées ici
             // pourront ensuite déposer le résultat du test (elles l'ont reçu),
-            // en plus de l'EBF assigné qui reste responsable du dépôt.
+            // en plus de l'EBF assigné qui reste responsable du dépôt. Liste
+            // dynamique d'utilisateurs (users.USERS) : hors périmètre du moteur
+            // générique (pas de configRef équivalent), reste en dur.
             h += '<div class="form-row"><label>Destinataires du test en prod <small style="font-weight:normal;color:var(--muted);">(pourront déposer le test reçu)</small></label>';
             h += '<div style="max-height:150px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;padding:6px;background:#fff;">';
             var _curReceivers = ch.testReceivers || [];
@@ -1698,7 +1699,9 @@
             });
             h += '</div></div>';
             h += '</div>';
-            h += customFieldsSectionHtml('data_lancement_test', ch);
+            // Cible du test : champ déjà en place, migré vers le moteur générique
+            // (même clé de stockage — voir DEFAULT_FIELDS['data_lancement_test']).
+            h += customFieldsSectionHtml('data_lancement_test', ch, null, { idSuffix: idx });
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-datatest" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-submit-canal-datatest" data-ch="' + idx + '" data-step="data_lancement_test">🧪 Confirmer le lancement test</button>';
