@@ -89,6 +89,20 @@ window.ImpulsionMarketing.customFields = (function () {
       { id: 'targetingCriteria', label: 'Critère ciblage', type: 'text', order: 4, required: true },
       { id: 'comTypology', label: 'Typologie de communication', type: 'radio', order: 5, required: true, configRef: 'COM_TYPOLOGIES' },
       { id: 'urlLccx', label: 'Lien LCCX (optionnel)', type: 'url', order: 6 }
+    ],
+    // Étapes de production (details.html) : mêmes id que le Workflow. Les id de
+    // champ se terminent par un tiret car ces étapes utilisent idSuffix (pas
+    // idPrefix) — un seul canal est affiché à la fois dans le DOM, mais le code
+    // de collecte du dépôt (hors moteur générique, ex. collectDataMepDepot)
+    // référence encore l'id complet 'data-mepdate-' + idx directement.
+    'data_mise_en_prod': [
+      { id: 'data-mepdate-', label: 'Date de mise en production effective', type: 'date', order: 1 },
+      { id: 'data-mepfirstsend-', label: 'Date du premier envoi', type: 'date', order: 2 },
+      { id: 'data-mepcomment-', label: 'Commentaire (optionnel)', type: 'text', order: 3 }
+    ],
+    'ebf_mise_en_prod': [
+      { id: 'ebf-mepdate-', label: 'Date de mise en production effective', type: 'date', order: 1 },
+      { id: 'ebf-mepcomment-', label: 'Commentaire (optionnel)', type: 'text', order: 2 }
     ]
   };
 

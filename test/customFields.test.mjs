@@ -242,6 +242,22 @@ test('renderFields — creation.step3.canal.base avec idSuffix : tous les id/nam
   });
 });
 
+test('getFields — data_mise_en_prod / ebf_mise_en_prod : repli DEFAULT_FIELDS sans config sauvegardée (étapes de production, details.html)', () => {
+  withConfig({}, () => {
+    assert.deepEqual(cf.getFields('data_mise_en_prod').map(f => f.id), ['data-mepdate-', 'data-mepfirstsend-', 'data-mepcomment-']);
+    assert.deepEqual(cf.getFields('ebf_mise_en_prod').map(f => f.id), ['ebf-mepdate-', 'ebf-mepcomment-']);
+  });
+});
+
+test('renderFields — data_mise_en_prod avec idSuffix : id DOM = id complet déjà référencé par collectDataMepDepot (document.getElementById direct)', () => {
+  withConfig({}, () => {
+    const html = cf.renderFields('data_mise_en_prod', {}, { idSuffix: 2 });
+    assert.match(html, /id="data-mepdate-2"/);
+    assert.match(html, /id="data-mepfirstsend-2"/);
+    assert.match(html, /id="data-mepcomment-2"/);
+  });
+});
+
 test('renderFields — l\'attribut data-cf-showif (JSON, plein de guillemets) reste bien formé', () => {
   // Régression : IM.security.escapeHtml échappe <, > et & mais PAS les guillemets
   // doubles (safe pour du texte, pas pour une valeur d'attribut) — un

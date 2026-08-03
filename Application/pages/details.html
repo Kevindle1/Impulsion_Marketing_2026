@@ -421,9 +421,13 @@
     // (dépôt JSON pour les étapes de dépôt, ch.customFieldValues pour les
     // étapes de validation PO / juridique — deux emplacements de stockage
     // différents selon l'étape, cf. renvoi de la fonction appelante).
-    function customFieldsSectionHtml(stepId, ch, values) {
+    // `opts.idSuffix` : réservé aux champs déjà en place migrés vers le moteur
+    // générique (même clé de stockage) — reconstitue l'id DOM exact déjà
+    // référencé ailleurs par du code non générique (ex. collectDataMepDepot),
+    // sans toucher aux champs perso ajoutés par un admin sur la même étape.
+    function customFieldsSectionHtml(stepId, ch, values, opts) {
         if (!customFields) return '';
-        return customFields.renderFields(stepId, values || {}, { canalType: ch && ch.content });
+        return customFields.renderFields(stepId, values || {}, Object.assign({ canalType: ch && ch.content }, opts || {}));
     }
     function wireCustomFieldsSection(stepId, ch) {
         if (!customFields) return;
@@ -1601,12 +1605,10 @@
         h += '<div id="data-mep-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
 
         if (editable) {
-            h += '<div class="actor-form">';
-            h += '<div class="form-row"><label>Date de mise en production effective</label><input type="date" id="data-mepdate-' + idx + '" class="form-control"></div>';
-            h += '<div class="form-row"><label>Date du premier envoi</label><input type="date" id="data-mepfirstsend-' + idx + '" class="form-control"></div>';
-            h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="data-mepcomment-' + idx + '" class="form-control" placeholder="Ex : routage déclenché à 9h00"></div>';
-            h += '</div>';
-            h += customFieldsSectionHtml('data_mise_en_prod', ch);
+            // Date MEP / date premier envoi / commentaire : champs déjà en place,
+            // migrés vers le moteur générique (même clé de stockage, voir
+            // DEFAULT_FIELDS['data_mise_en_prod'] dans customFields-standalone.js).
+            h += customFieldsSectionHtml('data_mise_en_prod', ch, null, { idSuffix: idx });
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-datamep" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';
@@ -1637,11 +1639,10 @@
         h += '<div id="ebf-mep-readonly-' + idx + '" class="depot-readonly" style="display:none;margin-bottom:12px;"></div>';
         h += '<div id="ebf-mep-empty-' + idx + '" style="color:var(--muted);font-size:13px;font-style:italic;display:none;">Aucune confirmation de mise en production.</div>';
         if (editable) {
-            h += '<div class="actor-form">';
-            h += '<div class="form-row"><label>Date de mise en production effective</label><input type="date" id="ebf-mepdate-' + idx + '" class="form-control"></div>';
-            h += '<div class="form-row"><label>Commentaire <small style="font-weight:normal;">(optionnel)</small></label><input type="text" id="ebf-mepcomment-' + idx + '" class="form-control" placeholder="Ex : LP mise en ligne à 9h00"></div>';
-            h += '</div>';
-            h += customFieldsSectionHtml('ebf_mise_en_prod', ch);
+            // Date MEP / commentaire : champs déjà en place, migrés vers le moteur
+            // générique (même clé de stockage, voir DEFAULT_FIELDS['ebf_mise_en_prod']
+            // dans customFields-standalone.js).
+            h += customFieldsSectionHtml('ebf_mise_en_prod', ch, null, { idSuffix: idx });
             h += '<div class="actor-submit-row">';
             h += '<button type="button" class="btn-actor-save btn-save-ebfmep" data-ch="' + idx + '">💾 Enregistrer</button>';
             h += '<button type="button" class="btn-actor-submit btn-actor-submit--mep btn-submit-ebf-mep" data-ch="' + idx + '">🚀 Confirmer la mise en production</button>';

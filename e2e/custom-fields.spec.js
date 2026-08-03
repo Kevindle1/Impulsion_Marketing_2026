@@ -636,3 +636,74 @@ test.describe('creation.step3.canal.base — migration sans casser les campagnes
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Lots 5-6 (details.html) : data_mise_en_prod / ebf_mise_en_prod — les seuls
+// champs déjà en place de ces deux étapes (date MEP, date premier envoi,
+// commentaire), sans lecteur externe (pas de mirrorChannelCodes, pas de
+// rapprochement Bilan/xlsx, pas de moteur d'affectation auto — cf. l'audit qui
+// a précédé cette migration). idSuffix reconstitue l'id DOM EXACT déjà
+// référencé directement par collectDataMepDepot / le handler ebf_mise_en_prod
+// (hors moteur générique), sans toucher à ce code de collecte.
+// ─────────────────────────────────────────────────────────────
+test.describe('data_mise_en_prod / ebf_mise_en_prod — migration sans casser les campagnes existantes', () => {
+  function mepCampaign() {
+    return {
+      id: 'CF Mep Test', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing', 'EBF', 'Data'],
+      channels: [
+        { content: 'MAIL', deliverableLabel: 'Test', deliverableName: 'MAIL - Test', comType: 'Commerciales', targetingCriteria: 'Tous', comTypology: 'Création Caisse' }
+      ],
+      workflow: {
+        steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' },
+        assignments: { ebf: [PO_USER.name], data: [PO_USER.name] },
+        channelSteps: {
+          0: {
+            ebf_bat: 'completed', po_validation_bat: 'completed',
+            data_ciblage: 'completed', po_validation_ciblage: 'completed',
+            data_lancement_test: 'completed',
+            ebf_test_prod: 'completed', po_validation_test_prod: 'completed',
+            data_mise_en_prod: 'pending', ebf_mise_en_prod: 'pending'
+          }
+        },
+        channelDates: {}, channelRevisionComments: {}
+      }
+    };
+  }
+
+  test('config customFields absente : les champs (date MEP, premier envoi, commentaire) s\'affichent et se sauvegardent au même format qu\'avant', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectory(page, { [mepCampaign().id]: mepCampaign() });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent('CF Mep Test')));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(400);
+
+    await expect(page.locator('#data-mepdate-0')).toHaveCount(1, { timeout: 10000 });
+    await expect(page.locator('#data-mepfirstsend-0')).toHaveCount(1);
+    await expect(page.locator('#data-mepcomment-0')).toHaveCount(1);
+    await expect(page.locator('#ebf-mepdate-0')).toHaveCount(1);
+    await expect(page.locator('#ebf-mepcomment-0')).toHaveCount(1);
+
+    await page.locator('#data-mepdate-0').fill('2026-09-10');
+    await page.locator('#data-mepfirstsend-0').fill('2026-09-11');
+    await page.locator('#data-mepcomment-0').fill('Routage 9h00');
+    await page.locator('.btn-save-datamep[data-ch="0"]').click();
+
+    // La sauvegarde ré-affiche le récapitulatif en lecture seule à partir de
+    // l'objet dépôt tout juste collecté (collectDataMepDepot lit encore les id
+    // DOM en dur data-mepdate-0/data-mepfirstsend-0/data-mepcomment-0, inchangé
+    // par la migration) — preuve que le format stocké (mepDate/mepFirstSend/
+    // mepComment) reste exactement celui d'avant.
+    const readonly = page.locator('#data-mep-readonly-0');
+    await expect(readonly).toBeVisible({ timeout: 10000 });
+    await expect(readonly).toContainText('2026-09-10');
+    await expect(readonly).toContainText('2026-09-11');
+    await expect(readonly).toContainText('Routage 9h00');
+
+    console.log('errors (migration data_mise_en_prod/ebf_mise_en_prod, campagne existante):', errors);
+    expect(errors).toEqual([]);
+  });
+});
