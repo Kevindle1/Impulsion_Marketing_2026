@@ -62,9 +62,9 @@
         .chip button { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: none; border-radius: 50%; background: var(--line-2); color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; transition: background .12s, color .12s; }
         .chip button:hover { background: var(--red-50); color: var(--red); }
 
-        .admin-input, .admin-select { padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 14px; font-family: inherit; color: var(--ink); background: #fff; }
-        .admin-input:focus, .admin-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(var(--primary-rgb),.14); }
-        .admin-label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); margin-bottom: 6px; }
+        /* .admin-input / .admin-select / .admin-label : css/components.css (partagé
+           avec campaign.html et details.html, qui rendent aussi des champs
+           personnalisés via renderFields()). */
         .icon-del { background: none; border: 1px solid var(--line); color: var(--red); border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px; transition: background .12s, border-color .12s; }
         .icon-del:hover { background: var(--red-50); border-color: var(--red); }
         .add-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
@@ -140,17 +140,9 @@
         .cf-admin-mini-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
         .cf-admin-id { color: var(--muted); }
 
-        /* Champs personnalisés — rendu générique côté utilisateur (details.html / campaign.html) */
-        .cf-fields-block { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-        .cf-field { display: flex; flex-direction: column; gap: 5px; }
-        .cf-label { font-size: 13px; font-weight: 650; color: var(--ink); }
-        .cf-required { color: var(--red, #e2001a); }
-        .cf-help { font-size: 11.5px; color: var(--muted-2); }
-        .cf-richtext { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-height: 60px; font-size: 13px; background: #fff; }
-        .cf-radio-opt, .cf-checkbox-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-right: 14px; }
-        .cf-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-        .cf-list-row input { flex: 1; }
-        .cf-file-current { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+        /* Champs personnalisés — rendu générique côté utilisateur (.cf-fields-block,
+           .cf-field, .cf-label, etc.) : css/components.css (partagé avec
+           campaign.html et details.html). */
 
         /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
         .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
