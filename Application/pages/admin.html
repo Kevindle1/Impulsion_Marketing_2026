@@ -155,10 +155,12 @@
 
         /* Champs personnalisés — carte d'édition d'un champ (admin) */
         .cf-admin-card { border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .cf-admin-card--dimmed { opacity: .5; }
         .cf-admin-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .cf-admin-mini { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
         .cf-admin-mini-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
         .cf-admin-id { color: var(--muted); }
+        .wf-canal-badge.off { background: var(--red-50,#fdecec); color: var(--red,#e2001a); }
 
         /* Champs personnalisés — rendu générique côté utilisateur (.cf-fields-block,
            .cf-field, .cf-label, etc.) : css/components.css (partagé avec
@@ -349,6 +351,7 @@
         var wfActiveTab = 'steps';      // onglet actif de la page Workflow : 'steps' (Étapes du circuit) | 'canaux' (Personnalisation par canal)
         var customFieldsState = {};     // copie éditable { <point d'attache>: [ {id,label,type,...}, ... ] }
         var cfActivePoint = null;       // point d'attache ouvert dans la sous-page « Champs personnalisés » (null = liste)
+        var cfCanalContext = null;      // canal depuis lequel on est arrivé via le raccourci Workflow ▸ canal (mise en évidence uniquement, ne filtre pas les données)
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
@@ -1771,15 +1774,19 @@
                 var checked = !active || active.indexOf(s.id) !== -1;
                 var overrideActor = overridesForCanal[s.id] || '';
                 var hint = WF_STEP_HINTS[s.id] || '';
+                var fieldCount = Array.isArray(customFieldsState[s.id]) ? customFieldsState[s.id].length : 0;
                 html += '<div class="wf-canal-step' + (checked ? '' : ' off') + '">'
                     + '<div class="wf-canal-step-top">'
                     + '<label class="wf-canal-step-label"><input type="checkbox" data-wfc="' + esc(canal) + '" data-wfc-step="' + esc(s.id) + '"' + (checked ? ' checked' : '') + '> ' + esc(s.label)
                     +   (hint ? ' <span class="wf-canal-step-info" title="' + esc(hint) + '">ⓘ</span>' : '')
                     + '</label>'
+                    + '<span style="display:flex;align-items:center;gap:10px;">'
                     + '<span class="wf-canal-step-actor">Acteur : <select class="admin-select" data-wfao-canal="' + esc(canal) + '" data-wfao-step="' + esc(s.id) + '" style="padding:4px 8px;font-size:12px;">'
                     +   '<option value="">' + esc((WF_ROLES.filter(function (r) { return r[0] === s.actor; })[0] || [s.actor, s.actor])[1]) + ' (par défaut)</option>'
                     +   WF_ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (overrideActor === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('')
                     + '</select></span>'
+                    + '<button type="button" class="btn btn-secondary" data-wf-cf-shortcut="' + esc(s.id) + '" data-wf-cf-canal="' + esc(canal) + '" style="padding:5px 10px;font-size:12px;white-space:nowrap;">⚙️ Champs' + (fieldCount ? ' (' + fieldCount + ')' : '') + '</button>'
+                    + '</span>'
                     + '</div>'
                     + '</div>';
             });
@@ -1935,6 +1942,18 @@
                     renderWorkflow();
                 });
 
+                // Raccourci « ⚙️ Champs » : ouvre directement l'éditeur de Champs
+                // personnalisés de cette étape, avec le canal d'origine mis en
+                // évidence (les champs qui ne s'y appliquent pas sont grisés).
+                cont.querySelectorAll('[data-wf-cf-shortcut]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        cfActivePoint = btn.getAttribute('data-wf-cf-shortcut');
+                        cfCanalContext = btn.getAttribute('data-wf-cf-canal');
+                        renderCustomFields();
+                        activateTab('customfields');
+                    });
+                });
+
                 // Acteur par étape (sous-page canal) : « (par défaut) » retire l'exception,
                 // toute autre valeur crée/met à jour l'exception pour ce canal + cette étape.
                 cont.querySelectorAll('[data-wfao-canal][data-wfao-step]').forEach(function (sel) {
@@ -2017,13 +2036,26 @@
             return html;
         }
 
-        function cfFieldCardHtml(f, i, canalScoped) {
+        function cfFieldCardHtml(f, i, canalScoped, canalContext) {
             var group = (f.required && typeof f.required === 'object' && f.required.group) ? f.required.group : '';
             var reqMode = f.required === true ? 'yes' : (group ? 'group' : 'no');
             var isChoiceType = ['select', 'radio', 'checkbox-group'].indexOf(f.type) !== -1;
             var isListType = f.type === 'list';
             var typeLabels = (IM.customFields && IM.customFields.TYPE_LABELS) || {};
-            var html = '<div class="cf-admin-card">';
+            // Mise en évidence par rapport au canal d'origine (raccourci Workflow ▸ canal) :
+            // un champ sans restriction s'applique à tous les canaux, sinon seulement à ceux listés.
+            var canalBadge = '';
+            var doesNotApply = false;
+            if (canalScoped && canalContext) {
+                var restricted = Array.isArray(f.canalTypes) && f.canalTypes.length > 0;
+                var applies = !restricted || f.canalTypes.indexOf(canalContext) !== -1;
+                doesNotApply = !applies;
+                canalBadge = applies
+                    ? '<span class="wf-canal-badge ' + (restricted ? 'custom' : 'default') + '" style="margin-left:auto;">' + (restricted ? '✓ s\'applique à ' + esc(canalContext) : 'Tous canaux') + '</span>'
+                    : '<span class="wf-canal-badge off" style="margin-left:auto;">⛔ pas sur ' + esc(canalContext) + '</span>';
+            }
+            var html = '<div class="cf-admin-card' + (doesNotApply ? ' cf-admin-card--dimmed' : '') + '">';
+            if (canalBadge) html += '<div class="cf-admin-row">' + canalBadge + '</div>';
             html += '<div class="cf-admin-row">'
                 + '<input class="admin-input cf-admin-id" data-cfid="' + i + '" value="' + esc(f.id || '') + '" placeholder="id technique" title="Identifiant de stockage — le modifier masque les valeurs déjà saisies sous l\'ancien id (elles restent dans le fichier, rien n\'est supprimé)." style="width:130px;font-family:monospace;font-size:12px;">'
                 + '<input class="admin-input" data-cfl="' + i + '" value="' + esc(f.label || '') + '" placeholder="Libellé affiché" style="flex:2;min-width:160px;">'
@@ -2076,15 +2108,22 @@
         function renderCfDetailHtml(point) {
             var meta = cfPointMeta(point);
             var fields = cfFieldsFor(point);
+            var canalContext = meta.canalScoped ? cfCanalContext : null;
             var html = '<div class="admin-card">';
             html += '<div class="wf-canal-detail-head">'
                 + '<button type="button" class="btn-back-lots" id="cf-back-to-points">← Tous les points d\'attache</button>'
                 + '<h3>🧩 ' + esc(meta.label) + '</h3>'
                 + '</div>';
+            if (canalContext) {
+                html += '<div class="admin-note"><span class="admin-note-ic">📍</span><div>'
+                    + 'Champs mis en évidence pour le canal <strong>' + esc(canalContext) + '</strong> (ouvert depuis Workflow). '
+                    + 'Les champs grisés ne s\'affichent pas sur ce canal — <button type="button" id="cf-clear-canal-context" style="background:none;border:none;padding:0;color:var(--primary,#00875A);font-weight:700;cursor:pointer;text-decoration:underline;">voir tous les canaux</button>.'
+                    + '</div></div>';
+            }
             if (!fields.length) {
                 html += '<div class="empty-hint">Aucun champ personnalisé ici pour le moment.</div>';
             } else {
-                fields.forEach(function (f, i) { html += cfFieldCardHtml(f, i, meta.canalScoped); });
+                fields.forEach(function (f, i) { html += cfFieldCardHtml(f, i, meta.canalScoped, canalContext); });
             }
             html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="cf-add-field">+ Ajouter un champ</button></div>';
             html += '</div>';
@@ -2104,7 +2143,11 @@
             html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-customfields">💾 Enregistrer les champs personnalisés</button></div>';
             cont.innerHTML = html;
 
-            wireDrilldown(cont, 'data-cf-open-point', 'cf-back-to-points', function (v) { cfActivePoint = v; }, renderCustomFields);
+            // Une navigation "normale" (liste ▸ point, ou retour à la liste) quitte le
+            // contexte canal éventuellement posé par le raccourci Workflow ▸ canal.
+            wireDrilldown(cont, 'data-cf-open-point', 'cf-back-to-points', function (v) { cfActivePoint = v; cfCanalContext = null; }, renderCustomFields);
+            var clearCtxBtn = document.getElementById('cf-clear-canal-context');
+            if (clearCtxBtn) clearCtxBtn.addEventListener('click', function () { cfCanalContext = null; renderCustomFields(); });
 
             if (cfActivePoint) {
                 var fields = cfFieldsFor(cfActivePoint);
