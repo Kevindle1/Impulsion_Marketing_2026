@@ -45,8 +45,10 @@ Impulsion Marketing/                 ← racine sur le lecteur réseau V://
 │       ├── directoryStorage-standalone.js ← handle FS, IndexedDB
 │       ├── users-standalone.js          ← utilisateur courant, rôles
 │       ├── workflow-standalone.js       ← machine à états, index, sauvegarde
+│       ├── customFields-standalone.js   ← moteur de champs personnalisés
 │       ├── help-standalone.js           ← aide contextuelle
 │       ├── incident-standalone.js       ← signalements (tickets)
+│       ├── connectionLog-standalone.js  ← journal des connexions
 │       ├── admin-standalone.js          ← chargement/application de _config.json
 │       └── topbar-standalone.js         ← en-tête, notifications, « Quoi de neuf »
 │
@@ -54,7 +56,7 @@ Impulsion Marketing/                 ← racine sur le lecteur réseau V://
     ├── _config.json          ← paramétrage admin-éditable (source unique)
     ├── docs/
     │   └── USER_GUIDE.md     ← guide utilisateur, lu en direct par pages/guide.html
-    ├── Données/              ← signalements (incidents.json, signalement_lots.json…)
+    ├── Données/              ← signalements (incidents.json), journal des connexions (connexions.json)…
     └── Campagnes/            ← données (créé par l'utilisateur sur V://)
         ├── _index.json          ← index léger de toutes les campagnes
         ├── _notifications.json  ← notifications inter-utilisateurs (conflits, validations)
@@ -80,7 +82,7 @@ Les outils de développement (`build-bundle.mjs`, `test/`, `package.json`, `docs
 
 ## Modules JS (bundle.js)
 
-Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js` est la concaténation ordonnée des **11 fichiers standalone** (dans cet ordre exact — voir `MODULES` dans `build-bundle.mjs`) :
+Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js` est la concaténation ordonnée des **13 fichiers standalone** (dans cet ordre exact — voir `MODULES` dans `build-bundle.mjs`) :
 
 | Ordre | Module | Namespace | Rôle |
 |-------|--------|-----------|------|
@@ -91,10 +93,12 @@ Tous les modules sont exposés sous `window.ImpulsionMarketing.*`. Le `bundle.js
 | 5 | `directoryStorage-standalone.js` | `directoryStorage` | Handle racine FS, persistance IndexedDB |
 | 6 | `users-standalone.js` | `users` | Utilisateur courant, rôles, `isCurrentUserPO`, `canAccessAdmin` |
 | 7 | `workflow-standalone.js` | `workflow` | Machine à états, `STEPS`, `advanceStep`, `extractIndexEntry` |
-| 8 | `help-standalone.js` | `help` | Système d'aide contextuelle |
-| 9 | `incident-standalone.js` | `incident` | Signalements (tickets) — logique partagée hors admin.html |
-| 10 | `admin-standalone.js` | `adminConfig` | Chargement/application de `_config.json`, lien menu Administration |
-| 11 | `topbar-standalone.js` | `topbar` | En-tête, notifications, « Quoi de neuf » |
+| 8 | `customFields-standalone.js` | `customFields` | Moteur de champs personnalisés (définitions, rendu, validation) |
+| 9 | `help-standalone.js` | `help` | Système d'aide contextuelle |
+| 10 | `incident-standalone.js` | `incident` | Signalements (tickets) — logique partagée hors admin.html |
+| 11 | `connectionLog-standalone.js` | `connectionLog` | Journal des connexions (`Données/connexions.json`) |
+| 12 | `admin-standalone.js` | `adminConfig` | Chargement/application de `_config.json`, lien menu Administration |
+| 13 | `topbar-standalone.js` | `topbar` | En-tête, notifications, « Quoi de neuf » |
 
 > **Après toute modification d'un fichier standalone**, régénérer `bundle.js` :
 > ```bash

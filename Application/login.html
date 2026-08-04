@@ -398,7 +398,15 @@
                 btnConnect.textContent = 'Connexion…';
 
                 connectFolder()
-                    .then(function () { window.location.href = 'Impulsion-Marketing.html'; })
+                    .then(function () {
+                        // Journal des connexions (Données/connexions.json) : purement
+                        // best-effort, ne doit jamais retarder ni bloquer la connexion —
+                        // erreur ignorée volontairement (ex. permission en écriture
+                        // refusée sur le dossier, réseau temporairement indisponible).
+                        var cl = window.ImpulsionMarketing.connectionLog;
+                        if (cl) cl.record(users.getCurrentUser()).catch(function () {});
+                        window.location.href = 'Impulsion-Marketing.html';
+                    })
                     .catch(function (err) {
                         btnConnect.disabled = false;
                         btnConnect.textContent = 'Se connecter';

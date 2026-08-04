@@ -27,6 +27,7 @@ const MODULES = [
   'customFields-standalone.js',
   'help-standalone.js',
   'incident-standalone.js',
+  'connectionLog-standalone.js',
   'admin-standalone.js',
   'topbar-standalone.js',
 ];
