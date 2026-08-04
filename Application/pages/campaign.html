@@ -1163,13 +1163,6 @@
 
                         <div id="summaryContainer"></div>
 
-                        <div style="margin: 24px 0; text-align: center;">
-                            <button type="button" class="btn" onclick="copySummaryToClipboard()" style="background: var(--gradient); color: #fff; border-color: var(--primary);">
-                                📋 Copier le récapitulatif
-                            </button>
-                            <div id="copySummaryStatus" style="margin-top: 8px; font-size: 14px; font-weight: 500;"></div>
-                        </div>
-
                         <div class="step-navigation">
                             <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
                             <button type="submit" id="btnSubmit" class="btn btn-submit">Créer la campagne</button>
@@ -2214,120 +2207,6 @@
                     row.querySelector('input').value = '';
                 }
             };
-
-            // Fonction pour copier le récapitulatif dans le presse-papier
-            window.copySummaryToClipboard = function() {
-                var data = collectFormData();
-                var text = formatSummaryForPlanner(data);
-
-                navigator.clipboard.writeText(text)
-                    .then(function() {
-                        var status = document.getElementById('copySummaryStatus');
-                        status.textContent = '✅ Récapitulatif copié dans le presse-papiers !';
-                        status.style.color = '#22c55e';
-                        setTimeout(function() {
-                            status.textContent = '';
-                        }, 3000);
-                    })
-                    .catch(function(error) {
-                        var status = document.getElementById('copySummaryStatus');
-                        status.textContent = '❌ Erreur lors de la copie';
-                        status.style.color = 'var(--red)';
-                        console.error('Erreur de copie:', error);
-                    });
-            };
-
-            // Fonction pour formater le récapitulatif en texte pour le planificateur
-            function formatSummaryForPlanner(data) {
-                var text = '═══════════════════════════════════════\n';
-                text += '📋 RÉCAPITULATIF CAMPAGNE\n';
-                text += '═══════════════════════════════════════\n\n';
-
-                // Section 1 : Informations générales
-                text += '📌 INFORMATIONS GÉNÉRALES\n';
-                text += '─────────────────────────────────────\n';
-                text += 'Nom de la tâche     : ' + (data.taskName || '-') + '\n';
-                text += 'Description         : ' + (data.description || '-') + '\n';
-                text += 'PO                  : ' + (data.po || '-') + '\n';
-                text += 'Date Envoi client   : ' + (data.launchDate || '-') + '\n';
-                text += 'Date de saisie      : ' + (data.instantiation || '-') + '\n';
-                text += 'Typologie           : ' + (data.typology || '-') + '\n';
-                text += 'Marché              : ' + (data.market || '-') + '\n';
-                text += 'Récurrence          : ' + (data.recurrence || '-') + '\n';
-                text += '\n';
-
-                // Section 2 : Segmentation
-                if (data.segments.length > 0 || data.ubs.length > 0 || data.persona || data.cibleProspect) {
-                    text += '🎯 SEGMENTATION\n';
-                    text += '─────────────────────────────────────\n';
-
-                    if (data.cibleProspect) text += 'Cible prospects     : Oui' + (data.prospectSource ? ' — ' + data.prospectSource : '') + '\n';
-
-                    if (data.segments.length > 0) {
-                        text += 'Segments (' + data.segments.length + '):\n';
-                        data.segments.forEach(function(seg, idx) {
-                            text += '  • ' + seg + '\n';
-                        });
-                        text += '\n';
-                    }
-
-                    if (data.ubs.length > 0) {
-                        text += 'Univers de besoin (' + data.ubs.length + '):\n';
-                        data.ubs.forEach(function(ub, idx) {
-                            text += '  • ' + ub + '\n';
-                        });
-                        text += '\n';
-                    }
-                    if (data.persona) text += 'Persona             : ' + data.persona + '\n';
-                }
-
-                // Section 3 : Détails produit
-                var _expProds = Array.isArray(data.targetProducts) ? data.targetProducts
-                              : (data.targetProduct ? [data.targetProduct] : []);
-                if (data.objetEmail || data.productUrl || _expProds.length || data.offerValidityDate || data.transfo || data.offrePromo || data.parcoursSelfcare || data.parcoursSimulateur) {
-                    text += '🛍️ DÉTAILS PRODUIT\n';
-                    text += '─────────────────────────────────────\n';
-                    if (data.objetEmail) text += 'Objet de l\'email    : ' + data.objetEmail + '\n';
-                    if (data.productUrl) text += 'URL Fiche Produit   : ' + data.productUrl + '\n';
-                    if (_expProds.length) text += 'Produits ciblés     : ' + _expProds.join(', ') + '\n';
-                    if (data.offrePromo) text += 'Offre promotionnelle: ' + data.offrePromo + '\n';
-                    if (data.offerValidityDate) text += 'Date mise en vigueur : ' + data.offerValidityDate + '\n';
-                    if (data.offerEndDate) text += 'Date fin de validité : ' + data.offerEndDate + '\n';
-                    if (data.parcoursSelfcare) text += 'Parcours selfcare   : ' + data.parcoursSelfcare + '\n';
-                    if (data.parcoursSimulateur) text += 'Parcours simulateur : ' + data.parcoursSimulateur + '\n';
-                    if (data.transfo) text += 'Transfo             : ' + data.transfo + '\n';
-                    if (data.transfo === 'Oui' && data.lotNumber) {
-                        text += 'Numéro de Lot       : ' + data.lotNumber + '\n';
-                    }
-                    text += '\n';
-                }
-
-                // Section 4 : Canaux de communication
-                if (data.channels.length > 0) {
-                    text += '📢 CANAUX DE COMMUNICATION (' + data.channels.length + ')\n';
-                    text += '─────────────────────────────────────\n';
-                    data.channels.forEach(function(channel, idx) {
-                        text += '\n▸ Canal ' + (idx + 1) + ':\n';
-                        text += '  Nom du livrable     : ' + (channel.deliverableName || '-') + '\n';
-                        text += '  Canal du contenu    : ' + (channel.content || '-') + '\n';
-                        text += '  Date réception client: ' + (channel.sendDate || '-') + '\n';
-                        text += '  Type de Com         : ' + (channel.comType || '-') + '\n';
-                        text += '  Critère ciblage     : ' + (channel.targetingCriteria || '-') + '\n';
-                        text += '  Typologie com       : ' + (channel.comTypology || '-') + '\n';
-                        if (isSiteWebComTypology(channel.comTypology)) {
-                            if (channel.urlTicTac) text += '  URL Tic et Tac/CA NOUS : ' + channel.urlTicTac + '\n';
-                            if (channel.urlComStore) text += '  URL Com Store       : ' + channel.urlComStore + '\n';
-                        }
-                    });
-                    text += '\n';
-                }
-
-                text += '═══════════════════════════════════════\n';
-                text += 'Fin du récapitulatif\n';
-                text += '═══════════════════════════════════════\n';
-
-                return text;
-            }
 
             function generateChannelFields(num) {
                 const container = $("#channelsContainer");

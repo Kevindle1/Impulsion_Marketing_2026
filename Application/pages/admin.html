@@ -10,21 +10,25 @@
     <link rel="stylesheet" href="../css/dashboard-layout.css">
     <link rel="stylesheet" href="../css/topbar.css">
     <style>
-        /* ── Layout « Réglages » : sous-menu latéral + panneau ── */
-        .admin-shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; align-items: start; }
-        @media (max-width: 880px) { .admin-shell { grid-template-columns: 1fr; } }
-        .admin-nav { position: sticky; top: 18px; display: flex; flex-direction: column; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 10px; box-shadow: var(--shadow-xs); }
-        @media (max-width: 880px) { .admin-nav { position: static; } }
-        .admin-nav-group { display: flex; flex-direction: column; gap: 3px; }
-        .admin-nav-group + .admin-nav-group { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-2); }
-        .admin-nav-title { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); padding: 4px 13px 6px; }
-        .admin-nav-item { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 11px 13px; border: none; background: transparent; border-radius: 11px; font-size: 14px; font-weight: 650; color: var(--muted); cursor: pointer; transition: background .15s, color .15s, box-shadow .15s; }
-        .admin-nav-item:hover { background: var(--line-2); color: var(--ink); }
-        .admin-nav-item.active { background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(0,135,90,.22); }
-        .admin-nav-ic { width: 24px; text-align: center; font-size: 16px; flex-shrink: 0; }
-        .admin-nav-label { flex: 1; min-width: 0; white-space: nowrap; }
-        .admin-nav-count { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--red-50); color: var(--red); flex-shrink: 0; }
-        .admin-nav-item.active .admin-nav-count { background: rgba(255,255,255,.22); color: #fff; }
+        /* ── Layout « Réglages » : page menu (cards) + panneau ── */
+        .admin-shell { display: block; }
+
+        /* Page menu (accueil de l'Administration) : cards façon bento plutôt
+           qu'un sous-menu latéral toujours visible — une page dédiée qui
+           renvoie vers chaque section, chaque section a son propre bouton
+           retour (voir .admin-back-btn) vers cette page. */
+        .admin-bento-group + .admin-bento-group { margin-top: 26px; }
+        .admin-bento-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); margin-bottom: 12px; }
+        .admin-bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; }
+        .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.12); transform: translateY(-2px); }
+        .admin-bento-card .admin-bento-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--green-50); }
+        .admin-bento-card .admin-bento-label { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+        .admin-bento-card .admin-bento-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+        .admin-nav-count { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--red-50); color: var(--red); }
+
+        .admin-back-btn { display: inline-flex; align-items: center; gap: 7px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 650; cursor: pointer; padding: 6px 2px; margin-bottom: 12px; }
+        .admin-back-btn:hover { color: var(--primary); }
 
         .admin-section { display: none; }
         .admin-section.active { display: block; animation: adminFade .22s ease; }
@@ -198,39 +202,23 @@
         <header class="top-header" id="app-topbar"></header>
         <main class="content">
             <div class="admin-shell">
-                <nav class="admin-nav" id="admin-nav" aria-label="Sections d'administration">
-                    <div class="admin-nav-group" id="nav-group-config">
-                        <span class="admin-nav-title">Paramétrage</span>
-                        <button class="admin-nav-item active" data-tab="people"><span class="admin-nav-ic">👥</span><span class="admin-nav-label">Équipes &amp; personnes</span></button>
-                        <button class="admin-nav-item" data-tab="segments"><span class="admin-nav-ic">🎯</span><span class="admin-nav-label">Segments</span></button>
-                        <button class="admin-nav-item" data-tab="settings"><span class="admin-nav-ic">⚙️</span><span class="admin-nav-label">Paramètres généraux</span></button>
-                        <button class="admin-nav-item" data-tab="autoassign"><span class="admin-nav-ic">🤖</span><span class="admin-nav-label">Affectation automatique</span></button>
-                        <button class="admin-nav-item" data-tab="webzones"><span class="admin-nav-ic">🌐</span><span class="admin-nav-label">Zones site web</span></button>
-                        <button class="admin-nav-item" data-tab="marchessiteweb"><span class="admin-nav-ic">🗺️</span><span class="admin-nav-label">Marchés site web</span></button>
-                        <button class="admin-nav-item" data-tab="workflow"><span class="admin-nav-ic">🔀</span><span class="admin-nav-label">Workflow</span></button>
-                        <button class="admin-nav-item" data-tab="customfields"><span class="admin-nav-ic">🧩</span><span class="admin-nav-label">Champs personnalisés</span></button>
-                        <button class="admin-nav-item" data-tab="bilan"><span class="admin-nav-ic">📊</span><span class="admin-nav-label">Bilan (suivi .xlsx)</span></button>
-                        <!-- Les pages de listes de choix sont injectées ici par le script -->
-                    </div>
-                    <div class="admin-nav-group">
-                        <span class="admin-nav-title">Support &amp; annonces</span>
-                        <button class="admin-nav-item" data-tab="incidents"><span class="admin-nav-ic">🐞</span><span class="admin-nav-label">Signalements</span><span class="admin-nav-count" id="nav-count-incidents" style="display:none;">0</span></button>
-                        <button class="admin-nav-item" data-tab="statuts"><span class="admin-nav-ic">💬</span><span class="admin-nav-label">Statuts de réponse</span></button>
-                        <button class="admin-nav-item" data-tab="whatsnew"><span class="admin-nav-ic">📣</span><span class="admin-nav-label">Quoi de neuf</span></button>
-                        <button class="admin-nav-item" data-tab="badges"><span class="admin-nav-ic">🏷️</span><span class="admin-nav-label">Badges Quoi de neuf</span></button>
-                    </div>
-                </nav>
-
                 <div class="admin-panel" id="admin-panel">
-                    <section class="admin-section active" id="tab-people">
+                    <!-- Page d'accueil de l'Administration : cards façon bento renvoyant vers
+                         chaque section, générées dynamiquement (buildAdminBento()) à partir des
+                         en-têtes .admin-sec-head des sections ci-dessous (icône/libellé/
+                         description) — une seule source pour la carte ET le titre de la page. -->
+                    <section class="admin-section active" id="tab-menu">
+                        <div id="admin-bento-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-people" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">👥</div><div><h2>Équipes &amp; personnes</h2><p>Gérez les membres, leur équipe et qui est responsable.</p></div></div>
                         <div id="people-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-segments">
+                    <section class="admin-section" id="tab-segments" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🎯</div><div><h2>Segments</h2><p>Segments cibles, organisés par groupe (Particuliers / Pro / Agri).</p></div></div>
                         <div id="segments-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-autoassign">
+                    <section class="admin-section" id="tab-autoassign" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🤖</div><div><h2>Affectation automatique</h2><p>Affecte des personnes automatiquement selon des conditions (à la création/édition d'une campagne).</p></div></div>
                         <div id="autoassign-container"></div>
                         <div style="margin-top:14px;display:flex;gap:10px;">
@@ -238,44 +226,44 @@
                             <button type="button" id="autoassign-save" class="btn primary">💾 Enregistrer les règles</button>
                         </div>
                     </section>
-                    <section class="admin-section" id="tab-settings">
+                    <section class="admin-section" id="tab-settings" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">⚙️</div><div><h2>Paramètres généraux</h2><p>Réglages globaux : galerie, dossier, seuil d'alerte, couleurs des rôles.</p></div></div>
                         <div id="settings-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-webzones">
+                    <section class="admin-section" id="tab-webzones" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🌐</div><div><h2>Zones site web</h2><p>Zones du planning du Comité éditorial et leurs sous-lignes.</p></div></div>
                         <div id="webzones-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-marchessiteweb">
+                    <section class="admin-section" id="tab-marchessiteweb" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🗺️</div><div><h2>Marchés site web</h2><p>Marchés proposés sur les onglets et cases à cocher du planning site web (Comité éditorial).</p></div></div>
                         <div id="marchessiteweb-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-workflow">
+                    <section class="admin-section" id="tab-workflow" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🔀</div><div><h2>Workflow</h2><p>Étapes du circuit de validation et applicabilité de chaque étape par canal.</p></div></div>
                         <div id="workflow-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-customfields">
+                    <section class="admin-section" id="tab-customfields" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🧩</div><div><h2>Champs personnalisés</h2><p>Ajoutez, modifiez ou retirez des champs sur le formulaire de création et les étapes de production — y compris les champs déjà en place.</p></div></div>
                         <div id="customfields-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-bilan">
+                    <section class="admin-section" id="tab-bilan" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">📊</div><div><h2>Bilan (suivi .xlsx)</h2><p>Correspondance des colonnes et indicateurs du fichier de suivi.</p></div></div>
                         <div id="bilan-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-statuts">
+                    <section class="admin-section" id="tab-statuts" data-group="Support &amp; annonces">
                         <div class="admin-sec-head"><div class="admin-sec-ic">💬</div><div><h2>Statuts de réponse</h2><p>Choix proposés lorsqu'on répond à un signalement.</p></div></div>
                         <div id="statuts-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-badges">
+                    <section class="admin-section" id="tab-badges" data-group="Support &amp; annonces">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🏷️</div><div><h2>Badges « Quoi de neuf »</h2><p>Types d'annonces et leur apparence.</p></div></div>
                         <div id="badges-container"></div>
                     </section>
                     <!-- Les pages de listes de choix sont injectées ici par le script -->
-                    <section class="admin-section" id="tab-incidents">
+                    <section class="admin-section" id="tab-incidents" data-group="Support &amp; annonces">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🐞</div><div><h2>Signalements</h2><p>Incidents et idées d'amélioration remontés par les utilisateurs.</p></div></div>
                         <div id="incidents-container"></div>
                     </section>
-                    <section class="admin-section" id="tab-whatsnew">
+                    <section class="admin-section" id="tab-whatsnew" data-group="Support &amp; annonces">
                         <div class="admin-sec-head"><div class="admin-sec-ic">📣</div><div><h2>Quoi de neuf</h2><p>Publiez des annonces visibles par les utilisateurs choisis.</p></div></div>
                         <div id="whatsnew-container"></div>
                     </section>
@@ -365,23 +353,16 @@
         ];
         var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS', comTypologies: 'COM_TYPOLOGIES' };
 
-        // ── Génère une page (nav + section) par liste de choix ──
+        // ── Génère une page (section) par liste de choix ──
         // Chaque liste devient une page autonome, au même niveau que Segments / Équipes.
         function buildListPages() {
-            var navGroup = document.getElementById('nav-group-config');
             var panel = document.getElementById('admin-panel');
             var incidentsSection = document.getElementById('tab-incidents');
             LISTS_META.forEach(function (meta) {
-                // Bouton de navigation
-                var btn = document.createElement('button');
-                btn.className = 'admin-nav-item';
-                btn.setAttribute('data-tab', meta.key);
-                btn.innerHTML = '<span class="admin-nav-ic">' + meta.icon + '</span><span class="admin-nav-label">' + esc(meta.label) + '</span>';
-                navGroup.appendChild(btn);
-                // Section / page
                 var sec = document.createElement('section');
                 sec.className = 'admin-section';
                 sec.id = 'tab-' + meta.key;
+                sec.setAttribute('data-group', 'Paramétrage');
                 sec.innerHTML = '<div class="admin-sec-head"><div class="admin-sec-ic">' + meta.icon + '</div>'
                     + '<div><h2>' + esc(meta.label) + '</h2><p>' + esc(meta.desc) + '</p></div></div>'
                     + '<div id="list-' + meta.key + '-container"></div>';
@@ -390,17 +371,67 @@
         }
         buildListPages();
 
-        // ── Navigation latérale (sections) ──
-        document.querySelectorAll('.admin-nav-item').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                document.querySelectorAll('.admin-nav-item').forEach(function (b) { b.classList.remove('active'); });
-                btn.classList.add('active');
-                document.querySelectorAll('.admin-section').forEach(function (s) { s.classList.remove('active'); });
-                document.getElementById('tab-' + btn.getAttribute('data-tab')).classList.add('active');
-                document.querySelector('.content').scrollTop = 0;
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+        // ── Page menu (accueil) : une card par section, façon bento, groupées comme
+        // l'était l'ancien sous-menu latéral (data-group posé sur chaque <section>).
+        // Construite APRÈS buildListPages() pour inclure les pages de listes de choix.
+        function buildAdminBento() {
+            var cont = document.getElementById('admin-bento-container');
+            var groups = {}; // { 'Paramétrage': [sectionEl, ...], ... }
+            var order = [];
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                var g = sec.getAttribute('data-group');
+                if (!groups[g]) { groups[g] = []; order.push(g); }
+                groups[g].push(sec);
             });
-        });
+            var html = '';
+            order.forEach(function (g) {
+                html += '<div class="admin-bento-group"><div class="admin-bento-title">' + esc(g) + '</div><div class="admin-bento-grid">';
+                groups[g].forEach(function (sec) {
+                    var key = sec.id.replace(/^tab-/, '');
+                    var ic = (sec.querySelector('.admin-sec-ic') || {}).textContent || '';
+                    var label = (sec.querySelector('.admin-sec-head h2') || {}).textContent || key;
+                    var desc = (sec.querySelector('.admin-sec-head p') || {}).textContent || '';
+                    var countBadge = key === 'incidents' ? '<span class="admin-nav-count" id="nav-count-incidents" style="display:none;">0</span>' : '';
+                    html += '<button type="button" class="admin-bento-card" data-tab="' + esc(key) + '">' + countBadge
+                        + '<span class="admin-bento-ic">' + ic + '</span>'
+                        + '<span class="admin-bento-label">' + esc(label) + '</span>'
+                        + (desc ? '<span class="admin-bento-desc">' + esc(desc) + '</span>' : '')
+                        + '</button>';
+                });
+                html += '</div></div>';
+            });
+            cont.innerHTML = html;
+            cont.querySelectorAll('.admin-bento-card').forEach(function (card) {
+                card.addEventListener('click', function () { activateTab(card.getAttribute('data-tab')); });
+            });
+        }
+
+        // ── Bouton retour (chaque section, sauf le menu) : injecté une fois au
+        // chargement plutôt que dupliqué dans chaque bloc HTML/généré. ──
+        function addBackButtons() {
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                if (sec.querySelector('.admin-back-btn')) return;
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'admin-back-btn';
+                btn.innerHTML = '← Retour au menu';
+                btn.addEventListener('click', function () { activateTab('menu'); });
+                sec.insertBefore(btn, sec.firstChild);
+            });
+        }
+
+        // ── Activation d'une section (menu bento ou page) — remplace l'ancienne
+        // navigation latérale toujours visible. ──
+        function activateTab(key) {
+            document.querySelectorAll('.admin-section').forEach(function (s) { s.classList.remove('active'); });
+            var sec = document.getElementById('tab-' + key);
+            if (sec) sec.classList.add('active');
+            document.querySelector('.content').scrollTop = 0;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        buildAdminBento();
+        addBackButtons();
 
         // ── PERSONNES ──
         function renderPeople() {
