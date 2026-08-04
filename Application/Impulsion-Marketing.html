@@ -126,7 +126,6 @@
                 <div class="dash-hero">
                     <div class="dash-hero-text">
                         <h1 id="hero-greeting">Bonjour 👋</h1>
-                        <p>Voici l'état de tes campagnes aujourd'hui.</p>
                     </div>
                     <a href="pages/campaign.html" class="dash-hero-cta">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
@@ -1668,18 +1667,24 @@
             color: #15803d;
         }
 
-        /* ── Bascule À produire / Mes campagnes en cours ── */
-        .dash-tabs { display: flex; gap: 8px; margin: 6px 0 4px; flex-wrap: wrap; }
+        /* ── Bascule À produire / Mes campagnes en cours — traitée comme une vraie
+           navigation primaire (pas un simple filtre discret) : onglet actif en
+           aplat vert plein + ombre, nettement détaché de l'onglet inactif. ── */
+        .dash-tabs { display: flex; gap: 10px; margin: 4px 0 20px; flex-wrap: wrap; }
         .dash-tab-btn {
-            display: flex; align-items: center; gap: 9px;
-            padding: 10px 16px; border-radius: 12px; border: 1px solid var(--line, #eaefec);
-            background: #fff; color: var(--muted, #56655e);
-            font-size: 13.5px; font-weight: 650; font-family: inherit; cursor: pointer;
+            display: flex; align-items: center; gap: 10px;
+            padding: 13px 22px; border-radius: 13px; border: 1.5px solid var(--line, #eaefec);
+            background: #fff; color: var(--ink, #0c1a14);
+            font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
+            transition: background .12s, border-color .12s, box-shadow .12s, color .12s;
         }
         .dash-tab-btn:hover { background: var(--line-2, #f0f4f1); }
-        .dash-tab-btn.active { background: var(--sidebar-active-bg, #e8f6ef); color: var(--sidebar-active-text, #00734C); border-color: transparent; }
-        .dash-tab-count { font-size: 11px; font-weight: 800; background: rgba(0, 0, 0, .07); color: inherit; border-radius: 999px; padding: 1px 8px; }
-        .dash-tab-btn.active .dash-tab-count { background: rgba(0, 115, 76, .16); }
+        .dash-tab-btn.active {
+            background: var(--primary, #00875A); color: #fff; border-color: transparent;
+            box-shadow: 0 8px 18px rgba(0, 135, 90, .28);
+        }
+        .dash-tab-count { font-size: 12.5px; font-weight: 800; background: var(--line-2, #f0f4f1); color: var(--muted, #56655e); border-radius: 999px; padding: 2px 10px; }
+        .dash-tab-btn.active .dash-tab-count { background: rgba(255, 255, 255, .24); color: #fff; }
 
         /* ── Campaigns Section ── */
         .campaigns-section { margin-top: 12px; }
@@ -1694,15 +1699,15 @@
         /* ── Hero d'accueil ── */
         .dash-hero {
             background: var(--gradient-hero, linear-gradient(120deg, #00734C, #0FA56E));
-            border-radius: 20px;
-            padding: 24px 26px;
+            border-radius: 16px;
+            padding: 14px 20px;
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 16px;
-            margin-bottom: 22px;
-            box-shadow: 0 14px 30px rgba(0, 115, 76, 0.26);
+            margin-bottom: 12px;
+            box-shadow: 0 10px 22px rgba(0, 115, 76, 0.22);
             position: relative;
             overflow: hidden;
         }
@@ -1716,20 +1721,19 @@
         }
         .dash-hero-text { position: relative; z-index: 1; }
         .dash-hero h1 {
-            font-size: 22px; font-weight: 800; letter-spacing: -0.5px; margin: 0;
+            font-size: 17px; font-weight: 800; letter-spacing: -0.4px; margin: 0;
             color: #fff !important;
             background: none !important;
             -webkit-text-fill-color: #fff !important;
             -webkit-background-clip: initial !important;
             background-clip: initial !important;
         }
-        .dash-hero p { font-size: 13.5px; opacity: 0.92; margin: 5px 0 0; color: #fff; }
         .dash-hero-cta {
             position: relative; z-index: 1;
             display: inline-flex; align-items: center; gap: 7px;
             background: #fff; color: var(--green-600, #00734C);
-            font-weight: 700; font-size: 13.5px;
-            padding: 11px 18px; border-radius: 12px;
+            font-weight: 700; font-size: 13px;
+            padding: 9px 16px; border-radius: 11px;
             text-decoration: none; white-space: nowrap;
             transition: transform 0.12s ease, box-shadow 0.15s ease;
         }
@@ -1737,28 +1741,28 @@
 
 
         /* ── KPIs ── */
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
         .kpi {
             background: var(--bg-card, #fff);
             border: 1px solid var(--line, #eaefec);
-            border-radius: var(--radius, 16px);
-            padding: 18px;
+            border-radius: 14px;
+            padding: 11px 14px;
             box-shadow: var(--shadow-xs);
         }
         a.kpi { display: block; text-decoration: none; color: inherit; cursor: pointer; transition: box-shadow .18s, transform .18s, border-color .18s; }
         a.kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--green-100, #a7f3d0); }
         a.kpi:focus-visible { outline: 2px solid var(--primary, #00875A); outline-offset: 2px; }
         .kpi-top { display: flex; align-items: center; justify-content: space-between; }
-        .kpi-ic { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .kpi-ic svg { width: 20px; height: 20px; }
+        .kpi-ic { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
+        .kpi-ic svg { width: 15px; height: 15px; }
         .kpi-ic.g { background: var(--green-50); color: var(--primary); }
         .kpi-ic.b { background: var(--blue-50); color: var(--blue); }
         .kpi-ic.a { background: var(--amber-50); color: var(--amber); }
         .kpi-ic.r { background: var(--red-50); color: var(--red); }
-        .kpi-delta { font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
+        .kpi-delta { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
         .kpi-delta.r { background: var(--red-50); color: var(--red); }
-        .kpi-num { font-size: 30px; font-weight: 850; letter-spacing: -1px; margin-top: 12px; line-height: 1; color: var(--ink); }
-        .kpi-cap { font-size: 12.5px; color: var(--muted); margin-top: 5px; font-weight: 600; }
+        .kpi-num { font-size: 21px; font-weight: 850; letter-spacing: -.7px; margin-top: 7px; line-height: 1; color: var(--ink); }
+        .kpi-cap { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 600; }
 
         /* ── Cartes campagne riches : voir css/campaign-card.css (partagé avec
            pages/visualization.html) pour les styles .cc-flip / .cc-face / etc. ── */
