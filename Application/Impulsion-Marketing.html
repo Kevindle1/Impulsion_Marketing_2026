@@ -1051,9 +1051,9 @@
             h += '        <div class="cc-back-main"><div class="cc-back-section-label">Progression</div>';
             if (isActif && Array.isArray(c.chprog) && c.chprog.length > 1) {
                 // Au-delà de MAX_CHROWS canaux, une ligne par canal ne tient plus dans la
-                // hauteur fixe de la carte (le verso serait rogné en plein milieu d'une
-                // ligne) — on affiche les premiers puis un total pour le reste.
-                var MAX_CHROWS = 3;
+                // hauteur de la carte (le verso serait rogné en plein milieu d'une ligne)
+                // — on affiche les premiers puis un total pour le reste.
+                var MAX_CHROWS = 5;
                 c.chprog.slice(0, MAX_CHROWS).forEach(function(cp) {
                     var pct = (typeof cp.pct === 'number') ? cp.pct : 0;
                     var key = cp.key || 'maq';
