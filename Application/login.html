@@ -208,6 +208,8 @@
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </button>
 
+            <p class="login-hint" id="root-path-hint" style="display:none;"></p>
+
             <p class="login-hint">
                 Le dossier de travail est rechargé automatiquement.<br>
                 La sélection du dossier n'est demandée qu'à la première connexion.
@@ -258,6 +260,26 @@
                 });
             }
             applyRoleLabels();
+
+            // Chemin du dossier à sélectionner (Administration ▸ Paramètres généraux
+            // ▸ Chemin par défaut du dossier) : c'est le dossier « Données de
+            // production », pas le dossier racine du dépôt applicatif — un point de
+            // confusion fréquent. Purement informatif (le navigateur ne permet pas de
+            // pré-remplir showDirectoryPicker), affiché seulement si l'admin l'a
+            // renseigné (repli silencieux sinon, ex. tout premier lancement sur un
+            // poste où aucun dossier n'a encore jamais été connecté).
+            function applyRootPathHint() {
+                var path = (IM.config && IM.config.DEFAULT_ROOT_PATH) || '';
+                var hintEl = document.getElementById('root-path-hint');
+                if (!hintEl) return;
+                if (path) {
+                    hintEl.innerHTML = 'Dossier à sélectionner : <strong>' + path.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</strong>';
+                    hintEl.style.display = 'block';
+                } else {
+                    hintEl.style.display = 'none';
+                }
+            }
+            applyRootPathHint();
 
             // Compatibilité navigateur (File System Access API)
             if (typeof window.showDirectoryPicker !== 'function') {

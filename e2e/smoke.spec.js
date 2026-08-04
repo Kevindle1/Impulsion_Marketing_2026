@@ -63,6 +63,21 @@ test.describe('login.html', () => {
     await expect(page.locator('#login-team')).toHaveValue('superadmin');
     await expect(page.locator('#login-name')).toHaveValue('Test Smoke');
   });
+
+  test('chemin du dossier à sélectionner (Administration ▸ Paramètres généraux) : masqué si non renseigné', async ({ page }) => {
+    await page.goto(url('login.html'));
+    await expect(page.locator('#root-path-hint')).toBeHidden();
+  });
+
+  test('chemin du dossier à sélectionner : affiché sous le bouton si renseigné en Administration', async ({ page }) => {
+    await page.addInitScript(([user, cfg]) => {
+      window.localStorage.setItem('im_current_user', JSON.stringify(user));
+      window.localStorage.setItem('im_config_cache', JSON.stringify(cfg));
+    }, [FAKE_USER, Object.assign({}, FAKE_CONFIG, { settings: { defaultRootPath: 'V://Impulsion_Marketing/Données de production' } })]);
+    await page.goto(url('login.html'));
+    await expect(page.locator('#root-path-hint')).toBeVisible();
+    await expect(page.locator('#root-path-hint')).toContainText('V://Impulsion_Marketing/Données de production');
+  });
 });
 
 // Pages nécessitant une session : sans dossier de travail réel (impossible en
