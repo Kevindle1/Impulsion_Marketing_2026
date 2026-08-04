@@ -12,7 +12,18 @@
    champ (migré ou ajouté par un admin) doit avoir le même rendu partout.
    ======================================== */
 
-.admin-input, .admin-select {
+/* Spécificité : (0,2,0) partout ci-dessous (deux classes, jamais un seul
+   .admin-input/.cf-xxx isolé) — un champ personnalisé peut être imbriqué dans
+   un conteneur plus ancien qui stylise génériquement ses `label`/`input`
+   descendants (ex. .form-group du canal sur campaign.html, spécificité
+   (0,1,1) : classe + type). Sans ce deuxième qualificatif, ces règles plus
+   anciennes gagnent la cascade et cassent l'affichage (ex. un radio
+   .cf-radio-opt hérite de `.form-group label { display:block }` et perd son
+   alignement horizontal icône/texte). .cf-fields-block enveloppe TOUJOURS un
+   champ rendu par renderFields(), donc `.cf-fields-block .xxx` est un
+   qualificatif sûr et toujours présent. */
+.cf-fields-block .admin-input, .cf-fields-block .admin-select,
+.admin-input.cf-input, .admin-select.cf-input {
   padding: 9px 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -20,8 +31,11 @@
   font-family: inherit;
   color: var(--ink);
   background: #fff;
+  width: 100%;
+  box-sizing: border-box;
 }
-.admin-input:focus, .admin-select:focus {
+.cf-fields-block .admin-input:focus, .cf-fields-block .admin-select:focus,
+.admin-input.cf-input:focus, .admin-select.cf-input:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .14);
@@ -37,15 +51,19 @@
 }
 
 .cf-fields-block { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
-.cf-field { display: flex; flex-direction: column; gap: 5px; }
-.cf-label { font-size: 13px; font-weight: 650; color: var(--ink); }
-.cf-required { color: var(--red, #e2001a); }
-.cf-help { font-size: 11.5px; color: var(--muted-2); }
-.cf-richtext { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-height: 60px; font-size: 13px; background: #fff; }
-.cf-radio-opt, .cf-checkbox-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-right: 14px; }
-.cf-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.cf-list-row input { flex: 1; }
-.cf-file-current { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+.cf-fields-block .cf-field { display: flex; flex-direction: column; gap: 5px; }
+.cf-fields-block .cf-label { display: block; font-size: 13px; font-weight: 650; color: var(--ink); margin: 0; }
+.cf-fields-block .cf-required { color: var(--red, #e2001a); }
+.cf-fields-block .cf-help { font-size: 11.5px; color: var(--muted-2); }
+.cf-fields-block .cf-richtext { border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-height: 60px; font-size: 13px; background: #fff; }
+.cf-fields-block .cf-options-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; }
+.cf-fields-block .cf-radio-opt, .cf-fields-block .cf-checkbox-opt {
+  display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+  font-weight: 400; color: var(--ink);
+}
+.cf-fields-block .cf-list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.cf-fields-block .cf-list-row input { flex: 1; }
+.cf-fields-block .cf-file-current { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
 
 /* ========================================
    Buttons

@@ -3540,18 +3540,22 @@ window.ImpulsionMarketing.customFields = (function () {
       }
       case 'radio': {
         var ropts = fieldOptions(field);
-        return ropts.map(function (o) {
+        // Enveloppées dans .cf-options-row : un .cf-field est en flex-column
+        // (un enfant direct par ligne), donc sans ce conteneur chaque option
+        // radio se retrouverait seule sur sa propre ligne au lieu de s'aligner
+        // horizontalement avec les autres.
+        return '<div class="cf-options-row">' + ropts.map(function (o) {
           return '<label class="cf-radio-opt"><input type="radio" name="' + domId + '" data-cf-field="' + escAttr(field.id) + '" value="' + escAttr(o) + '"' + (value === o ? ' checked' : '') + '> ' + esc(o) + '</label>';
-        }).join(' ');
+        }).join('') + '</div>';
       }
       case 'checkbox':
         return '<label class="cf-checkbox-opt"><input type="checkbox" id="' + domId + '" data-cf-field="' + escAttr(field.id) + '"' + (value === true || value === 'true' ? ' checked' : '') + '> ' + esc(field.checkboxLabel || 'Oui') + '</label>';
       case 'checkbox-group': {
         var gopts = fieldOptions(field);
         var vals = Array.isArray(value) ? value : [];
-        return gopts.map(function (o) {
+        return '<div class="cf-options-row">' + gopts.map(function (o) {
           return '<label class="cf-checkbox-opt"><input type="checkbox" data-cf-field="' + escAttr(field.id) + '" data-cf-group-value="' + escAttr(o) + '"' + (vals.indexOf(o) !== -1 ? ' checked' : '') + '> ' + esc(o) + '</label>';
-        }).join(' ');
+        }).join('') + '</div>';
       }
       case 'list': {
         var itemType = field.itemType === 'text' ? 'text' : 'url';
