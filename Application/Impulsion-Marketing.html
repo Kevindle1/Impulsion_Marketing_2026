@@ -373,16 +373,20 @@
             var kpi = document.getElementById('kpi-row'); if (kpi) kpi.style.display = 'none';
         }
 
-        // ── Skeleton screens (affiché pendant le chargement) ──
+        // ── Skeleton screens (affiché pendant le chargement) — même gabarit que
+        // les cards recto/verso (badges, titre, pastille, avatar) pour éviter un
+        // saut visuel quand les vraies cards (dégradées) les remplacent. ──
         function showSkeletons() {
             document.getElementById('allmine-section').style.display = 'block';
             var h = '<div class="campaigns-grid">';
             for (var i = 0; i < 4; i++) {
-                h += '<div class="campaign-card skeleton-card">';
-                h += '<div class="campaign-card-icon sk-icon"></div>';
-                h += '<div class="campaign-card-content">';
-                h += '<div class="sk-line sk-w60"></div><div class="sk-line sk-w35"></div>';
-                h += '</div></div>';
+                h += '<div class="cc-skel">'
+                    + '<span class="cc-skel-badge cc-skel-badge--l"></span>'
+                    + '<span class="cc-skel-badge cc-skel-badge--r"></span>'
+                    + '<div class="cc-skel-title"></div><div class="cc-skel-title cc-skel-title--sm"></div>'
+                    + '<div class="cc-skel-pill"></div>'
+                    + '<div class="cc-skel-foot"><span class="cc-skel-av"></span></div>'
+                    + '</div>';
             }
             h += '</div>';
             document.getElementById('allmine-list').innerHTML = h;
@@ -1908,22 +1912,7 @@
             white-space: nowrap;
         }
 
-        /* ── Cartes skeleton (chargement) ── */
-        @keyframes sk-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-        .skeleton-card {
-            pointer-events: none;
-            cursor: default;
-            animation: sk-pulse 1.4s ease-in-out infinite;
-        }
-        .sk-icon { background: #e2e8f0 !important; }
-        .sk-line {
-            height: 11px;
-            border-radius: 4px;
-            background: #e2e8f0;
-        }
-        .sk-line + .sk-line { margin-top: 7px; }
-        .sk-w60 { width: 62%; }
-        .sk-w35 { width: 38%; }
+        /* ── Cartes skeleton (chargement) : voir css/campaign-card.css (.cc-skel*) ── */
 
         /* ── Pagination "charger plus" ── */
         .load-more-bar {
