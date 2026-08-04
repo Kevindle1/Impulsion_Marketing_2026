@@ -135,8 +135,9 @@
     color: var(--muted-2, #8b988f); margin-bottom: 3px;
 }
 
-.cc-back-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; overflow: hidden; }
-.cc-chrow { display: flex; flex-direction: column; gap: 5px; }
+.cc-back-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 6px; overflow: hidden; }
+.cc-chrow { display: flex; flex-direction: column; gap: 3px; }
+.cc-chmore { font-size: 10.5px; font-weight: 700; color: var(--muted, #56655e); }
 .cc-chtop { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .cc-chname { font-size: 11.5px; font-weight: 750; color: var(--ink, #0c1a14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 58%; }
 .cc-chstat {
