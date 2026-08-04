@@ -50,18 +50,35 @@
 
 .cc-flip.cc--inactive { opacity: .6; }
 
-/* ── Teinte pastel par type de com (fond des 2 faces + couleur du badge) ── */
-.cc-flip.ct-com .cc-face { background: var(--green-50, #e8f6ef); border-color: var(--green-100, #cdeede); }
-.cc-flip.ct-ges .cc-face { background: #eaf1fe; border-color: #cddcfb; }
-.cc-flip.ct-reg .cc-face { background: #fdf3e2; border-color: #f6e0ae; }
-.cc-flip.ct-pal3 .cc-face { background: #f1eafd; border-color: #ddc9fa; }
-.cc-flip.ct-pal4 .cc-face { background: #fde8f2; border-color: #f7c2dd; }
-.cc-flip.ct-pal5 .cc-face { background: #e6f6fa; border-color: #b7e6f0; }
-.cc-flip.ct-none .cc-face { background: var(--bg-card, #fff); }
+/* ── Teinte pastel par type de com (verso uniquement — le recto utilise un
+   dégradé saturé, voir plus bas) ── */
+.cc-flip.ct-com .cc-face--back { background: var(--green-50, #e8f6ef); border-color: var(--green-100, #cdeede); }
+.cc-flip.ct-ges .cc-face--back { background: #eaf1fe; border-color: #cddcfb; }
+.cc-flip.ct-reg .cc-face--back { background: #fdf3e2; border-color: #f6e0ae; }
+.cc-flip.ct-pal3 .cc-face--back { background: #f1eafd; border-color: #ddc9fa; }
+.cc-flip.ct-pal4 .cc-face--back { background: #fde8f2; border-color: #f7c2dd; }
+.cc-flip.ct-pal5 .cc-face--back { background: #e6f6fa; border-color: #b7e6f0; }
+.cc-flip.ct-none .cc-face--back { background: var(--bg-card, #fff); }
+
+/* ── Recto : fond en dégradé saturé par type de com (+ voile sombre en bas
+   pour garantir la lisibilité du texte blanc quelle que soit la teinte) ── */
+.cc-face--front {
+    color: #fff;
+    align-items: center;
+    text-align: center;
+    background-blend-mode: normal;
+}
+.cc-flip.ct-com .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #17D398, #00734C); border-color: transparent; }
+.cc-flip.ct-ges .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #60a5fa, #1d4ed8); border-color: transparent; }
+.cc-flip.ct-reg .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #fbbf24, #b45309); border-color: transparent; }
+.cc-flip.ct-pal3 .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #a78bfa, #6d28d9); border-color: transparent; }
+.cc-flip.ct-pal4 .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #f472b6, #be185d); border-color: transparent; }
+.cc-flip.ct-pal5 .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #22d3ee, #0e7490); border-color: transparent; }
+.cc-flip.ct-none .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #cbd5e1, #64748b); border-color: transparent; }
 
 .cc-badge {
     position: absolute;
-    top: -11px;
+    top: 14px;
     font-size: 10.5px;
     font-weight: 800;
     padding: 5px 11px;
@@ -73,31 +90,27 @@
     box-shadow: 0 2px 5px rgba(0, 0, 0, .12);
 }
 
-.cc-badge--type { left: 14px; color: #fff; }
-.cc-badge--step { right: 14px; background: #fff; color: var(--muted, #56655e); border: 1px solid var(--line, #eaefec); box-shadow: var(--shadow-xs); }
+.cc-badge--type { left: 14px; color: #fff; background: rgba(0, 0, 0, .22); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); box-shadow: none; }
+.cc-badge--step { right: 14px; background: rgba(255, 255, 255, .95); color: var(--muted, #56655e); }
 
-.cc-flip.ct-com .cc-badge--type { background: var(--primary, #00875A); }
-.cc-flip.ct-ges .cc-badge--type { background: #2563EB; }
-.cc-flip.ct-reg .cc-badge--type { background: #E8A100; }
-.cc-flip.ct-pal3 .cc-badge--type { background: #7C3AED; }
-.cc-flip.ct-pal4 .cc-badge--type { background: #DB2777; }
-.cc-flip.ct-pal5 .cc-badge--type { background: #0891B2; }
-.cc-flip.ct-none .cc-badge--type { background: #94a3b8; }
-
-/* ── Recto ── */
-.cc-front-body { flex: 1; min-width: 0; margin-top: 8px; }
+/* ── Recto : titre + date centrés au milieu de la carte ── */
+.cc-front-body { flex: 1; min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
 .cc-front-body h3 {
-    font-size: 15px; font-weight: 750; line-height: 1.3; letter-spacing: -.2px;
-    color: var(--ink, #0c1a14); margin: 0 0 7px;
+    font-size: 17.5px; font-weight: 800; line-height: 1.3; letter-spacing: -.2px;
+    color: #fff; margin: 0; text-shadow: 0 1px 4px rgba(0, 0, 0, .18);
     overflow: hidden; text-overflow: ellipsis;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
 }
-.cc-front-date { font-size: 12px; color: var(--muted, #56655e); font-weight: 650; display: flex; align-items: center; gap: 5px; }
-.cc-front-date--urgent { color: var(--red, #E2001A); font-weight: 800; }
+.cc-front-date {
+    font-size: 12px; color: rgba(255, 255, 255, .92); font-weight: 700;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255, 255, 255, .16); padding: 4px 12px; border-radius: 999px;
+}
+.cc-front-date--urgent { color: #fff; background: rgba(226, 0, 26, .88); }
 
-.cc-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(0, 0, 0, .06); padding-top: 11px; margin-top: 8px; }
+.cc-foot { display: flex; align-items: center; justify-content: center; border-top: 1px solid rgba(255, 255, 255, .28); padding-top: 11px; margin-top: 8px; width: 100%; }
 .cc-avs { display: flex; }
-.cc-avs .av { width: 27px; height: 27px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; margin-left: -7px; }
+.cc-avs .av { width: 27px; height: 27px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, .9); margin-left: -7px; }
 .cc-avs .av:first-child { margin-left: 0; }
 
 /* ── Verso : en-tête (contexte) + progression par canal + timeline ── */
