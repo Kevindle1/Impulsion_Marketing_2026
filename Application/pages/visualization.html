@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="../css/components.css">
     <link rel="stylesheet" href="../css/dashboard-layout.css">
     <link rel="stylesheet" href="../css/topbar.css">
+    <link rel="stylesheet" href="../css/campaign-card.css">
     <style>
         .back-button {
             display: inline-flex;
@@ -693,8 +694,8 @@
         function updateCardProgress(name, status) {
             var card = document.querySelector('[data-name="' + encodeURIComponent(name) + '"]');
             if (!card) return; // Carte hors de la page courante, pas grave
-            var fill = card.querySelector('.cc-bar i');
-            var text = card.querySelector('.cc-pct');
+            var fill = card.querySelector('.cc-chbar i');
+            var text = card.querySelector('.cc-chstat');
             if (fill) { fill.classList.remove('progress-loading-anim'); fill.style.width = status.percentage + '%'; }
             if (text) text.textContent = status.completed + '/' + status.total;
         }
@@ -821,8 +822,7 @@
             var types = window.ImpulsionMarketing.config.TYPES_COM || [];
             var idx = types.indexOf(bestCt);
             if (idx === -1) return { cls: 'ct-none', label: '—', title: 'Type de com non défini' };
-            return { cls: VC_CT_PALETTE[idx % VC_CT_PALETTE.length], label: String(bestCt).trim().slice(0, 3), title: bestCt }; }
-        function vcMeta(data){ var chs=data.channels||[]; var primary=chs[0]&&(chs[0].content||chs[0].deliverableName)||'Campagne'; var extra=chs.length>1?' +'+(chs.length-1):''; var mk=data.market?' · '+data.market:''; return security.escapeHtml(primary+extra+mk); }
+            return { cls: VC_CT_PALETTE[idx % VC_CT_PALETTE.length], label: String(bestCt).trim(), title: bestCt }; }
         function vcStatus(data,wf){ var label=(wf&&data.workflow)?((wf.getCurrentStepLabel(data)||'').trim()):''; if(wf&&data.workflow&&wf.isCompleted(data))return{label:'Terminée',text:'Terminée',key:'done',pct:100};
             var L=label.toLowerCase(); var pct=50,key='prod',text=label||'En cours';
             if(/affect/.test(L)){pct=10;key='maq';text='Affectation';} else if(/kick/.test(L)){pct=18;key='maq';text='Kick-off';}
@@ -867,15 +867,29 @@
                 var chan  = vcChannel(data);
                 var pct   = (completion.percentage >= 0) ? completion.percentage : st.pct;
                 var pctTxt = isLoading ? '…' : (completion.percentage >= 0 ? completion.completed + '/' + completion.total : Math.round(pct) + '%');
+                var launchTxt = data.launchDate ? new Date(data.launchDate).toLocaleDateString('fr-FR') : '—';
 
                 var p = [];
-                p.push('<a href="' + detailsUrl + '" class="campaign-card-link cc k-' + st.key + '" data-name="' + encodedName + '">');
-                p.push('<div class="cc-row1"><div class="cc-chan"><div class="cc-ci ' + chan.cls + '" title="' + security.escapeHtml(chan.title || '') + '">' + chan.label + '</div>');
-                p.push('<div style="min-width:0"><h3>' + security.escapeHtml(name) + '</h3><div class="cc-meta">' + vcMeta(data) + '</div></div></div>');
-                p.push('<span class="cc-pill ' + st.key + '">' + security.escapeHtml(st.text) + '</span></div>');
-                p.push('<div class="cc-prog"><div class="cc-lab"><span>' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-pct">' + pctTxt + '</span></div>');
-                p.push('<div class="cc-bar"><i' + (isLoading ? ' class="progress-loading-anim"' : '') + ' style="width:' + (isLoading ? 0 : pct) + '%"></i></div></div>');
-                p.push('<div class="cc-foot"><div class="cc-avs">' + vcAvatars(data) + '</div><div class="cc-date">📅 ' + dateStr + '</div></div>');
+                p.push('<a href="' + detailsUrl + '" class="cc-flip ' + chan.cls + '" data-name="' + encodedName + '">');
+                p.push('  <div class="cc-flip-inner">');
+                // Recto
+                p.push('    <div class="cc-face cc-face--front">');
+                p.push('      <span class="cc-badge cc-badge--type" title="' + security.escapeHtml(chan.title || '') + '">' + security.escapeHtml(chan.label) + '</span>');
+                p.push('      <span class="cc-badge cc-badge--step">' + security.escapeHtml(st.text) + '</span>');
+                p.push('      <div class="cc-front-body"><h3>' + security.escapeHtml(name) + '</h3>');
+                p.push('        <div class="cc-front-date">📅 ' + dateStr + '</div></div>');
+                p.push('      <div class="cc-foot"><div class="cc-avs">' + vcAvatars(data) + '</div></div>');
+                p.push('    </div>');
+                // Verso : barre de progression + timeline (dernière MAJ / date d'envoi)
+                p.push('    <div class="cc-face cc-face--back">');
+                p.push('      <div class="cc-back-main"><div class="cc-chrow"><div class="cc-chtop"><span class="cc-chname">' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-chstat">' + pctTxt + '</span></div>');
+                p.push('      <div class="cc-chbar"><i' + (isLoading ? ' class="progress-loading-anim"' : '') + ' style="width:' + (isLoading ? 0 : pct) + '%"></i></div></div></div>');
+                p.push('      <div class="cc-timeline">');
+                p.push('        <div class="cc-tl-point"><span class="cc-tl-label">MAJ</span>' + dateStr + '</div>');
+                p.push('        <div class="cc-tl-point"><span class="cc-tl-label">Envoi</span>' + launchTxt + '</div>');
+                p.push('      </div>');
+                p.push('    </div>');
+                p.push('  </div>');
                 p.push('</a>');
                 return p.join('');
             });
@@ -1404,32 +1418,9 @@
             white-space: nowrap;
         }
 
-        /* ── Cartes de campagne riches (cohérentes avec le dashboard) ── */
+        /* ── Cartes de campagne riches : voir css/campaign-card.css (partagé avec
+           le Tableau de bord) pour les styles .cc-flip / .cc-face / etc. ── */
         #campaigns-grid.campaigns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
-        .cc { background: var(--bg-card,#fff); border: 1px solid var(--line,#eaefec); border-radius: var(--radius,16px); padding: 18px; box-shadow: var(--shadow-xs); display: flex; flex-direction: column; gap: 13px; text-decoration: none; color: inherit; position: relative; overflow: hidden; transition: box-shadow .18s, transform .18s, border-color .18s; }
-        .cc::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--primary); }
-        .cc.k-valid::before { background:var(--amber); } .cc.k-maq::before { background:var(--blue); } .cc.k-urgent::before { background:var(--red); } .cc.k-done::before { background:var(--green-600); }
-        .cc:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--green-100); }
-        .cc-row1 { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-        .cc-chan { display:flex; align-items:flex-start; gap:11px; min-width:0; }
-        .cc-ci { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:800; flex-shrink:0; }
-        .cc-ci.mail{background:var(--blue);} .cc-ci.sms{background:#0FA56E;} .cc-ci.push{background:var(--violet);} .cc-ci.lp{background:var(--amber);}
-        /* Vignette par type de com (agrégé sur les livrables) */
-        .cc-ci.ct-com{background:var(--primary,#00875A);} .cc-ci.ct-ges{background:#2563EB;} .cc-ci.ct-reg{background:#E8A100;} .cc-ci.ct-none{background:#94a3b8;}
-        /* Palette générique (au-delà de 3 « Types de communication » configurés en Administration) */
-        .cc-ci.ct-pal3{background:#7C3AED;} .cc-ci.ct-pal4{background:#DB2777;} .cc-ci.ct-pal5{background:#0891B2;}
-        .cc h3 { font-size:14.5px; font-weight:750; line-height:1.3; letter-spacing:-.2px; color:var(--ink); margin:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
-        .cc-meta { font-size:11.5px; color:var(--muted-2); margin-top:3px; font-weight:550; }
-        .cc-pill { font-size:10.5px; font-weight:800; padding:4px 10px; border-radius:999px; white-space:nowrap; display:inline-flex; align-items:center; gap:5px; flex-shrink:0; }
-        .cc-pill::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
-        .cc-pill.prod{background:var(--green-50);color:var(--green-600);} .cc-pill.valid{background:var(--amber-50);color:#9a6b00;} .cc-pill.maq{background:var(--blue-50);color:#1d4ed8;} .cc-pill.urgent{background:var(--red-50);color:var(--red);} .cc-pill.done{background:var(--green-50);color:var(--green-700);}
-        .cc-prog { display:flex; flex-direction:column; gap:7px; }
-        .cc-lab { display:flex; justify-content:space-between; font-size:11.5px; color:var(--muted); font-weight:650; }
-        .cc-bar { height:8px; border-radius:99px; background:#eef2f0; overflow:hidden; }
-        .cc-bar i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#12C386,#00875A); }
-        .cc-foot { display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--line); padding-top:12px; }
-        .cc-avs { display:flex; } .cc-avs .av { width:27px; height:27px; border-radius:50%; color:#fff; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; border:2px solid #fff; margin-left:-7px; } .cc-avs .av:first-child { margin-left:0; }
-        .cc-date { font-size:11.5px; color:var(--muted-2); font-weight:700; white-space:nowrap; }
     </style>
 </body>
 </html>
