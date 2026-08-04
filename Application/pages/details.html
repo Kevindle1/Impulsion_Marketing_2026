@@ -378,8 +378,8 @@
     </aside>
 
     <div class="main-container">
-        <header class="top-header" id="app-topbar"></header>
-        <div class="details-actionbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 28px 0;">
+        <h1 id="details-campaign-title" style="font-size:19px;font-weight:800;color:var(--ink);margin:20px 28px 0;"></h1>
+        <div class="details-actionbar" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 28px 0;">
             <a href="../Impulsion-Marketing.html" class="btn secondary back-button">← Retour au tableau de bord</a>
             <button id="editButton" class="btn primary back-button" style="display:none;" onclick="editCampaign()">✏️ Modifier</button>
             <button id="duplicateButton" class="btn secondary back-button" style="display:none;" onclick="duplicateCampaign()">📋 Dupliquer</button>
@@ -398,7 +398,7 @@
 </div>
 
 <script src="../js/bundle.js"></script>
-<script>window.ImpulsionMarketing.topbar.mount({ title: 'Détails de la campagne', subtitle: 'Informations détaillées' });</script>
+<script>window.ImpulsionMarketing.topbar.mount();</script>
 <script src="../js/suivi-xlsx.js"></script>
 <script>
     // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
@@ -782,8 +782,8 @@
     // ─────────────────────────────────────────────
     function initDetailsUI(name, data) {
         document.getElementById('loading').style.display = 'none';
-        var _crumb = document.querySelector('header.top-header .crumb b');
-        if (_crumb) _crumb.textContent = name;
+        var _title = document.getElementById('details-campaign-title');
+        if (_title) _title.textContent = name;
         currentCampaignName = name;
         var editBtn        = document.getElementById('editButton');
         var dupBtn         = document.getElementById('duplicateButton');

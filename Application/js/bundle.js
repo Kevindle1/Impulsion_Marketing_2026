@@ -4474,9 +4474,10 @@ window.ImpulsionMarketing.adminConfig = (function () {
 /**
  * topbar-standalone.js — Barre du haut commune à toutes les pages.
  *
- * Expose window.ImpulsionMarketing.topbar.mount({ title, subtitle }).
- * Rend un en-tête identique partout (recherche globale, Rafraîchir, Quoi de neuf,
- * Notifications, avatar, déconnexion) ; seul le titre à gauche change.
+ * Expose window.ImpulsionMarketing.topbar.mount().
+ * Injecte les contrôles communs (recherche globale, Rafraîchir, Quoi de neuf,
+ * Notifications, avatar, déconnexion) dans la sidebar — identiques partout,
+ * pas de barre du haut séparée.
  *
  * Dépend des modules : users, directoryStorage, workflow, security, errors.
  * Aucune dépendance externe.
@@ -4512,18 +4513,18 @@ window.ImpulsionMarketing.adminConfig = (function () {
     logout: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
   };
 
-  // ── Markup de l'en-tête ──
-  function headerHtml(opts) {
+  // ── Markup — recherche (sous le logo) et actions (au-dessus du bloc
+  // utilisateur), intégrées à la barre de navigation latérale plutôt que dans
+  // une barre du haut séparée (une seule barre par page, pas deux). ──
+  function searchHtml() {
+    return '<div class="sidebar-search">' + SVG.search
+      + '<input type="text" id="topbar-search" placeholder="Rechercher : nom, PO, code projet/action, réf com/paracom…"></div>';
+  }
+  function actionsHtml() {
     var dotStyle = 'display:none;position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:var(--primary,#00875A);border-radius:50%;border:2px solid #fff;';
     var badgeStyle = 'display:none;position:absolute;top:-4px;right:-4px;background:var(--red,#E2001A);color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:11px;font-weight:700;line-height:18px;text-align:center;padding:0 3px;border:2px solid #fff;';
-    var panelStyle = 'display:none;position:absolute;top:48px;right:0;width:340px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
-    return ''
-      + '<div class="header-left">'
-      + '<div class="crumb">Accueil&nbsp;·&nbsp;<b>' + esc(opts.title || '') + '</b></div>'
-      + '</div>'
-      + '<div class="header-right">'
-      + '<div class="header-search">' + SVG.search
-      + '<input type="text" id="topbar-search" placeholder="Rechercher : nom, PO, code projet/action, réf com/paracom…"></div>'
+    var panelStyle = 'display:none;position:absolute;bottom:0;left:calc(100% + 10px);width:340px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
+    return '<div class="sidebar-actions">'
       + '<button id="topbar-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">'
       + SVG.gift + '<span id="topbar-whatsnew-dot" style="' + dotStyle + '"></span></button>'
       + '<div style="position:relative;">'
@@ -4924,12 +4925,31 @@ window.ImpulsionMarketing.adminConfig = (function () {
   }
 
   // ── Montage ──
-  function mount(opts) {
-    opts = opts || {};
-    var host = (opts.mount && $(opts.mount)) || document.querySelector('header.top-header');
-    if (!host) return;
-    if (!host.classList.contains('top-header')) host.classList.add('top-header');
-    host.innerHTML = headerHtml(opts);
+  // Pas de barre du haut séparée : la recherche et les actions (Quoi de neuf,
+  // notifications, rafraîchir) rejoignent la barre de navigation latérale,
+  // qui reste la SEULE barre de chrome de l'application sur chaque page.
+  // Le lien actif de la sidebar suffit à indiquer la page courante.
+  function mount() {
+    var side = document.querySelector('.sidebar');
+    if (!side) return;
+    var sideHeader = side.querySelector('.sidebar-header');
+    var sideNav = side.querySelector('.sidebar-nav');
+    if (!side.querySelector('.sidebar-search')) {
+      var searchEl = document.createElement('div');
+      searchEl.innerHTML = searchHtml();
+      var searchNode = searchEl.firstChild;
+      if (sideHeader && sideHeader.nextSibling) side.insertBefore(searchNode, sideHeader.nextSibling);
+      else if (sideNav) side.insertBefore(searchNode, sideNav);
+      else side.appendChild(searchNode);
+    }
+    if (!side.querySelector('.sidebar-actions')) {
+      var actionsEl = document.createElement('div');
+      actionsEl.innerHTML = actionsHtml();
+      // Juste avant le bloc utilisateur (mountSidebarUser l'ajoute toujours en
+      // dernier) — en l'appelant après, .sidebar-actions se retrouve bien
+      // au-dessus de .sidebar-user dans l'ordre du DOM.
+      side.appendChild(actionsEl.firstChild);
+    }
     wireSearch();
     wireRefresh();
     wireWhatsNew();

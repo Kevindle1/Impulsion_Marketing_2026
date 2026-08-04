@@ -235,8 +235,6 @@
     </aside>
 
     <div class="main-container">
-        <header class="top-header" id="app-topbar"></header>
-
         <div id="guide-scroll" style="flex:1;overflow-y:auto;background:var(--line-2);">
             <div id="guide-loading">Chargement du guide...</div>
             <div id="guide-error" style="display:none;"></div>
@@ -249,7 +247,7 @@
 </div>
 
 <script src="../js/bundle.js"></script>
-<script>window.ImpulsionMarketing.topbar.mount({ title: 'Guide utilisateur', subtitle: 'Comment utiliser Impulsion Marketing' });</script>
+<script>window.ImpulsionMarketing.topbar.mount();</script>
 <script>
     // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
     (function () {

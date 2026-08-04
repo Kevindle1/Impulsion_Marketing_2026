@@ -1,13 +1,10 @@
-/* topbar.css — styles du composant d'en-tête partagé (barre du haut commune).
-   Le layout .top-header / .header-left / .page-title / .header-right vient de
-   dashboard-layout.css ; ce fichier ajoute les contrôles (recherche, boutons,
-   avatar) pour qu'ils soient identiques sur toutes les pages. */
+/* topbar.css — styles des contrôles partagés (recherche, actions, avatar)
+   injectés dans la barre de navigation latérale par topbar-standalone.js
+   (mount()) — pour qu'ils soient identiques sur toutes les pages. Il n'y a
+   qu'une seule barre de chrome par page (la sidebar) : ce fichier ne définit
+   plus de barre du haut séparée. */
 
-/* Fil d'Ariane à gauche (identique au tableau de bord) */
-.crumb { font-size: 13px; color: var(--muted-2, #8b988f); font-weight: 600; }
-.crumb b { color: var(--ink, #0c1a14); font-weight: 750; }
-
-.header-search {
+.sidebar-search {
     display: flex;
     align-items: center;
     gap: 9px;
@@ -15,10 +12,10 @@
     border: 1px solid var(--line, #eaefec);
     border-radius: 12px;
     padding: 9px 13px;
-    width: 300px;
+    margin: 0 12px 14px;
     color: var(--muted-2, #8b988f);
 }
-.header-search input {
+.sidebar-search input {
     border: 0;
     background: none;
     outline: 0;
@@ -26,10 +23,19 @@
     font-size: 13px;
     color: var(--ink, #0c1a14);
     width: 100%;
+    min-width: 0;
 }
-.header-search:focus-within {
+.sidebar-search:focus-within {
     border-color: var(--primary, #00875A);
     box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+}
+
+.sidebar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 12px 10px;
 }
 
 .icon-btn {
@@ -50,23 +56,3 @@
 .icon-btn:disabled { opacity: .6; cursor: default; }
 .icon-btn--text { width: auto; padding: 0 14px; font-family: inherit; font-size: 13px; font-weight: 650; }
 .icon-btn--text svg { flex-shrink: 0; }
-
-.top-av {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--primary, #00875A);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 13px;
-    flex-shrink: 0;
-}
-
-@media (max-width: 768px) {
-    .header-search { display: none; }
-    .icon-btn--text .icon-btn-label { display: none; }
-    .icon-btn--text { width: 40px; padding: 0; }
-}
