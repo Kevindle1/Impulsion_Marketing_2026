@@ -880,13 +880,16 @@
                 p.push('        <div class="cc-front-date">📅 ' + dateStr + '</div></div>');
                 p.push('      <div class="cc-foot"><div class="cc-avs">' + vcAvatars(data) + '</div></div>');
                 p.push('    </div>');
-                // Verso : barre de progression + timeline (dernière MAJ / date d'envoi)
+                // Verso : en-tête (contexte) + barre de progression + timeline (dernière MAJ / date d'envoi)
                 p.push('    <div class="cc-face cc-face--back">');
-                p.push('      <div class="cc-back-main"><div class="cc-chrow"><div class="cc-chtop"><span class="cc-chname">' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-chstat">' + pctTxt + '</span></div>');
-                p.push('      <div class="cc-chbar"><i' + (isLoading ? ' class="progress-loading-anim"' : '') + ' style="width:' + (isLoading ? 0 : pct) + '%"></i></div></div></div>');
-                p.push('      <div class="cc-timeline">');
-                p.push('        <div class="cc-tl-point"><span class="cc-tl-label">MAJ</span>' + dateStr + '</div>');
-                p.push('        <div class="cc-tl-point"><span class="cc-tl-label">Envoi</span>' + launchTxt + '</div>');
+                p.push('      <div class="cc-back-head"><span class="cc-back-name">' + security.escapeHtml(name) + '</span></div>');
+                p.push('      <div class="cc-back-body">');
+                p.push('        <div class="cc-back-main"><div class="cc-back-section-label">Progression</div><div class="cc-chrow"><div class="cc-chtop"><span class="cc-chname">' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-chstat k-' + st.key + '">' + pctTxt + '</span></div>');
+                p.push('        <div class="cc-chbar"><i class="k-' + st.key + (isLoading ? ' progress-loading-anim' : '') + '" style="width:' + (isLoading ? 0 : pct) + '%"></i></div></div></div>');
+                p.push('        <div class="cc-timeline"><div class="cc-back-section-label">Dates clés</div>');
+                p.push('          <div class="cc-tl-point"><span class="cc-tl-label">MAJ</span>' + dateStr + '</div>');
+                p.push('          <div class="cc-tl-point"><span class="cc-tl-label">Envoi</span>' + launchTxt + '</div>');
+                p.push('        </div>');
                 p.push('      </div>');
                 p.push('    </div>');
                 p.push('  </div>');

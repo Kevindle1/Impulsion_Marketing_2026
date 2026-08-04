@@ -46,7 +46,7 @@
 .cc-flip:hover .cc-face,
 .cc-flip:focus-visible .cc-face { box-shadow: var(--shadow-md); }
 
-.cc-face--back { transform: rotateY(180deg); flex-direction: row; gap: 14px; align-items: stretch; }
+.cc-face--back { transform: rotateY(180deg); flex-direction: column; padding: 18px 18px 16px; }
 
 .cc-flip.cc--inactive { opacity: .6; }
 
@@ -100,13 +100,39 @@
 .cc-avs .av { width: 27px; height: 27px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; margin-left: -7px; }
 .cc-avs .av:first-child { margin-left: 0; }
 
-/* ── Verso : progression par canal + timeline ── */
-.cc-back-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 11px; overflow: hidden; }
-.cc-chrow { display: flex; flex-direction: column; gap: 4px; }
+/* ── Verso : en-tête (contexte) + progression par canal + timeline ── */
+.cc-back-head {
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 10px; margin-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, .09);
+    flex-shrink: 0;
+}
+.cc-back-name {
+    font-size: 12.5px; font-weight: 750; color: var(--ink, #0c1a14);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.cc-back-body { flex: 1; min-height: 0; display: flex; gap: 18px; }
+
+.cc-back-section-label {
+    font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted-2, #8b988f); margin-bottom: 3px;
+}
+
+.cc-back-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 12px; overflow: hidden; }
+.cc-chrow { display: flex; flex-direction: column; gap: 5px; }
 .cc-chtop { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .cc-chname { font-size: 11.5px; font-weight: 750; color: var(--ink, #0c1a14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 58%; }
-.cc-chstat { font-size: 10.5px; font-weight: 600; color: var(--muted, #56655e); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right; }
-.cc-chbar { height: 7px; border-radius: 99px; background: rgba(0, 0, 0, .07); overflow: hidden; }
+.cc-chstat {
+    font-size: 10px; font-weight: 800; white-space: nowrap;
+    background: rgba(255, 255, 255, .7); border-radius: 999px; padding: 1px 8px;
+    color: var(--primary, #00875A);
+}
+.cc-chstat.k-valid { color: #9a6b00; }
+.cc-chstat.k-maq   { color: #1d4ed8; }
+.cc-chstat.k-urgent { color: #b91c1c; }
+.cc-chstat.k-done  { color: #00734C; }
+.cc-chbar { height: 8px; border-radius: 99px; background: rgba(0, 0, 0, .08); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .07); }
 .cc-chbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #12C386, #00875A); }
 .cc-chbar i.k-valid { background: linear-gradient(90deg, #fbbf24, #E8A100); }
 .cc-chbar i.k-maq   { background: linear-gradient(90deg, #60a5fa, #2563EB); }
@@ -115,21 +141,27 @@
 
 .cc-timeline {
     flex-shrink: 0;
-    width: 86px;
+    width: 94px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 22px;
-    border-left: 2px solid rgba(0, 0, 0, .09);
-    padding-left: 12px;
+    gap: 20px;
+    position: relative;
+    padding-left: 16px;
+}
+.cc-timeline::before {
+    content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 2px;
+    background: linear-gradient(180deg, var(--primary, #00875A), rgba(0, 135, 90, .15));
+    border-radius: 2px;
 }
 .cc-tl-point { position: relative; font-size: 10px; color: var(--muted, #56655e); line-height: 1.35; }
 .cc-tl-point::before {
-    content: ""; position: absolute; left: -16px; top: 3px;
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--primary, #00875A); box-shadow: 0 0 0 2px var(--bg-card, #fff);
+    content: ""; position: absolute; left: -16px; top: 2px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--primary, #00875A); border: 2px solid var(--bg-card, #fff);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
 }
-.cc-tl-label { font-weight: 800; color: var(--ink, #0c1a14); display: block; text-transform: uppercase; font-size: 9px; letter-spacing: .3px; margin-bottom: 1px; }
+.cc-tl-label { font-weight: 800; color: var(--ink, #0c1a14); display: block; text-transform: uppercase; font-size: 9px; letter-spacing: .4px; margin-bottom: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
     .cc-flip-inner { transition: none; }

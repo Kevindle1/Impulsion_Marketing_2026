@@ -1039,26 +1039,32 @@
             h += '      <div class="cc-foot"><div class="cc-avs">' + avatarsHtml(c) + '</div></div>';
             h += '    </div>';
 
-            // Verso : progression par canal (si multi-canal, sinon barre unique) + timeline
+            // Verso : en-tête (contexte) + progression par canal (si multi-canal, sinon
+            // barre unique) + timeline
             h += '    <div class="cc-face cc-face--back">';
-            h += '      <div class="cc-back-main">';
+            h += '      <div class="cc-back-head"><span class="cc-back-name">' + security.escapeHtml(c.name) + '</span></div>';
+            h += '      <div class="cc-back-body">';
+            h += '        <div class="cc-back-main"><div class="cc-back-section-label">Progression</div>';
             if (isActif && Array.isArray(c.chprog) && c.chprog.length > 1) {
                 c.chprog.forEach(function(cp) {
                     var pct = (typeof cp.pct === 'number') ? cp.pct : 0;
+                    var key = cp.key || 'maq';
                     h += '<div class="cc-chrow">'
                         + '<div class="cc-chtop"><span class="cc-chname" title="' + security.escapeHtml(cp.name) + '">' + security.escapeHtml(cp.name) + '</span>'
-                        + '<span class="cc-chstat">' + security.escapeHtml(cp.label || '') + '</span></div>'
-                        + '<div class="cc-chbar"><i class="k-' + (cp.key || 'maq') + '" style="width:' + pct + '%"></i></div>'
+                        + '<span class="cc-chstat k-' + key + '">' + security.escapeHtml(cp.label || '') + '</span></div>'
+                        + '<div class="cc-chbar"><i class="k-' + key + '" style="width:' + pct + '%"></i></div>'
                         + '</div>';
                 });
             } else {
-                h += '<div class="cc-chrow"><div class="cc-chtop"><span class="cc-chname">' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-chstat">' + st.pct + '%</span></div>'
-                    + '<div class="cc-chbar"><i class="k-' + (urgent ? 'urgent' : st.key) + '" style="width:' + st.pct + '%"></i></div></div>';
+                var soloKey = urgent ? 'urgent' : st.key;
+                h += '<div class="cc-chrow"><div class="cc-chtop"><span class="cc-chname">' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-chstat k-' + soloKey + '">' + st.pct + '%</span></div>'
+                    + '<div class="cc-chbar"><i class="k-' + soloKey + '" style="width:' + st.pct + '%"></i></div></div>';
             }
-            h += '      </div>';
-            h += '      <div class="cc-timeline">';
-            h += '        <div class="cc-tl-point"><span class="cc-tl-label">MAJ</span>' + modTxt + '</div>';
-            h += '        <div class="cc-tl-point"><span class="cc-tl-label">Envoi</span>' + launchTxt + '</div>';
+            h += '        </div>';
+            h += '        <div class="cc-timeline"><div class="cc-back-section-label">Dates clés</div>';
+            h += '          <div class="cc-tl-point"><span class="cc-tl-label">MAJ</span>' + modTxt + '</div>';
+            h += '          <div class="cc-tl-point"><span class="cc-tl-label">Envoi</span>' + launchTxt + '</div>';
+            h += '        </div>';
             h += '      </div>';
             h += '    </div>';
 
