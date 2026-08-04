@@ -122,19 +122,15 @@
         <!-- Main Content Area -->
         <div class="main-container">
             <main class="content">
-                <!-- Bandeau d'accueil -->
-                <div class="dash-hero">
-                    <div class="dash-hero-text">
-                        <h1 id="hero-greeting">Bonjour 👋</h1>
+                <!-- Bandeau d'accueil + KPI sur la même ligne -->
+                <div class="dash-top-row">
+                    <div class="dash-hero">
+                        <div class="dash-hero-text">
+                            <h1 id="hero-greeting">Bonjour 👋</h1>
+                        </div>
                     </div>
-                    <a href="pages/campaign.html" class="dash-hero-cta">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
-                        Créer une campagne
-                    </a>
+                    <div class="kpi-row" id="kpi-row" style="display:none;"></div>
                 </div>
-
-                <!-- KPIs -->
-                <div class="kpi-row" id="kpi-row" style="display:none;"></div>
 
                 <!-- Filtre par étape -->
                 <div class="dashboard-toolbar" id="dashboard-toolbar" style="display:none;">
@@ -1696,17 +1692,23 @@
             margin-bottom: 20px;
         }
 
-        /* ── Hero d'accueil ── */
+        /* ── Bandeau d'accueil + KPI sur la même ligne (au-delà de 1280px — voir
+           media query plus bas pour l'empilement en dessous) ── */
+        .dash-top-row { display: flex; align-items: stretch; gap: 14px; margin-bottom: 14px; }
+
+        /* ── Hero d'accueil (juste le message de bienvenue — le bouton "Créer une
+           campagne" est déjà dans la navigation latérale, pas besoin de le
+           dupliquer ici) ── */
         .dash-hero {
             background: var(--gradient-hero, linear-gradient(120deg, #00734C, #0FA56E));
             border-radius: 16px;
-            padding: 14px 20px;
+            padding: 14px 22px;
             color: #fff;
             display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 16px;
-            margin-bottom: 12px;
+            flex: 0 1 240px;
+            min-width: 200px;
             box-shadow: 0 10px 22px rgba(0, 115, 76, 0.22);
             position: relative;
             overflow: hidden;
@@ -1722,26 +1724,16 @@
         .dash-hero-text { position: relative; z-index: 1; }
         .dash-hero h1 {
             font-size: 17px; font-weight: 800; letter-spacing: -0.4px; margin: 0;
+            white-space: nowrap;
             color: #fff !important;
             background: none !important;
             -webkit-text-fill-color: #fff !important;
             -webkit-background-clip: initial !important;
             background-clip: initial !important;
         }
-        .dash-hero-cta {
-            position: relative; z-index: 1;
-            display: inline-flex; align-items: center; gap: 7px;
-            background: #fff; color: var(--green-600, #00734C);
-            font-weight: 700; font-size: 13px;
-            padding: 9px 16px; border-radius: 11px;
-            text-decoration: none; white-space: nowrap;
-            transition: transform 0.12s ease, box-shadow 0.15s ease;
-        }
-        .dash-hero-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,0.15); }
-
 
         /* ── KPIs ── */
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 14px; }
+        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex: 1; min-width: 0; }
         .kpi {
             background: var(--bg-card, #fff);
             border: 1px solid var(--line, #eaefec);
@@ -2025,7 +2017,12 @@
             .icon-btn--text .icon-btn-label { display: none; }
             .icon-btn--text { width: 40px; padding: 0; }
         }
-        @media (max-width: 1280px) {
+        /* En dessous de 900px, le bandeau (désormais juste le message d'accueil,
+           sans bouton) + les 4 KPI ne tiennent plus proprement sur une seule
+           ligne : on les réempile comme avant. */
+        @media (max-width: 899px) {
+            .dash-top-row { flex-direction: column; }
+            .dash-hero { flex: none; width: 100%; min-width: 0; }
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
