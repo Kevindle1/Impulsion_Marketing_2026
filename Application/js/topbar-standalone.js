@@ -50,7 +50,10 @@
   function actionsHtml() {
     var dotStyle = 'display:none;position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:var(--primary,#00875A);border-radius:50%;border:2px solid #fff;';
     var badgeStyle = 'display:none;position:absolute;top:-4px;right:-4px;background:var(--red,#E2001A);color:#fff;border-radius:50%;min-width:18px;height:18px;font-size:11px;font-weight:700;line-height:18px;text-align:center;padding:0 3px;border:2px solid #fff;';
-    var panelStyle = 'display:none;position:absolute;bottom:0;left:calc(100% + 10px);width:340px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
+    // position:fixed (coordonnées calculées à l'ouverture, cf. wireNotifications) —
+    // pas position:absolute : la sidebar a overflow-x:hidden, qui rognait le
+    // panneau au lieu de le laisser déborder à droite de la barre de nav.
+    var panelStyle = 'display:none;position:fixed;width:340px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
     return '<div class="sidebar-actions">'
       + '<button id="topbar-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">'
       + SVG.gift + '<span id="topbar-whatsnew-dot" style="' + dotStyle + '"></span></button>'
@@ -329,18 +332,35 @@
       });
     });
   }
+  // Repositionne le panneau (position:fixed) juste avant de l'afficher, à partir
+  // de la position réelle de la cloche à l'écran — indépendant de tout ancêtre
+  // à overflow réduit (la sidebar en particulier).
+  function _positionNotifPanel(bell, panel) {
+    var r = bell.getBoundingClientRect();
+    panel.style.left = (r.right + 10) + 'px';
+    panel.style.bottom = Math.max(8, window.innerHeight - r.bottom) + 'px';
+  }
   function wireNotifications() {
     var bell = $('topbar-notif-bell');
     if (bell) {
       bell.addEventListener('click', function (e) {
         e.stopPropagation();
-        var p = $('topbar-notif-panel'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none';
+        var p = $('topbar-notif-panel');
+        if (p) {
+          var opening = p.style.display === 'none';
+          if (opening) _positionNotifPanel(bell, p);
+          p.style.display = opening ? 'block' : 'none';
+        }
         // Un clic est un vrai geste utilisateur : c'est le meilleur moment pour
         // demander l'autorisation d'afficher des notifications système si ce
         // n'est pas déjà fait (Chrome bloque parfois la demande hors interaction).
         _ensureNotifPermission();
       });
       document.addEventListener('click', function () { var p = $('topbar-notif-panel'); if (p) p.style.display = 'none'; });
+      window.addEventListener('resize', function () {
+        var p = $('topbar-notif-panel');
+        if (p && p.style.display !== 'none') _positionNotifPanel(bell, p);
+      });
     }
     _ensureNotifPermission();
     pollNotifications();
