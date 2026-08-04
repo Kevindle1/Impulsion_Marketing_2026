@@ -270,11 +270,16 @@ window.ImpulsionMarketing.customFields = (function () {
     // création pour les champs par canal (jamais préfixée).
     var idPrefix = (opts.idPrefix !== undefined) ? opts.idPrefix : ('cf-' + attachPoint.replace(/[^a-zA-Z0-9]/g, '-'));
     var html = '';
+    // Types qui profitent d'être sur toute la largeur plutôt que dans une
+    // grille à 2 colonnes (texte long, contenu élargi par nature) — seule une
+    // page qui place .cf-fields-block en grille (campaign.html, étapes 1/3)
+    // s'en sert réellement ; sans grille parente la classe est sans effet.
+    var WIDE_TYPES = { textarea: true, richtext: true, list: true, 'checkbox-group': true };
     fields.forEach(function (f) {
       var visible = evalShowIf(f, values);
       var marked = isSimpleRequired(f) || !!requiredGroup(f);
       var domId = (opts.idSuffix !== undefined) ? (f.id + opts.idSuffix) : (idPrefix ? (idPrefix + '-' + f.id) : f.id);
-      html += '<div class="cf-field" data-cf-row="' + escAttr(f.id) + '"'
+      html += '<div class="cf-field' + (WIDE_TYPES[f.type] ? ' cf-field--wide' : '') + '" data-cf-row="' + escAttr(f.id) + '"'
         + (f.showIf ? ' data-cf-showif="' + escAttr(JSON.stringify(f.showIf)) + '"' : '')
         + (visible ? '' : ' style="display:none;"') + '>';
       if (f.type !== 'checkbox') {

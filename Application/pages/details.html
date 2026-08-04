@@ -82,6 +82,14 @@
         .actor-form { margin-bottom: 4px; }
         .form-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
         .form-row label { font-size: 11px; font-weight: 700; color: var(--muted, #56655e); text-transform: uppercase; letter-spacing: 0.6px; }
+        /* Champs personnalisés (déjà en place, migrés, ou ajoutés par un admin) :
+           même langage typographique que .form-row label ci-dessus, pour qu'un
+           champ historique et un champ migré ne se distinguent pas visuellement
+           dans une même carte (ex. Réalisation BAT : Webmaster/Ref Paracom à
+           côté d'Objet de l'email/Code Com). Règle propre à cette page — sur
+           campaign.html/admin.html, .cf-label (css/components.css) reste déjà
+           cohérente avec leur propre style de libellé. */
+        .cf-fields-block .cf-label { font-size: 11px; font-weight: 700; color: var(--muted, #56655e); text-transform: uppercase; letter-spacing: 0.6px; }
         .form-control { padding: 10px 12px; border: 1px solid var(--line, #eaefec); border-radius: 10px; font-size: 13.5px; font-family: inherit; color: var(--ink, #0c1a14); background: #fff; width: 100%; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
         .form-control:focus { outline: none; border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
         .form-control:disabled, .form-control[readonly] { background: var(--line-2, #f0f4f1); color: var(--muted-2, #8b988f); cursor: not-allowed; border-color: var(--line, #eaefec); }

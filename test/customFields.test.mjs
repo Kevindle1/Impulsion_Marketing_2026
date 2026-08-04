@@ -209,6 +209,23 @@ test('renderFields — idPrefix explicitement vide (\'\') : id DOM = field.id te
   });
 });
 
+test('renderFields — cf-field--wide sur les types qui profitent de toute la largeur (texte long, liste, cases multiples), pas sur les autres', () => {
+  withConfig({ CUSTOM_FIELDS: { com_maquette: [
+    { id: 'a', label: 'Texte long', type: 'textarea', order: 1 },
+    { id: 'b', label: 'Liste', type: 'list', order: 2 },
+    { id: 'c', label: 'Cases multiples', type: 'checkbox-group', options: ['X'], order: 3 },
+    { id: 'd', label: 'Texte court', type: 'text', order: 4 },
+    { id: 'e', label: 'Date', type: 'date', order: 5 }
+  ] } }, () => {
+    const html = cf.renderFields('com_maquette', {});
+    assert.match(html, /class="cf-field cf-field--wide" data-cf-row="a"/);
+    assert.match(html, /class="cf-field cf-field--wide" data-cf-row="b"/);
+    assert.match(html, /class="cf-field cf-field--wide" data-cf-row="c"/);
+    assert.match(html, /class="cf-field" data-cf-row="d"/);
+    assert.match(html, /class="cf-field" data-cf-row="e"/);
+  });
+});
+
 test('renderFields — idPrefix omis : préfixe auto-généré (comportement par défaut, nouveaux champs perso)', () => {
   withConfig({ CUSTOM_FIELDS: { com_maquette: [{ id: 'x', label: 'X', type: 'text' }] } }, () => {
     const html = cf.renderFields('com_maquette', {});

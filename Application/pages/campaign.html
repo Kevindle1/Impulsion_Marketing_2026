@@ -434,6 +434,36 @@
             grid-column: 1 / -1;
           }
           .form-step--grid > .form-group { margin-bottom: 18px; }
+
+          /* Champs personnalisés des étapes 1 et 3 (Informations générales,
+             Détails produit) : #cfStep1Fields/#cfStep3Fields restent en
+             fg-full (une seule cellule de la grille 2 colonnes ci-dessus),
+             mais LEUR PROPRE bloc (.cf-fields-block, habituellement empilé en
+             une colonne) devient à son tour une grille 2 colonnes — sinon
+             tous les champs migrés (Nom de la tâche, Description, dates,
+             Typologie, Marché...) s'empilent en une seule longue colonne sans
+             profiter de la largeur disponible. cf-field--wide (texte long,
+             liste, cases multiples — voir customFields-standalone.js) reste
+             sur toute la largeur. */
+          /* [id^=cfCanalBaseFields] : un id par canal (cfCanalBaseFields1,
+             cfCanalBaseFields2...), pas de sélecteur #id unique possible. */
+          #cfStep1Fields .cf-fields-block, #cfStep3Fields .cf-fields-block,
+          [id^="cfCanalBaseFields"] .cf-fields-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 22px;
+          }
+          #cfStep1Fields .cf-fields-block > .cf-field--wide,
+          #cfStep3Fields .cf-fields-block > .cf-field--wide,
+          [id^="cfCanalBaseFields"] .cf-fields-block > .cf-field--wide {
+            grid-column: 1 / -1;
+          }
+          @media (max-width: 760px) {
+            #cfStep1Fields .cf-fields-block, #cfStep3Fields .cf-fields-block,
+            [id^="cfCanalBaseFields"] .cf-fields-block {
+              grid-template-columns: 1fr;
+            }
+          }
           @media (max-width: 760px) {
             .form-step--grid { grid-template-columns: 1fr; }
           }
