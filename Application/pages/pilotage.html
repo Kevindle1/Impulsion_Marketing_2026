@@ -119,6 +119,33 @@
         .pil-affect-btn:disabled { opacity: .6; cursor: default; }
         .pil-affect-btn:hover:not(:disabled) { filter: brightness(1.05); }
 
+        /* Points de friction — allers-retours par canal, tous types confondus */
+        .pil-friction-count { font-size: 12px; font-weight: 800; padding: 3px 11px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
+        .pil-friction-count.warn { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+        .pil-friction-count.hot  { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .pil-friction-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+        .pil-friction-chip { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--line-2); color: var(--muted); white-space: nowrap; }
+        .pil-friction-last { font-size: 11.5px; color: var(--muted-2); }
+
+        /* Vue calendrier */
+        .pil-cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .pil-cal-nav { border: 1px solid var(--line); background: #fff; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: var(--muted); }
+        .pil-cal-nav:hover { border-color: var(--primary); color: var(--primary); }
+        .pil-cal-title { font-size: 16px; font-weight: 800; color: var(--ink); text-transform: capitalize; min-width: 160px; }
+        .pil-cal-today { margin-left: auto; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+        .pil-cal-today:hover { border-color: var(--primary); color: var(--primary); }
+        .pil-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .pil-cal-dow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--muted-2); text-align: center; padding-bottom: 4px; }
+        .pil-cal-day { background: #fff; border: 1px solid var(--line); border-radius: 10px; min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+        .pil-cal-day.pil-cal-out { background: var(--line-2); border-color: transparent; }
+        .pil-cal-day.pil-cal-today-cell { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+        .pil-cal-daynum { font-size: 12px; font-weight: 700; color: var(--ink); }
+        .pil-cal-out .pil-cal-daynum { color: var(--muted-2); }
+        .pil-cal-item { font-size: 10.5px; font-weight: 650; padding: 2px 6px; border-radius: 5px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .pil-cal-item:hover { filter: brightness(0.97); }
+        .pil-cal-more { font-size: 10px; color: var(--muted-2); font-weight: 700; }
+        .pil-cal-note { font-size: 12px; color: var(--muted-2); margin-top: 14px; }
+
         .loading-container { text-align: center; padding: 80px 20px; }
         .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; margin: 0 auto 16px; animation: pilspin 0.9s linear infinite; }
         @keyframes pilspin { to { transform: rotate(360deg); } }
@@ -354,6 +381,48 @@
                                     </div>
                                 </section>
 
+                                <!-- ═══ Points de friction ═══ -->
+                                <section class="admin-section" id="tab-friction" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">🔥</div>
+                                        <div>
+                                            <h2>Points de friction</h2>
+                                            <p>Canaux avec le plus d'allers-retours — maquette, BAT, ciblage, test en prod… tous types de révisions confondus.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="fric-table" style="display:none;">
+                                            <thead><tr>
+                                                <th>Campagne</th><th>Livrable</th><th>Canal</th><th>Allers-retours</th><th>Détail</th><th>Dernière demande</th>
+                                            </tr></thead>
+                                            <tbody id="fric-tbody"></tbody>
+                                        </table>
+                                        <div id="fric-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">🎉</div>
+                                            Aucun aller-retour enregistré pour le moment.
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- ═══ Vue calendrier ═══ -->
+                                <section class="admin-section" id="tab-calendrier" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">🗓️</div>
+                                        <div>
+                                            <h2>Vue calendrier</h2>
+                                            <p>Les mêmes communications attendues, en calendrier mensuel.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-cal-head">
+                                        <button type="button" class="pil-cal-nav" id="cal-prev">‹</button>
+                                        <div class="pil-cal-title" id="cal-title"></div>
+                                        <button type="button" class="pil-cal-nav" id="cal-next">›</button>
+                                        <button type="button" class="pil-cal-today" id="cal-today-btn">Aujourd'hui</button>
+                                    </div>
+                                    <div class="pil-cal-grid" id="cal-grid"></div>
+                                    <div class="pil-cal-note" id="cal-note"></div>
+                                </section>
+
                                 <!-- ═══ Indicateurs clés ═══ -->
                                 <section class="admin-section" id="tab-kpi" data-group="Pilotage">
                                     <div class="admin-sec-head">
@@ -443,7 +512,7 @@
             };
         })();
 
-        var state = { root: null, campaignsFolder: null, allCampaigns: [], coms: [], pendingItems: [], channelStats: [] };
+        var state = { root: null, campaignsFolder: null, allCampaigns: [], coms: [], pendingItems: [], channelStats: [], hotspots: [] };
 
         function showError(msg) {
             $('loadingContainer').style.display = 'none';
@@ -566,7 +635,7 @@
 
         function buildAnalytics() {
             var wf = IM.workflow;
-            var pending = [], channelStats = [];
+            var pending = [], channelStats = [], hotspots = [];
             state.allCampaigns.forEach(function (c) {
                 wf.initWorkflow(c);
                 var jur = wf.juridiqueRequired(c);
@@ -584,6 +653,27 @@
                         progressKey: (progress[idx] && progress[idx].key) || 'maq',
                         revisionCount: log.length
                     });
+
+                    // Points de friction : TOUTES les révisions du canal, quelle que soit
+                    // l'étape reprise (maquette, BAT, test en prod, ciblage…) — pas
+                    // seulement le BAT. groupées par étape pour voir où ça coince.
+                    if (log.length) {
+                        var byStep = {};
+                        log.forEach(function (entry) {
+                            var key = entry.stepId;
+                            if (!byStep[key]) byStep[key] = { stepId: key, stepLabel: wf.stepLabel(key), count: 0 };
+                            byStep[key].count++;
+                        });
+                        var last = log[log.length - 1];
+                        hotspots.push({
+                            campaignName: c.id || c.folderName, folderName: c.folderName,
+                            deliverableName: (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (idx + 1)),
+                            canal: content || '',
+                            total: log.length,
+                            byStep: Object.keys(byStep).map(function (k) { return byStep[k]; }).sort(function (a, b) { return b.count - a.count; }),
+                            last: { stepLabel: wf.stepLabel(last.stepId), author: last.author, date: last.date, comment: last.comment }
+                        });
+                    }
 
                     // Une seule étape par canal est réellement « actionnable » à la fois —
                     // pending ou revision_requested, même définition que getAvailableActions().
@@ -616,6 +706,8 @@
             });
             state.pendingItems = pending;
             state.channelStats = channelStats;
+            hotspots.sort(function (a, b) { return b.total - a.total; });
+            state.hotspots = hotspots;
         }
 
         // ── Affectation (managers) ──
@@ -898,6 +990,80 @@
             }).join('');
         }
 
+        // ── Points de friction ──
+        function renderFriction() {
+            var items = state.hotspots;
+            var table = $('fric-table'), empty = $('fric-empty'), tbody = $('fric-tbody');
+            if (!items.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+            tbody.innerHTML = items.map(function (h) {
+                var countClass = h.total >= 3 ? 'hot' : (h.total >= 2 ? 'warn' : '');
+                var chips = h.byStep.map(function (s) {
+                    return '<span class="pil-friction-chip">' + esc(s.stepLabel) + ' ×' + s.count + '</span>';
+                }).join('');
+                var lastTitle = h.last.comment ? ' title="' + esc(h.last.comment) + '"' : '';
+                return '<tr class="pil-row" data-name="' + esc(h.folderName) + '">'
+                    + '<td class="pil-camp">' + esc(h.campaignName) + '</td>'
+                    + '<td>' + esc(h.deliverableName) + '</td>'
+                    + '<td>' + (h.canal ? '<span class="pil-badge pil-canal">' + esc(h.canal) + '</span>' : '—') + '</td>'
+                    + '<td><span class="pil-friction-count ' + countClass + '">' + h.total + '</span></td>'
+                    + '<td><div class="pil-friction-chips">' + chips + '</div></td>'
+                    + '<td' + lastTitle + '><div class="pil-friction-last">' + esc(h.last.stepLabel) + '<br>' + esc(h.last.date || '—') + (h.last.author ? ' · ' + esc(h.last.author) : '') + '</div></td>'
+                    + '</tr>';
+            }).join('');
+            wireRowNav(tbody);
+        }
+
+        // ── Vue calendrier ── (réutilise state.coms, déjà construit par buildComs())
+        var calDate = (function () { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); })();
+        var MONTH_NAMES = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        var DOW_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        function isoOf(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function renderCalendar() {
+            var y = calDate.getFullYear(), m = calDate.getMonth();
+            $('cal-title').textContent = MONTH_NAMES[m] + ' ' + y;
+
+            var firstOfMonth = new Date(y, m, 1);
+            var startOffset = (firstOfMonth.getDay() + 6) % 7; // jours à reculer jusqu'au lundi
+            var gridStart = new Date(y, m, 1 - startOffset);
+            var todayIso = isoOf(new Date());
+
+            var byDate = {};
+            state.coms.forEach(function (co) { if (co.date) (byDate[co.date] || (byDate[co.date] = [])).push(co); });
+
+            var html = DOW_NAMES.map(function (d) { return '<div class="pil-cal-dow">' + d + '</div>'; }).join('');
+            for (var i = 0; i < 42; i++) {
+                var cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+                var cellIso = isoOf(cellDate);
+                var outOfMonth = cellDate.getMonth() !== m;
+                var items = byDate[cellIso] || [];
+                var cls = 'pil-cal-day' + (outOfMonth ? ' pil-cal-out' : '') + (cellIso === todayIso ? ' pil-cal-today-cell' : '');
+                var itemsHtml = items.slice(0, 3).map(function (co) {
+                    return '<div class="pil-cal-item" data-name="' + esc(co.folderName) + '" title="' + esc(co.campagne + ' — ' + co.livrable) + '">' + esc(co.livrable) + '</div>';
+                }).join('');
+                if (items.length > 3) itemsHtml += '<div class="pil-cal-more">+ ' + (items.length - 3) + ' autre' + (items.length - 3 > 1 ? 's' : '') + '</div>';
+                html += '<div class="' + cls + '"><div class="pil-cal-daynum">' + cellDate.getDate() + '</div>' + itemsHtml + '</div>';
+            }
+            $('cal-grid').innerHTML = html;
+            $('cal-grid').querySelectorAll('.pil-cal-item').forEach(function (el) {
+                el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
+            });
+
+            var undated = state.coms.filter(function (co) { return !co.date; }).length;
+            $('cal-note').textContent = undated
+                ? (undated + ' communication' + (undated > 1 ? 's' : '') + ' sans date exploitable, non affichée' + (undated > 1 ? 's' : '') + ' ici — voir « Coms attendues ».')
+                : '';
+        }
+        function wireCalendarNav() {
+            $('cal-prev').addEventListener('click', function () { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); });
+            $('cal-next').addEventListener('click', function () { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); });
+            $('cal-today-btn').addEventListener('click', function () {
+                var n = new Date(); calDate = new Date(n.getFullYear(), n.getMonth(), 1); renderCalendar();
+            });
+        }
+
         // ─────────────────────────────────────────────────────────
         // FILTRES
         // ─────────────────────────────────────────────────────────
@@ -1094,6 +1260,9 @@
                 renderValidations();
                 renderCharge();
                 renderKpi();
+                renderFriction();
+                wireCalendarNav();
+                renderCalendar();
 
                 // Page réservée aux responsables d'équipe : retirée du menu pour
                 // tout le monde d'autre (au lieu d'afficher une page vide/bloquée).
