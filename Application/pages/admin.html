@@ -20,8 +20,8 @@
         .admin-bento-group + .admin-bento-group { margin-top: 26px; }
         .admin-bento-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); margin-bottom: 12px; }
         .admin-bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; }
-        .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.12); transform: translateY(-2px); }
+        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; box-shadow: 0 4px 12px rgba(12,30,22,.08); }
+        .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.14); transform: translateY(-2px); }
         .admin-bento-card .admin-bento-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--green-50); }
         .admin-bento-card .admin-bento-label { font-size: 14.5px; font-weight: 700; color: var(--ink); }
         .admin-bento-card .admin-bento-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
@@ -56,6 +56,7 @@
         .person-row:last-child, .canal-row:last-child { border-bottom: none; }
         .person-name { font-size: 14px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; }
         .pill-mgr { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: var(--green-50); color: var(--green-600); }
+        .pill-mgr.pill-super { background: var(--red-50,#fdecea); color: var(--red,#e2001a); }
 
         /* Avatar initiales (personnes) */
         .av-ini { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 800; flex-shrink: 0; }
@@ -465,8 +466,9 @@
                     var idx = people.indexOf(p);
                     html += '<div class="person-row">'
                         + '<span class="av-ini" style="background:' + (ROLE_COLOR[p.role] || '#64748b') + ';">' + esc(initials(p.name)) + '</span>'
-                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + '</span>'
-                        + (p.isSuperAdmin ? '' : '<label class="toggle-label"><input type="checkbox" class="cb-mgr" data-i="' + idx + '"' + (p.isManager ? ' checked' : '') + '> Responsable</label>')
+                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + '</span>'
+                        + '<label class="toggle-label"><input type="checkbox" class="cb-mgr" data-i="' + idx + '"' + (p.isManager ? ' checked' : '') + '> Responsable</label>'
+                        + '<label class="toggle-label" title="Accès admin complet, sur toutes les équipes, en plus de son rôle ci-dessous."><input type="checkbox" class="cb-superadmin" data-i="' + idx + '"' + (p.isSuperAdmin ? ' checked' : '') + '> Super Admin</label>'
                         + '<select class="admin-select sel-team" data-i="' + idx + '">' + teamSelectOptions + '</select>'
                         + '<button class="icon-del" data-del="' + idx + '">🗑</button>'
                         + '</div>';
@@ -491,6 +493,10 @@
             document.querySelectorAll('.cb-mgr').forEach(function (cb) {
                 var i = +cb.getAttribute('data-i');
                 cb.addEventListener('change', function () { people[i].isManager = cb.checked; people[i].roleLabel = labelFor(people[i].role, cb.checked); });
+            });
+            document.querySelectorAll('.cb-superadmin').forEach(function (cb) {
+                var i = +cb.getAttribute('data-i');
+                cb.addEventListener('change', function () { people[i].isSuperAdmin = cb.checked || undefined; renderPeople(); });
             });
             document.querySelectorAll('[data-del]').forEach(function (b) {
                 b.addEventListener('click', function () { people.splice(+b.getAttribute('data-del'), 1); renderPeople(); });
