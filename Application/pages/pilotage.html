@@ -104,6 +104,21 @@
         .pil-subhead { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted-2); margin: 24px 0 10px; }
         .pil-subhead:first-of-type { margin-top: 0; }
 
+        /* Affectation — cartes d'affectation par campagne (managers) */
+        .pil-affect-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: var(--shadow-xs); }
+        .pil-affect-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .pil-affect-head strong { font-size: 15px; color: var(--ink); }
+        .pil-affect-meta { font-size: 12.5px; color: var(--muted); margin-left: 10px; }
+        .pil-affect-state { background: var(--amber-50, #fff8e6); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: #7a5b00; line-height: 1.6; }
+        .pil-affect-teams { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+        .pil-affect-team { flex: 1; min-width: 160px; }
+        .pil-affect-team-label { font-size: 12px; font-weight: 700; margin-bottom: 5px; color: var(--ink); }
+        .pil-affect-team-list { max-height: 130px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--line-2); }
+        .pil-affect-team-list label { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 13px; cursor: pointer; }
+        .pil-affect-btn { border: none; border-radius: 8px; background: var(--primary, #00875A); color: #fff; font-weight: 700; font-size: 13px; padding: 9px 18px; cursor: pointer; }
+        .pil-affect-btn:disabled { opacity: .6; cursor: default; }
+        .pil-affect-btn:hover:not(:disabled) { filter: brightness(1.05); }
+
         .loading-container { text-align: center; padding: 80px 20px; }
         .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; margin: 0 auto 16px; animation: pilspin 0.9s linear infinite; }
         @keyframes pilspin { to { transform: rotate(360deg); } }
@@ -244,6 +259,18 @@
                                             Aucune com attendue sur cette période avec ces filtres.
                                         </div>
                                     </div>
+                                </section>
+
+                                <!-- ═══ Affectation (managers) ═══ -->
+                                <section class="admin-section" id="tab-affectation" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">👥</div>
+                                        <div>
+                                            <h2>Affectation</h2>
+                                            <p>Campagnes en attente d'affectation pour votre équipe — affectez directement depuis cette page.</p>
+                                        </div>
+                                    </div>
+                                    <div id="affect-list"></div>
                                 </section>
 
                                 <!-- ═══ Retards & alertes ═══ -->
@@ -458,6 +485,12 @@
             }, 20);
 
             state.allCampaigns = campaigns.filter(function(c) { return c && c.actif !== false; });
+            // Repère l'état « tel que lu » de chaque campagne pour la fusion 3-way
+            // à la sauvegarde (page Affectation) — même précaution qu'à l'ouverture
+            // d'une campagne dans details.html.
+            if (IM.workflow && IM.workflow.captureBaseline) {
+                state.allCampaigns.forEach(function(c) { IM.workflow.captureBaseline(c); });
+            }
         }
 
         // ─────────────────────────────────────────────────────────
@@ -583,6 +616,152 @@
             });
             state.pendingItems = pending;
             state.channelStats = channelStats;
+        }
+
+        // ── Affectation (managers) ──
+        // Mêmes règles de visibilité et de complétion que le bloc « Manager :
+        // affectation » de details.html (users.isCurrentUserManager(),
+        // managerAffectationDone, isGeneralManager) — appliquées à TOUTES
+        // les campagnes plutôt qu'à une seule, pour affecter sans ouvrir
+        // chaque campagne une par une.
+        function computeAssignmentTargets() {
+            var user = IM.users.getCurrentUser();
+            if (!user || !IM.users.isCurrentUserManager()) return [];
+            var isGeneral = (user.role === 'marketing' && user.isManager === true) || user.isSuperAdmin === true;
+            var out = [];
+            state.allCampaigns.forEach(function (c) {
+                IM.workflow.initWorkflow(c);
+                var steps = c.workflow.steps || {};
+                if (steps.manager_affectation !== 'pending') return;
+                if (IM.workflow.managerAffectationDone(user, c)) return;
+                var req = c.requiredTeams || [];
+                var needsCom  = req.length === 0 || req.indexOf('Com')  !== -1;
+                var needsEbf  = req.length === 0 || req.indexOf('EBF')  !== -1;
+                var needsData = req.length === 0 || req.indexOf('Data') !== -1;
+                var showCom  = (isGeneral || user.role === 'com')  && needsCom;
+                var showEbf  = (isGeneral || user.role === 'ebf')  && needsEbf;
+                var showData = (isGeneral || user.role === 'data') && needsData;
+                if (!showCom && !showEbf && !showData) return;
+                out.push({ campaign: c, isGeneral: isGeneral, showCom: showCom, showEbf: showEbf, showData: showData, needsCom: needsCom, needsEbf: needsEbf, needsData: needsData });
+            });
+            return out;
+        }
+
+        function renderAffectation() {
+            var cont = $('affect-list');
+            if (!cont) return; // section retirée du DOM (utilisateur non manager)
+            var targets = computeAssignmentTargets();
+            if (!targets.length) {
+                cont.innerHTML = '<div class="pil-empty"><div class="big">🎉</div>Aucune campagne en attente d\'affectation pour votre équipe.</div>';
+                return;
+            }
+            cont.innerHTML = targets.map(function (t) {
+                var c = t.campaign;
+                var assignments = (c.workflow && c.workflow.assignments) || {};
+                function teamBlock(role, label, teamUsers) {
+                    var cur = asArr(assignments[role]);
+                    var h = '<div class="pil-affect-team"><div class="pil-affect-team-label">' + esc(label) + '</div><div class="pil-affect-team-list">';
+                    if (!teamUsers.length) h += '<span style="font-size:12px;color:var(--muted-2);">Aucune personne dans cette équipe.</span>';
+                    teamUsers.forEach(function (u) {
+                        var checked = cur.indexOf(u.name) !== -1 ? ' checked' : '';
+                        h += '<label><input type="checkbox" data-role="' + role + '" value="' + esc(u.name) + '"' + checked + '> ' + esc(u.name) + '</label>';
+                    });
+                    h += '</div></div>';
+                    return h;
+                }
+                var teamsHtml = '';
+                if (t.showCom)  teamsHtml += teamBlock('com', roleLabel('com'), IM.users.getUsersByRole('com'));
+                if (t.showEbf)  teamsHtml += teamBlock('ebf', roleLabel('ebf'), IM.users.getUsersByRole('ebf'));
+                if (t.showData) teamsHtml += teamBlock('data', roleLabel('data'), IM.users.getUsersByRole('data'));
+
+                var stateHtml = '';
+                if (!t.isGeneral) {
+                    var parts = [];
+                    if (t.needsCom)  parts.push((asArr(assignments.com).length ? '✅' : '⏳') + ' ' + esc(roleLabel('com')) + ' : ' + esc(asArr(assignments.com).join(', ') || 'non assigné'));
+                    if (t.needsEbf)  parts.push((asArr(assignments.ebf).length ? '✅' : '⏳') + ' ' + esc(roleLabel('ebf')) + ' : ' + esc(asArr(assignments.ebf).join(', ') || 'non assigné'));
+                    if (t.needsData) parts.push((asArr(assignments.data).length ? '✅' : '⏳') + ' ' + esc(roleLabel('data')) + ' : ' + esc(asArr(assignments.data).join(', ') || 'non assigné'));
+                    stateHtml = '<div class="pil-affect-state">' + parts.join(' &nbsp;|&nbsp; ') + '</div>';
+                }
+
+                var reqAttr = [t.needsCom ? 'com' : '', t.needsEbf ? 'ebf' : '', t.needsData ? 'data' : ''].filter(Boolean).join(',');
+                var btnLabel = t.isGeneral ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation';
+                return '<div class="pil-affect-card" data-folder="' + esc(c.folderName) + '">'
+                    + '<div class="pil-affect-head"><strong>' + esc(c.id || c.folderName) + '</strong>'
+                    + '<span class="pil-affect-meta">PO : ' + esc(c.po || '—') + (c.launchDate ? ' · Envoi client : ' + frDate(c.launchDate) : '') + '</span></div>'
+                    + stateHtml
+                    + '<div class="pil-affect-teams">' + teamsHtml + '</div>'
+                    + '<button type="button" class="pil-affect-btn" data-general="' + t.isGeneral + '" data-required="' + reqAttr + '">' + btnLabel + '</button>'
+                    + '</div>';
+            }).join('');
+
+            cont.querySelectorAll('.pil-affect-btn').forEach(function (btn, i) {
+                btn.addEventListener('click', function () { submitAffectation(targets[i], btn); });
+            });
+        }
+
+        function submitAffectation(target, btn) {
+            var c = target.campaign;
+            var card = btn.closest('.pil-affect-card');
+            var user = IM.users.getCurrentUser();
+            function collect(role) {
+                return Array.prototype.map.call(card.querySelectorAll('input[data-role="' + role + '"]:checked'), function (cb) { return cb.value; });
+            }
+            IM.workflow.initWorkflow(c);
+            if (target.isGeneral) {
+                var com = target.showCom ? collect('com') : [];
+                var ebf = target.showEbf ? collect('ebf') : [];
+                var dat = target.showData ? collect('data') : [];
+                var missing = (target.needsCom && !com.length) || (target.needsEbf && !ebf.length) || (target.needsData && !dat.length);
+                if (missing) { notifyPil('Sélectionnez au moins une personne pour chaque équipe requise.', 'warning'); return; }
+                if (com.length) c.workflow.assignments.com  = com;
+                if (ebf.length) c.workflow.assignments.ebf  = ebf;
+                if (dat.length) c.workflow.assignments.data = dat;
+                c.workflow.assignments.manager = user.name;
+                IM.workflow.advanceStep(c, 'manager_affectation', 'validated');
+            } else {
+                var role = target.showCom ? 'com' : (target.showEbf ? 'ebf' : 'data');
+                var vals = collect(role);
+                if (!vals.length) { notifyPil('Sélectionnez au moins une personne.', 'warning'); return; }
+                c.workflow.assignments[role] = vals;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Enregistrement…';
+            IM.workflow.saveCampaignWorkflow(state.root, c.folderName, c)
+                .then(function () {
+                    // Après sauvegarde, c reflète la fusion disque (affectations faites
+                    // entre-temps par d'autres managers) : on revalide l'étape si l'équipe
+                    // est maintenant complète, comme le fait details.html.
+                    var a = c.workflow.assignments || {};
+                    var reqArr = [target.needsCom ? 'com' : '', target.needsEbf ? 'ebf' : '', target.needsData ? 'data' : ''].filter(Boolean);
+                    function teamOK(k) { return reqArr.indexOf(k) === -1 || (a[k] && a[k].length); }
+                    var complete = teamOK('com') && teamOK('ebf') && teamOK('data');
+                    var steps = c.workflow.steps || {};
+                    var notValidated = steps.manager_affectation !== 'validated' && steps.manager_affectation !== 'completed';
+                    if (complete && notValidated) {
+                        if (!a.manager) a.manager = user.name;
+                        IM.workflow.advanceStep(c, 'manager_affectation', 'validated');
+                        return IM.workflow.saveCampaignWorkflow(state.root, c.folderName, c).then(function () {
+                            notifyPil('Affectation complète — étape validée ✅', 'success');
+                        });
+                    }
+                    notifyPil(target.isGeneral ? 'Affectation enregistrée.' : 'Affectation enregistrée — en attente des autres équipes.', 'success');
+                })
+                .then(function () {
+                    buildAnalytics();
+                    renderAffectation();
+                    renderRetards();
+                    renderValidations();
+                    renderCharge();
+                    renderKpi();
+                })
+                .catch(function (err) {
+                    btn.disabled = false;
+                    btn.textContent = target.isGeneral ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation';
+                    notifyPil('Erreur : ' + (err && err.message || err), 'error');
+                });
+        }
+        function notifyPil(msg, type) {
+            if (IM.errors && IM.errors.showNotification) IM.errors.showNotification(msg, type);
         }
 
         function wireRowNav(tbody) {
@@ -915,6 +1094,15 @@
                 renderValidations();
                 renderCharge();
                 renderKpi();
+
+                // Page réservée aux responsables d'équipe : retirée du menu pour
+                // tout le monde d'autre (au lieu d'afficher une page vide/bloquée).
+                if (!IM.users.isCurrentUserManager()) {
+                    var affectSection = $('tab-affectation');
+                    if (affectSection) affectSection.remove();
+                } else {
+                    renderAffectation();
+                }
 
                 buildBento();
                 addBackButtons();
