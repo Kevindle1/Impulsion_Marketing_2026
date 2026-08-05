@@ -19,10 +19,26 @@
         }
         .dashboard-container { max-width: 1400px; margin: 0 auto; }
 
-        /* ---- Section ---- */
-        .pil-section { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .pil-section h2 { margin: 0 0 4px; font-size: 1.05rem; font-weight: 800; color: var(--ink); letter-spacing: -0.2px; }
-        .pil-section .pil-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+        /* ── Menu de sections façon « Administration » : page d'accueil en
+           cards (bento) renvoyant vers chaque page de pilotage, chaque page
+           ayant son propre bouton retour vers ce menu. ── */
+        .admin-bento-group + .admin-bento-group { margin-top: 26px; }
+        .admin-bento-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); margin-bottom: 12px; }
+        .admin-bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; }
+        .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.12); transform: translateY(-2px); }
+        .admin-bento-card .admin-bento-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--green-50); }
+        .admin-bento-card .admin-bento-label { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+        .admin-bento-card .admin-bento-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+        .admin-back-btn { display: inline-flex; align-items: center; gap: 7px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 650; cursor: pointer; padding: 6px 2px; margin-bottom: 12px; }
+        .admin-back-btn:hover { color: var(--primary); }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; animation: pilFade .22s ease; }
+        @keyframes pilFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+        .admin-sec-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+        .admin-sec-ic { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 23px; background: var(--green-50); flex-shrink: 0; }
+        .admin-sec-head h2 { margin: 0; font-size: 21px; font-weight: 820; letter-spacing: -.4px; color: var(--ink); }
+        .admin-sec-head p { margin: 3px 0 0; font-size: 13.5px; color: var(--muted); }
 
         /* ---- Filtres ---- */
         .pil-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: var(--line-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
@@ -152,49 +168,64 @@
                     </div>
 
                     <div id="pilotageContent" style="display:none;">
+                        <div class="admin-shell">
+                            <div class="admin-panel" id="admin-panel">
+                                <!-- Page d'accueil du Pilotage : cards façon bento renvoyant vers
+                                     chaque page, générées dynamiquement (buildBento()) à partir des
+                                     en-têtes .admin-sec-head des sections ci-dessous. -->
+                                <section class="admin-section active" id="tab-menu">
+                                    <div id="admin-bento-container"></div>
+                                </section>
 
-                        <!-- ═══ Coms attendues sur une période ═══ -->
-                        <section class="pil-section">
-                            <h2>📅 Coms attendues</h2>
-                            <div class="pil-sub">Toutes les communications prévues sur la période choisie — d'après la date de réception client du livrable (à défaut, la date d'envoi client de la campagne).</div>
+                                <!-- ═══ Coms attendues sur une période ═══ -->
+                                <section class="admin-section" id="tab-coms" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">📅</div>
+                                        <div>
+                                            <h2>Coms attendues</h2>
+                                            <p>Toutes les communications prévues sur la période choisie — d'après la date de réception client du livrable (à défaut, la date d'envoi client de la campagne).</p>
+                                        </div>
+                                    </div>
 
-                            <div class="pil-filters">
-                                <div class="pil-filter">
-                                    <label for="f-du">Du</label>
-                                    <input type="date" id="f-du">
-                                </div>
-                                <div class="pil-filter">
-                                    <label for="f-au">Au</label>
-                                    <input type="date" id="f-au">
-                                </div>
-                                <div class="pil-filter">
-                                    <label for="f-canal">Canal</label>
-                                    <select id="f-canal"><option value="">Tous</option></select>
-                                </div>
-                                <div class="pil-filter">
-                                    <label for="f-type">Type de com</label>
-                                    <select id="f-type"><option value="">Tous</option></select>
-                                </div>
-                                <button type="button" class="pil-reset" id="f-reset">Réinitialiser</button>
-                                <span class="pil-count" id="f-count"></span>
-                            </div>
+                                    <div class="pil-filters">
+                                        <div class="pil-filter">
+                                            <label for="f-du">Du</label>
+                                            <input type="date" id="f-du">
+                                        </div>
+                                        <div class="pil-filter">
+                                            <label for="f-au">Au</label>
+                                            <input type="date" id="f-au">
+                                        </div>
+                                        <div class="pil-filter">
+                                            <label for="f-canal">Canal</label>
+                                            <select id="f-canal"><option value="">Tous</option></select>
+                                        </div>
+                                        <div class="pil-filter">
+                                            <label for="f-type">Type de com</label>
+                                            <select id="f-type"><option value="">Tous</option></select>
+                                        </div>
+                                        <button type="button" class="pil-reset" id="f-reset">Réinitialiser</button>
+                                        <span class="pil-count" id="f-count"></span>
+                                    </div>
 
-                            <div class="pil-table-wrap">
-                                <table class="pil-table" id="pil-table" style="display:none;">
-                                    <thead><tr>
-                                        <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>PO</th>
-                                    </tr></thead>
-                                    <tbody id="pil-tbody"></tbody>
-                                </table>
-                                <div id="pil-empty" class="pil-empty" style="display:none;">
-                                    <div class="big">📭</div>
-                                    Aucune com attendue sur cette période avec ces filtres.
-                                </div>
-                            </div>
-                        </section>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="pil-table" style="display:none;">
+                                            <thead><tr>
+                                                <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>PO</th>
+                                            </tr></thead>
+                                            <tbody id="pil-tbody"></tbody>
+                                        </table>
+                                        <div id="pil-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">📭</div>
+                                            Aucune com attendue sur cette période avec ces filtres.
+                                        </div>
+                                    </div>
+                                </section>
 
-                        <!-- (extensible : d'autres sections de pilotage viendront ici) -->
+                                <!-- (extensible : d'autres pages de pilotage viendront ici) -->
 
+                            </div><!-- /admin-panel -->
+                        </div><!-- /admin-shell -->
                     </div><!-- /pilotageContent -->
                     <div id="errorContainer" style="display:none;"></div>
                 </div><!-- /dashboard-container -->
@@ -439,6 +470,59 @@
             });
         }
 
+        // ─────────────────────────────────────────────────────────
+        // MENU (façon Administration) — page d'accueil en cards, une
+        // section par page de pilotage, groupées par data-group.
+        // ─────────────────────────────────────────────────────────
+        function buildBento() {
+            var cont = $('admin-bento-container');
+            if (!cont) return;
+            var groups = {}, order = [];
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                var g = sec.getAttribute('data-group');
+                if (!groups[g]) { groups[g] = []; order.push(g); }
+                groups[g].push(sec);
+            });
+            var html = '';
+            order.forEach(function (g) {
+                html += '<div class="admin-bento-group"><div class="admin-bento-title">' + esc(g) + '</div><div class="admin-bento-grid">';
+                groups[g].forEach(function (sec) {
+                    var key = sec.id.replace(/^tab-/, '');
+                    var ic = (sec.querySelector('.admin-sec-ic') || {}).textContent || '';
+                    var label = (sec.querySelector('.admin-sec-head h2') || {}).textContent || key;
+                    var desc = (sec.querySelector('.admin-sec-head p') || {}).textContent || '';
+                    html += '<button type="button" class="admin-bento-card" data-tab="' + esc(key) + '">'
+                        + '<span class="admin-bento-ic">' + ic + '</span>'
+                        + '<span class="admin-bento-label">' + esc(label) + '</span>'
+                        + (desc ? '<span class="admin-bento-desc">' + esc(desc) + '</span>' : '')
+                        + '</button>';
+                });
+                html += '</div></div>';
+            });
+            cont.innerHTML = html;
+            cont.querySelectorAll('.admin-bento-card').forEach(function (card) {
+                card.addEventListener('click', function () { activateTab(card.getAttribute('data-tab')); });
+            });
+        }
+        function addBackButtons() {
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                if (sec.querySelector('.admin-back-btn')) return;
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'admin-back-btn';
+                btn.innerHTML = '← Retour au menu';
+                btn.addEventListener('click', function () { activateTab('menu'); });
+                sec.insertBefore(btn, sec.firstChild);
+            });
+        }
+        function activateTab(key) {
+            document.querySelectorAll('.admin-section').forEach(function (s) { s.classList.remove('active'); });
+            var sec = $('tab-' + key);
+            if (sec) sec.classList.add('active');
+            document.querySelector('.content').scrollTop = 0;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function wireFilters() {
             ['f-du', 'f-au', 'f-canal', 'f-type'].forEach(function(id) {
                 $(id).addEventListener('change', render);
@@ -471,6 +555,9 @@
                 populateFilters();
                 wireFilters();
                 render();
+
+                buildBento();
+                addBackButtons();
 
                 $('loadingContainer').style.display = 'none';
                 $('pilotageContent').style.display = 'block';
