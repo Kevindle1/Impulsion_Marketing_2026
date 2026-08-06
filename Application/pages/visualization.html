@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toutes les Campagnes — Interface Impulsion Marketing</title>
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
+    <link rel="stylesheet" href="../css/campaign-card.css">
+    <style>
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="../Impulsion-Marketing.html" class="brand">
+                    <div class="brand-icon" style="font-size:14px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">IM</div>
+                    <div class="brand-text">
+                        <h1>Impulsion</h1>
+                        <span>Marketing</span>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Principal</span>
+                    <a href="../Impulsion-Marketing.html" class="nav-link">
+                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                            <span>Tableau de bord</span>
+                        </a>
+                    <a href="campaign.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        <span>Créer une campagne</span>
+                    </a>
+                    <a href="pilotage.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span>Pilotage</span>
+                    </a>
+                    <a href="visualization.html" class="nav-link active">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3v18h18"/>
+                            <path d="M18 9l-5 5-4-4-4 4"/>
+                        </svg>
+                        <span>Campagnes</span>
+                    </a>
+                    <a href="comite-editorial.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span>Comité Éditorial</span>
+                    </a>
+                    <a href="guide.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                        <span>Guide utilisateur</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-section-title">Externe</span>
+                    <a href="#" class="nav-link" data-gallery target="_blank" rel="noopener">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <path d="M21 15l-5-5L5 21"/>
+                        </svg>
+                        <span>Galerie</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="main-container">
+            <main class="content">
+                <!-- Section de recherche et filtres -->
+        <section class="panel search-section">
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Rechercher : nom, PO, code projet/action/MK, réf com/paracom, URL, segment…" />
+            </div>
+
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label for="filter-ub">Univers de Besoin :</label>
+                    <select id="filter-ub">
+                        <option value="">Tous</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-canal">Canal :</label>
+                    <select id="filter-canal">
+                        <option value="">Tous</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-type">Type :</label>
+                    <select id="filter-type">
+                        <option value="">Tous</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-etat">État :</label>
+                    <select id="filter-etat">
+                        <option value="">Tous</option>
+                        <option value="Affectation">Affectation</option>
+                        <option value="Kick-off">Kick-off</option>
+                        <option value="Maquette">Maquette</option>
+                        <option value="En Fabrication">En Fabrication</option>
+                        <option value="À valider">À valider</option>
+                        <option value="Révision">Révision</option>
+                        <option value="Terminée">Terminée</option>
+                    </select>
+                </div>
+
+                <button id="reset-filters-btn" class="btn secondary small">Réinitialiser</button>
+                <button id="toggle-my-campaigns" class="btn secondary small" title="Afficher uniquement mes campagnes">👤 Mes campagnes</button>
+            </div>
+        </section>
+
+        <!-- Section des résultats -->
+        <section class="panel results-section">
+            <div class="results-header">
+                <h2 id="results-count">Chargement des campagnes...</h2>
+                <div class="sort-controls">
+                    <label for="sort-select">Trier par :</label>
+                    <select id="sort-select">
+                        <option value="date-desc">Plus récentes</option>
+                        <option value="date-asc">Plus anciennes</option>
+                        <option value="name-asc">Nom (A-Z)</option>
+                        <option value="name-desc">Nom (Z-A)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="campaigns-grid" class="campaigns-grid">
+                <p class="loading-text">Chargement des campagnes...</p>
+            </div>
+            <div id="pagination-controls"></div>
+        </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts JavaScript -->
+    <script src="../js/bundle.js"></script>
+    <script>window.ImpulsionMarketing.topbar.mount();</script>
+
+    <script>
+        // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+        (function () {
+            var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+        })();
+    </script>
+
+    <script>
+        // Utiliser les objets globaux
+        var directoryStorage = window.ImpulsionMarketing.directoryStorage;
+        var config = window.ImpulsionMarketing.config;
+        var security = window.ImpulsionMarketing.security;
+        var performance = window.ImpulsionMarketing.performance;
+        var errors = window.ImpulsionMarketing.errors;
+        var help = window.ImpulsionMarketing.help;
+
+        // =====================================================================
+        // CACHE PERSISTANT INDEXEDDB
+        // Survit aux rechargements de page — le 2ème chargement est instantané
+        // =====================================================================
+        var ProgressCache = (function() {
+            var DB = 'ImpulsionProgressCache', STORE = 'status', TTL = 600000; // 10 min
+            var _db = null;
+
+            function open() {
+                if (_db) return Promise.resolve(_db);
+                return new Promise(function(res) {
+                    var r = indexedDB.open(DB, 1);
+                    r.onupgradeneeded = function(e) {
+                        e.target.result.createObjectStore(STORE, { keyPath: 'k' });
+                    };
+                    r.onsuccess = function(e) { _db = e.target.result; res(_db); };
+                    r.onerror = function() { res(null); };
+                });
+            }
+
+            return {
+                // Récupère plusieurs entrées en une seule transaction
+                getMany: function(keys) {
+                    if (!keys.length) return Promise.resolve({});
+                    return open().then(function(db) {
+                        if (!db) return {};
+                        return new Promise(function(res) {
+                            var out = {}, n = keys.length, now = Date.now();
+                            var tx = db.transaction(STORE, 'readonly');
+                            var st = tx.objectStore(STORE);
+                            keys.forEach(function(k) {
+                                var q = st.get(k);
+                                q.onsuccess = function(e) {
+                                    var r = e.target.result;
+                                    if (r && (now - r.ts) < TTL) out[k] = r.d;
+                                    if (!--n) res(out);
+                                };
+                                q.onerror = function() { if (!--n) res(out); };
+                            });
+                        });
+                    }).catch(function() { return {}; });
+                },
+
+                // Enregistre une entrée (silencieux en cas d'erreur)
+                set: function(key, data) {
+                    open().then(function(db) {
+                        if (!db) return;
+                        db.transaction(STORE, 'readwrite')
+                          .objectStore(STORE)
+                          .put({ k: key, d: data, ts: Date.now() });
+                    }).catch(function() {});
+                }
+            };
+        })();
+
+        // =====================================================================
+        // CACHE MÉTADONNÉES INDEXEDDB (campagne.json)
+        // Évite de re-lire les fichiers campagne.json à chaque chargement de page
+        // TTL 5 min — partagé entre toutes les pages via la même base
+        // =====================================================================
+        var MetadataCache = (function() {
+            var DB = 'ImpulsionMetaCache', STORE = 'meta', TTL = 300000; // 5 min
+            var _db = null;
+            function open() {
+                if (_db) return Promise.resolve(_db);
+                return new Promise(function(res) {
+                    var r = indexedDB.open(DB, 1);
+                    r.onupgradeneeded = function(e) { e.target.result.createObjectStore(STORE, { keyPath: 'k' }); };
+                    r.onsuccess = function(e) { _db = e.target.result; res(_db); };
+                    r.onerror = function() { res(null); };
+                });
+            }
+            return {
+                getMany: function(keys) {
+                    if (!keys.length) return Promise.resolve({});
+                    return open().then(function(db) {
+                        if (!db) return {};
+                        return new Promise(function(res) {
+                            var out = {}, n = keys.length, now = Date.now();
+                            var tx = db.transaction(STORE, 'readonly'), st = tx.objectStore(STORE);
+                            keys.forEach(function(k) {
+                                var q = st.get(k);
+                                q.onsuccess = function(e) {
+                                    var r = e.target.result;
+                                    if (r && (now - r.ts) < TTL) out[k] = r.d;
+                                    if (!--n) res(out);
+                                };
+                                q.onerror = function() { if (!--n) res(out); };
+                            });
+                        });
+                    }).catch(function() { return {}; });
+                },
+                set: function(key, data) {
+                    open().then(function(db) {
+                        if (!db) return;
+                        db.transaction(STORE, 'readwrite').objectStore(STORE).put({ k: key, d: data, ts: Date.now() });
+                    }).catch(function() {});
+                }
+            };
+        })();
+
+        // =====================================================================
+        // VARIABLES GLOBALES
+        // =====================================================================
+        var allCampaigns = [];
+        var filteredCampaigns = [];
+        var folderHandles = {};  // Handles filesystem (non-sérialisables, en mémoire seulement)
+        var PAGE_SIZE = 30;
+        var currentPage = 0;
+
+        // ── Filtre « catégorie KPI » (ouvert depuis une carte du tableau de bord) ──
+        // Valeurs possibles dans l'URL ?filter= : encours | aproduire | validation | urgent
+        function urgentDays() { var s = window.ImpulsionMarketing.config.APP_SETTINGS || {}; return (typeof s.urgentThresholdDays === 'number') ? s.urgentThresholdDays : 7; }
+        var KPI_LABELS = {
+            encours:    'Campagnes en cours',
+            aproduire:  'À produire (mon tour)',
+            validation: 'En attente de validation',
+            urgent:     'Échéance < ' + urgentDays() + ' jours'
+        };
+        var kpiFilter = (function() {
+            try {
+                var v = new URLSearchParams(window.location.search).get('filter');
+                return (v && KPI_LABELS[v]) ? v : null;
+            } catch (e) { return null; }
+        })();
+        // Terme de recherche transmis par la barre du haut (?q=) des autres pages.
+        var initialQuery = (function() {
+            try { return (new URLSearchParams(window.location.search).get('q') || '').trim(); } catch (e) { return ''; }
+        })();
+
+        // Réplique du calcul d'échéance du tableau de bord (urgence = J-7 ou dépassé).
+        function computeDelay(launchDate) {
+            if (!launchDate) return null;
+            var today = new Date(); today.setHours(0, 0, 0, 0);
+            var launch = new Date(launchDate); launch.setHours(0, 0, 0, 0);
+            var diff = Math.round((launch - today) / 86400000);
+            return { diff: diff };
+        }
+
+        // Périmètre « mes campagnes » identique au tableau de bord : manager → tout ;
+        // sinon PO ou présent dans une affectation (gère les tableaux de noms).
+        function userInvolved(data) {
+            var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            var currentUser = users && users.getCurrentUser();
+            if (!currentUser) return true;
+            if (currentUser.role === 'manager' || currentUser.isManager) return true;
+            function has(v) { return Array.isArray(v) ? v.indexOf(currentUser.name) !== -1 : v === currentUser.name; }
+            if (data.po === currentUser.name || has(data.coPo)) return true;
+            var a = (data.workflow && data.workflow.assignments) || {};
+            return has(a.com) || has(a.ebf) || has(a.data);
+        }
+
+        // Une campagne appartient-elle à la catégorie KPI demandée ? (mêmes règles que
+        // les compteurs du tableau de bord, restreintes au périmètre de l'utilisateur)
+        function matchesKpiCategory(campaign) {
+            if (!kpiFilter) return true;
+            var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            var data = campaign.data || {};
+            var currentUser = users && users.getCurrentUser();
+            var hasWf = !!(wf && data.workflow);
+            var completed = hasWf ? wf.isCompleted(data) : false;
+            var isActif = data.actif !== false;
+
+            switch (kpiFilter) {
+                case 'aproduire':
+                    // « mon tour » : l'utilisateur a au moins une action disponible (campagne active)
+                    if (!currentUser || !isActif || !hasWf) return false;
+                    return wf.getAvailableActions(currentUser, data).length > 0;
+                case 'encours':
+                    return !completed && userInvolved(data);
+                case 'validation': {
+                    if (!hasWf || completed) return false;
+                    var L = (wf.getCurrentStepLabel(data) || '').toLowerCase();
+                    return /validation|valider/.test(L) && userInvolved(data);
+                }
+                case 'urgent': {
+                    if (!isActif || completed) return false;
+                    var d = computeDelay(data.launchDate);
+                    return d && d.diff <= urgentDays() && userInvolved(data);
+                }
+                default:
+                    return true;
+            }
+        }
+
+        // Affichage initial : si un filtre KPI est actif (ouvert depuis le dashboard),
+        // on passe par le pipeline de filtrage ; sinon on affiche tout.
+        function initialDisplay() {
+            // Pré-remplit la recherche si un terme a été transmis via ?q=
+            var si = document.getElementById('search-input');
+            if (initialQuery && si && !si.value) si.value = initialQuery;
+            if (kpiFilter || (si && si.value)) { currentPage = 0; filterCampaigns(); return; }
+            filteredCampaigns = allCampaigns.slice();
+            sortAndDisplayCampaigns();
+        }
+
+        // Bandeau indiquant le filtre KPI actif, avec bouton pour le retirer.
+        function renderKpiChip() {
+            var existing = document.getElementById('kpi-filter-chip');
+            if (!kpiFilter) { if (existing) existing.remove(); return; }
+            if (!existing) {
+                var row = document.querySelector('.filters-row');
+                existing = document.createElement('div');
+                existing.id = 'kpi-filter-chip';
+                existing.className = 'kpi-chip';
+                if (row && row.parentNode) row.parentNode.insertBefore(existing, row.nextSibling);
+            }
+            existing.innerHTML = '<span>🎯 Filtre : <strong>' + security.escapeHtml(KPI_LABELS[kpiFilter] || '') + '</strong></span>'
+                + '<button type="button" id="kpi-chip-clear" title="Retirer ce filtre" aria-label="Retirer ce filtre">✕ Retirer</button>';
+            var clearBtn = document.getElementById('kpi-chip-clear');
+            if (clearBtn) clearBtn.addEventListener('click', clearKpiFilter);
+        }
+
+        function clearKpiFilter() {
+            kpiFilter = null;
+            try {
+                var url = new URL(window.location.href);
+                url.searchParams.delete('filter');
+                window.history.replaceState({}, '', url.toString());
+            } catch (e) {}
+            renderKpiChip();
+            currentPage = 0;
+            filterCampaigns();
+        }
+
+        // =====================================================================
+        // CALCUL COMPLÉTION (inchangé)
+        // =====================================================================
+        async function calculateCompletionStatus(folderHandle, campaignData) {
+            // Si la campagne a des données workflow, on se base sur les étapes
+            if (campaignData.workflow && campaignData.workflow.steps) {
+                var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+                var allSteps = (wf && wf.STEPS) ? wf.STEPS : [];
+                var steps = campaignData.workflow.steps;
+                var total = allSteps.length;
+
+                if (wf && wf.isCompleted(campaignData)) {
+                    return { completed: total, total: total, percentage: 100, isComplete: true };
+                }
+
+                var submittedToValidation = {
+                    com_maquette:   'po_validation_maquette',
+                    ebf_bat:        'po_validation_bat',
+                    data_ciblage:   'po_validation_ciblage',
+                    data_test_prod: 'po_validation_test_prod'
+                };
+
+                var completed = 0;
+                allSteps.forEach(function(step) {
+                    var status = steps[step.id] || 'locked';
+                    if (status === 'validated' || status === 'completed') {
+                        completed++;
+                    } else if (status === 'submitted') {
+                        var poStep = submittedToValidation[step.id];
+                        if (poStep && (steps[poStep] === 'validated' || steps[poStep] === 'completed')) {
+                            completed++;
+                        }
+                    }
+                });
+
+                var percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+                return { completed: completed, total: total, percentage: percentage, isComplete: false };
+            }
+
+            // Fallback : comptage par fichiers dépôt (campagnes sans workflow)
+            var channels = campaignData.channels || [];
+            if (channels.length === 0) return { completed: 0, total: 0, percentage: 0, isComplete: false };
+
+            var requiredTeams = campaignData.requiredTeams || [];
+            var needsCom  = requiredTeams.length === 0 || requiredTeams.includes('Com');
+            var needsEBF  = requiredTeams.length === 0 || requiredTeams.includes('EBF');
+            var needsData = requiredTeams.length === 0 || requiredTeams.includes('Data');
+
+            var depositsPerChannel = 0;
+            if (needsCom)  depositsPerChannel += 1;
+            if (needsEBF)  depositsPerChannel += 3;
+            if (needsData) depositsPerChannel += 1;
+
+            var completed = 0;
+            var total = channels.length * depositsPerChannel;
+
+            for (var i = 0; i < channels.length; i++) {
+                var channel = channels[i];
+                try {
+                    var channelFolder = await folderHandle.getDirectoryHandle(channel.deliverableName || channel.content);
+                    if (needsCom)  { try { await channelFolder.getFileHandle('depotcom.json');            completed++; } catch(e){} }
+                    if (needsEBF)  {
+                        try { await channelFolder.getFileHandle('depotebf.json');            completed++; } catch(e){}
+                        try { await channelFolder.getFileHandle('depotebf_bat.json');        completed++; } catch(e){}
+                        try { await channelFolder.getFileHandle('depotebf_testenprod.json'); completed++; } catch(e){}
+                    }
+                    if (needsData) { try { await channelFolder.getFileHandle('depotdata.json');           completed++; } catch(e){} }
+                } catch(err) {}
+            }
+
+            var percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+            return { completed: completed, total: total, percentage: percentage, isComplete: completed === total && total > 0 };
+        }
+
+        // =====================================================================
+        // INITIALISATION
+        // =====================================================================
+        window.addEventListener('load', function() {
+            help.initHelp('visualization');
+            // initPage récupère lui-même le dossier ; les filtres sont peuplés depuis
+            // la config en mémoire (surchargée par l'admin si déjà chargée). On ne bloque
+            // pas le chargement de la page sur une vérification de permission disque.
+            initPage();
+        });
+
+        function initPage() {
+            directoryStorage.getRootHandleWithCheck()
+                .then(function(result) {
+                    if (result.status !== 'success') { showError(result.message); return; }
+                    loadAllCampaigns();
+                    setupEventListeners();
+                    renderKpiChip();
+                    populateFilters();   // immédiat, depuis la config hydratée (cache)
+                    // Rafraîchit la config depuis V:// EN ARRIÈRE-PLAN, puis re-remplit les filtres.
+                    var _ac = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig;
+                    if (_ac && _ac.reload) _ac.reload().then(populateFilters).catch(function () {});
+                })
+                .catch(function(error) { showError('Erreur : ' + error.message); });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('search-input').addEventListener('input',
+                performance.debounce(function() { currentPage = 0; filterCampaigns(); }, 300)
+            );
+            document.getElementById('filter-ub').addEventListener('change',    function() { currentPage = 0; filterCampaigns(); });
+            document.getElementById('filter-canal').addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
+            document.getElementById('filter-type').addEventListener('change',  function() { currentPage = 0; filterCampaigns(); });
+            var _etatEl = document.getElementById('filter-etat');
+            if (_etatEl) _etatEl.addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
+            document.getElementById('sort-select').addEventListener('change',  function() { currentPage = 0; sortAndDisplayCampaigns(); });
+            document.getElementById('reset-filters-btn').addEventListener('click', function() {
+                document.getElementById('search-input').value = '';
+                document.getElementById('filter-ub').value = '';
+                document.getElementById('filter-canal').value = '';
+                document.getElementById('filter-type').value = '';
+                if (document.getElementById('filter-etat')) document.getElementById('filter-etat').value = '';
+                if (kpiFilter) {
+                    kpiFilter = null;
+                    try {
+                        var url = new URL(window.location.href);
+                        url.searchParams.delete('filter');
+                        window.history.replaceState({}, '', url.toString());
+                    } catch (e) {}
+                    renderKpiChip();
+                }
+                currentPage = 0;
+                filterCampaigns();
+            });
+            var toggleBtn = document.getElementById('toggle-my-campaigns');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    myViewMode = !myViewMode;
+                    localStorage.setItem('im_view_mode', myViewMode ? 'mine' : 'all');
+                    updateToggleBtn();
+                    currentPage = 0;
+                    filterCampaigns();
+                });
+                updateToggleBtn();
+            }
+        }
+
+        function populateFilters() {
+            // Idempotent : on ne garde que l'option « Tous » puis on (re)remplit depuis la config.
+            function fill(id, items) {
+                var sel = document.getElementById(id);
+                if (!sel) return;
+                var keep = sel.value;
+                var ph = sel.querySelector('option[value=""]');
+                sel.innerHTML = ph ? ph.outerHTML : '<option value="">Tous</option>';
+                (items || []).forEach(function(v) { var o = document.createElement('option'); o.value = v; o.textContent = v; sel.appendChild(o); });
+                if (keep) sel.value = keep;
+            }
+            fill('filter-ub', config.UNIVERS_BESOINS);
+            fill('filter-canal', config.CANAUX);
+            fill('filter-type', config.TYPES_COM);
+        }
+
+        // =====================================================================
+        // CHARGEMENT EN 3 PHASES
+        // Phase 1 : lecture rapide des campagne.json (concurrence x20) → affichage immédiat
+        // Phase 2 : récupération de la progression depuis IndexedDB → mise à jour DOM
+        // Phase 3 : calcul de la progression manquante en arrière-plan → DOM + cache
+        // =====================================================================
+        function loadAllCampaigns() {
+            // Niveau 1 — Cache mémoire : évite les re-lectures lors de navigation aller-retour
+            var memKey = 'campaigns-meta-v2';
+            var mem = performance.Cache.get(memKey);
+            if (mem) {
+                allCampaigns = mem.campaigns;
+                folderHandles = mem.handles;
+                initialDisplay();
+                var needsProgress = allCampaigns.filter(function(c) { return c.completionStatus.percentage === -1; });
+                if (needsProgress.length > 0) loadProgressAsync(needsProgress);
+                return;
+            }
+
+            directoryStorage.getRootHandleWithCheck()
+                .then(function(result) { return result.handle.getDirectoryHandle('Campagnes'); })
+                .then(async function(campaignsFolder) {
+                    // PHASE 1a : énumération du répertoire (pas de lecture fichier)
+                    var entries = [];
+                    for await (var entry of campaignsFolder.values()) {
+                        if (entry.kind === 'directory') entries.push(entry);
+                    }
+
+                    // PHASE 1b : Niveau 2 — MetadataCache IndexedDB (lecture en batch)
+                    var names = entries.map(function(e) { return e.name; });
+                    var cached = await MetadataCache.getMany(names);
+
+                    // PHASE 1c : traitement parallèle ×20
+                    // Cache hit → aucune lecture FS | Cache miss → lecture + mise en cache
+                    var campaigns = await performance.parallelLimit(entries, async function(handle) {
+                        var name = handle.name;
+                        folderHandles[name] = handle;
+
+                        if (cached[name]) {
+                            return {
+                                name: name,
+                                data: cached[name],
+                                lastModified: Date.parse(cached[name].dateInstantiation) || Date.now(),
+                                completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
+                            };
+                        }
+
+                        // Niveau 3 — lecture filesystem
+                        try {
+                            var txt = await (await (await handle.getFileHandle('campagne.json')).getFile()).text();
+                            var data = JSON.parse(txt);
+                            MetadataCache.set(name, data);
+                            return {
+                                name: name,
+                                data: data,
+                                lastModified: Date.parse(data.dateInstantiation) || Date.now(),
+                                completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
+                            };
+                        } catch(e) {
+                            return { name: name, data: {}, lastModified: Date.now(),
+                                     completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false } };
+                        }
+                    }, 20);
+
+                    campaigns = campaigns.filter(function(c) { return c !== null; });
+                    performance.Cache.set(memKey, { campaigns: campaigns, handles: folderHandles }, 300000);
+                    allCampaigns = campaigns;
+                    initialDisplay();
+                    loadProgressAsync(campaigns);
+                })
+                .catch(function(error) {
+                    errors.handleError(error, 'Chargement des campagnes', { showToUser: true });
+                });
+        }
+
+        // Phase 2 : IndexedDB → DOM | Phase 3 : calcul manquant en arrière-plan
+        function loadProgressAsync(campaigns) {
+            var names = campaigns.map(function(c) { return c.name; });
+            ProgressCache.getMany(names).then(function(cached) {
+                var needsCompute = [];
+                campaigns.forEach(function(c) {
+                    if (cached[c.name]) {
+                        // Donnée en cache → mise à jour instantanée
+                        c.completionStatus = cached[c.name];
+                        updateCardProgress(c.name, cached[c.name]);
+                    } else {
+                        needsCompute.push(c);
+                    }
+                });
+                if (needsCompute.length > 0) {
+                    computeProgressInBackground(needsCompute);
+                }
+            });
+        }
+
+        // Phase 3 : calcule par lots de 5, cède le thread entre chaque lot
+        function computeProgressInBackground(campaigns) {
+            var BATCH = 5, i = 0;
+            function next() {
+                if (i >= campaigns.length) return;
+                var batch = campaigns.slice(i, i + BATCH);
+                i += BATCH;
+                Promise.all(batch.map(function(c) {
+                    var handle = folderHandles[c.name];
+                    if (!handle) return Promise.resolve();
+                    return calculateCompletionStatus(handle, c.data)
+                        .then(function(status) {
+                            c.completionStatus = status;
+                            ProgressCache.set(c.name, status);   // Mise en cache persistante
+                            updateCardProgress(c.name, status);  // Mise à jour DOM si la carte est visible
+                        })
+                        .catch(function(err) {
+                            // Calcul du badge de progression : échec non bloquant (cosmétique).
+                            console.debug('Statut de progression indisponible pour', c.name, ':', err && err.message);
+                        });
+                })).then(function() {
+                    setTimeout(next, 0); // Cède le thread UI entre chaque lot
+                });
+            }
+            next();
+        }
+
+        // Met à jour la barre de progression d'une carte spécifique sans re-render
+        function updateCardProgress(name, status) {
+            var card = document.querySelector('[data-name="' + encodeURIComponent(name) + '"]');
+            if (!card) return; // Carte hors de la page courante, pas grave
+            var fill = card.querySelector('.cc-chbar i');
+            var text = card.querySelector('.cc-chstat');
+            if (fill) { fill.classList.remove('progress-loading-anim'); fill.style.width = status.percentage + '%'; }
+            if (text) text.textContent = status.completed + '/' + status.total;
+        }
+
+        // =====================================================================
+        // FILTRES & TRI
+        // =====================================================================
+        var myViewMode = localStorage.getItem('im_view_mode') === 'mine';
+
+        function updateToggleBtn() {
+            var btn = document.getElementById('toggle-my-campaigns');
+            if (!btn) return;
+            var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            var currentUser = users && users.getCurrentUser();
+            if (myViewMode && currentUser) {
+                btn.textContent = '🌐 Toutes les campagnes';
+                btn.classList.add('active');
+            } else {
+                btn.textContent = '👤 Mes campagnes';
+                btn.classList.remove('active');
+            }
+        }
+
+        function matchesCurrentUser(campaign) {
+            var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            if (!users) return true;
+            var currentUser = users.getCurrentUser();
+            if (!currentUser) return true;
+            var data = campaign.data;
+            // Manager / responsable de service voit tout
+            if (currentUser.role === 'manager' || currentUser.isManager) return true;
+            // PO ou co-PO : correspond au champ po / coPo
+            if (data.po === currentUser.name) return true;
+            if (Array.isArray(data.coPo) && data.coPo.indexOf(currentUser.name) !== -1) return true;
+            // Équipes : correspond à l'assignation workflow
+            if (data.workflow && data.workflow.assignments) {
+                var a = data.workflow.assignments;
+                if (currentUser.role === 'com'  && a.com  === currentUser.name) return true;
+                if (currentUser.role === 'ebf'  && a.ebf  === currentUser.name) return true;
+                if (currentUser.role === 'data' && a.data === currentUser.name) return true;
+            }
+            return false;
+        }
+
+        function filterCampaigns() {
+            var searchTerm  = document.getElementById('search-input').value.toLowerCase();
+            var ubFilter    = document.getElementById('filter-ub').value;
+            var canalFilter = document.getElementById('filter-canal').value;
+            var typeFilter  = document.getElementById('filter-type').value;
+            var etatFilter  = (document.getElementById('filter-etat') || {}).value || '';
+
+            var wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var terms = searchTerm.split(/\s+/).filter(Boolean);
+
+            filteredCampaigns = allCampaigns.filter(function(campaign) {
+                // Recherche complète : on cherche dans un « blob » agrégé (nom, PO, description,
+                // marché, typologie, segments, univers, produits, campagne liée + par canal :
+                // libellé, contenu, objet, type, ciblage, codes Projet/Action/MK/Com, réf
+                // Paracom, URLs…). Calculé une fois par campagne puis mémorisé.
+                var matchesSearch = true;
+                if (terms.length) {
+                    if (!campaign._blob) {
+                        var blob = (wfMod && wfMod.buildSearchBlob) ? wfMod.buildSearchBlob(campaign.data || {}) : '';
+                        campaign._blob = (blob + ' ' + (campaign.name || '') + ' ' + (campaign.data && campaign.data.productUrl || '')).toLowerCase();
+                    }
+                    matchesSearch = terms.every(function(t) { return campaign._blob.indexOf(t) !== -1; });
+                }
+
+                var matchesUB = !ubFilter || (campaign.data.ubs && campaign.data.ubs.includes(ubFilter));
+
+                var matchesCanal = !canalFilter;
+                if (canalFilter && campaign.data.channels) {
+                    matchesCanal = campaign.data.channels.some(function(ch) {
+                        return ch.deliverableName === canalFilter || ch.content === canalFilter;
+                    });
+                }
+
+                var matchesType = !typeFilter;
+                if (typeFilter && campaign.data.channels) {
+                    matchesType = campaign.data.channels.some(function(ch) { return ch.comType === typeFilter; });
+                }
+
+                var matchesUser = !myViewMode || matchesCurrentUser(campaign);
+
+                var matchesKpi = matchesKpiCategory(campaign);
+
+                var matchesEtat = !etatFilter || (vcStatus(campaign.data, wfMod).text === etatFilter);
+
+                return matchesSearch && matchesUB && matchesCanal && matchesType && matchesUser && matchesKpi && matchesEtat;
+            });
+
+            currentPage = 0;
+            sortAndDisplayCampaigns();
+        }
+
+        function sortAndDisplayCampaigns() {
+            var sortBy = document.getElementById('sort-select').value;
+            filteredCampaigns.sort(function(a, b) {
+                switch(sortBy) {
+                    case 'date-desc': return b.lastModified - a.lastModified;
+                    case 'date-asc':  return a.lastModified - b.lastModified;
+                    case 'name-asc':  return a.name.localeCompare(b.name);
+                    case 'name-desc': return b.name.localeCompare(a.name);
+                    default: return 0;
+                }
+            });
+            displayCampaigns();
+        }
+
+        // =====================================================================
+        // AFFICHAGE AVEC PAGINATION
+        // =====================================================================
+        // ── Helpers cartes riches ──
+        var VC_ROLE = window.ImpulsionMarketing.config.ROLE_COLORS || {};
+        function vcInitials(n){ return n.trim().split(/\s+/).map(function(p){return p[0];}).join('').toUpperCase().slice(0,2); }
+        // Vignette = type de com AGRÉGÉ sur tous les livrables — si les canaux diffèrent,
+        // on affiche le plus « prioritaire ». Priorité + couleur dérivées de la position
+        // dans IM.config.TYPES_COM (piloté par _config.json / Administration) — aucun nom
+        // de catégorie codé en dur. Dernier élément de la liste = priorité la plus haute.
+        var VC_CT_PALETTE = ['ct-com', 'ct-ges', 'ct-reg', 'ct-pal3', 'ct-pal4', 'ct-pal5'];
+        function vcComTypeWeight(ct){ var types = window.ImpulsionMarketing.config.TYPES_COM || []; return types.indexOf(ct); }
+        function vcChannel(data){ var chs=data.channels||[]; var bestCt=null, bestW=-1;
+            chs.forEach(function(ch){ var w=vcComTypeWeight(ch&&ch.comType); if(w>bestW){bestW=w;bestCt=ch&&ch.comType;} });
+            var types = window.ImpulsionMarketing.config.TYPES_COM || [];
+            var idx = types.indexOf(bestCt);
+            if (idx === -1) return { cls: 'ct-none', label: '—', title: 'Type de com non défini' };
+            return { cls: VC_CT_PALETTE[idx % VC_CT_PALETTE.length], label: String(bestCt).trim(), title: bestCt }; }
+        function vcStatus(data,wf){ var label=(wf&&data.workflow)?((wf.getCurrentStepLabel(data)||'').trim()):''; if(wf&&data.workflow&&wf.isCompleted(data))return{label:'Terminée',text:'Terminée',key:'done',pct:100};
+            var L=label.toLowerCase(); var pct=50,key='prod',text=label||'En cours';
+            if(/affect/.test(L)){pct=10;key='maq';text='Affectation';} else if(/kick/.test(L)){pct=18;key='maq';text='Kick-off';}
+            else if(/révision|revision/.test(L)){pct=35;key='urgent';text='Révision';} else if(/validation|valider/.test(L)){pct=55;key='valid';text='À valider';}
+            else if(/maquette/.test(L)){pct=28;key='maq';text='Maquette';} else if(/ciblage|bat|test|mise en prod|mep/.test(L)){pct=70;key='prod';text='En Fabrication';}
+            return{label:label,text:text,key:key,pct:pct}; }
+        function vcAvatars(data){ var seen={},people=[]; function add(n,r){ if(!n||seen[n])return; seen[n]=1; people.push({name:n,role:r}); }
+            add(data.po,'po'); var asn=(data.workflow&&data.workflow.assignments)||{}; ['com','ebf','data'].forEach(function(r){ var v=asn[r]; if(Array.isArray(v))v.forEach(function(x){add(x,r);}); else add(v,r); });
+            var h=''; people.slice(0,3).forEach(function(p){ h+='<span class="av" style="background:'+(VC_ROLE[p.role]||'#64748b')+'" title="'+security.escapeHtml(p.name)+'">'+security.escapeHtml(vcInitials(p.name))+'</span>'; });
+            var more=people.length-3; if(more>0)h+='<span class="av" style="background:#94a3b8">+'+more+'</span>'; return h; }
+
+        function displayCampaigns() {
+            var grid    = document.getElementById('campaigns-grid');
+            var countEl = document.getElementById('results-count');
+            var total   = filteredCampaigns.length;
+
+            countEl.textContent = total + ' campagne(s) trouvée(s)';
+
+            if (total === 0) {
+                grid.innerHTML = '<p class="empty-text">Aucune campagne trouvée</p>';
+                renderPagination(0, 0);
+                return;
+            }
+
+            var totalPages = Math.ceil(total / PAGE_SIZE);
+            if (currentPage >= totalPages) currentPage = 0;
+
+            var start     = currentPage * PAGE_SIZE;
+            var paginated = filteredCampaigns.slice(start, start + PAGE_SIZE);
+
+            var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var html = performance.buildHtml(paginated, function(campaign) {
+                var data        = campaign.data || {};
+                var name        = campaign.name;
+                var dateStr     = new Date(campaign.lastModified).toLocaleDateString('fr-FR');
+                var detailsUrl  = 'details.html?name=' + encodeURIComponent(name);
+                var encodedName = encodeURIComponent(name);
+                var completion  = campaign.completionStatus || { percentage: -1, completed: 0, total: 0 };
+                var isLoading   = completion.percentage === -1;
+
+                var st    = vcStatus(data, wf);
+                var chan  = vcChannel(data);
+                var pct   = (completion.percentage >= 0) ? completion.percentage : st.pct;
+                var pctTxt = isLoading ? '…' : (completion.percentage >= 0 ? completion.completed + '/' + completion.total : Math.round(pct) + '%');
+                var launchTxt = data.launchDate ? new Date(data.launchDate).toLocaleDateString('fr-FR') : '—';
+
+                var p = [];
+                p.push('<a href="' + detailsUrl + '" class="cc-flip ' + chan.cls + '" data-name="' + encodedName + '">');
+                p.push('  <div class="cc-flip-inner">');
+                // Recto
+                p.push('    <div class="cc-face cc-face--front">');
+                p.push('      <span class="cc-badge cc-badge--type" title="' + security.escapeHtml(chan.title || '') + '">' + security.escapeHtml(chan.label) + '</span>');
+                p.push('      <span class="cc-badge cc-badge--step">' + security.escapeHtml(st.text) + '</span>');
+                p.push('      <div class="cc-front-body"><h3>' + security.escapeHtml(name) + '</h3>');
+                p.push('        <div class="cc-front-date">📅 ' + dateStr + '</div></div>');
+                p.push('      <div class="cc-foot"><div class="cc-avs">' + vcAvatars(data) + '</div></div>');
+                p.push('    </div>');
+                // Verso : en-tête (contexte) + barre de progression + timeline (dernière MAJ / date d'envoi)
+                p.push('    <div class="cc-face cc-face--back">');
+                p.push('      <div class="cc-back-head"><span class="cc-back-name">' + security.escapeHtml(name) + '</span></div>');
+                p.push('      <div class="cc-back-body">');
+                p.push('        <div class="cc-back-main"><div class="cc-back-section-label">Progression</div><div class="cc-chrow"><div class="cc-chtop"><span class="cc-chname">' + security.escapeHtml(st.label || st.text) + '</span><span class="cc-chstat k-' + st.key + '">' + pctTxt + '</span></div>');
+                p.push('        <div class="cc-chbar"><i class="k-' + st.key + (isLoading ? ' progress-loading-anim' : '') + '" style="width:' + (isLoading ? 0 : pct) + '%"></i></div></div></div>');
+                p.push('        <div class="cc-timeline"><div class="cc-back-section-label">Dates clés</div>');
+                p.push('          <div class="cc-tl-point"><span class="cc-tl-label">MAJ</span>' + dateStr + '</div>');
+                p.push('          <div class="cc-tl-point"><span class="cc-tl-label">Envoi</span>' + launchTxt + '</div>');
+                p.push('        </div>');
+                p.push('      </div>');
+                p.push('    </div>');
+                p.push('  </div>');
+                p.push('</a>');
+                return p.join('');
+            });
+
+            grid.innerHTML = html;
+            renderPagination(currentPage, totalPages);
+        }
+
+        // =====================================================================
+        // PAGINATION
+        // =====================================================================
+        function renderPagination(page, totalPages) {
+            var container = document.getElementById('pagination-controls');
+            if (!container) return;
+            if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+            var parts = ['<div class="pagination">'];
+
+            // Bouton précédent
+            parts.push('<button class="pg-btn" onclick="goToPage(' + Math.max(0, page - 1) + ')"' +
+                       (page === 0 ? ' disabled' : '') + '>← Préc.</button>');
+
+            // Pages numérotées (fenêtre glissante ± 2)
+            var s = Math.max(0, page - 2);
+            var e = Math.min(totalPages - 1, page + 2);
+
+            if (s > 0) {
+                parts.push('<button class="pg-btn" onclick="goToPage(0)">1</button>');
+                if (s > 1) parts.push('<span class="pg-ellipsis">…</span>');
+            }
+            for (var i = s; i <= e; i++) {
+                parts.push('<button class="pg-btn' + (i === page ? ' pg-active' : '') + '" onclick="goToPage(' + i + ')">' + (i + 1) + '</button>');
+            }
+            if (e < totalPages - 1) {
+                if (e < totalPages - 2) parts.push('<span class="pg-ellipsis">…</span>');
+                parts.push('<button class="pg-btn" onclick="goToPage(' + (totalPages - 1) + ')">' + totalPages + '</button>');
+            }
+
+            // Bouton suivant
+            parts.push('<button class="pg-btn" onclick="goToPage(' + Math.min(totalPages - 1, page + 1) + ')"' +
+                       (page >= totalPages - 1 ? ' disabled' : '') + '>Suiv. →</button>');
+
+            parts.push('<span class="pg-info">Page ' + (page + 1) + ' / ' + totalPages + '</span>');
+            parts.push('</div>');
+
+            container.innerHTML = parts.join('');
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            displayCampaigns();
+            document.querySelector('.results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function showError(message) {
+            var grid = document.getElementById('campaigns-grid');
+            errors.showErrorInContainer(grid, message, {
+                showHomeButton: true,
+                homeUrl: '../login.html'
+            });
+        }
+    </script>
+
+    <style>
+        /* Styles spécifiques à la page - Header et body gérés par dashboard-layout.css */
+
+        /* Section de recherche */
+        .search-section {
+            margin-top: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            border: 1px solid var(--line);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .search-bar {
+            margin-bottom: 20px;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 16px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+        }
+
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(48, 130, 118, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .filters-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        /* Bandeau « filtre KPI actif » (ouvert depuis le tableau de bord) */
+        .kpi-chip {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+            padding: 10px 16px;
+            background: var(--green-50, #e9f7f0);
+            border: 1px solid var(--primary, #00875A);
+            border-radius: 999px;
+            font-size: 14px;
+            color: var(--ink);
+            width: fit-content;
+        }
+        .kpi-chip strong { color: var(--primary, #00875A); }
+        .kpi-chip button {
+            border: none;
+            background: var(--primary, #00875A);
+            color: #fff;
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background .2s ease;
+        }
+        .kpi-chip button:hover { background: var(--primary-hover, #00734C); }
+
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select {
+            padding: 10px 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            color: var(--ink);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .filter-group select:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(48, 130, 118, 0.1);
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(48, 130, 118, 0.1);
+        }
+
+        /* Section des résultats */
+        .results-section {
+            margin-top: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            border: 1px solid var(--line);
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--line);
+        }
+
+        .results-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ink);
+        }
+
+        .sort-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .sort-controls label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gray-700);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sort-controls select {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sort-controls select:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(48, 130, 118, 0.1);
+        }
+
+        /* Grille des campagnes */
+        .campaigns-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .campaign-card-link {
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .campaign-card {
+            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .campaign-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%);
+            transform: scaleY(0);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .campaign-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, rgba(48, 130, 118, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(30%, -30%);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .campaign-card-link:hover .campaign-card::before {
+            transform: scaleY(1);
+        }
+
+        .campaign-card-link:hover .campaign-card::after {
+            transform: translate(30%, -30%) scale(1.5);
+            opacity: 0.8;
+        }
+
+        .campaign-card-link:hover .campaign-card {
+            border-color: var(--primary);
+            box-shadow: 0 12px 32px rgba(48, 130, 118, 0.15);
+            transform: translateY(-6px) scale(1.01);
+        }
+
+        .campaign-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .campaign-title-group {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .campaign-name {
+            margin: 0 0 6px 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        .campaign-card-link:hover .campaign-name {
+            color: var(--primary);
+        }
+
+        .campaign-subtitle {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .campaign-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .meta-tag {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ub-tag {
+            background: linear-gradient(135deg, var(--blue-50) 0%, var(--blue-50) 100%);
+            color: var(--blue);
+            border: 1px solid var(--blue-50);
+        }
+
+        .type-tag {
+            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            color: var(--violet);
+            border: 1px solid var(--violet);
+        }
+
+        .campaign-card-link:hover .meta-tag {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .campaign-canaux {
+            margin-bottom: 12px;
+            font-size: 13px;
+            color: var(--muted);
+            position: relative;
+            z-index: 1;
+        }
+
+        .campaign-canaux strong {
+            color: var(--ink);
+            font-weight: 600;
+        }
+
+        .more-count {
+            font-weight: 700;
+            color: var(--primary);
+            background: rgba(48, 130, 118, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .campaign-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 12px;
+            border-top: 1px solid var(--line);
+            position: relative;
+            z-index: 1;
+        }
+
+        .campaign-date {
+            font-size: 13px;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        /* Barre de progression */
+        .campaign-progress {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-bar-inline {
+            flex: 1;
+            height: 8px;
+            background: var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            min-width: 90px;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-fill-inline {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-hover) 100%);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(48, 130, 118, 0.3);
+        }
+
+        .progress-text {
+            font-size: 0.75rem;
+            color: var(--muted);
+            white-space: nowrap;
+            font-weight: 600;
+        }
+
+        /* Messages */
+        .loading-text {
+            text-align: center;
+            padding: 60px 32px;
+            color: var(--muted);
+            font-style: italic;
+            font-size: 16px;
+        }
+
+        .empty-text {
+            text-align: center;
+            padding: 60px 32px;
+            color: var(--muted);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 60px 32px;
+        }
+
+        .error-text {
+            color: var(--red);
+            margin-bottom: 24px;
+            font-weight: 600;
+        }
+
+        /* === Animation de chargement de la progression === */
+        @keyframes progressPulse {
+            0%   { width: 10%; opacity: 0.3; }
+            50%  { width: 55%; opacity: 0.7; }
+            100% { width: 10%; opacity: 0.3; }
+        }
+        .progress-loading-anim {
+            animation: progressPulse 1.6s ease-in-out infinite;
+            background: linear-gradient(90deg, var(--line) 0%, var(--muted-2) 50%, var(--line) 100%);
+        }
+
+        /* === Pagination === */
+        #pagination-controls {
+            margin-top: 8px;
+        }
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            padding: 20px 0 4px;
+            border-top: 1px solid var(--line);
+        }
+        .pg-btn {
+            padding: 7px 13px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #ffffff;
+            color: var(--ink);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+        .pg-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(48, 130, 118, 0.06);
+        }
+        .pg-btn.pg-active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: #ffffff;
+            border-color: var(--primary-hover);
+            box-shadow: 0 2px 8px rgba(48, 130, 118, 0.3);
+        }
+        .pg-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .pg-ellipsis {
+            color: var(--muted);
+            font-weight: 600;
+            padding: 0 2px;
+            user-select: none;
+        }
+        .pg-info {
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 500;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+
+        /* ── Cartes de campagne riches : voir css/campaign-card.css (partagé avec
+           le Tableau de bord) pour les styles .cc-flip / .cc-face / etc. ── */
+        #campaigns-grid.campaigns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+    </style>
+</body>
+</html>

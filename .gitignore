@@ -1,0 +1,34 @@
+# Dépendances / artefacts Node
+node_modules/
+dist/
+*.log
+npm-debug.log*
+
+# Artefacts des tests de fumée Playwright (npm run test:e2e)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Secrets / configuration locale
+.env
+.env.*
+!.env.example
+
+# Fichiers de données bureautiques (lourds, non sources — vivent sur V://)
+*.xlsm
+*.xlsx
+*.xls
+# Exception : on autorise les fichiers .xlsx d'exemple/structure placés dans docs/
+# (ex. le fichier de suivi hebdomadaire « Suivi MDC-MKD_12mois_*.xlsx »).
+!docs/*.xlsx
+
+# Système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+*.swp
+*~
+.idea/

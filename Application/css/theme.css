@@ -1,0 +1,115 @@
+/**
+ * Design System — Impulsion Marketing 2026
+ * DA Crédit Agricole : vert signature + accent rouge, look moderne.
+ * Source unique des tokens (couleurs, rayons, ombres, typographie).
+ */
+
+:root {
+  /* ── Texte & lignes ── */
+  --ink: #0c1a14;                 /* Texte principal (vert-noir) */
+  --muted: #56655e;              /* Texte secondaire */
+  --muted-2: #8b988f;           /* Texte tertiaire / placeholders */
+  --line: #eaefec;              /* Bordures neutres */
+  --line-2: #f0f4f1;            /* Bordure très claire / fonds subtils */
+
+  /* ── Vert Crédit Agricole (primaire) ── */
+  --primary: #00875A;
+  --primary-hover: #00734C;
+  --primary-light: #e8f6ef;
+  --primary-rgb: 0, 135, 90;
+  --green-50: #e8f6ef;
+  --green-100: #ccebdd;
+  --green-600: #00734C;
+  --green-700: #005C3D;
+
+  /* ── Accents ── */
+  --red: #E2001A;               /* Rouge CA — urgence / destructif (usage parcimonieux) */
+  --red-50: #fdeaec;
+  --amber: #E8A100;             /* À valider / attention */
+  --amber-50: #fdf3e2;
+  --blue: #2563EB;              /* Canal mail / info */
+  --blue-50: #e8f0fe;
+  --violet: #7C3AED;            /* Canal push */
+
+  /* ── Fonds ── */
+  --bg: #f4f7f5;                 /* Fond applicatif */
+  --bg-card: #ffffff;            /* Cartes / surfaces */
+  --bg-header: #ffffff;          /* En-tête */
+  --accent: #e8f6ef;             /* Accent vert ultra-clair */
+
+  /* ── Dégradés ── */
+  --gradient: linear-gradient(135deg, #12C386 0%, #00734C 100%);            /* marque / boutons */
+  --gradient-hero: linear-gradient(120deg, #00734C 0%, #00875A 55%, #0FA56E 100%); /* bandeau accueil */
+  --gold: #E8A100;
+  --bg-image: none;
+
+  /* ── Rayons & espacements ── */
+  --gap: 24px;
+  --radius: 16px;
+  --radius-sm: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* ── Sidebar (claire) ── */
+  --sidebar-bg: #ffffff;
+  --sidebar-line: #eaefec;
+  --sidebar-text: #56655e;
+  --sidebar-text-hover: #0c1a14;
+  --sidebar-active-bg: #e8f6ef;
+  --sidebar-active-text: #00734C;
+
+  /* ── Ombres (douces, teintées vert) ── */
+  --shadow-xs:    0 1px 2px rgba(12, 30, 22, 0.05);
+  --shadow:       0 1px 2px rgba(12, 30, 22, 0.05);
+  --shadow-md:    0 2px 4px rgba(12, 30, 22, 0.04), 0 8px 20px rgba(12, 30, 22, 0.06);
+  --shadow-hover: 0 2px 4px rgba(12, 30, 22, 0.04), 0 12px 28px rgba(12, 30, 22, 0.08);
+  --shadow-lg:    0 18px 40px rgba(12, 30, 22, 0.10);
+
+  /* ── Gris neutres (utilisés par le CSS inline des pages) ── */
+  --gray-50:  #f6f8f7;
+  --gray-100: #f0f4f1;
+  --gray-200: #eaefec;
+  --gray-300: #d6ddd8;
+  --gray-400: #9aa8a0;
+  --gray-500: #56655e;
+  --gray-600: #44524b;
+  --gray-700: #33403a;
+  --gray-800: #1d2a24;
+  --gray-900: #0c1a14;
+  --gray-light: #f6f8f7;
+  --gray-medium: #eaefec;
+  --gray-medium-light: #eaefec;
+  --gray-medium-light-rgb: 234, 239, 236;
+  --gray-dark: #33403a;
+  --gray-darker: #0c1a14;
+  --gray-text: #56655e;
+  --gray-text-light: #8b988f;
+  --gray-muted: #56655e;
+  --gray-muted-light: #44524b;
+
+  /* ── Ombres spécifiques (compat composants existants) ── */
+  --shadow-modal:        0 25px 50px -12px rgba(12, 30, 22, 0.18);
+  --shadow-detail:       0 1px 2px rgba(12, 30, 22, 0.06);
+  --shadow-detail-hover: 0 12px 28px rgba(12, 30, 22, 0.08);
+  --shadow-channel:      0 1px 2px rgba(12, 30, 22, 0.05);
+  --shadow-channel-hover:0 12px 28px rgba(12, 30, 22, 0.10);
+  --shadow-image:        0 4px 12px rgba(12, 30, 22, 0.08);
+  --shadow-image-hover:  0 12px 28px rgba(12, 30, 22, 0.14);
+}
+
+/**
+ * Fond applicatif
+ */
+body {
+  background-color: var(--bg);
+  background-image: var(--bg-image);
+}
+
+/**
+ * Transitions ciblées (éviter le * global pour la performance)
+ */
+a, button, .btn, .btn-primary, .btn-secondary, .nav-link, .card,
+input, textarea, select, .badge, .status-badge {
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+              color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}

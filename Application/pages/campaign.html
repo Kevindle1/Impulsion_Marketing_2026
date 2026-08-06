@@ -1,0 +1,3181 @@
+<!DOCTYPE html>
+<!-- Interface de saisie pour créer une campagne -->
+<html lang="fr">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Interface de saisie — Historique des Campagnes</title>
+
+        <!-- Styles CSS partagés -->
+        <link rel="stylesheet" href="../css/theme.css">
+        <link rel="stylesheet" href="../css/components.css">
+        <link rel="stylesheet" href="../css/dashboard-layout.css">
+        <link rel="stylesheet" href="../css/topbar.css">
+
+        <!-- Styles CSS pour l'application -->
+        <style>
+          /* Reset et base */
+          * {
+            box-sizing: border-box;
+          }
+
+          body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+          }
+
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            color: var(--ink);
+            background: var(--line-2);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+          }
+
+          /* Header styles now handled by dashboard-layout.css */
+
+          h2 {
+            margin: 0 0 16px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--ink);
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.875rem;
+          }
+
+          h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin: 0 0 8px 0;
+          }
+
+          .row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+          }
+
+          .hint {
+            color: var(--muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+          }
+
+          /* Boutons */
+          .btn {
+            border: none;
+            background: transparent;
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-weight: 600;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--gray-700);
+          }
+
+          .btn:hover {
+            background: var(--line-2);
+            border-color: var(--muted-2);
+          }
+
+          .btn.primary {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+            padding: 8px 16px;
+          }
+
+          .btn.primary:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+          }
+
+          .btn.secondary {
+            background: var(--muted);
+            color: #fff;
+            border-color: var(--muted);
+          }
+
+          .btn.secondary:hover {
+            background: var(--muted);
+            border-color: var(--muted);
+          }
+
+          .btn.success {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+          }
+
+          .btn.success:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+          }
+
+          /* Panel */
+          .panel {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            padding: 24px;
+            margin-top: 24px;
+          }
+
+          /* Formulaire */
+          .form-group {
+            margin-bottom: 16px;
+          }
+
+          .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            color: var(--gray-700);
+            font-size: 0.875rem;
+          }
+
+          .form-group input,
+          .form-group textarea,
+          .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            font-size: 0.875rem;
+            transition: border-color 0.15s;
+            box-sizing: border-box;
+            font-family: inherit;
+            background: #ffffff;
+            color: var(--ink);
+          }
+
+          .form-group input:focus,
+          .form-group textarea:focus,
+          .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+          }
+
+          .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+          }
+
+          /* Radio et checkbox */
+          .radio-group {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+          }
+
+          .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+          }
+
+          .radio-group input[type="radio"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+          }
+
+          .checkbox-group {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+          }
+
+          .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+          }
+
+          .checkbox-group input[type="checkbox"] {
+            margin: 0;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+          }
+
+          /* Dynamic fields (canaux) */
+          .dynamic-fields {
+            margin-top: 16px;
+          }
+
+          .dynamic-fields > .form-group {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--primary);
+            border-radius: 3px;
+            padding: 20px;
+            margin-bottom: 16px;
+            position: relative;
+          }
+
+          .dynamic-fields .form-group .form-group {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+            margin-bottom: 12px;
+          }
+
+          /* Champs conditionnels */
+          .conditional-field {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--line-2);
+            border-radius: 3px;
+            border: 1px dashed var(--primary);
+          }
+
+          .conditional-field label {
+            color: var(--primary);
+            font-weight: 600;
+          }
+
+          /* Sous-titre pour les canaux */
+          .dynamic-fields h4 {
+            margin: -20px -20px 16px -20px;
+            padding: 12px 20px;
+            background: var(--line-2);
+            border-bottom: 1px solid var(--line);
+            color: var(--ink);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          /* Loader */
+          .loader {
+            display: none;
+            text-align: center;
+            padding: 32px 20px;
+            background: #ffffff;
+            border-radius: 3px;
+            border: 1px solid var(--line);
+            margin: 20px auto;
+            max-width: 300px;
+          }
+
+          .spinner {
+            border: 3px solid var(--line);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+          }
+
+          .loader-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--muted);
+          }
+
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+
+          /* Stepper */
+          .stepper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            position: relative;
+            padding: 0;
+          }
+
+          .stepper::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--line);
+            z-index: 0;
+          }
+
+          /* Barre de progression */
+          .progress-container {
+            margin: 0 0 32px 0;
+          }
+
+          .progress-bar-wrapper {
+            height: 12px;
+            background: var(--line);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+            margin-bottom: 8px;
+          }
+
+          .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary) 0%, #245f56 100%);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(48, 130, 118, 0.3);
+            border-radius: 10px;
+          }
+
+          .progress-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--muted);
+            font-weight: 600;
+          }
+
+          .step {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+          }
+
+          .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--muted);
+            transition: all 0.2s;
+            margin-bottom: 8px;
+          }
+
+          .step-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-align: center;
+            transition: color 0.2s;
+            max-width: 100px;
+          }
+
+          .step.active .step-circle {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+          }
+
+          .step.active .step-label {
+            color: var(--primary);
+          }
+
+          .step.completed .step-circle {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+          }
+
+          .step.completed .step-label {
+            color: var(--primary);
+          }
+
+          /* Form steps */
+          .form-step {
+            display: none;
+          }
+
+          .form-step.active {
+            display: block;
+          }
+
+          /* ── Mise en page en grille 2 colonnes ── */
+          .form-step.form-step--grid.active { display: grid; }
+          .form-step--grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 22px;
+            align-items: start;
+          }
+          .form-step--grid > .step-title,
+          .form-step--grid > .step-description,
+          .form-step--grid > .step-navigation,
+          .form-step--grid > .form-group.fg-full {
+            grid-column: 1 / -1;
+          }
+          .form-step--grid > .form-group { margin-bottom: 18px; }
+
+          /* Champs personnalisés des étapes 1 et 3 (Informations générales,
+             Détails produit) : #cfStep1Fields/#cfStep3Fields restent en
+             fg-full (une seule cellule de la grille 2 colonnes ci-dessus),
+             mais LEUR PROPRE bloc (.cf-fields-block, habituellement empilé en
+             une colonne) devient à son tour une grille 2 colonnes — sinon
+             tous les champs migrés (Nom de la tâche, Description, dates,
+             Typologie, Marché...) s'empilent en une seule longue colonne sans
+             profiter de la largeur disponible. cf-field--wide (texte long,
+             liste, cases multiples — voir customFields-standalone.js) reste
+             sur toute la largeur. */
+          /* [id^=cfCanalBaseFields] : un id par canal (cfCanalBaseFields1,
+             cfCanalBaseFields2...), pas de sélecteur #id unique possible. */
+          #cfStep1Fields .cf-fields-block, #cfStep3Fields .cf-fields-block,
+          [id^="cfCanalBaseFields"] .cf-fields-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 22px;
+          }
+          #cfStep1Fields .cf-fields-block > .cf-field--wide,
+          #cfStep3Fields .cf-fields-block > .cf-field--wide,
+          [id^="cfCanalBaseFields"] .cf-fields-block > .cf-field--wide {
+            grid-column: 1 / -1;
+          }
+          @media (max-width: 760px) {
+            #cfStep1Fields .cf-fields-block, #cfStep3Fields .cf-fields-block,
+            [id^="cfCanalBaseFields"] .cf-fields-block {
+              grid-template-columns: 1fr;
+            }
+          }
+          @media (max-width: 760px) {
+            .form-step--grid { grid-template-columns: 1fr; }
+          }
+
+          .step-title {
+            margin: 0 0 8px 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--ink);
+          }
+
+          .step-description {
+            margin: 0 0 20px 0;
+            color: var(--muted);
+            font-size: 0.875rem;
+          }
+
+          /* Navigation buttons */
+          .step-navigation {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid var(--line);
+          }
+
+          .step-navigation .btn {
+            min-width: 120px;
+          }
+
+          .btn-prev {
+            background: #ffffff;
+            color: var(--muted);
+            border: 1px solid var(--line);
+          }
+
+          .btn-prev:hover {
+            background: var(--line-2);
+            border-color: var(--muted-2);
+          }
+
+          .btn-next,
+          .btn-submit {
+            background: var(--primary);
+            color: #ffffff;
+            border: 1px solid var(--primary);
+          }
+
+          .btn-next:hover,
+          .btn-submit:hover {
+            background: var(--primary-hover);
+            border-color: var(--primary-hover);
+          }
+
+          /* Récapitulatif */
+          .summary-section {
+            background: var(--line-2);
+            border-radius: 3px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 3px solid var(--primary);
+          }
+
+          .summary-section h4 {
+            margin: 0 0 12px 0;
+            color: var(--ink);
+            font-size: 0.9375rem;
+            font-weight: 600;
+          }
+
+          .summary-item {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--line);
+            font-size: 0.875rem;
+          }
+
+          .summary-item:last-child {
+            border-bottom: none;
+          }
+
+          .summary-label {
+            font-weight: 600;
+            color: var(--gray-700);
+            min-width: 180px;
+          }
+
+          .summary-value {
+            color: var(--ink);
+            flex: 1;
+          }
+
+          /* Responsive */
+          @media (max-width: 768px) {
+            .wrap {
+              padding: 12px 16px;
+            }
+
+            h1 {
+              font-size: 1.25rem;
+            }
+
+            .row {
+              flex-direction: column;
+              gap: 12px;
+              align-items: stretch;
+            }
+
+            .stepper {
+              margin-bottom: 24px;
+            }
+
+            .step-circle {
+              width: 32px;
+              height: 32px;
+              font-size: 0.75rem;
+            }
+
+            .step-label {
+              font-size: 0.65rem;
+            }
+
+            .summary-item {
+              flex-direction: column;
+              gap: 4px;
+            }
+
+            .summary-label {
+              min-width: auto;
+            }
+
+            .step-navigation {
+              flex-direction: column;
+            }
+
+            .step-navigation .btn {
+              width: 100%;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .wrap {
+              padding: 12px;
+            }
+
+            .panel {
+              padding: 16px;
+            }
+
+            .stepper {
+              gap: 8px;
+            }
+          }
+
+          .step.active .step-circle {
+            border-color: var(--primary);
+            color: #ffffff;
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 149, 151, 0.3);
+          }
+
+          .step.active .step-label {
+            color: var(--primary);
+            font-weight: 700;
+          }
+
+          .step.completed .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #ffffff;
+          }
+
+          .step.completed .step-label {
+            color: var(--ink);
+          }
+
+          .step.completed .step-circle::before {
+            content: '✓';
+            font-size: 28px;
+          }
+
+          /* Sections d'étapes */
+          .form-step {
+            display: none;
+            animation: fadeIn 0.4s ease;
+          }
+
+          .form-step.active {
+            display: block;
+          }
+
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          .step-title {
+            margin: 0 0 8px 0;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .step-description {
+            margin: 0 0 32px 0;
+            color: var(--muted);
+            font-size: 15px;
+          }
+
+          /* Boutons de navigation */
+          .step-navigation {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 2px solid var(--line);
+          }
+
+          .step-navigation .btn {
+            min-width: 140px;
+          }
+
+          .btn-prev {
+            background: var(--bg-card);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+          }
+
+          .btn-prev:hover {
+            background: var(--accent);
+          }
+
+          .btn-next,
+          .btn-submit {
+            background: var(--gradient);
+            color: #ffffff;
+            border: 2px solid var(--primary);
+          }
+
+          .btn-next:hover,
+          .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 149, 151, 0.3);
+          }
+
+          /* Récapitulatif */
+          .summary-section {
+            background: var(--accent);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+          }
+
+          .summary-section h4 {
+            margin: 0 0 16px 0;
+            color: var(--primary);
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+          }
+
+          .summary-item {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--line);
+          }
+
+          .summary-item:last-child {
+            border-bottom: none;
+          }
+
+          .summary-label {
+            font-weight: 600;
+            color: var(--ink);
+            min-width: 200px;
+          }
+
+          .summary-value {
+            color: var(--muted);
+            flex: 1;
+          }
+
+          @media (max-width: 768px) {
+            .wrap {
+              padding: 16px;
+            }
+
+            h1 {
+              font-size: 24px;
+            }
+
+            .row {
+              flex-direction: column;
+              gap: 12px;
+            }
+
+            .btn {
+              padding: 10px 16px;
+              font-size: 13px;
+            }
+
+            .stepper {
+              flex-direction: column;
+              gap: 20px;
+            }
+
+            .stepper::before {
+              left: 29px;
+              right: auto;
+              width: 4px;
+              height: 100%;
+              top: 0;
+            }
+
+            .step {
+              flex-direction: row;
+              justify-content: flex-start;
+              gap: 16px;
+            }
+
+            .step-circle {
+              width: 50px;
+              height: 50px;
+              font-size: 20px;
+              margin-bottom: 0;
+            }
+
+            .step-label {
+              text-align: left;
+              max-width: none;
+            }
+
+            .summary-item {
+              flex-direction: column;
+              gap: 4px;
+            }
+
+            .summary-label {
+              min-width: auto;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .wrap {
+              padding: 12px;
+            }
+
+            .panel {
+              padding: 16px;
+            }
+          }
+        </style>
+    </head>
+
+    <body>
+        <div class="dashboard-layout">
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <a href="../Impulsion-Marketing.html" class="brand">
+                        <div class="brand-icon" style="font-size:14px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">IM</div>
+                        <div class="brand-text">
+                            <h1>Impulsion</h1>
+                            <span>Marketing</span>
+                        </div>
+                    </a>
+                </div>
+
+                <nav class="sidebar-nav">
+                    <div class="nav-section">
+                        <span class="nav-section-title">Principal</span>
+                        <a href="../Impulsion-Marketing.html" class="nav-link">
+                                <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                                <span>Tableau de bord</span>
+                            </a>
+                        <a href="campaign.html" class="nav-link">
+                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            <span>Créer une campagne</span>
+                        </a>
+                        <a href="pilotage.html" class="nav-link">
+                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"/>
+                                <rect x="14" y="3" width="7" height="7"/>
+                                <rect x="14" y="14" width="7" height="7"/>
+                                <rect x="3" y="14" width="7" height="7"/>
+                            </svg>
+                            <span>Pilotage</span>
+                        </a>
+                        <a href="visualization.html" class="nav-link">
+                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 3v18h18"/>
+                                <path d="M18 9l-5 5-4-4-4 4"/>
+                            </svg>
+                            <span>Campagnes</span>
+                        </a>
+                        <a href="comite-editorial.html" class="nav-link">
+                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            <span>Comité Éditorial</span>
+                        </a>
+                        <a href="guide.html" class="nav-link">
+                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                            <span>Guide utilisateur</span>
+                        </a>
+                    </div>
+
+                    <div class="nav-section">
+                        <span class="nav-section-title">Externe</span>
+                        <a href="#" class="nav-link" data-gallery target="_blank" rel="noopener">
+                            <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <path d="M21 15l-5-5L5 21"/>
+                            </svg>
+                            <span>Galerie</span>
+                        </a>
+                    </div>
+                </nav>
+            </aside>
+
+            <div class="main-container">
+                <main class="content">
+            <section class="panel">
+                <h2>Créer une campagne</h2>
+                <div id="folder-status-panel" class="form-group">
+                    <div id="rootStatus" class="hint">Vérification du dossier...</div>
+                </div>
+                <form id="campaignForm" novalidate style="display: none;">
+                    <!-- Stepper Indicator -->
+                    <div class="stepper">
+                        <div class="step active" data-step="1">
+                            <div class="step-circle">1</div>
+                            <div class="step-label">Informations</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-circle">2</div>
+                            <div class="step-label">Segmentation</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-circle">3</div>
+                            <div class="step-label">Produit</div>
+                        </div>
+                        <div class="step" data-step="4">
+                            <div class="step-circle">4</div>
+                            <div class="step-label">Canaux</div>
+                        </div>
+                        <div class="step" data-step="5">
+                            <div class="step-circle">5</div>
+                            <div class="step-label">Récapitulatif</div>
+                        </div>
+                    </div>
+
+                    <!-- Barre de progression -->
+                    <div class="progress-container">
+                        <div class="progress-bar-wrapper">
+                            <div class="progress-bar-fill" id="progress-fill" style="width: 20%"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span id="progress-text">Étape 1 sur 5</span>
+                            <span id="progress-percentage">20%</span>
+                        </div>
+                    </div>
+
+                    <!-- Étape 1 : Informations générales -->
+                    <div class="form-step form-step--grid active" data-step="1">
+                        <h3 class="step-title">📋 Informations générales</h3>
+                        <p class="step-description">Renseignez les informations de base de la campagne</p>
+
+                        <!-- Champs éditables depuis Administration ▸ Champs personnalisés ▸ Création —
+                        Informations générales : nom de la tâche, description, date d'envoi, kick-off
+                        (+ date conditionnelle), typologie, marché, récurrence — déjà en place, migrés
+                        vers le moteur générique avec la MÊME clé de stockage qu'avant
+                        (data.id/description/launchDate/...), aucune campagne existante à convertir —
+                        + tout nouveau champ ajouté par l'admin pour cette étape. -->
+                        <div id="cfStep1Fields" class="fg-full"></div>
+
+                        <div class="form-group fg-full">
+                            <label>PO :</label>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <select id="poTeam" style="flex: 1; min-width: 130px;">
+                                    <option value="">Équipe...</option>
+                                    <option value="marketing">Marketing</option>
+                                    <option value="com">Com</option>
+                                    <option value="ebf">EBF</option>
+                                    <option value="data">Data</option>
+                                </select>
+                                <select id="po" required style="flex: 2; min-width: 180px;">
+                                    <option value="">Choisir d'abord l'équipe</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="instantiation">Date de saisie : <span style="font-weight:400;color:#888;">(automatique)</span></label>
+                            <input type="date" id="instantiation" readonly style="background:var(--line-2);cursor:not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label for="campagneLiee">Campagne liée <span style="font-weight:400;color:#888;">(optionnel)</span></label>
+                            <input type="text" id="campagneLiee" list="campagnesListData" placeholder="Choisir ou saisir une campagne...">
+                            <datalist id="campagnesListData"></datalist>
+                        </div>
+
+                        <div class="form-group fg-full">
+                            <label>Équipes nécessaires au projet :</label>
+                            <div id="teamCheckboxes" style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px;">
+                                <label id="labelTeamMarketing" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="teamMarketing" value="Marketing" checked style="margin-right: 8px; cursor: pointer;">
+                                    <span>Marketing</span>
+                                </label>
+                                <label id="labelTeamCom" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="teamCom" value="Com" checked style="margin-right: 8px; cursor: pointer;">
+                                    <span>Com</span>
+                                </label>
+                                <label id="labelTeamEBF" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="teamEBF" value="EBF" checked style="margin-right: 8px; cursor: pointer;">
+                                    <span>EBF</span>
+                                </label>
+                                <label id="labelTeamData" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="teamData" value="Data" checked style="margin-right: 8px; cursor: pointer;">
+                                    <span>Data</span>
+                                </label>
+                            </div>
+                            <small id="teamRestrictionNote" style="color: var(--muted); display: block; margin-top: 8px;">
+                                Sélectionnez les équipes qui devront intervenir sur cette campagne (votre équipe incluse si vous êtes PO).
+                            </small>
+                        </div>
+
+                        <div class="step-navigation">
+                            <div></div>
+                            <button type="button" class="btn btn-next" onclick="nextStep()">Suivant →</button>
+                        </div>
+                    </div>
+
+                    <!-- Étape 2 : Segmentation -->
+                    <div class="form-step" data-step="2">
+                        <h3 class="step-title">🎯 Segmentation</h3>
+                        <p class="step-description">Définissez les segments et univers de besoin</p>
+
+                        <!-- Champs éditables depuis Administration ▸ Champs personnalisés ▸ Création —
+                        Segmentation : cible prospects (+ source conditionnelle) et persona — déjà en
+                        place, migrés avec la MÊME clé de stockage (data.cibleProspect/prospectSource/
+                        persona). Segments et Univers de besoin restent gérés ci-dessous : ils ont déjà
+                        leur propre surface d'admin dédiée (Administration ▸ Segments / listes simples),
+                        les dupliquer ici créerait deux façons différentes d'éditer la même liste. -->
+                        <div id="cfStep2Fields"></div>
+
+                        <div class="form-group">
+                            <label>Segments <small style="font-weight:400;color:var(--muted);">(cocher tout ce qui s'applique)</small></label>
+                            <div id="segmentsContainer" style="margin-top:8px;border:1px solid var(--line);border-radius:8px;overflow:hidden;">
+
+                                <div data-seg-header style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;"><span>Particuliers</span><label style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--primary);cursor:pointer;text-transform:none;letter-spacing:0;"><input type="checkbox" class="seg-all-cb"> Tout sélectionner</label></div>
+                                <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid var(--line);">
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Actif"> Actif</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Etudiant"> Etudiant</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="GP"> GP</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Senior"> Senior</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="BP"> BP</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Sociétaire"> Sociétaire</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Patri Tradi"> Patri Tradi</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Patri Dynamique"> Patri Dynamique</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Intermédiaire Tradi"> Interméd. Tradi</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Intermédiaire Dynamique"> Interméd. Dynamique</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="PP Majeur"> PP Majeur</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Jeunes Actif 18-25ans"> Jeunes 18-25 ans</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Jeunes 18-30ans"> Jeunes 18-30 ans</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Jeunes 12-17 ans"> Jeunes 12-17 ans</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Jeunes 0-11 ans"> Jeunes 0-11 ans</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Mineurs"> Mineurs</label>
+                                </div>
+
+                                <div data-seg-header style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;"><span>Pro</span><label style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--primary);cursor:pointer;text-transform:none;letter-spacing:0;"><input type="checkbox" class="seg-all-cb"> Tout sélectionner</label></div>
+                                <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;border-bottom:1px solid var(--line);">
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - PLS"> Pro - PLS</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - Commerçants"> Pro - Commerçants</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - Artisans"> Pro - Artisans</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Pro - Micro entrepreneurs"> Pro - Micro-entrepreneurs</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Associations"> Associations</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Entreprises"> Entreprises</label>
+                                </div>
+
+                                <div data-seg-header style="background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;"><span>Agri</span><label style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--primary);cursor:pointer;text-transform:none;letter-spacing:0;"><input type="checkbox" class="seg-all-cb"> Tout sélectionner</label></div>
+                                <div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;">
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Agri - Managers"> Agri - Managers</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Agris"> Agris</label>
+                                    <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="segment-cb" value="Agris - JA"> Agris - JA</label>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-top:16px;">
+                            <label>Univers de besoin <small style="font-weight:400;color:var(--muted);">(facultatif — cocher ce qui s'applique)</small></label>
+                            <div id="ubContainer" style="margin-top:8px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;">
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Epargne / Collecte"> Epargne / Collecte</label>
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Crédits"> Crédits</label>
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Assurances"> Assurances</label>
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Conquête"> Conquête</label>
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="BAQ"> BAQ</label>
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Immobilier"> Immobilier</label>
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Spécialisés"> Spécialisés</label>
+                                <label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;"><input type="checkbox" class="ub-cb" value="Monétique"> Monétique</label>
+                            </div>
+                        </div>
+
+                        <div class="step-navigation">
+                            <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
+                            <button type="button" class="btn btn-next" onclick="nextStep()">Suivant →</button>
+                        </div>
+                    </div>
+
+                    <!-- Étape 3 : Détails produit -->
+                    <div class="form-step form-step--grid" data-step="3">
+                        <h3 class="step-title">🛍️ Détails produit</h3>
+                        <p class="step-description">Informations sur le produit et l'offre</p>
+
+                        <div class="form-group fg-full">
+                            <label>Produits ciblés <small style="font-weight:400;color:var(--muted);">(choisir un univers puis un produit ; plusieurs univers possibles)</small></label>
+                            <div id="targetProductsContainer" style="margin-top:8px;">
+                                <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+                                    <select id="productUniversSelect" style="flex:1;min-width:190px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;cursor:pointer;">
+                                        <option value="">Choisir un univers…</option>
+                                    </select>
+                                    <select id="productItemSelect" disabled style="flex:1;min-width:190px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;cursor:pointer;">
+                                        <option value="">Choisir un univers d'abord…</option>
+                                    </select>
+                                </div>
+                                <div id="selectedProductsChips" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;"></div>
+                                <div id="productHiddenInputs" style="display:none;"></div>
+                                <div id="productLoadNote" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Champs éditables depuis Administration ▸ Champs personnalisés ▸ Création —
+                        Détails produit : URL fiche produit, offre promotionnelle (+ dates conditionnelles),
+                        parcours selfcare/simulateur, transfo (+ numéro de lot conditionnel) — déjà en
+                        place, migrés avec la MÊME clé de stockage. Produits ciblés reste codé en dur
+                        (cascade univers→produit alimentée par un CSV, logique trop spécifique). -->
+                        <div id="cfStep3Fields" class="fg-full"></div>
+
+                        <div class="step-navigation">
+                            <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
+                            <button type="button" class="btn btn-next" onclick="nextStep()">Suivant →</button>
+                        </div>
+                    </div>
+
+                    <!-- Étape 4 : Canaux de communication -->
+                    <div class="form-step" data-step="4">
+                        <h3 class="step-title">📢 Canaux de communication</h3>
+                        <p class="step-description">Configurez les canaux de diffusion</p>
+
+                        <div class="form-group">
+                            <label>Nombre de canal :</label>
+                            <div class="checkbox-group">
+                                <label><input type="radio" name="numChannels" value="1"> 1</label>
+                                <label><input type="radio" name="numChannels" value="2"> 2</label>
+                                <label><input type="radio" name="numChannels" value="3"> 3</label>
+                                <label><input type="radio" name="numChannels" value="4"> 4</label>
+                                <label><input type="radio" name="numChannels" value="5"> 5</label>
+                                <label><input type="radio" name="numChannels" value="6"> 6</label>
+                                <label><input type="radio" name="numChannels" value="7"> 7</label>
+                                <label><input type="radio" name="numChannels" value="8"> 8</label>
+                                <label><input type="radio" name="numChannels" value="9"> 9</label>
+                                <label><input type="radio" name="numChannels" value="10"> 10</label>
+                            </div>
+                        </div>
+                        <div id="channelsContainer" class="dynamic-fields"></div>
+
+                        <div class="step-navigation">
+                            <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
+                            <button type="button" class="btn btn-next" onclick="nextStep()">Suivant →</button>
+                        </div>
+                    </div>
+
+                    <!-- Étape 5 : Récapitulatif -->
+                    <div class="form-step" data-step="5">
+                        <h3 class="step-title">✅ Récapitulatif</h3>
+                        <p class="step-description">Vérifiez les informations avant de créer la campagne</p>
+
+                        <div id="summaryContainer"></div>
+
+                        <div class="step-navigation">
+                            <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
+                            <button type="submit" id="btnSubmit" class="btn btn-submit">Créer la campagne</button>
+                        </div>
+                    </div>
+                </form>
+                <div class="loader">
+                    <div class="spinner"></div>
+                    <div class="loader-text">Traitement en cours...</div>
+                </div>
+            </section>
+                </main>
+
+                <!-- Scripts standalone pour le système centralisé -->
+        <script src="../js/bundle.js"></script>
+        <script>window.ImpulsionMarketing.topbar.mount();</script>
+
+        <script>
+            // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+            (function () {
+                var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+                if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+            })();
+        </script>
+
+        <script>
+            // Fonction utilitaire pour sélectionner un élément DOM
+            const $ = (s) => document.querySelector(s);
+
+            // Utiliser les objets globaux
+            var directoryStorage = window.ImpulsionMarketing.directoryStorage;
+            var help = window.ImpulsionMarketing.help;
+
+            // Notification (remplace alert) — repli sur alert si le module n'est pas chargé.
+            function notify(message, type) {
+                var e = window.ImpulsionMarketing && window.ImpulsionMarketing.errors;
+                if (e && e.showNotification) e.showNotification(message, type || 'info');
+                else alert(message);
+            }
+
+            // Typologie(s) de com déclenchant les champs « zone site web » (marché, dates,
+            // URL Tic et Tac / Com Store…). Piloté par _config.json (settings.siteWebComTypologies,
+            // éditable via Administration ▸ Paramètres généraux) — plus aucune valeur en dur :
+            // repli sur « Reprise Natio » (comportement historique) si le réglage est absent.
+            function isSiteWebComTypology(v) {
+                var s = window.ImpulsionMarketing.config.APP_SETTINGS || {};
+                var trig = Array.isArray(s.siteWebComTypologies) && s.siteWebComTypologies.length ? s.siteWebComTypologies : ['Reprise Natio'];
+                return trig.indexOf(v) !== -1;
+            }
+
+            // Invalidation MetadataCache lors de la création/modification d'une campagne
+            var MetadataCacheInvalidator = (function() {
+                var DB = 'ImpulsionMetaCache', STORE = 'meta';
+                return {
+                    invalidate: function(key) {
+                        try {
+                            var r = indexedDB.open(DB, 1);
+                            r.onupgradeneeded = function(e) {
+                                try { e.target.result.createObjectStore(STORE, { keyPath: 'k' }); } catch(ex) {}
+                            };
+                            r.onsuccess = function(e) {
+                                try { e.target.result.transaction(STORE, 'readwrite').objectStore(STORE).delete(key); } catch(ex) {}
+                            };
+                        } catch(ex) {}
+                    }
+                };
+            })();
+
+            // Objet état pour gérer l'application
+            const state = {
+                root: null,
+                campaignsFolder: null,
+                editMode: false,
+                editCampaignName: null,
+                editCampaignData: null
+            };
+
+            // Vérifier le dossier au chargement
+            function checkFolder() {
+                return directoryStorage.getRootHandleWithCheck()
+                    .then(function(result) {
+                        if (result.status !== 'success') {
+                            noteRoot("❌ " + result.message);
+                            var statusPanel = $("#folder-status-panel");
+                            statusPanel.innerHTML = '<p class="hint" style="color: var(--red);">' + result.message + '</p>' +
+                                '<a href="../login.html" class="btn primary">Se reconnecter pour recharger le dossier</a>';
+                            return;
+                        }
+
+                        state.root = result.handle;
+
+                        // Accéder au sous-dossier Campagnes
+                        return state.root.getDirectoryHandle('Campagnes', { create: true })
+                            .then(function(campaignsFolder) {
+                                state.campaignsFolder = campaignsFolder;
+                                noteRoot("✅ Connecté : " + result.handle.name + " / Campagnes");
+                                $("#campaignForm").style.display = "block";
+                                $("#folder-status-panel").style.display = "none";
+                            });
+                    })
+                    .catch(function(error) {
+                        noteRoot("❌ Erreur : " + error.message);
+                    });
+            }
+
+            function noteRoot(t) {
+                $("#rootStatus").textContent = t;
+            }
+
+            // Vérifier si on est en mode édition et charger les données
+            async function checkEditMode() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const editCampaignName = urlParams.get('edit');
+                const duplicateCampaignName = urlParams.get('duplicate');
+
+                if (editCampaignName) {
+                    state.editMode = true;
+                    state.editCampaignName = editCampaignName;
+
+                    // Changer le titre et le texte du bouton
+                    var pageTitle = document.querySelector(".crumb b");
+                    if (pageTitle) pageTitle.textContent = "Modifier une campagne";
+                    document.title = "Modifier une campagne — Historique des Campagnes";
+                    $("#btnSubmit").textContent = "Modifier la campagne";
+
+                    try {
+                        // Charger les données de la campagne
+                        const campaignFolder = await state.campaignsFolder.getDirectoryHandle(editCampaignName);
+                        const fileHandle = await campaignFolder.getFileHandle('campagne.json');
+                        const file = await fileHandle.getFile();
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+
+                        state.editCampaignData = data;
+
+                        // Pré-remplir le formulaire
+                        populateForm(data);
+                    } catch (error) {
+                        console.error("Erreur lors du chargement de la campagne:", error);
+                        notify("Erreur lors du chargement de la campagne : " + error.message, 'error');
+                    }
+                } else if (duplicateCampaignName) {
+                    // Mode duplication : pré-remplir mais créer un nouveau dossier
+                    var pageTitle2 = document.querySelector(".crumb b");
+                    if (pageTitle2) pageTitle2.textContent = "Dupliquer une campagne";
+                    document.title = "Dupliquer une campagne — Historique des Campagnes";
+                    $("#btnSubmit").textContent = "Créer la copie";
+
+                    try {
+                        const campaignFolder = await state.campaignsFolder.getDirectoryHandle(duplicateCampaignName);
+                        const fileHandle = await campaignFolder.getFileHandle('campagne.json');
+                        const file = await fileHandle.getFile();
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+
+                        // Supprimer le workflow pour repartir d'une campagne vierge
+                        delete data.workflow;
+                        delete data.kickoffDate;
+                        // Modifier le nom pour indiquer la copie
+                        if (data.id) data.id = 'Copie de ' + data.id;
+
+                        populateForm(data);
+                    } catch (error) {
+                        console.error("Erreur lors du chargement de la campagne source:", error);
+                        notify("Erreur lors du chargement de la campagne source : " + error.message, 'error');
+                    }
+                }
+            }
+
+            // Champs des étapes 1 et 2 du formulaire de création, rendus par le moteur
+            // générique (Administration ▸ Champs personnalisés). Deux catégories
+            // coexistent dans le même bloc, distinguées uniquement par leur clé de
+            // stockage :
+            //  - champs DÉJÀ EN PLACE, migrés : même clé que toujours (data.id,
+            //    data.launchDate...) — STEP1_MIGRATED_DEFAULTS en fait la liste.
+            //  - nouveaux champs ajoutés par l'admin : rangés dans
+            //    data.customFieldValues['creation.step1'] (aucune collision possible
+            //    avec une clé existante, l'admin choisit un id propre à son champ).
+            // idPrefix:'' préserve les id DOM déjà utilisés ailleurs (validateStep,
+            // récapitulatif...) pour les champs migrés.
+            var STEP1_MIGRATED_IDS = ['taskName', 'description', 'launchDate', 'kickoffNeeded', 'kickoffDate', 'typology', 'market', 'recurrence', 'juridiqueRequired', 'juridiqueComment'];
+            // Retire les champs migrés d'un objet de valeurs collecté génériquement — ils
+            // sont déjà sauvegardés à leur emplacement d'origine (data.id, data.launchDate...),
+            // les stocker aussi dans customFieldValues serait une copie redondante.
+            function stripMigratedIds(values, migratedIds) {
+                var out = {};
+                Object.keys(values || {}).forEach(function (k) { if (migratedIds.indexOf(k) === -1) out[k] = values[k]; });
+                return out;
+            }
+            var STEP1_MIGRATED_DEFAULTS = function (data) {
+                data = data || {};
+                return {
+                    taskName: data.id || '',
+                    description: data.description || '',
+                    launchDate: data.launchDate || '',
+                    kickoffNeeded: data.kickoffNeeded || (data.kickoffDate ? 'Oui' : 'Non'),
+                    kickoffDate: data.kickoffDate || '',
+                    typology: data.typology || '',
+                    market: data.market || '',
+                    recurrence: data.recurrence || '',
+                    juridiqueRequired: !!(data.juridique && data.juridique.required),
+                    juridiqueComment: (data.juridique && data.juridique.comment) || ''
+                };
+            };
+            var STEP2_MIGRATED_IDS = ['cibleProspect', 'prospectSource', 'persona'];
+            var STEP2_MIGRATED_DEFAULTS = function (data) {
+                data = data || {};
+                return {
+                    cibleProspect: !!data.cibleProspect,
+                    prospectSource: data.prospectSource || '',
+                    persona: data.persona || ''
+                };
+            };
+            var STEP3_MIGRATED_IDS = ['productUrl', 'offrePromo', 'offerValidityDate', 'offerEndDate', 'parcoursSelfcare', 'parcoursSimulateur', 'transfo', 'lotNumber'];
+            var STEP3_MIGRATED_DEFAULTS = function (data) {
+                data = data || {};
+                return {
+                    productUrl: data.productUrl || '',
+                    offrePromo: data.offrePromo || '',
+                    offerValidityDate: data.offerValidityDate || '',
+                    offerEndDate: data.offerEndDate || '',
+                    parcoursSelfcare: data.parcoursSelfcare || '',
+                    parcoursSimulateur: data.parcoursSimulateur || '',
+                    transfo: data.transfo || 'Non',
+                    lotNumber: data.lotNumber || ''
+                };
+            };
+            function renderCreationCustomFields(data) {
+                data = data || {};
+                var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                if (!cf) return;
+                var cfValues = data.customFieldValues || {};
+                var cont1 = document.getElementById('cfStep1Fields');
+                if (cont1) {
+                    var step1Values = Object.assign(STEP1_MIGRATED_DEFAULTS(data), cfValues['creation.step1'] || {});
+                    cont1.innerHTML = cf.renderFields('creation.step1', step1Values, { idPrefix: '' });
+                    cf.wireFields(cont1, 'creation.step1', {});
+                }
+                var cont2 = document.getElementById('cfStep2Fields');
+                if (cont2) {
+                    var step2Values = Object.assign(STEP2_MIGRATED_DEFAULTS(data), cfValues['creation.step2'] || {});
+                    cont2.innerHTML = cf.renderFields('creation.step2', step2Values, { idPrefix: '' });
+                    cf.wireFields(cont2, 'creation.step2', {});
+                }
+                var cont3 = document.getElementById('cfStep3Fields');
+                if (cont3) {
+                    var step3Values = Object.assign(STEP3_MIGRATED_DEFAULTS(data), cfValues['creation.step3'] || {});
+                    cont3.innerHTML = cf.renderFields('creation.step3', step3Values, { idPrefix: '' });
+                    cf.wireFields(cont3, 'creation.step3', {});
+                }
+            }
+
+            // Fonction pour pré-remplir le formulaire avec les données existantes
+            function populateForm(data) {
+                // Informations générales : taskName/description/launchDate/kickoffNeeded/
+                // kickoffDate/typology/market/recurrence — rendu générique EN PREMIER (champs
+                // migrés, même clé de stockage qu'avant) : ces éléments n'existent dans le DOM
+                // qu'une fois cet appel fait.
+                renderCreationCustomFields(data);
+
+                // PO : sélection équipe puis personne
+                if (data.po) {
+                    var usersModule = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+                    if (usersModule) {
+                        var poUser = usersModule.USERS.find(function(u) { return u.name === data.po; });
+                        if (poUser) {
+                            document.getElementById('poTeam').value = poUser.role;
+                            updatePoPersons();
+                            document.getElementById('po').value = data.po;
+                        }
+                    }
+                }
+                if (data.instantiation) $("#instantiation").value = data.instantiation;
+                if (data.campagneLiee) $("#campagneLiee").value = data.campagneLiee;
+                // juridiqueRequired/juridiqueComment : rendus par renderCreationCustomFields()
+                // (champs migrés, même clé de stockage data.juridique.{required,comment}) —
+                // la conditionnalité (showIf) est calculée directement à partir de `data`
+                // au rendu, pas besoin d'événement.
+
+                // Équipes requises
+                if (data.requiredTeams && Array.isArray(data.requiredTeams)) {
+                    $("#teamMarketing").checked = data.requiredTeams.includes("Marketing");
+                    $("#teamCom").checked  = data.requiredTeams.includes("Com");
+                    $("#teamEBF").checked  = data.requiredTeams.includes("EBF");
+                    $("#teamData").checked = data.requiredTeams.includes("Data");
+                }
+                // Mettre à jour les restrictions basées sur le PO
+                updateTeamRestrictions();
+
+                // Segments (checkboxes)
+                if (data.segments && data.segments.length > 0) {
+                    data.segments.forEach(function(seg) {
+                        var cb = document.querySelector('.segment-cb[value="' + seg.trim() + '"]');
+                        if (cb) cb.checked = true;
+                    });
+                }
+                // UBs (checkboxes)
+                if (data.ubs && data.ubs.length > 0) {
+                    data.ubs.forEach(function(ub) {
+                        var cb = document.querySelector('.ub-cb[value="' + ub.trim() + '"]');
+                        if (cb) cb.checked = true;
+                    });
+                }
+
+                // persona/cibleProspect/prospectSource : rendus par renderCreationCustomFields()
+                // (champs migrés, même clé de stockage) — la conditionnalité (showIf) est
+                // calculée directement à partir de `data` au rendu, pas besoin d'événement.
+
+                // Produit — productUrl/offrePromo/offerValidityDate/offerEndDate/parcoursSelfcare/
+                // parcoursSimulateur/transfo/lotNumber : rendus par renderCreationCustomFields()
+                // (champs migrés). Produits ciblés (multi) reste géré ici (cascade univers→produit
+                // alimentée par CSV, hors périmètre de la migration). Rétro-compat : ancien champ
+                // texte `targetProduct`.
+                var _prods = Array.isArray(data.targetProducts) ? data.targetProducts
+                           : (data.targetProduct ? [data.targetProduct] : []);
+                if (window.setSelectedProducts) window.setSelectedProducts(_prods);
+
+                // Canaux
+                if (data.channels && data.channels.length > 0) {
+                    const numChannels = data.channels.length;
+                    document.querySelector(`input[name="numChannels"][value="${numChannels}"]`).checked = true;
+                    generateChannelFields(numChannels);
+                    restoreChannelFields(data.channels);
+                }
+            }
+
+            // Ré-affecte les valeurs des canaux dans les champs du formulaire.
+            // Réutilisé au pré-remplissage (édition) ET au changement du nombre de
+            // canaux, afin de préserver les canaux déjà saisis (sans les effacer).
+            function restoreChannelFields(channels) {
+                setTimeout(() => {
+                        channels.forEach((channel, i) => {
+                            const idx = i + 1;
+                            // Le nom final (readonly) est restauré TEL QUEL, sans recalcul :
+                            // c'est le nom déjà utilisé pour le dossier de stockage du canal
+                            // (déposts existants). Le libellé libre est restauré séparément
+                            // pour rester éditable — s'il n'a pas été mémorisé (anciennes
+                            // campagnes), on tente de retirer le préfixe « Type - » connu,
+                            // sinon on reprend le nom complet tel quel.
+                            if (channel.deliverableName) $(`#deliverableName${idx}`).value = channel.deliverableName;
+                            const labelInp = $(`#deliverableLabel${idx}`);
+                            if (labelInp) {
+                                if (channel.deliverableLabel) {
+                                    labelInp.value = channel.deliverableLabel;
+                                } else if (channel.deliverableName) {
+                                    const prefix = channel.content ? (channel.content + ' - ') : '';
+                                    labelInp.value = (prefix && channel.deliverableName.indexOf(prefix) === 0)
+                                        ? channel.deliverableName.slice(prefix.length)
+                                        : channel.deliverableName;
+                                }
+                            }
+                            // channelContent: if stored value doesn't match any option, add it as a custom option
+                            if (channel.content) {
+                                const contentSel = $(`#channelContent${idx}`);
+                                if (contentSel) {
+                                    contentSel.value = channel.content;
+                                    if (contentSel.value !== channel.content) {
+                                        const opt = document.createElement('option');
+                                        opt.value = channel.content;
+                                        opt.textContent = channel.content;
+                                        contentSel.appendChild(opt);
+                                        contentSel.value = channel.content;
+                                    }
+                                }
+                            }
+                            if (channel.sendDate) {
+                                var _sdInp = $(`#sendDate${idx}`);
+                                if (_sdInp) {
+                                    // Valeur libre (délai / condition) → bascule le champ en texte + coche la case.
+                                    if (!/^\d{4}-\d{2}-\d{2}$/.test(channel.sendDate)) {
+                                        _sdInp.type = 'text';
+                                        var _sdCb = document.querySelector('.sendDateFree-cb[data-i="' + idx + '"]');
+                                        if (_sdCb) _sdCb.checked = true;
+                                    }
+                                    _sdInp.value = channel.sendDate;
+                                }
+                            }
+                            // comType: if stored value doesn't match any option, add it as a custom option
+                            if (channel.comType) {
+                                const comTypeSel = $(`#comType${idx}`);
+                                if (comTypeSel) {
+                                    comTypeSel.value = channel.comType;
+                                    if (comTypeSel.value !== channel.comType) {
+                                        const opt = document.createElement('option');
+                                        opt.value = channel.comType;
+                                        opt.textContent = channel.comType;
+                                        comTypeSel.appendChild(opt);
+                                        comTypeSel.value = channel.comType;
+                                    }
+                                }
+                            }
+                            if (channel.targetingCriteria) $(`#targetingCriteria${idx}`).value = channel.targetingCriteria;
+                            // emailObject: restore et afficher si canal MAIL
+                            if (channel.emailObject) {
+                                const emailField = $(`#emailObject${idx}`);
+                                if (emailField) emailField.value = channel.emailObject;
+                            }
+                            // comTypology : liste pilotée par _config.json (comTypologies) ; défaut = 1re option.
+                            const validTypologies = window.ImpulsionMarketing.config.COM_TYPOLOGIES || [];
+                            const comTypologyValue = validTypologies.includes(channel.comTypology) ? channel.comTypology : (validTypologies[0] || "");
+                            const typologyRadio = document.querySelector(`input[name="comTypology${idx}"][value="${comTypologyValue}"]`);
+                            if (typologyRadio) {
+                                typologyRadio.checked = true;
+                                typologyRadio.dispatchEvent(new Event('change'));
+                            }
+                            // Univers de besoin propres au canal (multi)
+                            if (channel.ubs && channel.ubs.length) {
+                                channel.ubs.forEach(function(ub) {
+                                    var cb = document.querySelector('.ch-ub-cb-' + idx + '[value="' + String(ub).replace(/"/g, '&quot;') + '"]');
+                                    if (cb) cb.checked = true;
+                                });
+                            }
+                            if (channel.urlTicTac) {
+                                setTimeout(() => {
+                                    const field = $(`#urlTicTac${idx}`);
+                                    if (field) field.value = channel.urlTicTac;
+                                }, 200);
+                            }
+                            if (channel.urlLccx) {
+                                const lccxField = $(`#urlLccx${idx}`);
+                                if (lccxField) lccxField.value = channel.urlLccx;
+                            }
+                            // Restore urlsComStore (new multi-URL) ou urlComStore (rétrocompat)
+                            const comStoreUrls = channel.urlsComStore && channel.urlsComStore.length
+                                ? channel.urlsComStore
+                                : (channel.urlComStore ? [channel.urlComStore] : []);
+                            if (comStoreUrls.length > 0) {
+                                setTimeout(() => {
+                                    const list = document.getElementById(`urlComStoreList${idx}`);
+                                    if (!list) return;
+                                    // Remplir la première ligne existante
+                                    const firstInput = list.querySelector('.url-comstore-input');
+                                    if (firstInput) firstInput.value = comStoreUrls[0];
+                                    // Ajouter les lignes supplémentaires
+                                    for (let u = 1; u < comStoreUrls.length; u++) {
+                                        addComStoreRow(idx);
+                                        const inputs = list.querySelectorAll('.url-comstore-input');
+                                        if (inputs[u]) inputs[u].value = comStoreUrls[u];
+                                    }
+                                }, 250);
+                            }
+                            // Restore siteWeb fields
+                            if (channel.siteWeb) {
+                                setTimeout(() => {
+                                    const sf = document.getElementById(`siteWebFields${idx}`);
+                                    if (sf) sf.style.display = 'block';
+                                    // Restore marchés (new array or legacy single string)
+                                    var swMarches = channel.siteWeb.marches && channel.siteWeb.marches.length
+                                        ? channel.siteWeb.marches
+                                        : (channel.siteWeb.marche ? [channel.siteWeb.marche] : ['part']);
+                                    document.querySelectorAll(`.sw-marche-cb-${idx}`).forEach(function(cb) {
+                                        cb.checked = swMarches.indexOf(cb.value) !== -1;
+                                    });
+                                    // Trigger constraints so univers/emplacement options are populated
+                                    const contentSel = document.getElementById(`channelContent${idx}`);
+                                    if (contentSel) contentSel.dispatchEvent(new Event('change'));
+                                    setTimeout(() => {
+                                        const univers = document.getElementById(`siteWebUnivers${idx}`);
+                                        if (univers && channel.siteWeb.univers) univers.value = channel.siteWeb.univers;
+                                    }, 50);
+                                    const dateDebut = document.getElementById(`siteWebDateDebut${idx}`);
+                                    if (dateDebut && channel.siteWeb.dateDebut) dateDebut.value = channel.siteWeb.dateDebut;
+                                    const dateFin = document.getElementById(`siteWebDateFin${idx}`);
+                                    if (dateFin && channel.siteWeb.dateFin) dateFin.value = channel.siteWeb.dateFin;
+                                }, 200);
+                            }
+                            // Champs personnalisés propres à ce canal (Administration ▸ Champs
+                            // personnalisés) — réaffichés avec les valeurs déjà enregistrées.
+                            var cfChan = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                            if (cfChan) {
+                                setTimeout(() => {
+                                    var cfContChan = document.getElementById(`cfCanalFields${idx}`);
+                                    if (!cfContChan) return;
+                                    var savedCfValues = (channel.customFieldValues && channel.customFieldValues['creation.step3.canal']) || {};
+                                    cfContChan.innerHTML = cfChan.renderFields('creation.step3.canal', savedCfValues, { canalType: channel.content, idPrefix: 'cf-canal-' + idx });
+                                    cfChan.wireFields(cfContChan, 'creation.step3.canal', { canalType: channel.content });
+                                }, 200);
+                            }
+                        });
+                    }, 100);
+            }
+
+            // Lit les canaux actuellement saisis dans le formulaire (DOM courant),
+            // pour pouvoir les restaurer après régénération des champs. Auto-détecte
+            // le nombre de canaux présents.
+            function collectChannelsFromForm() {
+                var channels = [];
+                for (var i = 1; document.getElementById('deliverableName' + i); i++) {
+                    channels.push({
+                        deliverableName: ($(`#deliverableName${i}`) || {}).value || '',
+                        deliverableLabel: ($(`#deliverableLabel${i}`) || {}).value || '',
+                        content: ($(`#channelContent${i}`) || {}).value || '',
+                        sendDate: ($(`#sendDate${i}`) || {}).value || '',
+                        comType: ($(`#comType${i}`) || {}).value || '',
+                        targetingCriteria: ($(`#targetingCriteria${i}`) || {}).value || '',
+                        emailObject: ($(`#emailObject${i}`) || {}).value || '',
+                        comTypology: (document.querySelector(`input[name="comTypology${i}"]:checked`) || {}).value || '',
+                        ubs: Array.from(document.querySelectorAll(`.ch-ub-cb-${i}:checked`)).map(function(cb){ return cb.value; }),
+                        urlTicTac: ($(`#urlTicTac${i}`) || {}).value || '',
+                        urlLccx: ($(`#urlLccx${i}`) || {}).value || '',
+                        urlsComStore: (function() {
+                            var inputs = document.querySelectorAll(`.urlComStore-input-${i}`);
+                            var urls = [];
+                            inputs.forEach(function(inp) { if (inp.value.trim()) urls.push(inp.value.trim()); });
+                            return urls;
+                        })(),
+                        siteWeb: (function() {
+                            var sf = document.getElementById(`siteWebFields${i}`);
+                            if (!sf || sf.style.display === 'none') return null;
+                            return {
+                                zone: ($(`#channelContent${i}`) || {}).value || '',
+                                marches: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); var res = []; cbs.forEach(function(cb) { res.push(cb.value); }); return res.length ? res : ['part']; })(),
+                                marche: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); return cbs.length ? cbs[0].value : 'part'; })(),
+                                univers: ($(`#siteWebUnivers${i}`) || {}).value || null,
+                                dateDebut: ($(`#siteWebDateDebut${i}`) || {}).value || '',
+                                dateFin: ($(`#siteWebDateFin${i}`) || {}).value || ''
+                            };
+                        })()
+                    });
+                }
+                return channels;
+            }
+
+            // Peuple la liste de personnes selon l'équipe PO sélectionnée
+            function updatePoPersons() {
+                var team = document.getElementById('poTeam').value;
+                var poSelect = document.getElementById('po');
+                var users = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+
+                if (!team || !users) {
+                    poSelect.innerHTML = '<option value="">Choisir d\'abord l\'équipe</option>';
+                    updateTeamRestrictions();
+                    return;
+                }
+
+                var filtered = users.USERS.filter(function(u) { return u.role === team; });
+                poSelect.innerHTML = '<option value="">Choisir la personne...</option>';
+                filtered.forEach(function(u) {
+                    var opt = document.createElement('option');
+                    opt.value = u.name;
+                    opt.textContent = u.name + (u.isManager ? ' ★' : '');
+                    poSelect.appendChild(opt);
+                });
+
+                updateTeamRestrictions();
+            }
+
+            // Mise à jour de la sélection d'équipes selon le service du PO.
+            // L'équipe du PO n'est plus exclue : elle reste sélectionnable (un PO EBF,
+            // par exemple, doit pouvoir garder l'EBF pour conserver ses étapes de workflow).
+            function updateTeamRestrictions() {
+                var roleToTeam = {
+                    'marketing': { cbId: 'teamMarketing', lblId: 'labelTeamMarketing', name: 'Marketing' },
+                    'com':       { cbId: 'teamCom',       lblId: 'labelTeamCom',       name: 'Com' },
+                    'ebf':       { cbId: 'teamEBF',       lblId: 'labelTeamEBF',       name: 'EBF' },
+                    'data':      { cbId: 'teamData',      lblId: 'labelTeamData',      name: 'Data' }
+                };
+
+                // Toutes les équipes restent actives et cochables (y compris celle du PO).
+                Object.values(roleToTeam).forEach(function(t) {
+                    var cb = document.getElementById(t.cbId);
+                    var lbl = document.getElementById(t.lblId);
+                    if (cb) cb.disabled = false;
+                    if (lbl) { lbl.style.opacity = '1'; lbl.title = ''; }
+                });
+
+                var note = document.getElementById('teamRestrictionNote');
+                if (note) note.textContent = 'Sélectionnez les équipes qui devront intervenir sur cette campagne (votre équipe incluse si vous êtes PO).';
+            }
+
+            // Écouter les changements du sélecteur d'équipe PO
+            document.getElementById('poTeam').addEventListener('change', updatePoPersons);
+            // Écouter la sélection de la personne PO (pour mettre à jour les restrictions d'équipes)
+            document.getElementById('po').addEventListener('change', updateTeamRestrictions);
+
+            // Gestion des champs dynamiques
+            document.querySelectorAll('input[name="numChannels"]').forEach(radio => {
+                radio.addEventListener("change", (e) => {
+                    const newCount = parseInt(e.target.value);
+                    // Préserver les canaux déjà saisis : on capture l'état courant
+                    // avant de régénérer les champs, puis on le réapplique. Ajouter
+                    // un canal n'efface donc plus les canaux existants.
+                    const existing = collectChannelsFromForm();
+                    generateChannelFields(newCount);
+                    if (existing.length) restoreChannelFields(existing.slice(0, newCount));
+                });
+            });
+
+            // kickoffNeeded → kickoffDate, offrePromo → dates d'offre, transfo → lotNumber,
+            // cibleProspect → prospectSource : géré par la conditionnalité (showIf) du moteur
+            // générique de champs personnalisés, ces champs étant tous rendus par
+            // renderCreationCustomFields() (creation.step1/step2/step3).
+
+            // Date de saisie = date du jour (automatique, non modifiable).
+            (function () {
+                var inst = document.getElementById('instantiation');
+                if (inst && !inst.value) inst.value = new Date().toISOString().slice(0, 10);
+            })();
+
+            // « Date de réception client » : bascule date ↔ texte libre (délai / condition).
+            document.addEventListener('change', function (e) {
+                var t = e.target;
+                if (!t || !t.classList || !t.classList.contains('sendDateFree-cb')) return;
+                var inp = document.getElementById('sendDate' + t.getAttribute('data-i'));
+                if (!inp) return;
+                if (t.checked) {
+                    inp.type = 'text';
+                    inp.placeholder = 'Ex : J+3 après ouverture de compte';
+                } else {
+                    inp.type = 'date';
+                    inp.placeholder = '';
+                    if (inp.value && !/^\d{4}-\d{2}-\d{2}$/.test(inp.value)) inp.value = '';
+                }
+            });
+
+            // Variables globales pour le stepper
+            var currentStep = 1;
+            var totalSteps = 5;
+
+            // Fonction pour naviguer vers l'étape suivante
+            window.nextStep = function() {
+                if (validateStep(currentStep)) {
+                    if (currentStep < totalSteps) {
+                        currentStep++;
+                        updateStepper();
+                        if (currentStep === 5) {
+                            generateSummary();
+                        }
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                }
+            };
+
+            // Fonction pour naviguer vers l'étape précédente
+            window.prevStep = function() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    updateStepper();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            };
+
+            // Fonction pour mettre à jour l'affichage du stepper
+            function updateStepper() {
+                // Mettre à jour les indicateurs d'étapes
+                var steps = document.querySelectorAll('.step');
+                steps.forEach(function(step) {
+                    var stepNum = parseInt(step.getAttribute('data-step'));
+                    step.classList.remove('active', 'completed');
+                    if (stepNum === currentStep) {
+                        step.classList.add('active');
+                    } else if (stepNum < currentStep) {
+                        step.classList.add('completed');
+                    }
+                });
+
+                // Mettre à jour l'affichage des sections de formulaire
+                var formSteps = document.querySelectorAll('.form-step');
+                formSteps.forEach(function(formStep) {
+                    var stepNum = parseInt(formStep.getAttribute('data-step'));
+                    formStep.classList.remove('active');
+                    if (stepNum === currentStep) {
+                        formStep.classList.add('active');
+                    }
+                });
+
+                // Mettre à jour la barre de progression
+                var percentage = (currentStep / totalSteps) * 100;
+                var progressFill = document.getElementById('progress-fill');
+                var progressText = document.getElementById('progress-text');
+                var progressPercentage = document.getElementById('progress-percentage');
+
+                if (progressFill) {
+                    progressFill.style.width = percentage + '%';
+                }
+                if (progressText) {
+                    progressText.textContent = 'Étape ' + currentStep + ' sur ' + totalSteps;
+                }
+                if (progressPercentage) {
+                    progressPercentage.textContent = Math.round(percentage) + '%';
+                }
+            }
+
+            // Fonction pour valider une étape avant de passer à la suivante
+            function validateStep(step) {
+                var currentFormStep = document.querySelector('.form-step[data-step="' + step + '"]');
+                if (!currentFormStep) return true;
+
+                var requiredFields = currentFormStep.querySelectorAll('input[required], select[required], textarea[required]');
+                var allValid = true;
+
+                requiredFields.forEach(function(field) {
+                    if (field.type === 'radio') {
+                        var radioName = field.getAttribute('name');
+                        var radioGroup = currentFormStep.querySelectorAll('input[name="' + radioName + '"]');
+                        var isChecked = Array.from(radioGroup).some(function(r) { return r.checked; });
+                        // Encart rouge sur un groupe de radios obligatoire non renseigné
+                        // (ex. Typologie de communication) — comme les autres champs.
+                        var grp = field.closest('.radio-group') || field.closest('.form-group');
+                        if (!isChecked) {
+                            allValid = false;
+                            if (grp) { grp.style.outline = '1.5px solid var(--red)'; grp.style.outlineOffset = '3px'; grp.style.borderRadius = '6px'; }
+                        } else if (grp) {
+                            grp.style.outline = '';
+                        }
+                    } else if (!field.value.trim()) {
+                        field.style.borderColor = 'var(--red)';
+                        allValid = false;
+                    } else {
+                        field.style.borderColor = '';
+                    }
+                });
+
+                // Cohérence des dates (étape 1) : la saisie et le kick-off ne peuvent pas
+                // être postérieurs au lancement. Les valeurs sont au format ISO (YYYY-MM-DD),
+                // donc une comparaison de chaînes suffit pour l'ordre chronologique.
+                if (step === 1 && allValid) {
+                    var launchEl  = document.getElementById('launchDate');
+                    var saisieEl  = document.getElementById('instantiation');
+                    var kickoffEl = document.getElementById('kickoffDate');
+                    if (kickoffEl) kickoffEl.style.borderColor = '';
+                    var launch  = launchEl  && launchEl.value  ? launchEl.value  : null;
+                    var saisie  = saisieEl  && saisieEl.value  ? saisieEl.value  : null;
+                    var kickoff = kickoffEl && kickoffEl.value ? kickoffEl.value : null;
+                    var dateMsg = '';
+                    if (launch && saisie && saisie > launch) {
+                        dateMsg = 'La date de saisie ne peut pas être postérieure à la date de lancement.';
+                        if (saisieEl) saisieEl.style.borderColor = 'var(--red)';
+                    } else if (launch && kickoff && kickoff > launch) {
+                        dateMsg = 'La date de kick-off ne peut pas être postérieure à la date de lancement.';
+                        if (kickoffEl) kickoffEl.style.borderColor = 'var(--red)';
+                    }
+                    if (dateMsg) {
+                        if (launchEl) launchEl.style.borderColor = 'var(--red)';
+                        notify(dateMsg, 'warning');
+                        return false;
+                    }
+                }
+
+                // Offre promotionnelle = Oui → dates de vigueur ET de fin de validité obligatoires.
+                var _opRadio = currentFormStep.querySelector('input[name="offrePromo"]:checked');
+                if (_opRadio && _opRadio.value === 'Oui') {
+                    var _vd = document.getElementById('offerValidityDate');
+                    var _ed = document.getElementById('offerEndDate');
+                    var _bad = (_vd && !_vd.value) ? _vd : ((_ed && !_ed.value) ? _ed : null);
+                    if (_vd) _vd.style.borderColor = '';
+                    if (_ed) _ed.style.borderColor = '';
+                    if (_bad) {
+                        _bad.style.borderColor = 'var(--red)';
+                        _bad.focus();
+                        notify('Offre promotionnelle : renseignez la date de mise en vigueur ET la date de fin de validité.', 'warning');
+                        return false;
+                    }
+                }
+
+                // Contrainte URL : tout champ URL renseigné (fiche produit, TicTac,
+                // LCCX, ComStore…) doit être une adresse http(s) valide. On ignore
+                // les champs masqués (groupes conditionnels non applicables).
+                var urlFields = currentFormStep.querySelectorAll('input[type="url"]');
+                for (var _u = 0; _u < urlFields.length; _u++) {
+                    var _uf = urlFields[_u];
+                    if (_uf.offsetParent === null) continue; // champ masqué
+                    var _uv = (_uf.value || '').trim();
+                    if (!_uv) { _uf.style.borderColor = ''; continue; }
+                    var _uok = /^https?:\/\/.+/i.test(_uv);
+                    if (_uok) { try { new URL(_uv); } catch (e) { _uok = false; } }
+                    if (!_uok) {
+                        _uf.style.borderColor = 'var(--red)';
+                        _uf.focus();
+                        notify('Une URL renseignée est invalide : elle doit commencer par http:// ou https://.', 'warning');
+                        return false;
+                    }
+                    _uf.style.borderColor = '';
+                }
+
+                // Nom de livrable unique : deux canaux ne peuvent pas porter le même
+                // nom (sinon leurs dépôts se télescopent dans le même dossier).
+                var nameEls = currentFormStep.querySelectorAll('input[id^="deliverableName"]');
+                if (nameEls.length > 1) {
+                    var _seen = {};
+                    for (var _n = 0; _n < nameEls.length; _n++) {
+                        nameEls[_n].style.borderColor = '';
+                    }
+                    for (var _n2 = 0; _n2 < nameEls.length; _n2++) {
+                        var _nv = (nameEls[_n2].value || '').trim().toLowerCase();
+                        if (!_nv) continue;
+                        if (_seen[_nv]) {
+                            nameEls[_n2].style.borderColor = 'var(--red)';
+                            _seen[_nv].style.borderColor = 'var(--red)';
+                            // Le champ readonly « deliverableName<i> » n'est pas éditable :
+                            // on met le focus sur le libellé libre correspondant à la place.
+                            var _dupIdSuffix = nameEls[_n2].id.replace('deliverableName', '');
+                            var _dupLabelEl = document.getElementById('deliverableLabel' + _dupIdSuffix);
+                            (_dupLabelEl || nameEls[_n2]).focus();
+                            if (_dupLabelEl) _dupLabelEl.style.borderColor = 'var(--red)';
+                            notify('Deux canaux portent le même nom de livrable (« ' + nameEls[_n2].value.trim() + ' »). Donnez un nom unique à chaque canal.', 'warning');
+                            return false;
+                        }
+                        _seen[_nv] = nameEls[_n2];
+                    }
+                }
+
+                // Champs personnalisés (Administration ▸ Champs personnalisés) : requis
+                // simples + groupes « au moins un », déjà conditionnés par showIf.
+                if (allValid) {
+                    var cfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                    if (cfMod) {
+                        var cfStepErrors = [];
+                        if (step === 1) {
+                            var cfCont1 = document.getElementById('cfStep1Fields');
+                            cfStepErrors = cfMod.validateValues('creation.step1', cfMod.collectValues(cfCont1, 'creation.step1'));
+                        } else if (step === 2) {
+                            var cfCont2 = document.getElementById('cfStep2Fields');
+                            cfStepErrors = cfMod.validateValues('creation.step2', cfMod.collectValues(cfCont2, 'creation.step2'));
+                        } else if (step === 3) {
+                            var cfCont3 = document.getElementById('cfStep3Fields');
+                            cfStepErrors = cfMod.validateValues('creation.step3', cfMod.collectValues(cfCont3, 'creation.step3'));
+                        } else if (step === 4) {
+                            var numCh = parseInt((document.querySelector('input[name="numChannels"]:checked') || {}).value) || 0;
+                            for (var _c = 1; _c <= numCh && !cfStepErrors.length; _c++) {
+                                var cfContBaseC = document.getElementById('cfCanalBaseFields' + _c);
+                                cfStepErrors = cfMod.validateValues('creation.step3.canal.base', cfMod.collectValues(cfContBaseC, 'creation.step3.canal.base'));
+                                if (cfStepErrors.length) break;
+                                var cfContC = document.getElementById('cfCanalFields' + _c);
+                                var cType = (document.getElementById('channelContent' + _c) || {}).value || '';
+                                cfStepErrors = cfMod.validateValues('creation.step3.canal', cfMod.collectValues(cfContC, 'creation.step3.canal', cType), cType);
+                            }
+                        }
+                        if (cfStepErrors.length) {
+                            allValid = false;
+                            notify(cfStepErrors[0].message, 'warning');
+                        }
+                    }
+                }
+
+                if (!allValid) {
+                    notify('Veuillez remplir tous les champs obligatoires', 'warning');
+                }
+
+                return allValid;
+            }
+
+            // Fonction pour générer le récapitulatif
+            function generateSummary() {
+                var summaryContainer = $('#summaryContainer');
+                var html = '';
+
+                // Section 1 : Informations générales
+                html += '<div class="summary-section">';
+                html += '  <h4>📋 Informations générales</h4>';
+                html += '  <div class="summary-item"><span class="summary-label">Nom de la tâche :</span><span class="summary-value">' + ($("#taskName").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Description :</span><span class="summary-value">' + ($("#description").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">PO :</span><span class="summary-value">' + ($("#po").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Date Envoi client :</span><span class="summary-value">' + ($("#launchDate").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Date de saisie :</span><span class="summary-value">' + ($("#instantiation").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Typologie :</span><span class="summary-value">' + ($("#typology").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Marché :</span><span class="summary-value">' + ($("#market").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Récurrence :</span><span class="summary-value">' + ($("#recurrence").value || '-') + '</span></div>';
+                var reqTeams = [];
+                if ($("#teamMarketing").checked) reqTeams.push("Marketing");
+                if ($("#teamCom").checked) reqTeams.push("Com");
+                if ($("#teamEBF").checked) reqTeams.push("EBF");
+                if ($("#teamData").checked) reqTeams.push("Data");
+                html += '  <div class="summary-item"><span class="summary-label">Équipes requises :</span><span class="summary-value">' + (reqTeams.join(', ') || '-') + '</span></div>';
+                html += '</div>';
+
+                // Section 2 : Segmentation
+                html += '<div class="summary-section">';
+                html += '  <h4>🎯 Segmentation</h4>';
+
+                if (document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked) {
+                    var _ps = ($("#prospectSource") ? $("#prospectSource").value : '').trim();
+                    html += '  <div class="summary-item"><span class="summary-label">Cible prospects :</span><span class="summary-value">Oui' + (_ps ? ' — ' + _ps : '') + '</span></div>';
+                }
+                var checkedSegments = Array.from(document.querySelectorAll('.segment-cb:checked')).map(function(cb) { return cb.value; });
+                if (checkedSegments.length > 0) {
+                    html += '  <div class="summary-item"><span class="summary-label">Segments :</span><span class="summary-value">' + checkedSegments.join(', ') + '</span></div>';
+                }
+                var checkedUBs = Array.from(document.querySelectorAll('.ub-cb:checked')).map(function(cb) { return cb.value; });
+                if (checkedUBs.length > 0) {
+                    html += '  <div class="summary-item"><span class="summary-label">Univers de besoin :</span><span class="summary-value">' + checkedUBs.join(', ') + '</span></div>';
+                }
+                if ($("#persona").value) html += '  <div class="summary-item"><span class="summary-label">Persona :</span><span class="summary-value">' + $("#persona").value + '</span></div>';
+                html += '</div>';
+
+                // Section 3 : Détails produit
+                html += '<div class="summary-section">';
+                html += '  <h4>🛍️ Détails produit</h4>';
+                html += '  <div class="summary-item"><span class="summary-label">URL Fiche Produit :</span><span class="summary-value">' + ($("#productUrl").value || '-') + '</span></div>';
+                var _summaryProds = Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function(cb){ return cb.value; });
+                html += '  <div class="summary-item"><span class="summary-label">Produits ciblés :</span><span class="summary-value">' + (_summaryProds.length ? _summaryProds.join(', ') : '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Offre promotionnelle :</span><span class="summary-value">' + (document.querySelector('input[name="offrePromo"]:checked')?.value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Date de mise en vigueur :</span><span class="summary-value">' + ($("#offerValidityDate").value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Date de fin de validité :</span><span class="summary-value">' + (($("#offerEndDate") || {}).value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Parcours selfcare :</span><span class="summary-value">' + (document.querySelector('input[name="parcoursSelfcare"]:checked')?.value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Parcours simulateur :</span><span class="summary-value">' + (document.querySelector('input[name="parcoursSimulateur"]:checked')?.value || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Transfo :</span><span class="summary-value">' + (document.querySelector('input[name="transfo"]:checked')?.value || '-') + '</span></div>';
+                if (document.querySelector('input[name="transfo"]:checked')?.value === 'Oui') {
+                    html += '  <div class="summary-item"><span class="summary-label">Numéro de Lot :</span><span class="summary-value">' + ($("#lotNumber").value || '-') + '</span></div>';
+                }
+                html += '</div>';
+
+                // Section 4 : Canaux
+                var numChannels = parseInt(document.querySelector('input[name="numChannels"]:checked')?.value) || 0;
+                if (numChannels > 0) {
+                    html += '<div class="summary-section">';
+                    html += '  <h4>📢 Canaux de communication (' + numChannels + ')</h4>';
+                    for (var i = 1; i <= numChannels; i++) {
+                        html += '  <div style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 8px;">';
+                        html += '    <strong>Canal ' + i + ' :</strong><br>';
+                        html += '    <div class="summary-item"><span class="summary-label">Nom du livrable :</span><span class="summary-value">' + ($(`#deliverableName${i}`)?.value || '-') + '</span></div>';
+                        html += '    <div class="summary-item"><span class="summary-label">Canal du contenu :</span><span class="summary-value">' + ($(`#channelContent${i}`)?.value || '-') + '</span></div>';
+                        html += '    <div class="summary-item"><span class="summary-label">Date de réception client :</span><span class="summary-value">' + ($(`#sendDate${i}`)?.value || '-') + '</span></div>';
+                        html += '    <div class="summary-item"><span class="summary-label">Type de Com :</span><span class="summary-value">' + ($(`#comType${i}`)?.value || '-') + '</span></div>';
+                        html += '    <div class="summary-item"><span class="summary-label">Critère ciblage :</span><span class="summary-value">' + ($(`#targetingCriteria${i}`)?.value || '-') + '</span></div>';
+                        html += '    <div class="summary-item"><span class="summary-label">Typologie com :</span><span class="summary-value">' + (document.querySelector(`input[name="comTypology${i}"]:checked`)?.value || '-') + '</span></div>';
+                        if ($(`#urlLccx${i}`)?.value) html += '    <div class="summary-item"><span class="summary-label">Lien LCCX :</span><span class="summary-value">' + ($(`#urlLccx${i}`)?.value || '-') + '</span></div>';
+                        if (isSiteWebComTypology(document.querySelector(`input[name="comTypology${i}"]:checked`)?.value)) {
+                            html += '    <div class="summary-item"><span class="summary-label">URL Tic et Tac / CA NOUS :</span><span class="summary-value">' + ($(`#urlTicTac${i}`)?.value || '-') + '</span></div>';
+                            html += '    <div class="summary-item"><span class="summary-label">URL Com Store :</span><span class="summary-value">' + ($(`#urlComStore${i}`)?.value || '-') + '</span></div>';
+                        }
+                        html += '  </div>';
+                    }
+                    html += '</div>';
+                }
+
+                summaryContainer.innerHTML = html;
+            }
+
+            // juridiqueRequired → afficher juridiqueComment : géré par le moteur
+            // générique (showIf), voir DEFAULT_FIELDS['creation.step1'].
+
+            // ── Segments : "Tout sélectionner" par groupe (Particuliers / Pro / Agri) ──
+            // (lié après génération des cases depuis la config — voir buildChoiceLists)
+            function bindSegAll() {
+                var masters = document.querySelectorAll('.seg-all-cb');
+                masters.forEach(function(master) {
+                    var header = master.closest('[data-seg-header]');
+                    var grid = header && header.nextElementSibling;
+                    if (!grid) return;
+                    var cbs = grid.querySelectorAll('.segment-cb');
+                    master.addEventListener('change', function() {
+                        cbs.forEach(function(cb) { cb.checked = master.checked; });
+                    });
+                    cbs.forEach(function(cb) {
+                        cb.addEventListener('change', function() {
+                            master.checked = Array.prototype.every.call(cbs, function(x) { return x.checked; });
+                        });
+                    });
+                });
+            }
+
+            // ── Construit les listes de choix depuis IM.config (surchargée par l'admin) ──
+            // Les segments, univers de besoin et listes déroulantes simples sont générés
+            // ici pour refléter d'éventuelles modifications faites dans l'Administration.
+            function buildChoiceLists() {
+                var cfg = window.ImpulsionMarketing && window.ImpulsionMarketing.config;
+                if (!cfg) return;
+                function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+                // IMPORTANT : la régénération réécrit les blocs. On capture d'abord les
+                // sélections de l'utilisateur pour les restaurer ensuite (ne jamais perdre
+                // ce qui a été coché si cette fonction est rappelée — ex. config admin tardive).
+                function checkedValues(sel) { return Array.prototype.map.call(document.querySelectorAll(sel), function (c) { return c.value; }); }
+                var prevUB = checkedValues('.ub-cb:checked');
+                var prevSeg = checkedValues('.segment-cb:checked');
+
+                // Listes déroulantes simples : on conserve l'option « Choisir... », la
+                // sélection courante, puis on régénère.
+                function fillSelect(id, items) {
+                    var sel = document.getElementById(id);
+                    if (!sel || !Array.isArray(items)) return;
+                    var prev = sel.value;
+                    var ph = sel.querySelector('option[value=""]');
+                    var phHtml = ph ? ph.outerHTML : '';
+                    sel.innerHTML = phHtml + items.map(function (v) { return '<option value="' + esc(v) + '">' + esc(v) + '</option>'; }).join('');
+                    if (prev && items.indexOf(prev) !== -1) sel.value = prev;
+                }
+                fillSelect('typology', cfg.TYPOLOGIES);
+                fillSelect('market', cfg.MARCHES);
+                fillSelect('recurrence', cfg.RECURRENCES);
+                fillSelect('lotNumber', cfg.LOTS);
+
+                // Segments groupés
+                var segC = document.getElementById('segmentsContainer');
+                if (segC && Array.isArray(cfg.SEGMENTS_GROUPS)) {
+                    var labStyle = 'font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;';
+                    var hdrStyle = 'background:var(--line-2);padding:6px 14px;font-size:11px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;';
+                    var allLabStyle = 'display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:var(--primary);cursor:pointer;text-transform:none;letter-spacing:0;';
+                    var html = '';
+                    cfg.SEGMENTS_GROUPS.forEach(function (g, gi) {
+                        var last = gi === cfg.SEGMENTS_GROUPS.length - 1;
+                        html += '<div data-seg-header style="' + hdrStyle + '"><span>' + esc(g.group) + '</span>'
+                            + '<label style="' + allLabStyle + '"><input type="checkbox" class="seg-all-cb"> Tout sélectionner</label></div>';
+                        html += '<div style="padding:10px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px 8px;' + (last ? '' : 'border-bottom:1px solid var(--line);') + '">';
+                        (g.items || []).forEach(function (it) {
+                            html += '<label style="' + labStyle + '"><input type="checkbox" class="segment-cb" value="' + esc(it.value) + '"> ' + esc(it.label || it.value) + '</label>';
+                        });
+                        html += '</div>';
+                    });
+                    segC.innerHTML = html;
+                }
+
+                // Univers de besoin
+                var ubC = document.getElementById('ubContainer');
+                if (ubC && Array.isArray(cfg.UNIVERS_BESOINS)) {
+                    var ubLab = 'font-weight:400;font-size:13px;display:flex;align-items:center;gap:7px;cursor:pointer;white-space:nowrap;justify-self:start;';
+                    ubC.innerHTML = cfg.UNIVERS_BESOINS.map(function (u) {
+                        return '<label style="' + ubLab + '"><input type="checkbox" class="ub-cb" value="' + esc(u) + '"> ' + esc(u) + '</label>';
+                    }).join('');
+                }
+
+                // Restaurer les cases précédemment cochées (segments + univers de besoin).
+                function restore(sel, values) {
+                    if (!values.length) return;
+                    Array.prototype.forEach.call(document.querySelectorAll(sel), function (cb) {
+                        if (values.indexOf(cb.value) !== -1) cb.checked = true;
+                    });
+                }
+                restore('.segment-cb', prevSeg);
+                restore('.ub-cb', prevUB);
+
+                bindSegAll();
+            }
+
+            // ── URLs ComStore dynamiques ──
+            window.addComStoreRow = function(chanIdx) {
+                var list = document.getElementById('urlComStoreList' + chanIdx);
+                if (!list) return;
+                var row = document.createElement('div');
+                row.className = 'url-comstore-row';
+                row.style.cssText = 'display:flex;gap:6px;margin-bottom:4px;';
+                row.innerHTML = '<input type="url" class="urlComStore-input-' + chanIdx + ' url-comstore-input" placeholder="https://..." style="flex:1;"><button type="button" class="btn-remove-comstore" onclick="removeComStoreRow(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;" title="Supprimer">−</button>';
+                list.appendChild(row);
+            };
+            window.removeComStoreRow = function(btn) {
+                var row = btn.parentElement;
+                var list = row.parentElement;
+                if (list.querySelectorAll('.url-comstore-row').length > 1) {
+                    list.removeChild(row);
+                } else {
+                    row.querySelector('input').value = '';
+                }
+            };
+
+            function generateChannelFields(num) {
+                const container = $("#channelsContainer");
+                container.innerHTML = "";
+                // Types de livrable / canaux : repris de la config (éditable via
+                // l'Administration), avec repli sur la liste par défaut si indisponible.
+                var cfgCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.config;
+                // Type de livrable, type de Com, typologie de com, nom du livrable et
+                // lien LCCX : rendus par le bloc « socle » du canal (cfCanalBaseFields,
+                // champs migrés, même clé de stockage) juste après l'insertion du canal
+                // dans le DOM, voir plus bas.
+                const universBesoins = (cfgCampaign && Array.isArray(cfgCampaign.UNIVERS_BESOINS)) ? cfgCampaign.UNIVERS_BESOINS.slice() : [];
+                // Zones site web : reprises de la config (Administration → Zones site web).
+                const webZonesCfg = (cfgCampaign && cfgCampaign.WEB_ZONES && typeof cfgCampaign.WEB_ZONES === 'object') ? cfgCampaign.WEB_ZONES : {};
+                // Marchés du planning site web : repris de la config (Administration → Marchés
+                // site web — même liste que la matrice du Comité éditorial).
+                const marchesSiteWeb = (cfgCampaign && Array.isArray(cfgCampaign.MARCHES_SITE_WEB) && cfgCampaign.MARCHES_SITE_WEB.length)
+                    ? cfgCampaign.MARCHES_SITE_WEB.slice()
+                    : [{ value: 'part', label: 'Particuliers' }, { value: 'bp', label: 'BP' }, { value: 'pro', label: 'Pro' }, { value: 'agri', label: 'Agri' }, { value: 'ent', label: 'ENT' }, { value: 'asso', label: 'Association' }];
+                // Jour de début des créneaux site web : repris de la config (Administration →
+                // Paramètres généraux), avec repli sur lundi (comportement historique).
+                const DAY_LABELS_FR = { 0: 'dimanche', 1: 'lundi', 2: 'mardi', 3: 'mercredi', 4: 'jeudi', 5: 'vendredi', 6: 'samedi' };
+                var _appSettings = (cfgCampaign && cfgCampaign.APP_SETTINGS) || {};
+                const webSlotStartDay = (typeof _appSettings.webSlotStartDay === 'number' && _appSettings.webSlotStartDay >= 0 && _appSettings.webSlotStartDay <= 6) ? _appSettings.webSlotStartDay : 1;
+                const webSlotDayLabel = DAY_LABELS_FR[webSlotStartDay];
+                for (let i = 1; i <= num; i++) {
+                    const div = document.createElement("div");
+                    div.className = "form-group";
+                    div.innerHTML = `
+                        <h4>Canal ${i}</h4>
+                        <div id="cfCanalBaseFields${i}"></div>
+                        <div class="form-group">
+                            <input type="text" id="deliverableName${i}" readonly style="background:var(--line-2,#f0f4f1);color:var(--muted,#666);cursor:not-allowed;">
+                        </div>
+                        <div class="form-group">
+                            <label for="sendDate${i}">Date de réception client :</label>
+                            <input type="date" id="sendDate${i}">
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:#666;margin-top:4px;cursor:pointer;"><input type="checkbox" class="sendDateFree-cb" data-i="${i}"> Délai / condition à la place d'une date (ex : « J+3 après ouverture de compte »)</label>
+                        </div>
+                        <div class="form-group">
+                            <label>Univers de besoin de ce livrable <small style="font-weight:400;color:#888;">(facultatif — si vide, celui de la campagne s'applique)</small></label>
+                            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                                ${universBesoins.map(function(u){ var v = String(u).replace(/"/g,'&quot;'); return '<label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;"><input type="checkbox" class="ch-ub-cb-' + i + '" value="' + v + '"> ' + v + '</label>'; }).join('')}
+                            </div>
+                        </div>
+                        <div class="conditional-field" id="siteWebFields${i}" style="display:none;background:var(--green-50);border:1px solid var(--green-100);border-radius:6px;padding:10px 12px;margin-top:4px;">
+                            <div style="font-weight:600;font-size:12px;color:#15803d;margin-bottom:4px;">🌐 Paramètres zone site web</div>
+                            <div style="font-size:11px;color:#166534;margin-bottom:8px;">⚠️ Les créneaux site web sont du <strong>${webSlotDayLabel} au ${webSlotDayLabel}</strong> — les dates seront automatiquement ajustées.</div>
+                            <div style="font-size:11px;color:#166534;margin-bottom:8px;">📋 Vérifiez avant la saisie le <strong>plan de communication national</strong> pour vous assurer d'un alignement avec la stratégie CASA.</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div>
+                                    <label style="font-size:12px;">Marché(s) :</label>
+                                    <div id="siteWebMarcheGroup${i}" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;">
+                                        ${marchesSiteWeb.map(function(m, mi) { var v = String(m.value).replace(/"/g, '&quot;'); return '<label style="font-size:12px;display:flex;align-items:center;gap:3px;font-weight:400;"><input type="checkbox" class="sw-marche-cb-' + i + '" value="' + v + '"' + (mi === 0 ? ' checked' : '') + '> ' + m.label + '</label>'; }).join('')}
+                                    </div>
+                                </div>
+                                <div id="siteWebUniversGroup${i}" style="display:none;">
+                                    <label style="font-size:12px;" id="siteWebUniversLabel${i}" for="siteWebUnivers${i}">Emplacement :</label>
+                                    <select id="siteWebUnivers${i}" style="width:100%;">
+                                        <option value="">—</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size:12px;" for="siteWebDateDebut${i}">Date début :</label>
+                                    <input type="date" id="siteWebDateDebut${i}" style="width:100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size:12px;" for="siteWebDateFin${i}">Date fin :</label>
+                                    <input type="date" id="siteWebDateFin${i}" style="width:100%;">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="conditional-field" id="repriseNatioFields${i}" style="display: none;">
+                            <label for="urlTicTac${i}">URL Tic et Tac / CA NOUS (optionnel):</label>
+                            <input type="url" id="urlTicTac${i}" placeholder="https://...">
+                        </div>
+                        <div class="conditional-field" id="urlComStoreGroup${i}" style="display: none;">
+                            <label>URLs Com Store <small style="font-weight:400;">(optionnel — une ou plusieurs)</small></label>
+                            <div id="urlComStoreList${i}">
+                                <div class="url-comstore-row" style="display:flex;gap:6px;margin-bottom:4px;">
+                                    <input type="url" class="urlComStore-input-${i} url-comstore-input" placeholder="https://..." style="flex:1;">
+                                    <button type="button" class="btn-remove-comstore" onclick="removeComStoreRow(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;" title="Supprimer">−</button>
+                                </div>
+                            </div>
+                            <button type="button" onclick="addComStoreRow(${i})" style="margin-top:4px;background:var(--blue-50);color:#0369a1;border:1px solid var(--blue);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;">+ Ajouter une URL</button>
+                        </div>
+                        <div id="cfCanalFields${i}"></div>
+                    `;
+                    container.appendChild(div);
+
+                    // Champs « socle » du canal (Type de livrable, Nom du livrable, Type de
+                    // Com, Critère ciblage, Typologie de com, Lien LCCX) — champs déjà en
+                    // place avant l'admin « Champs personnalisés », migrés vers le moteur
+                    // générique (même clé de stockage). Rendus UNE SEULE FOIS ici (jamais
+                    // filtrés par canalTypes, donc pas besoin de les régénérer au changement
+                    // de type de livrable — contrairement aux champs additionnels ci-dessous).
+                    const cfModuleCampaign = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                    const cfBaseCont = document.getElementById(`cfCanalBaseFields${i}`);
+                    if (cfModuleCampaign && cfBaseCont) {
+                        cfBaseCont.innerHTML = cfModuleCampaign.renderFields('creation.step3.canal.base', {}, { idSuffix: i });
+                        cfModuleCampaign.wireFields(cfBaseCont, 'creation.step3.canal.base', {});
+                    }
+
+                    // Show/hide siteWeb fields based on channel content selection
+                    // (zones + zones réservées BP reprises de la config Administration).
+                    const WEB_CHANNELS = (Array.isArray(webZonesCfg.zones) && webZonesCfg.zones.length)
+                        ? webZonesCfg.zones.slice()
+                        : ["Zone de Gauche ( synthese des comptes)", "Zone de Gauche ( Authentification)", "Bandeau Hero", "ZAC HOME PAGE", "Zone de droite ( synthese des comptes)", "ZAC", "Menu Burger"];
+                    const ZAC_BP_ONLY = (Array.isArray(webZonesCfg.bpOnlyZones) && webZonesCfg.bpOnlyZones.length)
+                        ? webZonesCfg.bpOnlyZones.slice()
+                        : ["ZAC"];
+
+                    // Ramène une date au jour de créneau site web configuré (webSlotStartDay,
+                    // Administration → Paramètres généraux — lundi par défaut) le plus proche.
+                    const snapToMonday = function(dateStr) {
+                        if (!dateStr) return dateStr;
+                        var d = new Date(dateStr + 'T00:00:00');
+                        var day = d.getDay(); // 0=Sun,1=Mon,...
+                        var diff = (day - webSlotStartDay + 7) % 7;
+                        if (diff) d.setDate(d.getDate() - diff);
+                        var y = d.getFullYear();
+                        var m = String(d.getMonth() + 1).padStart(2, '0');
+                        var dd = String(d.getDate()).padStart(2, '0');
+                        return y + '-' + m + '-' + dd;
+                    };
+
+                    const applySiteWebConstraints = function(val) {
+                        const siteWebFields = document.getElementById(`siteWebFields${i}`);
+                        if (!siteWebFields) return;
+                        const isWeb = WEB_CHANNELS.includes(val);
+                        siteWebFields.style.display = isWeb ? 'block' : 'none';
+                        if (!isWeb) return;
+
+                        // ZAC: force marché BP uniquement
+                        const marcheCbs = document.querySelectorAll(`.sw-marche-cb-${i}`);
+                        if (ZAC_BP_ONLY.includes(val)) {
+                            marcheCbs.forEach(function(cb) {
+                                cb.checked = cb.value === 'bp';
+                                cb.disabled = true;
+                            });
+                        } else {
+                            marcheCbs.forEach(function(cb) { cb.disabled = false; });
+                        }
+
+                        // Univers / Emplacement selector
+                        const universGroup = document.getElementById(`siteWebUniversGroup${i}`);
+                        const universLabel = document.getElementById(`siteWebUniversLabel${i}`);
+                        const universEl    = document.getElementById(`siteWebUnivers${i}`);
+                        // Sous-lignes par zone : reprises de la config Administration
+                        // (Zones site web → « Sous-lignes par zone »), à défaut liste par défaut.
+                        var zonesMultiCfg = (webZonesCfg.zonesMulti && typeof webZonesCfg.zonesMulti === 'object') ? webZonesCfg.zonesMulti : {};
+                        var UNIVERS_OPTIONS = {};
+                        if (Object.keys(zonesMultiCfg).length) {
+                            Object.keys(zonesMultiCfg).forEach(function (zoneName) {
+                                UNIVERS_OPTIONS[zoneName] = { label: 'Sélection :', options: (zonesMultiCfg[zoneName] || []).slice() };
+                            });
+                        } else {
+                            UNIVERS_OPTIONS = {
+                                'Menu Burger': { label: 'Univers :', options: ['Compte et carte', 'Epargne', 'Assurance', 'Crédit'] },
+                                'Zone de Gauche ( Authentification)': { label: 'Emplacement :', options: ['Emplacement 1', 'Emplacement 2', 'Emplacement 3', 'Emplacement 4', 'Emplacement 5'] }
+                            };
+                        }
+                        if (universGroup && universEl) {
+                            if (UNIVERS_OPTIONS[val]) {
+                                var cfg = UNIVERS_OPTIONS[val];
+                                if (universLabel) universLabel.textContent = cfg.label;
+                                universEl.innerHTML = '<option value="">—</option>' + cfg.options.map(function(o) {
+                                    return '<option value="' + o + '">' + o + '</option>';
+                                }).join('');
+                                universGroup.style.display = 'block';
+                            } else {
+                                universGroup.style.display = 'none';
+                                universEl.value = '';
+                            }
+                        }
+                    };
+
+                    const MAIL_CHANNELS = ['MAIL', 'MAIL + E-MESSAGE'];
+                    const applyMailConstraints = function(val) {
+                        const emailGroup = document.getElementById(`emailObjectGroup${i}`);
+                        if (emailGroup) emailGroup.style.display = MAIL_CHANNELS.includes(val) ? 'block' : 'none';
+                    };
+
+                    // Champs personnalisés (Administration ▸ Champs personnalisés) propres à
+                    // ce canal — certains peuvent être restreints à certains types de livrable
+                    // (canalTypes) : on réaffiche donc le bloc à chaque changement de type, en
+                    // conservant les valeurs déjà saisies pour les champs qui restent visibles.
+                    const applyCustomFieldsCanal = function(val) {
+                        if (!cfModuleCampaign) return;
+                        const cfCont = document.getElementById(`cfCanalFields${i}`);
+                        if (!cfCont) return;
+                        const existingValues = cfModuleCampaign.collectValues(cfCont, 'creation.step3.canal') || {};
+                        cfCont.innerHTML = cfModuleCampaign.renderFields('creation.step3.canal', existingValues, { canalType: val, idPrefix: 'cf-canal-' + i });
+                        cfModuleCampaign.wireFields(cfCont, 'creation.step3.canal', { canalType: val });
+                    };
+
+                    const channelSel = document.getElementById(`channelContent${i}`);
+                    if (channelSel) {
+                        channelSel.addEventListener('change', function() {
+                            applySiteWebConstraints(this.value);
+                            applyMailConstraints(this.value);
+                            applyCustomFieldsCanal(this.value);
+                        });
+                        // Init on render (in case pre-filled)
+                        applySiteWebConstraints(channelSel.value);
+                        applyMailConstraints(channelSel.value);
+                        applyCustomFieldsCanal(channelSel.value);
+                    }
+
+                    // Nom du livrable standardisé : « Type de livrable - saisie utilisateur ».
+                    // Recalculé en direct dès que le type ou le libellé changent — mais
+                    // JAMAIS lors de la restauration programmatique d'une valeur existante
+                    // (restoreChannelFields ne déclenche pas ces événements), pour ne pas
+                    // renommer silencieusement un canal déjà déposé en édition.
+                    const recomputeDeliverableName = function() {
+                        const typeVal  = (document.getElementById(`channelContent${i}`) || {}).value || '';
+                        const labelVal = (document.getElementById(`deliverableLabel${i}`) || {}).value || '';
+                        const nameEl   = document.getElementById(`deliverableName${i}`);
+                        if (nameEl) nameEl.value = typeVal && labelVal ? (typeVal + ' - ' + labelVal) : (typeVal || labelVal || '');
+                    };
+                    if (channelSel) channelSel.addEventListener('change', recomputeDeliverableName);
+                    const labelEl = document.getElementById(`deliverableLabel${i}`);
+                    if (labelEl) labelEl.addEventListener('input', recomputeDeliverableName);
+
+                    // Lundi → Lundi : snap dateDebut and dateFin to Monday
+                    const dateDebutEl = document.getElementById(`siteWebDateDebut${i}`);
+                    const dateFinEl   = document.getElementById(`siteWebDateFin${i}`);
+                    if (dateDebutEl) {
+                        dateDebutEl.addEventListener('change', function() {
+                            const snapped = snapToMonday(this.value);
+                            if (snapped !== this.value) this.value = snapped;
+                        });
+                    }
+                    if (dateFinEl) {
+                        dateFinEl.addEventListener('change', function() {
+                            const snapped = snapToMonday(this.value);
+                            if (snapped !== this.value) this.value = snapped;
+                        });
+                    }
+
+                    // Add event listeners for the radio buttons with smooth animation
+                    const radios = document.querySelectorAll(`input[name="comTypology${i}"]`);
+                    radios.forEach(radio => {
+                        radio.addEventListener('change', function() {
+                            const repriseFields = document.getElementById(`repriseNatioFields${i}`);
+                            const urlComStoreGroup = document.getElementById(`urlComStoreGroup${i}`);
+                            if (isSiteWebComTypology(this.value)) {
+                                repriseFields.style.display = "block";
+                                urlComStoreGroup.style.display = "block";
+                                // Force reflow pour l'animation
+                                repriseFields.offsetHeight;
+                                urlComStoreGroup.offsetHeight;
+                            } else {
+                                repriseFields.style.display = "none";
+                                urlComStoreGroup.style.display = "none";
+                            }
+                        });
+                    });
+                }
+            }
+
+            // ── Brouillon auto-sauvegardé du formulaire de création ──────────────────
+            // Sauvegarde la saisie en cours dans localStorage (mode création uniquement)
+            // pour ne rien perdre si l'onglet est fermé / rechargé. Vidé à la création.
+            var DRAFT_KEY = 'im_campaign_draft';
+            var _draftTimer = null;
+            var isCreationMode = !(new URLSearchParams(location.search).get('edit') || new URLSearchParams(location.search).get('duplicate'));
+
+            function collectDraft() {
+                var form = document.getElementById('campaignForm');
+                if (!form) return null;
+                var d = { fields: {}, checks: {}, radios: {}, ub: [], seg: [], prod: [], ts: Date.now() };
+                form.querySelectorAll('input, select, textarea').forEach(function (el) {
+                    if (el.type === 'file' || el.type === 'button' || el.type === 'submit') return;
+                    if (el.type === 'radio') { if (el.checked && el.name) d.radios[el.name] = el.value; return; }
+                    if (el.type === 'checkbox') {
+                        if (el.classList.contains('ub-cb')) { if (el.checked) d.ub.push(el.value); return; }
+                        if (el.classList.contains('segment-cb')) { if (el.checked) d.seg.push(el.value); return; }
+                        if (el.classList.contains('product-cb')) { if (el.checked) d.prod.push(el.value); return; }
+                        if (el.id) d.checks[el.id] = el.checked;
+                        return;
+                    }
+                    if (el.id) d.fields[el.id] = el.value;
+                });
+                return d;
+            }
+            function saveDraft() { if (isCreationMode) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(collectDraft())); } catch (e) {} } }
+            function clearDraft() { try { localStorage.removeItem(DRAFT_KEY); } catch (e) {} }
+            function loadDraft() { try { var t = localStorage.getItem(DRAFT_KEY); return t ? JSON.parse(t) : null; } catch (e) { return null; } }
+            function draftIsMeaningful(d) {
+                if (!d) return false;
+                var f = d.fields || {};
+                if ((d.ub && d.ub.length) || (d.seg && d.seg.length)) return true;
+                return Object.keys(f).some(function (k) { return f[k] && String(f[k]).trim(); });
+            }
+            function startDraftAutosave() {
+                var form = document.getElementById('campaignForm');
+                if (!form || form._draftBound) return;
+                form._draftBound = true;
+                var handler = function () { clearTimeout(_draftTimer); _draftTimer = setTimeout(saveDraft, 600); };
+                form.addEventListener('input', handler);
+                form.addEventListener('change', handler);
+            }
+            // Restauration échelonnée : canaux d'abord (régénération), puis selects (avec
+            // 'change' pour révéler les champs dépendants), enfin les autres champs.
+            function applyDraft(d) {
+                var form = document.getElementById('campaignForm');
+                if (!form || !d) return;
+                if (d.radios && d.radios.numChannels) {
+                    var nc = form.querySelector('input[name="numChannels"][value="' + d.radios.numChannels + '"]');
+                    if (nc) { nc.checked = true; nc.dispatchEvent(new Event('change')); }
+                }
+                setTimeout(function () {
+                    Object.keys(d.fields || {}).forEach(function (id) {
+                        var el = document.getElementById(id);
+                        if (el && el.tagName === 'SELECT') { el.value = d.fields[id]; el.dispatchEvent(new Event('change')); }
+                    });
+                    Object.keys(d.radios || {}).forEach(function (name) {
+                        if (name === 'numChannels') return;
+                        form.querySelectorAll('input[type=radio][name="' + name + '"]').forEach(function (el) {
+                            if (el.value === d.radios[name]) { el.checked = true; el.dispatchEvent(new Event('change')); }
+                        });
+                    });
+                    setTimeout(function () {
+                        Object.keys(d.fields || {}).forEach(function (id) {
+                            var el = document.getElementById(id);
+                            if (el && el.tagName !== 'SELECT') el.value = d.fields[id];
+                        });
+                        Object.keys(d.checks || {}).forEach(function (id) {
+                            var el = document.getElementById(id); if (el) { el.checked = d.checks[id]; if (id === 'cibleProspect') el.dispatchEvent(new Event('change')); }
+                        });
+                        (d.ub || []).forEach(function (v) { Array.prototype.forEach.call(form.querySelectorAll('.ub-cb'), function (c) { if (c.value === v) c.checked = true; }); });
+                        (d.seg || []).forEach(function (v) { Array.prototype.forEach.call(form.querySelectorAll('.segment-cb'), function (c) { if (c.value === v) c.checked = true; }); });
+                        if (window.setSelectedProducts) window.setSelectedProducts(d.prod || []);
+                        updateTeamRestrictions();
+                    }, 200);
+                }, 200);
+            }
+            function offerDraftRestore() {
+                if (!isCreationMode) return;
+                var d = loadDraft();
+                if (!draftIsMeaningful(d)) return;
+                var form = document.getElementById('campaignForm');
+                if (!form || document.getElementById('draft-bar')) return;
+                var when = d.ts ? new Date(d.ts).toLocaleString('fr-FR') : '';
+                var bar = document.createElement('div');
+                bar.id = 'draft-bar';
+                bar.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;';
+                bar.innerHTML = '<span>📝 Un brouillon non terminé a été retrouvé' + (when ? ' (' + when + ')' : '') + '.</span>'
+                    + '<span style="display:flex;gap:8px;"><button type="button" id="draft-restore" class="btn btn-primary" style="padding:6px 14px;">Restaurer</button>'
+                    + '<button type="button" id="draft-discard" style="padding:6px 14px;border:1px solid var(--line,#ddd);background:#fff;border-radius:6px;cursor:pointer;">Supprimer</button></span>';
+                form.parentNode.insertBefore(bar, form);
+                document.getElementById('draft-restore').addEventListener('click', function () { applyDraft(d); bar.remove(); notify('Brouillon restauré.', 'success'); });
+                document.getElementById('draft-discard').addEventListener('click', function () { clearDraft(); bar.remove(); });
+            }
+
+            // Journalise une action dans activity.json de la campagne (journal d'activité).
+            function logCampaignActivity(folderName, type, detail) {
+                if (!state.campaignsFolder || !folderName) return Promise.resolve();
+                var u = window.ImpulsionMarketing.users && window.ImpulsionMarketing.users.getCurrentUser();
+                var actor = u ? u.name : '?';
+                return state.campaignsFolder.getDirectoryHandle(folderName)
+                    .then(function(dir) { return dir.getFileHandle('activity.json', { create: true }); })
+                    .then(function(fh) {
+                        return fh.getFile().then(function(f) { return f.text(); })
+                            .then(function(t) { var a; try { a = JSON.parse(t); } catch (e) { a = []; } return { fh: fh, list: Array.isArray(a) ? a : [] }; })
+                            .catch(function() { return { fh: fh, list: [] }; });
+                    })
+                    .then(function(res) {
+                        res.list.push({ id: 'act-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4), date: new Date().toISOString(), type: type, acteur: actor, detail: detail });
+                        return res.fh.createWritable().then(function(w) { return w.write(JSON.stringify(res.list, null, 2)).then(function() { return w.close(); }); });
+                    })
+                    .catch(function(e) { console.warn('logCampaignActivity:', e && e.message); });
+            }
+
+            $("#campaignForm").addEventListener("submit", async (e) => {
+                e.preventDefault();
+                $("#btnSubmit").disabled = true;
+                $("#btnSubmit").textContent = state.editMode ? "Modification..." : "Création...";
+                $(".loader").style.display = "block";
+                try {
+                    var oldCampaignFolder = state.editCampaignName;
+                    var campaignFolder = await createCampaign();
+                    clearDraft(); // création réussie → on jette le brouillon
+                    logCampaignActivity(campaignFolder, 'campagne', state.editMode ? 'Campagne modifiée' : 'Campagne créée');
+
+                    // Invalider le cache métadonnées pour cette campagne (edit ou création),
+                    // et pour l'ancien nom de dossier si la campagne a été renommée.
+                    MetadataCacheInvalidator.invalidate(campaignFolder);
+                    if (oldCampaignFolder && oldCampaignFolder !== campaignFolder) {
+                        MetadataCacheInvalidator.invalidate(oldCampaignFolder);
+                    }
+
+                    // Utiliser le module d'erreurs pour afficher une notification
+                    var errors = window.ImpulsionMarketing.errors;
+                    if (errors && errors.showNotification) {
+                        var successMessage = state.editMode ? 'Campagne modifiée avec succès !' : 'Campagne créée avec succès !';
+                        errors.showNotification(successMessage, 'success', 2000);
+                    }
+
+                    // Rediriger vers la page de détails après 1 seconde
+                    setTimeout(function() {
+                        window.location.href = 'details.html?name=' + encodeURIComponent(campaignFolder);
+                    }, 1000);
+                } catch (error) {
+                    var errors = window.ImpulsionMarketing.errors;
+                    if (errors && errors.showNotification) {
+                        errors.showNotification('Erreur : ' + error.message, 'error');
+                    } else {
+                        notify("Erreur : " + error.message, 'error');
+                    }
+                    $("#btnSubmit").disabled = false;
+                    $("#btnSubmit").textContent = state.editMode ? "Modifier la campagne" : "Créer la campagne";
+                    $(".loader").style.display = "none";
+                }
+            });
+
+            // Fonction pour collecter les données du formulaire
+            function collectFormData() {
+                const data = {
+                    taskName: $("#taskName").value,
+                    description: $("#description").value,
+                    po: $("#po").value,
+                    launchDate: $("#launchDate").value,
+                    instantiation: $("#instantiation").value || new Date().toISOString().slice(0, 10),
+                    kickoffNeeded: (document.querySelector('input[name="kickoffNeeded"]:checked') || {}).value || 'Non',
+                    typology: $("#typology").value,
+                    market: $("#market").value,
+                    recurrence: $("#recurrence").value,
+                    campagneLiee: $("#campagneLiee").value.trim(),
+                    juridique: (function() {
+                        var req = document.getElementById('juridiqueRequired');
+                        if (!req || !req.checked) return null;
+                        return {
+                            required: true,
+                            comment: ($("#juridiqueComment") || {}).value || '',
+                            status: 'pending'
+                        };
+                    })(),
+                    segments: [],
+                    ubs: [],
+                    persona: $("#persona").value,
+
+                    productUrl: $("#productUrl").value,
+                    targetProducts: Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function(cb){ return cb.value; }),
+                    offrePromo: (document.querySelector('input[name="offrePromo"]:checked') || {}).value || '',
+                    parcoursSelfcare: (document.querySelector('input[name="parcoursSelfcare"]:checked') || {}).value || '',
+                    parcoursSimulateur: (document.querySelector('input[name="parcoursSimulateur"]:checked') || {}).value || '',
+                    cibleProspect: !!(document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked),
+                    prospectSource: ($("#prospectSource") ? $("#prospectSource").value : '').trim(),
+                    offerValidityDate: $("#offerValidityDate").value,
+                    offerEndDate: ($("#offerEndDate") || {}).value || '',
+                    transfo: document.querySelector('input[name="transfo"]:checked')?.value,
+                    lotNumber: $("#lotNumber").value,
+                    customFieldValues: (function() {
+                        var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                        if (!cf) return {};
+                        return {
+                            'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
+                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS),
+                            'creation.step3': stripMigratedIds(cf.collectValues(document.getElementById('cfStep3Fields'), 'creation.step3'), STEP3_MIGRATED_IDS)
+                        };
+                    })(),
+                    channels: []
+                };
+
+                // Collect segments (checkboxes)
+                document.querySelectorAll('.segment-cb:checked').forEach(function(cb) { data.segments.push(cb.value); });
+                // Collect UBs (checkboxes)
+                document.querySelectorAll('.ub-cb:checked').forEach(function(cb) { data.ubs.push(cb.value); });
+
+                // Collect channels
+                const numChannels = parseInt(document.querySelector('input[name="numChannels"]:checked')?.value) || 0;
+                for (let i = 1; i <= numChannels; i++) {
+                    data.channels.push({
+                        deliverableName: $(`#deliverableName${i}`).value,
+                        deliverableLabel: ($(`#deliverableLabel${i}`) || {}).value || '',
+                        content: $(`#channelContent${i}`).value,
+                        sendDate: $(`#sendDate${i}`).value,
+                        comType: $(`#comType${i}`).value,
+                        targetingCriteria: $(`#targetingCriteria${i}`).value,
+                        // L'objet de l'email n'est plus saisi à la création : il l'est à
+                        // l'étape « Réalisation BAT ». En édition, on préserve la valeur
+                        // déjà enregistrée sur le canal existant.
+                        emailObject: (state.editCampaignData && (state.editCampaignData.channels || [])[i - 1] && (state.editCampaignData.channels || [])[i - 1].emailObject) || '',
+                        comTypology: document.querySelector(`input[name="comTypology${i}"]:checked`)?.value,
+                        ubs: Array.from(document.querySelectorAll(`.ch-ub-cb-${i}:checked`)).map(function(cb){ return cb.value; }),
+                        urlTicTac: $(`#urlTicTac${i}`) ? $(`#urlTicTac${i}`).value : '',
+                        urlLccx: $(`#urlLccx${i}`) ? $(`#urlLccx${i}`).value : '',
+                        urlsComStore: (function() {
+                            var inputs = document.querySelectorAll(`.urlComStore-input-${i}`);
+                            var urls = [];
+                            inputs.forEach(function(inp) { if (inp.value.trim()) urls.push(inp.value.trim()); });
+                            return urls;
+                        })(),
+                        siteWeb: (function() {
+                            var sf = document.getElementById(`siteWebFields${i}`);
+                            if (!sf || sf.style.display === 'none') return null;
+                            return {
+                                zone: $(`#channelContent${i}`) ? $(`#channelContent${i}`).value : '',
+                                marches: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); var res = []; cbs.forEach(function(cb) { res.push(cb.value); }); return res.length ? res : ['part']; })(),
+                                marche: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); return cbs.length ? cbs[0].value : 'part'; })(),
+                                univers: ($(`#siteWebUnivers${i}`) || {}).value || null,
+                                dateDebut: ($(`#siteWebDateDebut${i}`) || {}).value || '',
+                                dateFin: ($(`#siteWebDateFin${i}`) || {}).value || ''
+                            };
+                        })(),
+                        customFieldValues: (function() {
+                            var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                            if (!cf) return {};
+                            var cType = $(`#channelContent${i}`) ? $(`#channelContent${i}`).value : '';
+                            return { 'creation.step3.canal': cf.collectValues(document.getElementById('cfCanalFields' + i), 'creation.step3.canal', cType) };
+                        })()
+                    });
+                }
+
+                return data;
+            }
+
+            // Copie récursive du contenu d'un dossier vers un autre (utilisée pour le
+            // renommage de dossier de campagne quand l'API move() n'est pas disponible).
+            async function copyDirRecursive(srcDir, destDir) {
+                for await (var [name, handle] of srcDir.entries()) {
+                    if (handle.kind === 'file') {
+                        var srcFile = await handle.getFile();
+                        var destFileHandle = await destDir.getFileHandle(name, { create: true });
+                        var writable = await destFileHandle.createWritable();
+                        await writable.write(await srcFile.arrayBuffer());
+                        await writable.close();
+                    } else {
+                        var destSubDir = await destDir.getDirectoryHandle(name, { create: true });
+                        await copyDirRecursive(handle, destSubDir);
+                    }
+                }
+            }
+
+            // Renomme le dossier d'une campagne (nom de campagne ou univers de besoin
+            // modifié → le préfixe/nom du dossier doit suivre). Utilise l'API native
+            // move() quand elle est disponible (rapide), sinon copie récursive + suppression
+            // de l'ancien dossier.
+            async function renameCampaignFolder(parentDir, oldName, newName) {
+                if (oldName === newName) return await parentDir.getDirectoryHandle(oldName);
+                var oldDir = await parentDir.getDirectoryHandle(oldName);
+                var collision = true;
+                try { await parentDir.getDirectoryHandle(newName); } catch (e) { collision = false; }
+                if (collision) throw new Error('Un dossier "' + newName + '" existe déjà. Choisissez un autre nom de campagne ou univers de besoin.');
+                if (typeof oldDir.move === 'function') {
+                    await oldDir.move(newName);
+                    return await parentDir.getDirectoryHandle(newName);
+                }
+                var newDir = await parentDir.getDirectoryHandle(newName, { create: true });
+                await copyDirRecursive(oldDir, newDir);
+                await parentDir.removeEntry(oldName, { recursive: true });
+                return newDir;
+            }
+
+            // Retire une entrée de _index.json (utilisé après renommage de dossier,
+            // pour ne pas laisser une entrée orpheline sous l'ancien nom).
+            async function removeFromCampaignIndex(campaignsDir, campaignName) {
+                try {
+                    var fh = await campaignsDir.getFileHandle('_index.json', { create: false });
+                    var file = await fh.getFile();
+                    var idx = JSON.parse(await file.text());
+                    if (idx.campaigns && idx.campaigns[campaignName]) {
+                        delete idx.campaigns[campaignName];
+                        var w = await (await campaignsDir.getFileHandle('_index.json', { create: true })).createWritable();
+                        await w.write(JSON.stringify(idx));
+                        await w.close();
+                    }
+                } catch (e) { /* pas d'index existant ou illisible : rien à purger */ }
+            }
+
+            function sanitizeFileName(name) {
+                // Replace invalid characters with underscores
+                let sanitized = name.replace(/[<>:"|?*\\\/()\[\]{}]/g, '_').replace(/\s+/g, '_');
+                // Remove leading/trailing dots and spaces
+                sanitized = sanitized.replace(/^\.+|\.+$/g, '').replace(/^ +| +$/g, '');
+                // Check for reserved names (Windows)
+                const reserved = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
+                if (reserved.includes(sanitized.toUpperCase())) {
+                    sanitized += '_file';
+                }
+                return sanitized;
+            }
+
+            async function createCampaign() {
+                if (!state.campaignsFolder) throw new Error("Dossier Campagnes non chargé.");
+
+                const taskName = $("#taskName").value.trim();
+
+                // Univers de besoin : facultatif. S'il est renseigné, il préfixe le nom
+                // du dossier ; sinon le dossier prend simplement le nom de la campagne.
+                const firstUBEl = document.querySelector('.ub-cb:checked');
+                const firstUB = firstUBEl ? firstUBEl.value : "";
+
+                if (!taskName) throw new Error("Le nom de la campagne est requis.");
+
+                let folderName;
+                let campaignDir;
+
+                const sanitizedTaskName = sanitizeFileName(taskName);
+                const computedFolderName = firstUB
+                    ? `[${sanitizeFileName(firstUB)}] ${sanitizedTaskName}`
+                    : sanitizedTaskName;
+
+                if (state.editMode) {
+                    // Mode édition : le dossier existant doit être renommé si le nom de la
+                    // campagne ou l'univers de besoin (préfixe du dossier) a changé.
+                    const oldFolderName = state.editCampaignName;
+                    if (computedFolderName !== oldFolderName) {
+                        campaignDir = await renameCampaignFolder(state.campaignsFolder, oldFolderName, computedFolderName);
+                        await removeFromCampaignIndex(state.campaignsFolder, oldFolderName);
+                        folderName = computedFolderName;
+                    } else {
+                        folderName = oldFolderName;
+                        campaignDir = await state.campaignsFolder.getDirectoryHandle(folderName);
+                    }
+                } else {
+                    // Mode création : créer un nouveau dossier
+                    folderName = computedFolderName;
+                    campaignDir = await state.campaignsFolder.getDirectoryHandle(folderName, { create: true });
+                }
+
+                // Collect all form data
+                let data = {
+                    id: taskName,
+                    description: $("#description").value,
+                    po: $("#po").value,
+                    launchDate: $("#launchDate").value,
+                    instantiation: $("#instantiation").value || new Date().toISOString().slice(0, 10),
+                    kickoffNeeded: (document.querySelector('input[name="kickoffNeeded"]:checked') || {}).value || 'Non',
+                    kickoffDate: $("#kickoffDate").value || "",
+                    typology: $("#typology").value,
+                    market: $("#market").value,
+                    recurrence: $("#recurrence").value,
+                    campagneLiee: $("#campagneLiee").value.trim(),
+                    juridique: (function() {
+                        var req = document.getElementById('juridiqueRequired');
+                        if (!req || !req.checked) return null;
+                        return {
+                            required: true,
+                            comment: ($("#juridiqueComment") || {}).value || '',
+                            status: 'pending'
+                        };
+                    })(),
+                    requiredTeams: [],
+                    segments: [],
+                    ubs: [],
+                    persona: $("#persona").value,
+
+                    productUrl: $("#productUrl").value,
+                    targetProducts: Array.prototype.map.call(document.querySelectorAll('.product-cb:checked'), function(cb){ return cb.value; }),
+                    offrePromo: (document.querySelector('input[name="offrePromo"]:checked') || {}).value || '',
+                    parcoursSelfcare: (document.querySelector('input[name="parcoursSelfcare"]:checked') || {}).value || '',
+                    parcoursSimulateur: (document.querySelector('input[name="parcoursSimulateur"]:checked') || {}).value || '',
+                    cibleProspect: !!(document.getElementById('cibleProspect') && document.getElementById('cibleProspect').checked),
+                    prospectSource: ($("#prospectSource") ? $("#prospectSource").value : '').trim(),
+                    offerValidityDate: $("#offerValidityDate").value,
+                    offerEndDate: ($("#offerEndDate") || {}).value || '',
+                    transfo: document.querySelector('input[name="transfo"]:checked')?.value,
+                    lotNumber: $("#lotNumber").value,
+                    numChannels: document.querySelector('input[name="numChannels"]:checked')?.value,
+                    customFieldValues: (function() {
+                        var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                        if (!cf) return {};
+                        return {
+                            'creation.step1': stripMigratedIds(cf.collectValues(document.getElementById('cfStep1Fields'), 'creation.step1'), STEP1_MIGRATED_IDS),
+                            'creation.step2': stripMigratedIds(cf.collectValues(document.getElementById('cfStep2Fields'), 'creation.step2'), STEP2_MIGRATED_IDS),
+                            'creation.step3': stripMigratedIds(cf.collectValues(document.getElementById('cfStep3Fields'), 'creation.step3'), STEP3_MIGRATED_IDS)
+                        };
+                    })(),
+                    channels: [],
+                    actif: true
+                };
+
+                // Segments (checkboxes)
+                document.querySelectorAll('.segment-cb:checked').forEach(function(cb) { data.segments.push(cb.value); });
+                // UBs (checkboxes)
+                document.querySelectorAll('.ub-cb:checked').forEach(function(cb) { data.ubs.push(cb.value); });
+
+                // Required Teams
+                if ($("#teamMarketing").checked) data.requiredTeams.push("Marketing");
+                if ($("#teamCom").checked) data.requiredTeams.push("Com");
+                if ($("#teamEBF").checked) data.requiredTeams.push("EBF");
+                if ($("#teamData").checked) data.requiredTeams.push("Data");
+
+                // Channels
+                const numChannels = parseInt(data.numChannels) || 0;
+                for (let i = 1; i <= numChannels; i++) {
+                    data.channels.push({
+                        deliverableName: $(`#deliverableName${i}`).value,
+                        deliverableLabel: ($(`#deliverableLabel${i}`) || {}).value || '',
+                        content: $(`#channelContent${i}`).value,
+                        sendDate: $(`#sendDate${i}`).value,
+                        comType: $(`#comType${i}`).value,
+                        targetingCriteria: $(`#targetingCriteria${i}`).value,
+                        // L'objet de l'email n'est plus saisi à la création : il l'est à
+                        // l'étape « Réalisation BAT ». En édition, on préserve la valeur
+                        // déjà enregistrée sur le canal existant.
+                        emailObject: (state.editCampaignData && (state.editCampaignData.channels || [])[i - 1] && (state.editCampaignData.channels || [])[i - 1].emailObject) || '',
+                        comTypology: document.querySelector(`input[name="comTypology${i}"]:checked`)?.value,
+                        ubs: Array.from(document.querySelectorAll(`.ch-ub-cb-${i}:checked`)).map(function(cb){ return cb.value; }),
+                        urlTicTac: $(`#urlTicTac${i}`) ? $(`#urlTicTac${i}`).value : '',
+                        urlLccx: $(`#urlLccx${i}`) ? $(`#urlLccx${i}`).value : '',
+                        urlsComStore: (function() {
+                            var inputs = document.querySelectorAll(`.urlComStore-input-${i}`);
+                            var urls = [];
+                            inputs.forEach(function(inp) { if (inp.value.trim()) urls.push(inp.value.trim()); });
+                            return urls;
+                        })(),
+                        siteWeb: (function() {
+                            var sf = document.getElementById(`siteWebFields${i}`);
+                            if (!sf || sf.style.display === 'none') return null;
+                            return {
+                                zone: $(`#channelContent${i}`) ? $(`#channelContent${i}`).value : '',
+                                marches: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); var res = []; cbs.forEach(function(cb) { res.push(cb.value); }); return res.length ? res : ['part']; })(),
+                                marche: (function() { var cbs = document.querySelectorAll(`.sw-marche-cb-${i}:checked`); return cbs.length ? cbs[0].value : 'part'; })(),
+                                univers: ($(`#siteWebUnivers${i}`) || {}).value || null,
+                                dateDebut: ($(`#siteWebDateDebut${i}`) || {}).value || '',
+                                dateFin: ($(`#siteWebDateFin${i}`) || {}).value || ''
+                            };
+                        })(),
+                        customFieldValues: (function() {
+                            var cf = window.ImpulsionMarketing && window.ImpulsionMarketing.customFields;
+                            if (!cf) return {};
+                            var cType = $(`#channelContent${i}`) ? $(`#channelContent${i}`).value : '';
+                            return { 'creation.step3.canal': cf.collectValues(document.getElementById('cfCanalFields' + i), 'creation.step3.canal', cType) };
+                        })()
+                    });
+                }
+
+                // Mode édition : fusionner les valeurs du formulaire PAR-DESSUS le JSON
+                // existant. Sans cela, les champs absents du formulaire (notes de
+                // kick-off, domaine, validation juridique, bilan, etc.) seraient perdus
+                // à chaque modification de la campagne.
+                if (state.editMode) {
+                    try {
+                        const existingFileHandle = await campaignDir.getFileHandle("campagne.json", { create: false });
+                        const existingFile = await existingFileHandle.getFile();
+                        const existingJson = JSON.parse(await existingFile.text());
+                        data = Object.assign({}, existingJson, data);
+                    } catch(e) {
+                        // Pas de JSON existant lisible : on conserve les seules données du formulaire.
+                    }
+                }
+
+                // Initialiser le workflow si absent (création, ou édition d'une campagne
+                // sans workflow). En édition, data.workflow est déjà préservé par la fusion.
+                if (window.ImpulsionMarketing && window.ImpulsionMarketing.workflow && !data.workflow) {
+                    window.ImpulsionMarketing.workflow.initWorkflow(data);
+                }
+
+                // Affectation automatique (L2 #21) : applique les règles paramétrées
+                // en Administration (création ET édition). Additif — n'écrase rien.
+                try {
+                    var _wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+                    var _rules = (window.ImpulsionMarketing && window.ImpulsionMarketing.config && window.ImpulsionMarketing.config.AUTO_ASSIGN_RULES) || [];
+                    if (_wfMod && _wfMod.applyAutoAssignments && _rules.length) {
+                        _wfMod.applyAutoAssignments(data, _rules);
+                    }
+                } catch (e) { console.warn('Affectation automatique ignorée :', e && e.message); }
+
+                // Write JSON file
+                const jsonHandle = await campaignDir.getFileHandle("campagne.json", { create: true });
+                const writable = await jsonHandle.createWritable();
+                await writable.write(JSON.stringify(data, null, 2));
+                await writable.close();
+
+                // Mettre à jour l'index de campagnes + IndexCache
+                try {
+                    const wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+                    if (wf && wf.updateCampaignIndex && state.root) {
+                        await wf.updateCampaignIndex(state.root, folderName, data);
+                    }
+                } catch(e) {
+                    console.error('[Impulsion] Échec mise à jour _index.json :', e);
+                    const errMod = window.ImpulsionMarketing && window.ImpulsionMarketing.errors;
+                    if (errMod && errMod.showNotification) {
+                        errMod.showNotification('⚠️ Campagne sauvegardée mais l\'index n\'a pas pu être mis à jour : ' + e.message, 'error', 6000);
+                    }
+                }
+
+                // Retourner le nom du dossier pour la redirection
+                return folderName;
+            }
+
+            // Remplit la liste de suggestions « Campagne liée » avec les campagnes
+            // existantes (noms de dossiers, tels qu'utilisés par la page Détails).
+            async function populateCampaignDatalist() {
+                var dl = document.getElementById('campagnesListData');
+                if (!dl || !state.campaignsFolder) return;
+                try {
+                    var names = [];
+                    var current = state.editCampaignName || state.duplicateCampaignName || '';
+                    for await (var entry of state.campaignsFolder.values()) {
+                        if (entry.kind === 'directory' && entry.name !== current) names.push(entry.name);
+                    }
+                    names.sort(function (a, b) { return a.localeCompare(b); });
+                    dl.innerHTML = names.map(function (n) {
+                        return '<option value="' + String(n).replace(/"/g, '&quot;') + '"></option>';
+                    }).join('');
+                } catch (e) { /* liste indisponible : la saisie libre reste possible */ }
+            }
+
+            // ── Produits ciblés : sélecteur en cascade (univers → produit) ──────────
+            // Données chargées depuis les CSV de référence (Données/…PRODUITS.csv +
+            // …UNIVERS.csv). On choisit un univers puis un produit ; les produits
+            // s'accumulent en « puces » et peuvent provenir d'univers différents.
+            //   PRODUITS : id;cr;id_univers;libelle   ·   UNIVERS : id;cr;libelle
+            var _prodCatalog = null;          // { universList:[{id,label}], byUniv:{ id:[libelle] } }
+            var _selectedProducts = [];       // libellés sélectionnés
+            function escProd(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+            function _renderProductChips() {
+                var chips = document.getElementById('selectedProductsChips');
+                var hidden = document.getElementById('productHiddenInputs');
+                if (!chips || !hidden) return;
+                if (!_selectedProducts.length) {
+                    chips.innerHTML = '<span style="font-size:12px;color:var(--muted);">Aucun produit sélectionné.</span>';
+                } else {
+                    chips.innerHTML = _selectedProducts.map(function (lib) {
+                        return '<span style="display:inline-flex;align-items:center;gap:7px;background:var(--green-50,#e8f6ef);border:1px solid var(--green-100,#cdeede);border-radius:999px;padding:4px 6px 4px 12px;font-size:13px;color:var(--ink,#0c1a14);">'
+                             + escProd(lib)
+                             + '<span data-remove-prod="' + escProd(lib) + '" title="Retirer" style="cursor:pointer;font-weight:700;color:#0f766e;line-height:1;padding:0 4px;">✕</span></span>';
+                    }).join('');
+                    chips.querySelectorAll('[data-remove-prod]').forEach(function (x) {
+                        x.addEventListener('click', function () { _removeProduct(x.getAttribute('data-remove-prod')); });
+                    });
+                }
+                // Cases cachées (.product-cb) pour rester compatible avec la collecte / brouillon / récap.
+                hidden.innerHTML = _selectedProducts.map(function (lib) {
+                    return '<input type="checkbox" class="product-cb" value="' + escProd(lib) + '" checked>';
+                }).join('');
+            }
+            function _saveDraftSafe() { try { if (typeof saveDraft === 'function') saveDraft(); } catch (e) {} }
+            function _addProduct(lib) {
+                lib = (lib == null ? '' : String(lib)).trim();
+                if (lib && _selectedProducts.indexOf(lib) === -1) { _selectedProducts.push(lib); _renderProductChips(); _saveDraftSafe(); }
+            }
+            function _removeProduct(lib) {
+                var i = _selectedProducts.indexOf(lib);
+                if (i >= 0) { _selectedProducts.splice(i, 1); _renderProductChips(); _saveDraftSafe(); }
+            }
+            window.setSelectedProducts = function (arr) { _selectedProducts = Array.isArray(arr) ? arr.slice() : []; _renderProductChips(); };
+            window.getSelectedProducts = function () { return _selectedProducts.slice(); };
+
+            function _setupProductPickers() {
+                var uSel = document.getElementById('productUniversSelect');
+                var pSel = document.getElementById('productItemSelect');
+                if (!uSel || !pSel || uSel._bound) return;
+                uSel._bound = true;
+                uSel.addEventListener('change', function () {
+                    var items = (_prodCatalog && _prodCatalog.byUniv[uSel.value]) ? _prodCatalog.byUniv[uSel.value] : [];
+                    pSel.innerHTML = '<option value="">' + (items.length ? 'Choisir un produit…' : 'Aucun produit') + '</option>'
+                        + items.map(function (l) { return '<option value="' + escProd(l) + '">' + escProd(l) + '</option>'; }).join('');
+                    pSel.disabled = !items.length;
+                });
+                pSel.addEventListener('change', function () {
+                    if (pSel.value) { _addProduct(pSel.value); pSel.value = ''; }  // ajout puis reset pour enchaîner
+                });
+            }
+
+            async function loadProductsFromCsv() {
+                var uSel = document.getElementById('productUniversSelect');
+                var noteEl = document.getElementById('productLoadNote');
+                if (!uSel || !state.root) return;
+                function setNote(m) { if (noteEl) noteEl.textContent = m || ''; }
+                _setupProductPickers();
+                _renderProductChips();
+                try {
+                    var dir = await state.root.getDirectoryHandle('Données');
+                    async function readCsv(name) {
+                        try {
+                            var fh = await dir.getFileHandle(name);
+                            var txt = await (await fh.getFile()).text();
+                            return txt.replace(/^\uFEFF/, '').split(/\r?\n/)
+                                .filter(function (l) { return l.trim() !== ''; })
+                                .map(function (l) { return l.split(';'); });
+                        } catch (e) { return null; }
+                    }
+                    var prodRows = await readCsv('SOLEAD_EXPORT_CNS_PRODUITS.csv');
+                    if (!prodRows || prodRows.length < 2) { setNote('Fichier SOLEAD_EXPORT_CNS_PRODUITS.csv introuvable ou vide dans le dossier « Données ».'); return; }
+                    var univRows = await readCsv('SOLEAD_EXPORT_CNS_UNIVERS.csv');
+
+                    var uMap = {}, uOrder = [];
+                    (univRows || []).slice(1).forEach(function (r) {
+                        var id = (r[0] || '').trim(); var lib = (r.slice(2).join(';') || '').trim();
+                        if (id) { uMap[id] = lib; uOrder.push(id); }
+                    });
+
+                    var byUniv = {};
+                    prodRows.slice(1).forEach(function (r) {
+                        var idu = (r[2] || '').trim(); var lib = (r.slice(3).join(';') || '').trim();
+                        if (!lib) return;
+                        if (!byUniv[idu]) byUniv[idu] = [];
+                        if (byUniv[idu].indexOf(lib) === -1) byUniv[idu].push(lib);
+                    });
+                    var keys = [];
+                    uOrder.forEach(function (k) { if (byUniv[k]) keys.push(k); });
+                    Object.keys(byUniv).forEach(function (k) { if (keys.indexOf(k) === -1) keys.push(k); });
+                    if (!keys.length) { setNote('Aucun produit trouvé dans le fichier.'); return; }
+                    keys.forEach(function (k) { byUniv[k].sort(function (a, b) { return a.localeCompare(b); }); });
+
+                    _prodCatalog = {
+                        byUniv: byUniv,
+                        universList: keys.map(function (k) { return { id: k, label: uMap[k] || (k ? 'Univers ' + k : 'Autres') }; })
+                    };
+                    uSel.innerHTML = '<option value="">Choisir un univers…</option>'
+                        + _prodCatalog.universList.map(function (u) { return '<option value="' + escProd(u.id) + '">' + escProd(u.label) + '</option>'; }).join('');
+                    setNote('');
+                } catch (e) {
+                    setNote('Dossier « Données » introuvable. Placez-y les fichiers CSV des produits.');
+                }
+            }
+
+            window.addEventListener("load", () => {
+                // Initialiser le système d'aide
+                help.initHelp('saisie-campagne');
+
+                // Construire les listes IMMÉDIATEMENT depuis la config en mémoire
+                // (toujours disponible). Les champs sont ainsi garantis présents sans
+                // dépendre d'un accès disque / d'une demande de permission.
+                buildChoiceLists();
+
+                // Champs personnalisés (étapes 1 et 2) — rendu par défaut (vide), écrasé
+                // par populateForm() si une campagne existante est chargée (édition/duplication).
+                renderCreationCustomFields();
+
+                // Mettre à jour les restrictions équipes si PO déjà renseigné
+                updateTeamRestrictions();
+
+                // Vérifier le dossier puis, le cas échéant, charger la campagne à éditer.
+                checkFolder().then(async () => {
+                    if (state.campaignsFolder) {
+                        await loadProductsFromCsv();   // produits prêts avant le pré-remplissage
+                        checkEditMode();
+                        populateCampaignDatalist();
+                        // Construit les listes depuis la config DÉJÀ hydratée (cache local) —
+                        // instantané, sans lecture V:// bloquante. Le rafraîchissement depuis
+                        // V:// se fait en arrière-plan (bloc adminReady ci-dessous).
+                        if (!(state.editMode || state.editCampaignData)) {
+                            var touched = document.querySelector('.ub-cb:checked, .segment-cb:checked')
+                                || ['typology', 'market', 'recurrence', 'lotNumber'].some(function (id) {
+                                    var el = document.getElementById(id); return el && el.value;
+                                });
+                            if (!touched) buildChoiceLists();
+                        }
+                    }
+                    // Brouillon (mode création uniquement) : autosave + proposition de restauration
+                    if (isCreationMode) { startDraftAutosave(); offerDraftRestore(); }
+                });
+
+                // Si l'admin a surchargé des listes via _config.json, les re-appliquer
+                // une fois la config prête — uniquement si le formulaire n'a pas encore
+                // été renseigné (ne jamais écraser une saisie ou un pré-remplissage).
+                var adminReady = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig && window.ImpulsionMarketing.adminConfig.ready;
+                if (adminReady) {
+                    adminReady.then(function () {
+                        if (state.editMode || state.editCampaignData) return;
+                        var touched = document.querySelector('.ub-cb:checked, .segment-cb:checked')
+                            || ['typology', 'market', 'recurrence', 'lotNumber'].some(function (id) {
+                                var el = document.getElementById(id); return el && el.value;
+                            });
+                        if (!touched) buildChoiceLists();
+                    });
+                }
+            });
+
+
+        </script>
+            </div>
+        </div>
+    </body>
+</html>

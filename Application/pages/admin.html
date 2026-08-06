@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration — Impulsion Marketing</title>
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
+    <style>
+        /* ── Layout « Réglages » : page menu (cards) + panneau ── */
+        .admin-shell { display: block; }
+
+        /* Page menu (accueil de l'Administration) : cards façon bento plutôt
+           qu'un sous-menu latéral toujours visible — une page dédiée qui
+           renvoie vers chaque section, chaque section a son propre bouton
+           retour (voir .admin-back-btn) vers cette page. */
+        .admin-bento-group + .admin-bento-group { margin-top: 26px; }
+        .admin-bento-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); margin-bottom: 12px; }
+        .admin-bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; box-shadow: 0 4px 12px rgba(12,30,22,.08); }
+        .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.14); transform: translateY(-2px); }
+        .admin-bento-card .admin-bento-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--green-50); }
+        .admin-bento-card .admin-bento-label { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+        .admin-bento-card .admin-bento-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+        .admin-nav-count { position: absolute; top: 14px; right: 14px; font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--red-50); color: var(--red); }
+
+        .admin-back-btn { display: inline-flex; align-items: center; gap: 7px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 650; cursor: pointer; padding: 6px 2px; margin-bottom: 12px; }
+        .admin-back-btn:hover { color: var(--primary); }
+
+        .admin-section { display: none; }
+        .admin-section.active { display: block; animation: adminFade .22s ease; }
+        @keyframes adminFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+        /* En-tête de section */
+        .admin-sec-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+        .admin-sec-ic { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 23px; background: var(--green-50); flex-shrink: 0; }
+        .admin-sec-head h2 { margin: 0; font-size: 21px; font-weight: 820; letter-spacing: -.4px; color: var(--ink); }
+        .admin-sec-head p { margin: 3px 0 0; font-size: 13.5px; color: var(--muted); }
+
+        /* Note d'information */
+        .admin-note { display: flex; gap: 11px; background: var(--amber-50,#fff8e6); border: 1px solid #f0d98a; border-radius: 14px; padding: 13px 16px; margin-bottom: 16px; font-size: 13px; color: #7a5b00; line-height: 1.55; }
+        .admin-note .admin-note-ic { font-size: 17px; line-height: 1.4; flex-shrink: 0; }
+
+        /* Cartes */
+        .admin-card { background: var(--bg-card,#fff); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
+        .admin-card-title { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; }
+        .admin-card h3 { font-size: 13px; font-weight: 750; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 14px; }
+        .admin-card-title h3 { margin: 0; }
+        .count-pill { font-size: 11.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
+
+        .person-row, .canal-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; margin: 0 -8px; border-radius: 10px; border-bottom: 1px solid var(--line-2); transition: background .12s; }
+        .person-row:hover, .canal-row:hover { background: var(--line-2); }
+        .person-row:last-child, .canal-row:last-child { border-bottom: none; }
+        .person-name { font-size: 14px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; }
+        .pill-mgr { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: var(--green-50); color: var(--green-600); }
+        .pill-mgr.pill-super { background: var(--red-50,#fdecea); color: var(--red,#e2001a); }
+
+        /* Avatar initiales (personnes) */
+        .av-ini { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 800; flex-shrink: 0; }
+
+        /* Chips (listes de choix) */
+        .chips-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 6px 6px 13px; background: #fff; border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+        .chip button { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: none; border-radius: 50%; background: var(--line-2); color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; transition: background .12s, color .12s; }
+        .chip button:hover { background: var(--red-50); color: var(--red); }
+
+        /* .admin-input / .admin-select / .admin-label : css/components.css (partagé
+           avec campaign.html et details.html, qui rendent aussi des champs
+           personnalisés via renderFields()). */
+        .icon-del { background: none; border: 1px solid var(--line); color: var(--red); border-radius: 8px; padding: 5px 9px; cursor: pointer; font-size: 13px; transition: background .12s, border-color .12s; }
+        .icon-del:hover { background: var(--red-50); border-color: var(--red); }
+        .add-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+        .save-bar { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+        /* Barre d'enregistrement collante en bas du panneau */
+        .save-bar.sticky { position: sticky; bottom: 0; background: linear-gradient(180deg, transparent, var(--bg, #f6f8f7) 40%); padding: 12px 0 4px; margin-top: 4px; z-index: 5; }
+        .inc-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; transition: border-color .15s; }
+        .inc-item.done { background: #fbfdfc; border-color: var(--green-100, #cceBdd); }
+        .inc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+        .inc-status { margin-left: auto; font-size: 11px; font-weight: 800; padding: 3px 11px; border-radius: 999px; white-space: nowrap; }
+        .inc-status.open { background: var(--amber-50); color: #9a6b00; }
+        .inc-status.done { background: var(--green-50); color: var(--green-600); }
+        /* Sous-onglets (À traiter / Traités) */
+        .sub-tabs { display: inline-flex; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 5px; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
+        .sub-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: none; background: transparent; border-radius: 8px; font-size: 13.5px; font-weight: 700; color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
+        .sub-tab:hover { background: var(--line-2); color: var(--ink); }
+        .sub-tab.active { background: var(--primary); color: #fff; }
+        .sub-tab-count { font-size: 11px; font-weight: 800; padding: 1px 8px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
+        .sub-tab.active .sub-tab-count { background: rgba(255,255,255,.25); color: #fff; }
+        .inc-type { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
+        .inc-type.incident { background: var(--red-50); color: var(--red); }
+        .inc-type.amelioration { background: var(--amber-50); color: #9a6b00; }
+        .inc-prio-badge { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+        .inc-prio-01 { background: #fdecea; color: #c0392b; } .inc-prio-02 { background: #fef5e7; color: #b9770e; } .inc-prio-03 { background: #eafaf1; color: #1e7e34; } .inc-prio-04 { background: #eef0f2; color: #7a7a7a; }
+        .inc-manage { background: var(--line-2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
+        .inc-meta { font-size: 12px; color: var(--muted-2); }
+        .inc-desc { font-size: 13.5px; color: var(--gray-700); line-height: 1.5; white-space: pre-wrap; }
+        .inc-reponse-saved { background: var(--green-50, #e8f6ef); border: 1px solid var(--green-200, #b7e4cd); border-radius: 8px; padding: 9px 12px; margin-top: 10px; font-size: 13px; color: var(--gray-700); white-space: pre-wrap; }
+        .inc-reponse-meta { font-size: 11px; color: var(--muted-2); margin-top: 4px; }
+        .inc-reply { margin-top: 10px; border-top: 1px dashed var(--line); padding-top: 10px; }
+        .inc-reply-text { width: 100%; box-sizing: border-box; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit; resize: vertical; }
+        .inc-reply-row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+        .inc-reply-statut { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; font-family: inherit; cursor: pointer; }
+        .btn-reply { padding: 8px 14px; border: none; border-radius: 8px; background: var(--primary, #00875A); color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .btn-reply:disabled { opacity: .6; cursor: default; }
+        .empty-hint { color: var(--muted-2); font-size: 14px; padding: 16px 0; }
+        .toggle-label { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); cursor:pointer; }
+
+        /* Workflow — onglets internes (Étapes du circuit / Personnalisation par canal) */
+        .wf-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+        .wf-tab-btn { padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line,#eaefec); background: #fff; color: var(--muted,#56655e); font-size: 13.5px; font-weight: 650; cursor: pointer; font-family: inherit; }
+        .wf-tab-btn:hover { background: var(--line-2,#f0f4f1); }
+        .wf-tab-btn.active { background: var(--sidebar-active-bg,#e8f6ef); color: var(--sidebar-active-text,#00734C); border-color: transparent; }
+
+        /* Étapes — cartes réordonnables par glisser-déposer (poignée ⠿ uniquement,
+           pas la carte entière : les champs libellé/acteur restent cliquables/sélectionnables
+           normalement). */
+        .wf-step-card { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; border: 1px solid var(--line-2); border-radius: 12px; margin-bottom: 8px; background: #fff; transition: opacity .12s, border-color .12s; }
+        .wf-step-card.dragging { opacity: .35; }
+        .wf-step-card.drag-over-top { border-top: 2px solid var(--primary,#00875A); }
+        .wf-step-card.drag-over-bottom { border-bottom: 2px solid var(--primary,#00875A); }
+        .wf-step-handle { flex-shrink: 0; color: var(--muted-2); font-size: 15px; line-height: 1; padding-top: 8px; cursor: grab; user-select: none; }
+        .wf-step-handle:active { cursor: grabbing; }
+        .wf-step-order { font-size: 11px; font-weight: 800; color: var(--muted-2); width: 22px; flex-shrink: 0; padding-top: 9px; }
+        .wf-step-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+        .wf-step-fields { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .wf-step-fields .admin-input { flex: 1; min-width: 170px; }
+        .wf-step-hint { font-size: 11.5px; color: var(--muted-2); line-height: 1.4; }
+        .wf-canal-badge { font-size: 9.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+        .wf-canal-badge.default { background: var(--line-2); color: var(--muted-2); }
+        .wf-canal-badge.custom { background: var(--blue-50,#e8f0fe); color: var(--blue,#2563EB); }
+        .wf-row-warning { font-size: 11px; color: #c0392b; font-weight: 600; line-height: 1.4; }
+        /* Liste des canaux (onglet « Personnalisation par canal ») */
+        .wf-canal-list-row { display: flex; align-items: center; gap: 12px; padding: 13px 10px; border-bottom: 1px solid var(--line-2); cursor: pointer; transition: background .12s; }
+        .wf-canal-list-row:last-child { border-bottom: none; }
+        .wf-canal-list-row:hover { background: var(--line-2); }
+        .wf-canal-list-row.warn { background: var(--red-50,#fdeaec); }
+        .wf-canal-list-row.warn:hover { background: #fbdadd; }
+        .wf-canal-list-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+        .wf-canal-list-name { font-weight: 650; color: var(--ink); font-size: 14px; }
+        .wf-canal-list-meta { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+        .wf-canal-list-arrow { color: var(--muted-2); font-size: 16px; flex-shrink: 0; }
+        /* Sous-page d'un canal — lignes allégées : l'explication de chaque étape est
+           accessible via l'icône ⓘ (info-bulle native) plutôt que toujours affichée. */
+        .wf-canal-detail-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+        .wf-canal-detail-head h3 { margin: 0; font-size: 17px; font-weight: 800; color: var(--ink); }
+        .wf-canal-step { border: 1px solid var(--line-2); border-radius: 10px; padding: 9px 12px; margin-bottom: 6px; transition: opacity .15s, background .15s; }
+        .wf-canal-step.off { opacity: .55; background: var(--line-2); }
+        .wf-canal-step-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .wf-canal-step-label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; }
+        .wf-canal-step-label input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+        .wf-canal-step-info { color: var(--muted-2); cursor: help; font-size: 11px; border: 1px solid var(--line-2); border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .wf-canal-step-actor { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+
+        /* Champs personnalisés — carte d'édition d'un champ (admin) */
+        .cf-admin-card { border: 1px solid var(--line-2); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+        .cf-admin-card--dimmed { opacity: .5; }
+        .cf-admin-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .cf-admin-mini { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+        .cf-admin-mini-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+        .cf-admin-id { color: var(--muted); }
+        .wf-canal-badge.off { background: var(--red-50,#fdecec); color: var(--red,#e2001a); }
+
+        /* Champs personnalisés — rendu générique côté utilisateur (.cf-fields-block,
+           .cf-field, .cf-label, etc.) : css/components.css (partagé avec
+           campaign.html et details.html). */
+
+        /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
+        .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+        .lot-status-a_venir, .dev-status-a_venir { background: #eef0f2; color: #64748b; }
+        .lot-status-dev_en_cours, .dev-status-dev_en_cours { background: #e8f0fe; color: #1a56db; }
+        .lot-status-recettage, .dev-status-recettage { background: var(--amber-50); color: #9a6b00; }
+        .lot-status-livre { background: var(--green-50); color: var(--green-600); }
+        .lot-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s; background: #fff; }
+        .lot-card:hover { border-color: var(--primary); box-shadow: var(--shadow-xs); }
+        .lot-card .lot-name { font-size: 15px; font-weight: 750; color: var(--ink); flex: 1; min-width: 0; }
+        .lot-card .lot-progress { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+        .lot-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+        .lot-header h3 { margin: 0; font-size: 18px; font-weight: 800; color: var(--ink); }
+        .lot-header .admin-select { margin-left: auto; }
+        .btn-back-lots { background: none; border: 1px solid var(--line); border-radius: 9px; padding: 7px 13px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; }
+        .btn-back-lots:hover { background: var(--line-2); color: var(--ink); }
+        .sig-search-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .sig-search-row input[type="text"] { flex: 2; min-width: 220px; }
+        .sig-search-row select { flex: 1; min-width: 140px; }
+        .inc-devstatut-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; align-items: center; }
+        .inc-triage-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; align-items: flex-end; }
+        .inc-triage-row label { font-size: 12px; color: var(--muted); }
+        .inc-lot-tag { font-size: 11px; font-weight: 700; color: var(--muted-2); }
+    </style>
+</head>
+<body>
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../Impulsion-Marketing.html" class="brand">
+                <div class="brand-icon" style="font-size:14px;font-weight:800;color:#fff;letter-spacing:-0.5px;">IM</div>
+                <div class="brand-text"><h1>Impulsion</h1><span>Marketing</span></div>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <span class="nav-section-title">Principal</span>
+                <a href="../Impulsion-Marketing.html" class="nav-link"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg><span>Tableau de bord</span></a>
+                <a href="campaign.html" class="nav-link"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg><span>Créer une campagne</span></a>
+                <a href="pilotage.html" class="nav-link"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Pilotage</span></a>
+                <a href="visualization.html" class="nav-link"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-4 4"/></svg><span>Campagnes</span></a>
+                <a href="comite-editorial.html" class="nav-link"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Comité Éditorial</span></a>
+                <a href="guide.html" class="nav-link"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span>Guide utilisateur</span></a>
+            </div>
+            <div class="nav-section">
+                <span class="nav-section-title">Externe</span>
+                <a href="#" class="nav-link" data-gallery target="_blank" rel="noopener"><svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>Galerie</span></a>
+            </div>
+        </nav>
+    </aside>
+
+    <div class="main-container">
+        <main class="content">
+            <div class="admin-shell">
+                <div class="admin-panel" id="admin-panel">
+                    <!-- Page d'accueil de l'Administration : cards façon bento renvoyant vers
+                         chaque section, générées dynamiquement (buildAdminBento()) à partir des
+                         en-têtes .admin-sec-head des sections ci-dessous (icône/libellé/
+                         description) — une seule source pour la carte ET le titre de la page. -->
+                    <section class="admin-section active" id="tab-menu">
+                        <div id="admin-bento-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-people" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">👥</div><div><h2>Équipes &amp; personnes</h2><p>Gérez les membres, leur équipe et qui est responsable.</p></div></div>
+                        <div id="people-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-segments" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🎯</div><div><h2>Segments</h2><p>Segments cibles, organisés par groupe (Particuliers / Pro / Agri).</p></div></div>
+                        <div id="segments-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-autoassign" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🤖</div><div><h2>Affectation automatique</h2><p>Affecte des personnes automatiquement selon des conditions (à la création/édition d'une campagne).</p></div></div>
+                        <div id="autoassign-container"></div>
+                        <div style="margin-top:14px;display:flex;gap:10px;">
+                            <button type="button" id="autoassign-add" class="btn secondary">➕ Ajouter une règle</button>
+                            <button type="button" id="autoassign-save" class="btn primary">💾 Enregistrer les règles</button>
+                        </div>
+                    </section>
+                    <section class="admin-section" id="tab-settings" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">⚙️</div><div><h2>Paramètres généraux</h2><p>Réglages globaux : galerie, dossier, seuil d'alerte, couleurs des rôles.</p></div></div>
+                        <div id="settings-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-webzones" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🌐</div><div><h2>Zones site web</h2><p>Zones du planning du Comité éditorial et leurs sous-lignes.</p></div></div>
+                        <div id="webzones-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-marchessiteweb" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🗺️</div><div><h2>Marchés site web</h2><p>Marchés proposés sur les onglets et cases à cocher du planning site web (Comité éditorial).</p></div></div>
+                        <div id="marchessiteweb-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-workflow" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🔀</div><div><h2>Workflow</h2><p>Étapes du circuit de validation et applicabilité de chaque étape par canal.</p></div></div>
+                        <div id="workflow-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-customfields" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🧩</div><div><h2>Champs personnalisés</h2><p>Ajoutez, modifiez ou retirez des champs sur le formulaire de création et les étapes de production — y compris les champs déjà en place.</p></div></div>
+                        <div id="customfields-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-bilan" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">📊</div><div><h2>Bilan (suivi .xlsx)</h2><p>Correspondance des colonnes et indicateurs du fichier de suivi.</p></div></div>
+                        <div id="bilan-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-statuts" data-group="Support &amp; annonces">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">💬</div><div><h2>Statuts de réponse</h2><p>Choix proposés lorsqu'on répond à un signalement.</p></div></div>
+                        <div id="statuts-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-badges" data-group="Support &amp; annonces">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🏷️</div><div><h2>Badges « Quoi de neuf »</h2><p>Types d'annonces et leur apparence.</p></div></div>
+                        <div id="badges-container"></div>
+                    </section>
+                    <!-- Les pages de listes de choix sont injectées ici par le script -->
+                    <section class="admin-section" id="tab-incidents" data-group="Support &amp; annonces">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">🐞</div><div><h2>Signalements</h2><p>Incidents et idées d'amélioration remontés par les utilisateurs.</p></div></div>
+                        <div id="incidents-container"></div>
+                    </section>
+                    <section class="admin-section" id="tab-whatsnew" data-group="Support &amp; annonces">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">📣</div><div><h2>Quoi de neuf</h2><p>Publiez des annonces visibles par les utilisateurs choisis.</p></div></div>
+                        <div id="whatsnew-container"></div>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script src="../js/bundle.js"></script>
+<script>window.ImpulsionMarketing.topbar.mount();</script>
+<script>
+    // Garde : identité requise + droit d'accès admin
+    (function () {
+        var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+        if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); return; }
+        if (!u.canAccessAdmin()) { window.location.replace('../Impulsion-Marketing.html'); }
+    })();
+</script>
+<script>
+    (function () {
+        'use strict';
+        var IM = window.ImpulsionMarketing;
+        var users = IM.users, config = IM.config, adminConfig = IM.adminConfig, errors = IM.errors;
+        var esc = (IM.security && IM.security.escapeHtml) ? IM.security.escapeHtml : function (s) { return String(s == null ? '' : s); };
+
+        // Câblage commun au motif « liste → sous-page » (Signalements ▸ Lots à dev,
+        // Workflow ▸ Étapes actives par canal) : une ligne cliquable ouvre la sous-page
+        // d'un élément, un bouton retour la referme — sans jamais toucher au rendu HTML
+        // lui-même (propre à chaque page). Sans effet si l'attribut/bouton est absent du
+        // DOM courant (liste OU détail), donc appelable après les deux rendus sans condition.
+        function wireDrilldown(cont, openAttr, backBtnId, setActive, rerender) {
+            cont.querySelectorAll('[' + openAttr + ']').forEach(function (el) {
+                el.addEventListener('click', function () { setActive(el.getAttribute(openAttr)); rerender(); });
+            });
+            var backBtn = document.getElementById(backBtnId);
+            if (backBtn) backBtn.addEventListener('click', function () { setActive(null); rerender(); });
+        }
+
+        // Les CLÉS de rôle sont structurelles au moteur de workflow (kick-off → maquette
+        // COM → BAT/test EBF → ciblage Data) et restent fixes. Seuls les LIBELLÉS affichés
+        // sont éditables via Administration ▸ Paramètres généraux ▸ Rôles (IM.config.ROLE_LABELS) —
+        // avec repli sur les libellés historiques si non encore configurés.
+        var ROLE_KEYS = ['marketing', 'com', 'ebf', 'data', 'superadmin'];
+        var DEFAULT_ROLE_LABELS = { marketing: 'Marketing', com: 'Com', ebf: 'EBF', data: 'Data', superadmin: 'Super Admin' };
+        function roleLabel(role) {
+            var rl = config.ROLE_LABELS || {};
+            return rl[role] || DEFAULT_ROLE_LABELS[role] || role;
+        }
+        function getTeams() { return ROLE_KEYS.map(function (k) { return { role: k, label: roleLabel(k) }; }); }
+        function labelFor(role, isManager) {
+            var base = roleLabel(role);
+            return (isManager && role !== 'superadmin') ? ('Resp. ' + base) : base;
+        }
+        // Couleur d'avatar par rôle + initiales (refonte UX des personnes)
+        var ROLE_COLOR = IM.config.ROLE_COLORS || {};
+        function initials(n) { return String(n || '').trim().split(/\s+/).map(function (p) { return p[0] || ''; }).join('').toUpperCase().slice(0, 2); }
+
+        var people = [];          // copie éditable des personnes
+        var lists = {};           // { canaux:[], universBesoins:[], … } copies éditables
+        var segmentsGroups = [];  // copie éditable des segments groupés
+        var webZonesState = { zones: [], bpOnlyZones: [], zonesMulti: {} }; // copie éditable des zones site web
+        var marchesSiteWebState = [];   // copie éditable des marchés site web (matrice Comité éditorial)
+        var workflowStepsState = [];    // copie éditable des étapes (libellé/acteur/ordre)
+        var canalStepsState = {};       // copie éditable de l'applicabilité des étapes par canal
+        var canalActorOverridesState = []; // copie éditable des exceptions d'acteur par canal : [{canal, stepId, actor}]
+        var wfActiveCanal = null;       // nom du canal ouvert dans la sous-page « Étapes actives par canal » (null = liste)
+        var wfActiveTab = 'steps';      // onglet actif de la page Workflow : 'steps' (Étapes du circuit) | 'canaux' (Personnalisation par canal)
+        var customFieldsState = {};     // copie éditable { <point d'attache>: [ {id,label,type,...}, ... ] }
+        var cfActivePoint = null;       // point d'attache ouvert dans la sous-page « Champs personnalisés » (null = liste)
+        var cfCanalContext = null;      // canal depuis lequel on est arrivé via le raccourci Workflow ▸ canal (mise en évidence uniquement, ne filtre pas les données)
+        var reponseStatutsState = [];   // copie éditable des statuts de réponse
+        var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
+        var bilanCfgState = {};         // copie éditable du mapping bilan
+        var autoAssignState = [];       // copie éditable des règles d'affectation auto
+        var incidents = [];
+
+        // Listes de choix simples éditables (clé _config.json → libellé + clé IM.config)
+        // Chaque liste a désormais sa propre page (nav + section générées dynamiquement).
+        var LISTS_META = [
+            { key: 'canaux',         label: 'Types de livrables / canaux', icon: '📨', desc: 'Canaux et livrables proposés à la création.', ph: 'Ex : Mail, SMS, Site web…' },
+            { key: 'universBesoins', label: 'Univers de besoin',           icon: '🧭', desc: 'Univers de besoin associables à une campagne.', ph: 'Ex : Épargne, Crédits…' },
+            { key: 'typesCom',       label: 'Types de communication',      icon: '💬', desc: 'Nature de la communication.', ph: 'Ex : Commerciales, Gestion, Réglementaire…' },
+            { key: 'typologies',     label: 'Typologies',                  icon: '🏷️', desc: 'Typologies de campagne.', ph: 'Ex : PR, Campagne' },
+            { key: 'marches',        label: 'Marchés',                     icon: '🌍', desc: 'Marchés cibles.', ph: 'Ex : Particuliers…' },
+            { key: 'recurrences',    label: 'Récurrences',                 icon: '🔁', desc: 'Rythmes de récurrence.', ph: 'Ex : Mensuel, One shot…' },
+            { key: 'lots',           label: 'Numéros de lot',              icon: '🔢', desc: 'Numéros de lot disponibles.', ph: 'Ex : 1, 2, Création' },
+            { key: 'comTypologies',  label: 'Typologies de communication', icon: '🗂️', desc: 'Ex : Création Caisse, Reprise Natio. La ou les valeurs qui déclenchent les champs site web se choisissent dans « Paramètres généraux ».', ph: 'Ex : Création Caisse' }
+        ];
+        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS', comTypologies: 'COM_TYPOLOGIES' };
+
+        // ── Génère une page (section) par liste de choix ──
+        // Chaque liste devient une page autonome, au même niveau que Segments / Équipes.
+        function buildListPages() {
+            var panel = document.getElementById('admin-panel');
+            var incidentsSection = document.getElementById('tab-incidents');
+            LISTS_META.forEach(function (meta) {
+                var sec = document.createElement('section');
+                sec.className = 'admin-section';
+                sec.id = 'tab-' + meta.key;
+                sec.setAttribute('data-group', 'Paramétrage');
+                sec.innerHTML = '<div class="admin-sec-head"><div class="admin-sec-ic">' + meta.icon + '</div>'
+                    + '<div><h2>' + esc(meta.label) + '</h2><p>' + esc(meta.desc) + '</p></div></div>'
+                    + '<div id="list-' + meta.key + '-container"></div>';
+                panel.insertBefore(sec, incidentsSection);
+            });
+        }
+        buildListPages();
+
+        // ── Page menu (accueil) : une card par section, façon bento, groupées comme
+        // l'était l'ancien sous-menu latéral (data-group posé sur chaque <section>).
+        // Construite APRÈS buildListPages() pour inclure les pages de listes de choix.
+        function buildAdminBento() {
+            var cont = document.getElementById('admin-bento-container');
+            var groups = {}; // { 'Paramétrage': [sectionEl, ...], ... }
+            var order = [];
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                var g = sec.getAttribute('data-group');
+                if (!groups[g]) { groups[g] = []; order.push(g); }
+                groups[g].push(sec);
+            });
+            var html = '';
+            order.forEach(function (g) {
+                html += '<div class="admin-bento-group"><div class="admin-bento-title">' + esc(g) + '</div><div class="admin-bento-grid">';
+                groups[g].forEach(function (sec) {
+                    var key = sec.id.replace(/^tab-/, '');
+                    var ic = (sec.querySelector('.admin-sec-ic') || {}).textContent || '';
+                    var label = (sec.querySelector('.admin-sec-head h2') || {}).textContent || key;
+                    var desc = (sec.querySelector('.admin-sec-head p') || {}).textContent || '';
+                    var countBadge = key === 'incidents' ? '<span class="admin-nav-count" id="nav-count-incidents" style="display:none;">0</span>' : '';
+                    html += '<button type="button" class="admin-bento-card" data-tab="' + esc(key) + '">' + countBadge
+                        + '<span class="admin-bento-ic">' + ic + '</span>'
+                        + '<span class="admin-bento-label">' + esc(label) + '</span>'
+                        + (desc ? '<span class="admin-bento-desc">' + esc(desc) + '</span>' : '')
+                        + '</button>';
+                });
+                html += '</div></div>';
+            });
+            cont.innerHTML = html;
+            cont.querySelectorAll('.admin-bento-card').forEach(function (card) {
+                card.addEventListener('click', function () { activateTab(card.getAttribute('data-tab')); });
+            });
+        }
+
+        // ── Bouton retour (chaque section, sauf le menu) : injecté une fois au
+        // chargement plutôt que dupliqué dans chaque bloc HTML/généré. ──
+        function addBackButtons() {
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                if (sec.querySelector('.admin-back-btn')) return;
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'admin-back-btn';
+                btn.innerHTML = '← Retour au menu';
+                btn.addEventListener('click', function () { activateTab('menu'); });
+                sec.insertBefore(btn, sec.firstChild);
+            });
+        }
+
+        // ── Activation d'une section (menu bento ou page) — remplace l'ancienne
+        // navigation latérale toujours visible. ──
+        function activateTab(key) {
+            document.querySelectorAll('.admin-section').forEach(function (s) { s.classList.remove('active'); });
+            var sec = document.getElementById('tab-' + key);
+            if (sec) sec.classList.add('active');
+            document.querySelector('.content').scrollTop = 0;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        buildAdminBento();
+        addBackButtons();
+
+        // ── PERSONNES ──
+        function renderPeople() {
+            var TEAMS = getTeams();
+            var teamSelectOptions = TEAMS.map(function (t) { return '<option value="' + t.role + '">' + t.label + '</option>'; }).join('');
+            var html = '';
+            TEAMS.forEach(function (t) {
+                var members = people.filter(function (p) { return p.role === t.role; });
+                html += '<div class="admin-card"><div class="admin-card-title"><h3>' + esc(t.label) + '</h3><span class="count-pill">' + members.length + '</span></div>';
+                if (!members.length) html += '<div class="empty-hint">Aucune personne dans cette équipe.</div>';
+                members.forEach(function (p) {
+                    var idx = people.indexOf(p);
+                    html += '<div class="person-row">'
+                        + '<span class="av-ini" style="background:' + (ROLE_COLOR[p.role] || '#64748b') + ';">' + esc(initials(p.name)) + '</span>'
+                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + '</span>'
+                        + '<label class="toggle-label"><input type="checkbox" class="cb-mgr" data-i="' + idx + '"' + (p.isManager ? ' checked' : '') + '> Responsable</label>'
+                        + '<label class="toggle-label" title="Accès admin complet, sur toutes les équipes, en plus de son rôle ci-dessous."><input type="checkbox" class="cb-superadmin" data-i="' + idx + '"' + (p.isSuperAdmin ? ' checked' : '') + '> Super Admin</label>'
+                        + '<select class="admin-select sel-team" data-i="' + idx + '">' + teamSelectOptions + '</select>'
+                        + '<button class="icon-del" data-del="' + idx + '">🗑</button>'
+                        + '</div>';
+                });
+                html += '</div>';
+            });
+            // Ajout
+            html += '<div class="admin-card"><h3>Ajouter une personne</h3><div class="add-row">'
+                + '<input class="admin-input" id="add-name" placeholder="Nom et prénom" style="flex:1;min-width:180px;">'
+                + '<select class="admin-select" id="add-team">' + teamSelectOptions + '</select>'
+                + '<label class="toggle-label"><input type="checkbox" id="add-mgr"> Responsable</label>'
+                + '<button class="btn btn-primary" id="add-person-btn">+ Ajouter</button>'
+                + '</div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-people">💾 Enregistrer les équipes</button></div>';
+            document.getElementById('people-container').innerHTML = html;
+
+            // Pré-sélectionner l'équipe de chaque ligne + handlers
+            document.querySelectorAll('.sel-team').forEach(function (sel) {
+                var i = +sel.getAttribute('data-i'); sel.value = people[i].role;
+                sel.addEventListener('change', function () { people[i].role = sel.value; people[i].roleLabel = labelFor(sel.value, people[i].isManager); renderPeople(); });
+            });
+            document.querySelectorAll('.cb-mgr').forEach(function (cb) {
+                var i = +cb.getAttribute('data-i');
+                cb.addEventListener('change', function () { people[i].isManager = cb.checked; people[i].roleLabel = labelFor(people[i].role, cb.checked); });
+            });
+            document.querySelectorAll('.cb-superadmin').forEach(function (cb) {
+                var i = +cb.getAttribute('data-i');
+                cb.addEventListener('change', function () { people[i].isSuperAdmin = cb.checked || undefined; renderPeople(); });
+            });
+            document.querySelectorAll('[data-del]').forEach(function (b) {
+                b.addEventListener('click', function () { people.splice(+b.getAttribute('data-del'), 1); renderPeople(); });
+            });
+            document.getElementById('add-person-btn').addEventListener('click', function () {
+                var name = document.getElementById('add-name').value.trim();
+                var role = document.getElementById('add-team').value;
+                var mgr = document.getElementById('add-mgr').checked;
+                if (!name) { notify('Indiquez un nom.', 'error'); return; }
+                people.push({ name: name, role: role, roleLabel: labelFor(role, mgr), isManager: mgr || undefined });
+                renderPeople();
+            });
+            document.getElementById('save-people').addEventListener('click', savePeople);
+        }
+        function savePeople() {
+            var clean = people.map(function (p) {
+                var o = { name: p.name, role: p.role, roleLabel: p.roleLabel || labelFor(p.role, p.isManager) };
+                if (p.isManager) o.isManager = true;
+                if (p.isSuperAdmin) o.isSuperAdmin = true;
+                return o;
+            });
+            saveConfig({ users: clean }, 'Équipes enregistrées.').then(function () { users.applyUsers(clean); });
+        }
+
+        // ── LISTES DE CHOIX SIMPLES (une page par liste) ──
+        function renderLists() { LISTS_META.forEach(function (meta) { renderOneList(meta); }); }
+
+        function renderOneList(meta) {
+            var cont = document.getElementById('list-' + meta.key + '-container');
+            if (!cont) return;
+            var arr = lists[meta.key] || (lists[meta.key] = []);
+            var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>'
+                + 'Ces valeurs alimentent le <strong>formulaire de création</strong> et les filtres. Ajouter une valeur est sans risque ; '
+                + 'évitez de <strong>renommer ou supprimer</strong> une valeur déjà utilisée (les campagnes existantes gardent leur valeur).'
+                + '</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>' + esc(meta.label) + '</h3><span class="count-pill">' + arr.length + '</span></div>';
+            if (!arr.length) {
+                html += '<div class="empty-hint">Aucune valeur pour le moment.</div>';
+            } else {
+                html += '<div class="chips-wrap">';
+                arr.forEach(function (v, i) {
+                    html += '<span class="chip">' + esc(v) + '<button type="button" title="Supprimer" data-deli="' + i + '">✕</button></span>';
+                });
+                html += '</div>';
+            }
+            html += '<div class="add-row"><input class="admin-input" id="add-' + meta.key + '" placeholder="' + esc(meta.ph) + '" style="flex:1;min-width:220px;">'
+                + '<button class="btn btn-primary" id="addbtn-' + meta.key + '">+ Ajouter</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-' + meta.key + '">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+
+            var input = document.getElementById('add-' + meta.key);
+            function add() {
+                var v = (input.value || '').trim();
+                if (!v) return;
+                if (arr.indexOf(v) === -1) arr.push(v);
+                renderOneList(meta);
+            }
+            document.getElementById('addbtn-' + meta.key).addEventListener('click', add);
+            input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+            cont.querySelectorAll('[data-deli]').forEach(function (b) {
+                b.addEventListener('click', function () { arr.splice(+b.getAttribute('data-deli'), 1); renderOneList(meta); });
+            });
+            document.getElementById('save-' + meta.key).addEventListener('click', function () { saveOneList(meta); });
+        }
+
+        function saveOneList(meta) {
+            var patch = {}; patch[meta.key] = (lists[meta.key] || []).slice();
+            saveConfig(patch, meta.label + ' enregistré(e).').then(function () {
+                var target = config && config[CFG_KEY[meta.key]];
+                if (Array.isArray(target)) target.splice.apply(target, [0, target.length].concat(lists[meta.key] || []));
+            });
+        }
+
+        // ── SEGMENTS GROUPÉS ──
+        function renderSegments() {
+            var html = '<div class="admin-card" style="background:var(--amber-50,#fff8e6);border-color:#f0d98a;">'
+                + '<div style="font-size:13px;color:#7a5b00;line-height:1.55;">'
+                + 'Les segments sont organisés par groupe (Particuliers / Pro / Agri). La <strong>valeur</strong> est enregistrée dans les campagnes ; '
+                + 'le <strong>libellé</strong> est ce qui s\'affiche dans le formulaire. Même précaution : ne renommez pas une valeur déjà utilisée.'
+                + '</div></div>';
+            segmentsGroups.forEach(function (g, gi) {
+                var items = g.items || (g.items = []);
+                html += '<div class="admin-card"><h3 style="display:flex;align-items:center;gap:10px;justify-content:space-between;">'
+                    + '<input class="admin-input" data-grpname="' + gi + '" value="' + esc(g.group || '') + '" style="font-size:13px;font-weight:750;text-transform:uppercase;letter-spacing:.6px;min-width:160px;">'
+                    + '<button class="icon-del" data-delgrp="' + gi + '">🗑 Groupe</button></h3>';
+                if (!items.length) html += '<div class="empty-hint">Aucun segment.</div>';
+                items.forEach(function (it, ii) {
+                    html += '<div class="person-row">'
+                        + '<input class="admin-input" data-segval="' + gi + '_' + ii + '" value="' + esc(it.value || '') + '" placeholder="Valeur (enregistrée)" style="flex:1;min-width:120px;">'
+                        + '<input class="admin-input" data-seglab="' + gi + '_' + ii + '" value="' + esc(it.label || '') + '" placeholder="Libellé (affiché)" style="flex:1;min-width:120px;">'
+                        + '<button class="icon-del" data-delseg="' + gi + '_' + ii + '">🗑</button></div>';
+                });
+                html += '<div class="add-row"><input class="admin-input" data-newval="' + gi + '" placeholder="Valeur" style="flex:1;min-width:120px;">'
+                    + '<input class="admin-input" data-newlab="' + gi + '" placeholder="Libellé (optionnel)" style="flex:1;min-width:120px;">'
+                    + '<button class="btn btn-primary" data-addseg="' + gi + '">+ Ajouter</button></div></div>';
+            });
+            html += '<div class="admin-card"><div class="add-row" style="border:none;padding:0;margin:0;">'
+                + '<input class="admin-input" id="new-group-name" placeholder="Nom d\'un nouveau groupe" style="flex:1;min-width:180px;">'
+                + '<button class="btn btn-secondary" id="add-group-btn">+ Ajouter un groupe</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-segments">💾 Enregistrer les segments</button></div>';
+            var cont = document.getElementById('segments-container');
+            cont.innerHTML = html;
+            // Édition en direct des champs (sans re-render, pour ne pas perdre le focus)
+            cont.querySelectorAll('[data-grpname]').forEach(function (inp) { inp.addEventListener('input', function () { segmentsGroups[+inp.getAttribute('data-grpname')].group = inp.value; }); });
+            cont.querySelectorAll('[data-segval]').forEach(function (inp) { var p = inp.getAttribute('data-segval').split('_'); inp.addEventListener('input', function () { segmentsGroups[+p[0]].items[+p[1]].value = inp.value; }); });
+            cont.querySelectorAll('[data-seglab]').forEach(function (inp) { var p = inp.getAttribute('data-seglab').split('_'); inp.addEventListener('input', function () { segmentsGroups[+p[0]].items[+p[1]].label = inp.value; }); });
+            cont.querySelectorAll('[data-delseg]').forEach(function (b) { b.addEventListener('click', function () { var p = b.getAttribute('data-delseg').split('_'); segmentsGroups[+p[0]].items.splice(+p[1], 1); renderSegments(); }); });
+            cont.querySelectorAll('[data-delgrp]').forEach(function (b) { b.addEventListener('click', function () { segmentsGroups.splice(+b.getAttribute('data-delgrp'), 1); renderSegments(); }); });
+            cont.querySelectorAll('[data-addseg]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var gi = +b.getAttribute('data-addseg');
+                    var val = (cont.querySelector('[data-newval="' + gi + '"]').value || '').trim();
+                    var lab = (cont.querySelector('[data-newlab="' + gi + '"]').value || '').trim();
+                    if (!val) { notify('Indiquez une valeur.', 'error'); return; }
+                    segmentsGroups[gi].items.push({ value: val, label: lab || val });
+                    renderSegments();
+                });
+            });
+            document.getElementById('add-group-btn').addEventListener('click', function () {
+                var n = (document.getElementById('new-group-name').value || '').trim();
+                if (!n) return;
+                segmentsGroups.push({ group: n, items: [] });
+                renderSegments();
+            });
+            document.getElementById('save-segments').addEventListener('click', saveSegments);
+        }
+        function saveSegments() {
+            var clean = segmentsGroups.map(function (g) {
+                return { group: g.group || '', items: (g.items || []).filter(function (it) { return it && it.value; }).map(function (it) { return { value: it.value, label: it.label || it.value }; }) };
+            });
+            saveConfig({ segmentsGroups: clean }, 'Segments enregistrés.').then(function () {
+                if (config && Array.isArray(config.SEGMENTS_GROUPS)) config.SEGMENTS_GROUPS.splice.apply(config.SEGMENTS_GROUPS, [0, config.SEGMENTS_GROUPS.length].concat(clean));
+                if (config && Array.isArray(config.SEGMENTS) && adminConfig.flattenSegments) {
+                    var flat = adminConfig.flattenSegments(clean);
+                    config.SEGMENTS.splice.apply(config.SEGMENTS, [0, config.SEGMENTS.length].concat(flat));
+                }
+            });
+        }
+
+        // ── SIGNALEMENTS ──
+        // Statuts de réponse proposés quand on traite un signalement (réponse à l'auteur).
+        var REPONSE_STATUTS = IM.config.REPONSE_STATUTS;
+        function statutReponseLabel(v) {
+            for (var k = 0; k < REPONSE_STATUTS.length; k++) if (REPONSE_STATUTS[k].value === v) return REPONSE_STATUTS[k].label;
+            return v || '';
+        }
+
+        // Statuts d'avancement dev, par signalement (une fois affecté à un lot).
+        var DEV_STATUTS = [
+            { value: 'a_venir', label: 'À venir' },
+            { value: 'dev_en_cours', label: 'Dev en cours' },
+            { value: 'recettage', label: 'Recettage' }
+        ];
+        function devStatutLabel(v) {
+            for (var k = 0; k < DEV_STATUTS.length; k++) if (DEV_STATUTS[k].value === v) return DEV_STATUTS[k].label;
+            return DEV_STATUTS[0].label;
+        }
+
+        // Statuts d'avancement d'un lot (agrégé — indépendant du statut de chaque signalement).
+        var LOT_STATUTS = [
+            { value: 'a_venir', label: 'À venir' },
+            { value: 'dev_en_cours', label: 'En cours de dev' },
+            { value: 'recettage', label: 'Recettage' },
+            { value: 'livre', label: 'Livré' }
+        ];
+        function lotStatutLabel(v) {
+            for (var k = 0; k < LOT_STATUTS.length; k++) if (LOT_STATUTS[k].value === v) return LOT_STATUTS[k].label;
+            return LOT_STATUTS[0].label;
+        }
+
+        // Sous-page active : 'triage' | 'lots' | 'archive' | 'recherche'.
+        var incView = 'triage';
+        var activeLot = null; // nom du lot ouvert dans la sous-page « Lots à dev »
+        var sigSearch = { q: '', type: '', lot: '', dev: '' };
+
+        // Suivi des lots (statut agrégé), persisté à part des signalements (Données/signalement_lots.json).
+        var sigLots = []; // [{ nom, statut }]
+        function findLot(nom) {
+            for (var k = 0; k < sigLots.length; k++) if (sigLots[k].nom === nom) return sigLots[k];
+            return null;
+        }
+        function ensureLot(nom) {
+            var l = findLot(nom);
+            if (!l) { l = { nom: nom, statut: 'a_venir' }; sigLots.push(l); }
+            return l;
+        }
+        function lotStatutOf(nom) { var l = findLot(nom); return l ? l.statut : 'a_venir'; }
+        function saveLots() { return writeJson('Données', 'signalement_lots.json', sigLots, 'Statut du lot enregistré.'); }
+
+        // Noms de lot connus : liste de choix « Numéros de lot » + lots déjà utilisés.
+        function knownLotNames() {
+            var set = {};
+            (lists.lots || []).forEach(function (v) { if (v) set[v] = true; });
+            incidents.forEach(function (it) { if (it.livraison) set[it.livraison] = true; });
+            sigLots.forEach(function (l) { if (l.nom) set[l.nom] = true; });
+            return Object.keys(set).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+        }
+        function isTriaged(it) { return !!(it.priorite && it.livraison); }
+        function readLotValue(card) {
+            var sel = card.querySelector('.inc-lot');
+            if (!sel) return '';
+            if (sel.value === '__new__') {
+                var inp = card.querySelector('.inc-lot-new');
+                return inp ? inp.value.trim() : '';
+            }
+            return sel.value;
+        }
+        function wireLotSelects(cont) {
+            cont.querySelectorAll('.inc-lot').forEach(function (sel) {
+                sel.addEventListener('change', function () {
+                    var inp = sel.parentElement.querySelector('.inc-lot-new');
+                    if (!inp) return;
+                    inp.style.display = sel.value === '__new__' ? '' : 'none';
+                    if (sel.value === '__new__') inp.focus();
+                });
+            });
+        }
+
+        // Badge de la nav : nombre de signalements en attente de triage.
+        function updateNavCounts() {
+            var el = document.getElementById('nav-count-incidents');
+            if (!el) return;
+            var pending = incidents.filter(function (i) { return !isTriaged(i); }).length;
+            if (pending > 0) { el.textContent = pending; el.style.display = ''; }
+            else { el.style.display = 'none'; }
+        }
+
+        var SIG_VIEWS = [
+            { key: 'triage', ic: '🗂️', label: 'Triage' },
+            { key: 'lots', ic: '🚧', label: 'Lots à dev' },
+            { key: 'archive', ic: '📦', label: 'Archive' },
+            { key: 'recherche', ic: '🔎', label: 'Recherche' }
+        ];
+        function sigSubnavHtml() {
+            var counts = {
+                triage: incidents.filter(function (i) { return !isTriaged(i); }).length,
+                lots: sigLots.filter(function (l) { return l.statut !== 'livre'; }).length,
+                archive: sigLots.filter(function (l) { return l.statut === 'livre'; }).length,
+                recherche: incidents.length
+            };
+            var html = '<div class="sub-tabs" style="flex-wrap:wrap;">';
+            SIG_VIEWS.forEach(function (v) {
+                html += '<button class="sub-tab' + (incView === v.key ? ' active' : '') + '" data-sigview="' + v.key + '">' + v.ic + ' ' + v.label + ' <span class="sub-tab-count">' + counts[v.key] + '</span></button>';
+            });
+            html += '<button class="btn btn-secondary" id="inc-export" style="margin-left:auto;">⬇️ Exporter (Excel/CSV)</button></div>';
+            return html;
+        }
+
+        // Bloc priorité + lot (+ champs complets en mode « full ») — réutilisé sur toutes les pages.
+        function manageBlockHtml(it, mode) {
+            var i = incidents.indexOf(it);
+            var PRIOS = ['', '01 Prioritaire', '02 Moyen', '03 Non prioritaire', '04 Non retenue'];
+            var lotOpts = knownLotNames();
+            var lotOptsHtml = '<option value="">— Choisir un lot —</option>' + lotOpts.map(function (n) {
+                return '<option value="' + esc(n) + '"' + (it.livraison === n ? ' selected' : '') + '>' + esc(n) + '</option>';
+            }).join('') + '<option value="__new__">➕ Nouveau lot…</option>';
+            var h = '<div class="inc-triage-row">'
+                + '<label>Priorité<br><select class="admin-select inc-prio" data-i="' + i + '">' + PRIOS.map(function (p) { return '<option' + (it.priorite === p ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '</select></label>'
+                + '<label>Lot<br><select class="admin-select inc-lot" data-i="' + i + '">' + lotOptsHtml + '</select>'
+                + '<input type="text" class="admin-input inc-lot-new" data-i="' + i + '" placeholder="Nom du nouveau lot" style="display:none;margin-top:6px;"></label>'
+                + (mode === 'triage' ? '<button class="btn btn-primary btn-triage" data-i="' + i + '">✅ Valider le triage</button>' : '')
+                + '</div>';
+            if (mode === 'full') {
+                var devOptsHtml = DEV_STATUTS.map(function (d) { return '<option value="' + d.value + '"' + ((it.devStatut || 'a_venir') === d.value ? ' selected' : '') + '>' + d.label + '</option>'; }).join('');
+                h += '<div class="inc-devstatut-row"><label style="font-size:12px;color:var(--muted);">Statut du signalement&nbsp;'
+                    + '<select class="admin-select inc-devstatut" data-i="' + i + '">' + devOptsHtml + '</select></label></div>'
+                    + '<label style="font-size:12px;display:block;margin-bottom:6px;">Modifications faites<textarea class="admin-input inc-notedev" data-i="' + i + '" rows="2" style="width:100%;">' + esc(it.noteDev || '') + '</textarea></label>'
+                    + '<label style="font-size:12px;display:block;margin-bottom:6px;">Bilan du recettage<textarea class="admin-input inc-bilan" data-i="' + i + '" rows="2" style="width:100%;">' + esc(it.bilanRecettage || '') + '</textarea></label>'
+                    + '<label style="font-size:12px;display:block;">Contournement<textarea class="admin-input inc-contournement" data-i="' + i + '" rows="2" style="width:100%;">' + esc(it.contournement || '') + '</textarea></label>'
+                    + '<button class="btn btn-secondary btn-save-manage" data-i="' + i + '" style="margin-top:8px;">💾 Enregistrer le suivi</button>';
+            }
+            return h;
+        }
+
+        // Bloc réponse à l'auteur — réutilisé sur les pages Lots à dev / Recherche.
+        function replyBlockHtml(it) {
+            var i = incidents.indexOf(it);
+            var rep = it.reponse;
+            var selVal = rep ? rep.statut : 'resolu';
+            var optsHtml = REPONSE_STATUTS.map(function (o) { return '<option value="' + o.value + '"' + (o.value === selVal ? ' selected' : '') + '>' + o.label + '</option>'; }).join('');
+            var h = '';
+            if (rep && rep.texte) {
+                h += '<div class="inc-reponse-saved">↳ <strong>' + esc(statutReponseLabel(rep.statut)) + '</strong> — ' + esc(rep.texte)
+                    + '<div class="inc-reponse-meta">par ' + esc(rep.par || '?') + ' · ' + esc((rep.date || '').slice(0, 10)) + ' · auteur notifié</div></div>';
+            }
+            h += '<div class="inc-reply">'
+                + '<textarea class="inc-reply-text" data-rep="' + i + '" rows="2" placeholder="Réponse à l\'auteur : ce que vous avez fait…">' + esc(rep ? rep.texte : '') + '</textarea>'
+                + '<div class="inc-reply-row"><select class="inc-reply-statut" data-reps="' + i + '">' + optsHtml + '</select>'
+                + '<button class="btn-reply" data-reply="' + i + '">💬 Répondre &amp; notifier</button></div>'
+                + '</div>';
+            return h;
+        }
+
+        function cardHead(it) {
+            var prioBadge = it.priorite ? '<span class="inc-prio-badge inc-prio-' + it.priorite.slice(0, 2) + '">' + esc(it.priorite) + '</span>' : '';
+            var devBadge = it.livraison ? '<span class="dev-status-badge dev-status-' + (it.devStatut || 'a_venir') + '">' + esc(devStatutLabel(it.devStatut)) + '</span>' : '';
+            return '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
+                + prioBadge + devBadge
+                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + (it.livraison ? ' · <span class="inc-lot-tag">📦 ' + esc(it.livraison) + '</span>' : '') + '</span></div>'
+                + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
+        }
+
+        // ── Page 1 : Triage ──
+        function triageCardHtml(it) {
+            var i = incidents.indexOf(it);
+            return '<div class="inc-item">' + cardHead(it) + manageBlockHtml(it, 'triage')
+                + '<div class="save-bar" style="margin-top:10px;"><button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div></div>';
+        }
+        function renderTriage(cont) {
+            var list = incidents.filter(function (it) { return !isTriaged(it); });
+            var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>Les nouveaux signalements arrivent ici. Une fois <strong>priorité</strong> et <strong>lot</strong> renseignés, le signalement bascule automatiquement dans « Lots à dev ».</div></div>';
+            if (!list.length) {
+                html += '<div class="admin-card"><div class="empty-hint">Rien à trier pour l’instant. 🎉</div></div>';
+            } else {
+                html += '<div class="admin-card"><div class="admin-card-title"><h3>À trier</h3><span class="count-pill">' + list.length + '</span></div>';
+                list.slice().reverse().forEach(function (it) { html += triageCardHtml(it); });
+                html += '</div>';
+            }
+            cont.innerHTML = html;
+            wireLotSelects(cont);
+            cont.querySelectorAll('.btn-triage').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var it = incidents[+b.getAttribute('data-i')]; if (!it) return;
+                    var card = b.closest('.inc-item');
+                    var prio = card.querySelector('.inc-prio').value;
+                    var lotVal = readLotValue(card);
+                    if (!prio || !lotVal) { notify('Indiquez une priorité et un lot.', 'error'); return; }
+                    it.priorite = prio; it.livraison = lotVal;
+                    ensureLot(it.livraison);
+                    saveIncidents();
+                    saveLots();
+                });
+            });
+            cont.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
+        }
+
+        // ── Page 2 : Lots à dev ──
+        function renderLotsList(cont) {
+            var lotNames = {};
+            incidents.forEach(function (it) { if (isTriaged(it)) lotNames[it.livraison] = true; });
+            sigLots.forEach(function (l) { if (l.statut !== 'livre') lotNames[l.nom] = true; });
+            var names = Object.keys(lotNames).filter(function (n) { return lotStatutOf(n) !== 'livre'; }).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Lots à dev</h3><span class="count-pill">' + names.length + '</span></div>';
+            if (!names.length) {
+                html += '<div class="empty-hint">Aucun lot en cours. Triez des signalements pour en créer un.</div>';
+            } else {
+                names.forEach(function (n) {
+                    var tickets = incidents.filter(function (it) { return it.livraison === n; });
+                    var done = tickets.filter(function (it) { return it.devStatut === 'recettage'; }).length;
+                    var st = lotStatutOf(n);
+                    html += '<div class="lot-card" data-openlot="' + esc(n) + '"><span class="lot-name">📦 ' + esc(n) + '</span>'
+                        + '<span class="lot-progress">' + tickets.length + ' signalement' + (tickets.length > 1 ? 's' : '') + (tickets.length ? ' · ' + done + '/' + tickets.length + ' en recettage' : '') + '</span>'
+                        + '<span class="lot-status-badge lot-status-' + st + '">' + lotStatutLabel(st) + '</span></div>';
+                });
+            }
+            html += '</div>';
+            cont.innerHTML = html;
+            wireDrilldown(cont, 'data-openlot', 'back-to-lots', function (v) { activeLot = v; }, renderIncidents);
+        }
+        function lotTicketCardHtml(it) {
+            var i = incidents.indexOf(it);
+            return '<div class="inc-item">' + cardHead(it) + manageBlockHtml(it, 'full') + replyBlockHtml(it)
+                + '<div class="save-bar" style="margin-top:10px;"><button class="icon-del" data-deli="' + i + '">🗑 Supprimer</button></div></div>';
+        }
+        function renderLotDetail(cont) {
+            var nom = activeLot;
+            ensureLot(nom);
+            var st = lotStatutOf(nom);
+            var tickets = incidents.filter(function (it) { return it.livraison === nom; });
+            var html = '<div class="lot-header"><button class="btn-back-lots" id="back-to-lots">← Lots à dev</button>'
+                + '<h3>📦 ' + esc(nom) + '</h3>'
+                + '<select class="admin-select" id="lot-statut-sel">' + LOT_STATUTS.map(function (s) { return '<option value="' + s.value + '"' + (st === s.value ? ' selected' : '') + '>' + s.label + '</option>'; }).join('') + '</select></div>';
+            if (!tickets.length) {
+                html += '<div class="admin-card"><div class="empty-hint">Aucun signalement dans ce lot.</div></div>';
+            } else {
+                html += '<div class="admin-card"><div class="admin-card-title"><h3>Signalements du lot</h3><span class="count-pill">' + tickets.length + '</span></div>';
+                tickets.slice().reverse().forEach(function (it) { html += lotTicketCardHtml(it); });
+                html += '</div>';
+            }
+            cont.innerHTML = html;
+            wireDrilldown(cont, 'data-openlot', 'back-to-lots', function (v) { activeLot = v; }, renderIncidents);
+            document.getElementById('lot-statut-sel').addEventListener('change', function (e) {
+                ensureLot(nom).statut = e.target.value;
+                saveLots().then(function () { renderIncidents(); });
+            });
+            wireManageBlocks(cont);
+            wireLotSelects(cont);
+            wireReplyBlocks(cont);
+            cont.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
+        }
+        function renderLots(cont) { if (activeLot) renderLotDetail(cont); else renderLotsList(cont); }
+
+        // ── Page 3 : Archive (lots livrés) ──
+        function renderArchive(cont) {
+            var names = sigLots.filter(function (l) { return l.statut === 'livre'; }).map(function (l) { return l.nom; }).sort(function (a, b) { return a.localeCompare(b, 'fr', { numeric: true }); });
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Lots livrés</h3><span class="count-pill">' + names.length + '</span></div>';
+            if (!names.length) {
+                html += '<div class="empty-hint">Aucun lot livré pour l’instant.</div>';
+            } else {
+                names.forEach(function (n) {
+                    var tickets = incidents.filter(function (it) { return it.livraison === n; });
+                    html += '<div class="lot-card" data-archlot="' + esc(n) + '"><span class="lot-name">📦 ' + esc(n) + '</span>'
+                        + '<span class="lot-progress">' + tickets.length + ' signalement' + (tickets.length > 1 ? 's' : '') + '</span>'
+                        + '<span class="lot-status-badge lot-status-livre">✅ Livré</span></div>';
+                });
+            }
+            html += '</div>';
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-archlot]').forEach(function (b) { b.addEventListener('click', function () { activeLot = b.getAttribute('data-archlot'); incView = 'lots'; renderIncidents(); }); });
+        }
+
+        // ── Page 4 : Recherche ──
+        function renderRecherche(cont) {
+            var lotOpts = knownLotNames();
+            var html = '<div class="admin-card"><div class="sig-search-row">'
+                + '<input type="text" class="admin-input" id="sig-q" placeholder="Rechercher (description, auteur, page…)" value="' + esc(sigSearch.q) + '">'
+                + '<select class="admin-select" id="sig-f-type"><option value="">Tous types</option><option value="incident"' + (sigSearch.type === 'incident' ? ' selected' : '') + '>🐞 Incident</option><option value="amelioration"' + (sigSearch.type === 'amelioration' ? ' selected' : '') + '>💡 Amélioration</option></select>'
+                + '<select class="admin-select" id="sig-f-lot"><option value="">Tous les lots</option>' + lotOpts.map(function (n) { return '<option value="' + esc(n) + '"' + (sigSearch.lot === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>'
+                + '<select class="admin-select" id="sig-f-dev"><option value="">Tous statuts</option>' + DEV_STATUTS.map(function (d) { return '<option value="' + d.value + '"' + (sigSearch.dev === d.value ? ' selected' : '') + '>' + d.label + '</option>'; }).join('') + '</select>'
+                + '</div></div>';
+            var q = (sigSearch.q || '').toLowerCase();
+            var list = incidents.filter(function (it) {
+                if (sigSearch.type && it.type !== sigSearch.type) return false;
+                if (sigSearch.lot && it.livraison !== sigSearch.lot) return false;
+                if (sigSearch.dev && (it.devStatut || 'a_venir') !== sigSearch.dev) return false;
+                if (q && (String(it.description || '') + ' ' + String(it.auteur || '') + ' ' + String(it.page || '')).toLowerCase().indexOf(q) === -1) return false;
+                return true;
+            });
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Résultats</h3><span class="count-pill">' + list.length + '</span></div>';
+            if (!list.length) html += '<div class="empty-hint">Aucun signalement ne correspond.</div>';
+            else list.slice().reverse().forEach(function (it) { html += lotTicketCardHtml(it); });
+            html += '</div>';
+            cont.innerHTML = html;
+            document.getElementById('sig-q').addEventListener('input', function (e) { var pos = e.target.selectionStart; sigSearch.q = e.target.value; renderIncidents(); var q2 = document.getElementById('sig-q'); if (q2) { q2.focus(); q2.selectionStart = q2.selectionEnd = pos; } });
+            document.getElementById('sig-f-type').addEventListener('change', function (e) { sigSearch.type = e.target.value; renderIncidents(); });
+            document.getElementById('sig-f-lot').addEventListener('change', function (e) { sigSearch.lot = e.target.value; renderIncidents(); });
+            document.getElementById('sig-f-dev').addEventListener('change', function (e) { sigSearch.dev = e.target.value; renderIncidents(); });
+            wireManageBlocks(cont);
+            wireLotSelects(cont);
+            wireReplyBlocks(cont);
+            cont.querySelectorAll('[data-deli]').forEach(function (b) { b.addEventListener('click', function () { incidents.splice(+b.getAttribute('data-deli'), 1); saveIncidents(); }); });
+        }
+
+        // ── Câblage commun ──
+        function wireManageBlocks(cont) {
+            cont.querySelectorAll('.btn-save-manage').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var it = incidents[+b.getAttribute('data-i')]; if (!it) return;
+                    var card = b.closest('.inc-item');
+                    it.priorite = card.querySelector('.inc-prio').value;
+                    var lotVal = readLotValue(card);
+                    if (lotVal) { it.livraison = lotVal; ensureLot(it.livraison); }
+                    var devSel = card.querySelector('.inc-devstatut'); if (devSel) it.devStatut = devSel.value;
+                    var noteDev = card.querySelector('.inc-notedev'); if (noteDev) it.noteDev = noteDev.value.trim();
+                    var bilan = card.querySelector('.inc-bilan'); if (bilan) it.bilanRecettage = bilan.value.trim();
+                    var contourn = card.querySelector('.inc-contournement'); if (contourn) it.contournement = contourn.value.trim();
+                    saveIncidents();
+                    if (it.livraison) saveLots();
+                });
+            });
+        }
+        function wireReplyBlocks(cont) {
+            cont.querySelectorAll('[data-reply]').forEach(function (b) { b.addEventListener('click', function () { respondToIncident(+b.getAttribute('data-reply'), b); }); });
+        }
+
+        function renderIncidents() {
+            updateNavCounts();
+            var c = document.getElementById('incidents-container');
+            c.innerHTML = sigSubnavHtml() + '<div id="sig-page"></div>';
+            var page = document.getElementById('sig-page');
+            if (incView === 'triage') renderTriage(page);
+            else if (incView === 'lots') renderLots(page);
+            else if (incView === 'archive') renderArchive(page);
+            else renderRecherche(page);
+            c.querySelectorAll('[data-sigview]').forEach(function (b) { b.addEventListener('click', function () { incView = b.getAttribute('data-sigview'); if (incView !== 'lots') activeLot = null; renderIncidents(); }); });
+            var expBtn = document.getElementById('inc-export');
+            if (expBtn) expBtn.addEventListener('click', exportIncidentsCsv);
+        }
+
+        // Export CSV (ouvrable dans Excel) de tous les signalements + leur suivi.
+        function exportIncidentsCsv() {
+            var cols = ['Type', 'Auteur', 'Page', 'Date', 'Priorité', 'Lot', 'Statut lot', 'Statut signalement', 'Description', 'Modifications faites', 'Bilan du recettage', 'Contournement', 'Réponse'];
+            var lines = [cols];
+            incidents.forEach(function (it) {
+                lines.push([
+                    it.type === 'amelioration' ? 'Amélioration' : 'Incident',
+                    it.auteur || '', it.page || '', (it.date || '').slice(0, 10),
+                    it.priorite || '', it.livraison || '', it.livraison ? lotStatutLabel(lotStatutOf(it.livraison)) : '',
+                    it.livraison ? devStatutLabel(it.devStatut) : '',
+                    it.description || '', it.noteDev || '', it.bilanRecettage || '', it.contournement || '',
+                    (it.reponse && it.reponse.texte) || ''
+                ]);
+            });
+            var csv = lines.map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+            var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'signalements.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        }
+
+        // Répond à un signalement : enregistre la réponse, met à jour le statut
+        // et notifie l'auteur via _notifications.json (lecture-puis-écriture).
+        function respondToIncident(i, btn) {
+            var it = incidents[i];
+            if (!it) return;
+            var card = btn.closest('.inc-item');
+            var texte = card.querySelector('.inc-reply-text').value.trim();
+            var statut = card.querySelector('.inc-reply-statut').value;
+            if (!texte) { notify('Saisissez une réponse avant de notifier l\'auteur.', 'error'); return; }
+            var me = (users && users.getCurrentUser()) ? users.getCurrentUser().name : 'Admin';
+            var def = REPONSE_STATUTS.filter(function (o) { return o.value === statut; })[0] || REPONSE_STATUTS[0];
+
+            it.reponse = { texte: texte, statut: statut, par: me, date: new Date().toISOString() };
+            it.statut = def.incStatut;
+
+            btn.disabled = true; btn.textContent = 'Envoi…';
+            notifyAuthor(it, def, me)
+                .then(function () {
+                    return writeJson('Données', 'incidents.json', incidents, 'Réponse enregistrée — auteur notifié.');
+                })
+                .then(function () { renderIncidents(); })
+                .catch(function (e) { btn.disabled = false; btn.textContent = '💬 Répondre & notifier'; notify('Échec : ' + (e && e.message), 'error'); });
+        }
+
+        // Ajoute une notification destinée à l'auteur du signalement.
+        function notifyAuthor(it, def, me) {
+            var dest = (it.auteur || '').trim();
+            if (!dest) return Promise.resolve();
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') throw new Error('Dossier non chargé.');
+                return res.handle.getFileHandle('_notifications.json', { create: true });
+            }).then(function (fh) {
+                return fh.getFile().then(function (f) { return f.text(); })
+                    .then(function (t) { var a; try { a = JSON.parse(t); } catch (e) { a = []; } return { fh: fh, notifs: Array.isArray(a) ? a : [] }; })
+                    .catch(function () { return { fh: fh, notifs: [] }; });
+            }).then(function (r) {
+                var typeLabel = it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident';
+                r.notifs.push({
+                    id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                    type: 'signalement_reponse',
+                    destinataire: dest,
+                    campagneId: '',
+                    campagneTitre: typeLabel + (it.page ? ' · ' + it.page : ''),
+                    statutReponse: def.label,
+                    message: it.reponse.texte,
+                    auteur: me,
+                    dateCreation: new Date().toISOString(),
+                    // Snapshot du signalement d'origine, pour l'afficher dans la modale
+                    // côté destinataire (la cloche n'a pas accès à incidents.json).
+                    signalementId: it.id,
+                    signalementType: typeLabel,
+                    signalementPage: it.page || '',
+                    signalementDescription: it.description || '',
+                    signalementDate: it.date || '',
+                    lu: false
+                });
+                return r.fh.createWritable().then(function (w) { return w.write(JSON.stringify(r.notifs, null, 2)).then(function () { return w.close(); }); });
+            });
+        }
+        function saveIncidents() {
+            writeJson('Données', 'incidents.json', incidents, 'Signalement mis à jour.').then(renderIncidents);
+        }
+
+        // ── Persistance ──
+        function notify(msg, type) { if (errors && errors.showNotification) errors.showNotification(msg, type || 'success', 2500); }
+        function saveConfig(patch, okMsg) {
+            return adminConfig.load().then(function (cur) {
+                Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
+                return adminConfig.save(cur);
+            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); throw e; });
+        }
+        function writeJson(dir, file, data, okMsg) {
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') throw new Error('Dossier non chargé.');
+                return res.handle.getDirectoryHandle(dir, { create: true });
+            }).then(function (d) {
+                return d.getFileHandle(file, { create: true }).then(function (fh) {
+                    return fh.createWritable().then(function (w) { return w.write(JSON.stringify(data, null, 2)).then(function () { return w.close(); }); });
+                });
+            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+        }
+
+        // ── QUOI DE NEUF (annonces) ──────────────────────────────────────────────
+        // Persisté dans _whatsnew.json à la racine. Chaque annonce : { id, dateLabel,
+        // title, type, text, audience:[noms] (vide = tout le monde), seenBy:[noms] }.
+        var WHATSNEW_FILE = '_whatsnew.json';
+        var whatsNewList = [];
+        var WN_BADGE = IM.config.WHATSNEW_BADGES;
+
+        function readWhatsNewFile() {
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') return [];
+                return res.handle.getFileHandle(WHATSNEW_FILE).then(function (fh) { return fh.getFile(); })
+                    .then(function (f) { return f.text(); })
+                    .then(function (t) { try { var a = JSON.parse(t); return Array.isArray(a) ? a : []; } catch (e) { return []; } })
+                    .catch(function () { return []; });
+            }).catch(function () { return []; });
+        }
+        function writeWhatsNewFile(list) {
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') throw new Error('Dossier non chargé.');
+                return res.handle.getFileHandle(WHATSNEW_FILE, { create: true });
+            }).then(function (fh) { return fh.createWritable(); })
+              .then(function (w) { return w.write(JSON.stringify(list, null, 2)).then(function () { return w.close(); }); });
+        }
+        function loadWhatsNew() {
+            return readWhatsNewFile().then(function (list) { whatsNewList = list; renderWhatsNew(); });
+        }
+
+        function renderWhatsNew() {
+            var cont = document.getElementById('whatsnew-container');
+            if (!cont) return;
+            var typeOpts = Object.keys(WN_BADGE).map(function (k) {
+                return '<option value="' + k + '">' + WN_BADGE[k].icon + ' ' + WN_BADGE[k].label + '</option>';
+            }).join('');
+
+            // Liste des personnes (audience)
+            var people = (users.USERS || []).slice().sort(function (a, b) { return a.name.localeCompare(b.name); });
+            var peopleHtml = people.map(function (p) {
+                return '<label style="display:flex;align-items:center;gap:7px;font-size:13px;padding:3px 0;">'
+                    + '<input type="checkbox" class="wn-person" value="' + esc(p.name) + '"> ' + esc(p.name)
+                    + ' <span style="color:var(--muted);font-size:11px;">' + esc(p.roleLabel || p.role || '') + '</span></label>';
+            }).join('');
+
+            var html = '';
+            html += '<div class="admin-card"><h3>📣 Publier une annonce</h3>';
+            html += '<div class="form-row" style="margin-bottom:10px;"><label class="admin-label">Titre</label>'
+                + '<input class="admin-input" id="wn-title" placeholder="Ex : Nouvelle fonctionnalité Documents" style="width:100%;"></div>';
+            html += '<div class="form-row" style="margin-bottom:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">'
+                + '<label class="admin-label">Type</label><select class="admin-input" id="wn-type">' + typeOpts + '</select></div>';
+            html += '<div class="form-row" style="margin-bottom:10px;"><label class="admin-label">Message</label>'
+                + '<textarea class="admin-input" id="wn-text" rows="3" placeholder="Décrivez la nouveauté ou la correction…" style="width:100%;resize:vertical;"></textarea></div>';
+            html += '<div class="form-row" style="margin-bottom:10px;"><label class="admin-label">Destinataires</label>'
+                + '<label style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;margin-bottom:6px;"><input type="checkbox" id="wn-all" checked> Tout le monde</label>'
+                + '<div id="wn-people" style="max-height:180px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;padding:8px 12px;opacity:.45;pointer-events:none;">' + (peopleHtml || '<span class="empty-hint">Aucune personne.</span>') + '</div></div>';
+            html += '<div class="save-bar"><button class="btn btn-primary" id="wn-publish">📣 Publier l\'annonce</button></div>';
+            html += '</div>';
+
+            // Liste des annonces existantes
+            var sorted = whatsNewList.slice().sort(function (a, b) { return (b.id || 0) - (a.id || 0); });
+            html += '<div class="admin-card"><h3>Annonces publiées (' + sorted.length + ')</h3>';
+            if (!sorted.length) {
+                html += '<div class="empty-hint">Aucune annonce pour le moment.</div>';
+            } else {
+                sorted.forEach(function (e) {
+                    var b = WN_BADGE[e.type] || WN_BADGE.improve;
+                    var audience = (Array.isArray(e.audience) && e.audience.length) ? (e.audience.length + ' personne' + (e.audience.length > 1 ? 's' : '')) : 'Tout le monde';
+                    var seen = Array.isArray(e.seenBy) ? e.seenBy.length : 0;
+                    html += '<div class="canal-row" style="align-items:flex-start;">';
+                    html += '<div style="flex:1;min-width:0;">'
+                        + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:3px;">'
+                        + '<span style="font-size:11px;font-weight:700;color:#fff;background:' + b.color + ';border-radius:4px;padding:2px 6px;">' + b.icon + ' ' + b.label + '</span>'
+                        + '<strong>' + esc(e.title) + '</strong>'
+                        + '<span style="color:var(--muted);font-size:11px;">' + esc(e.dateLabel || '') + '</span></div>'
+                        + (e.text ? '<div style="font-size:12.5px;color:var(--muted-2,#667);white-space:pre-wrap;line-height:1.45;">' + esc(e.text) + '</div>' : '')
+                        + '<div style="font-size:11px;color:var(--muted);margin-top:4px;">👥 ' + esc(audience) + ' · 👁 vu par ' + seen + '</div>'
+                        + '</div>';
+                    html += '<button class="icon-del" data-wn-del="' + e.id + '" title="Supprimer">🗑</button>';
+                    html += '</div>';
+                });
+            }
+            html += '</div>';
+            cont.innerHTML = html;
+
+            // Activer/désactiver la liste des personnes selon « Tout le monde »
+            var allCb = document.getElementById('wn-all');
+            var peopleBox = document.getElementById('wn-people');
+            allCb.addEventListener('change', function () {
+                if (allCb.checked) { peopleBox.style.opacity = '.45'; peopleBox.style.pointerEvents = 'none'; }
+                else { peopleBox.style.opacity = '1'; peopleBox.style.pointerEvents = 'auto'; }
+            });
+            document.getElementById('wn-publish').addEventListener('click', publishWhatsNew);
+            cont.querySelectorAll('[data-wn-del]').forEach(function (btn) {
+                btn.addEventListener('click', function () { deleteWhatsNew(+btn.getAttribute('data-wn-del')); });
+            });
+        }
+
+        function publishWhatsNew() {
+            var title = (document.getElementById('wn-title').value || '').trim();
+            var type = document.getElementById('wn-type').value;
+            var text = (document.getElementById('wn-text').value || '').trim();
+            var all = document.getElementById('wn-all').checked;
+            if (!title) { notify('Indiquez un titre pour l\'annonce.', 'error'); return; }
+            var audience = [];
+            if (!all) {
+                audience = Array.prototype.map.call(document.querySelectorAll('.wn-person:checked'), function (c) { return c.value; });
+                if (!audience.length) { notify('Sélectionnez au moins une personne, ou cochez « Tout le monde ».', 'error'); return; }
+            }
+            var entry = {
+                id: Date.now(),
+                dateLabel: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+                title: title, type: type, text: text, audience: audience, seenBy: []
+            };
+            whatsNewList.push(entry);
+            writeWhatsNewFile(whatsNewList)
+                .then(function () { notify('Annonce publiée.'); renderWhatsNew(); })
+                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+        }
+
+        function deleteWhatsNew(id) {
+            if (!confirm('Supprimer cette annonce ?')) return;
+            whatsNewList = whatsNewList.filter(function (e) { return e.id !== id; });
+            writeWhatsNewFile(whatsNewList)
+                .then(function () { notify('Annonce supprimée.'); renderWhatsNew(); })
+                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+        }
+
+        // ── Init : charger config + incidents puis rendre ──
+        function clone(a) { return a.map(function (x) { return Object.assign({}, x); }); }
+        function loadStateFromConfig() {
+            people = clone(users.USERS);
+            lists = {};
+            LISTS_META.forEach(function (meta) {
+                var arr = config && config[CFG_KEY[meta.key]];
+                lists[meta.key] = Array.isArray(arr) ? arr.slice() : [];
+            });
+            segmentsGroups = (config && Array.isArray(config.SEGMENTS_GROUPS))
+                ? JSON.parse(JSON.stringify(config.SEGMENTS_GROUPS)) : [];
+            var wz = (config && config.WEB_ZONES && typeof config.WEB_ZONES === 'object') ? config.WEB_ZONES : {};
+            webZonesState = {
+                zones: Array.isArray(wz.zones) ? wz.zones.slice() : [],
+                bpOnlyZones: Array.isArray(wz.bpOnlyZones) ? wz.bpOnlyZones.slice() : [],
+                zonesMulti: (wz.zonesMulti && typeof wz.zonesMulti === 'object') ? JSON.parse(JSON.stringify(wz.zonesMulti)) : {}
+            };
+            marchesSiteWebState = (config && Array.isArray(config.MARCHES_SITE_WEB)) ? JSON.parse(JSON.stringify(config.MARCHES_SITE_WEB)) : [];
+            workflowStepsState = (config && Array.isArray(config.WORKFLOW_STEPS) && config.WORKFLOW_STEPS.length) ? JSON.parse(JSON.stringify(config.WORKFLOW_STEPS)) : defaultWorkflowSteps();
+            canalStepsState = (config && config.CANAL_STEPS && typeof config.CANAL_STEPS === 'object') ? JSON.parse(JSON.stringify(config.CANAL_STEPS)) : {};
+            canalActorOverridesState = flattenActorOverrides((config && config.CANAL_ACTOR_OVERRIDES) || {});
+            reponseStatutsState = (config && Array.isArray(config.REPONSE_STATUTS)) ? JSON.parse(JSON.stringify(config.REPONSE_STATUTS)) : [];
+            whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
+            bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
+            autoAssignState = (config && Array.isArray(config.AUTO_ASSIGN_RULES)) ? JSON.parse(JSON.stringify(config.AUTO_ASSIGN_RULES)) : [];
+            // Pour un point d'attache pas encore configuré (aucune clé dans
+            // config.CUSTOM_FIELDS), on initialise à partir des valeurs par défaut du
+            // moteur (IM.customFields.getFields) plutôt qu'une liste vide — les champs
+            // déjà en place (migrés) doivent apparaître prêts à éditer dès l'ouverture,
+            // pas seulement après un premier enregistrement.
+            var savedCf = (config && config.CUSTOM_FIELDS && typeof config.CUSTOM_FIELDS === 'object') ? config.CUSTOM_FIELDS : {};
+            customFieldsState = {};
+            cfAttachPointsList().forEach(function (p) {
+                customFieldsState[p.id] = savedCf[p.id]
+                    ? JSON.parse(JSON.stringify(savedCf[p.id]))
+                    : ((IM.customFields ? IM.customFields.getFields(p.id) : []).map(function (f) { return JSON.parse(JSON.stringify(f)); }));
+            });
+        }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderWorkflow(); renderCustomFields(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
+
+        // Chips réutilisables (liste éditable de chaînes).
+        function chipsHtml(arr, delAttr) {
+            if (!arr || !arr.length) return '<div class="empty-hint">Aucune valeur.</div>';
+            return '<div class="chips-wrap">' + arr.map(function (v, i) {
+                return '<span class="chip">' + esc(v) + '<button type="button" title="Supprimer" data-' + delAttr + '="' + i + '">✕</button></span>';
+            }).join('') + '</div>';
+        }
+
+        // ── STATUTS DE RÉPONSE AUX SIGNALEMENTS ──
+        function renderReponseStatuts() {
+            var cont = document.getElementById('statuts-container');
+            if (!cont) return;
+            var st = reponseStatutsState;
+            var incOpts = ['nouveau', 'en cours', 'traité'];
+            var html = '<div class="admin-note"><span class="admin-note-ic">💬</span><div>Choix proposés au traitement d\'un signalement. Le statut « traité » ferme le signalement ; les autres le laissent ouvert.</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Statuts</h3><span class="count-pill">' + st.length + '</span></div>';
+            st.forEach(function (s, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;">'
+                    + '<input class="admin-input" data-sv="' + i + '" value="' + esc(s.value || '') + '" placeholder="clé" style="width:130px;">'
+                    + '<input class="admin-input" data-sl="' + i + '" value="' + esc(s.label || '') + '" placeholder="Libellé affiché" style="flex:1;min-width:170px;">'
+                    + '<select class="admin-select" data-si="' + i + '">' + incOpts.map(function (o) { return '<option value="' + o + '"' + (s.incStatut === o ? ' selected' : '') + '>' + o + '</option>'; }).join('') + '</select>'
+                    + '<button class="icon-del" data-dels="' + i + '">🗑</button></div>';
+            });
+            html += '<div class="add-row"><button class="btn btn-secondary" id="add-statut">+ Ajouter un statut</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-statuts">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-sv]').forEach(function (inp) { var i = +inp.getAttribute('data-sv'); inp.addEventListener('input', function () { st[i].value = inp.value; }); });
+            cont.querySelectorAll('[data-sl]').forEach(function (inp) { var i = +inp.getAttribute('data-sl'); inp.addEventListener('input', function () { st[i].label = inp.value; }); });
+            cont.querySelectorAll('[data-si]').forEach(function (sel) { var i = +sel.getAttribute('data-si'); sel.addEventListener('change', function () { st[i].incStatut = sel.value; }); });
+            cont.querySelectorAll('[data-dels]').forEach(function (b) { b.addEventListener('click', function () { st.splice(+b.getAttribute('data-dels'), 1); renderReponseStatuts(); }); });
+            document.getElementById('add-statut').addEventListener('click', function () { st.push({ value: '', label: '', incStatut: 'en cours' }); renderReponseStatuts(); });
+            document.getElementById('save-statuts').addEventListener('click', function () {
+                var clean = st.filter(function (s) { return (s.value || '').trim(); }).map(function (s) { return { value: s.value.trim(), label: (s.label || '').trim(), incStatut: s.incStatut || 'en cours' }; });
+                saveConfig({ reponseStatuts: clean }, 'Statuts enregistrés.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ reponseStatuts: clean }); reponseStatutsState = JSON.parse(JSON.stringify(clean)); renderReponseStatuts(); });
+            });
+        }
+
+        // ── BADGES « QUOI DE NEUF » ──
+        function renderBadges() {
+            var cont = document.getElementById('badges-container');
+            if (!cont) return;
+            var b = whatsnewBadgesState;
+            var keys = [['new', 'Nouveau'], ['fix', 'Correction'], ['improve', 'Amélioration']];
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Types d\'annonce</h3></div>';
+            keys.forEach(function (k) {
+                var v = b[k[0]] || {};
+                html += '<div class="person-row" style="flex-wrap:wrap;"><span class="person-name" style="flex:0 0 120px;">' + esc(k[1]) + '</span>'
+                    + '<input class="admin-input" data-bicon="' + k[0] + '" value="' + esc(v.icon || '') + '" placeholder="icône" style="width:70px;">'
+                    + '<input class="admin-input" data-blabel="' + k[0] + '" value="' + esc(v.label || '') + '" placeholder="libellé" style="flex:1;min-width:150px;">'
+                    + '<input type="color" data-bcolor="' + k[0] + '" value="' + (v.color || '#16a34a') + '" style="width:56px;height:34px;border:1px solid var(--line);border-radius:8px;padding:2px;cursor:pointer;">'
+                    + '</div>';
+            });
+            html += '</div><div class="save-bar sticky"><button class="btn btn-primary" id="save-badges">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            document.getElementById('save-badges').addEventListener('click', function () {
+                var out = {};
+                keys.forEach(function (k) {
+                    out[k[0]] = {
+                        icon: (cont.querySelector('[data-bicon="' + k[0] + '"]').value || '').trim(),
+                        label: (cont.querySelector('[data-blabel="' + k[0] + '"]').value || '').trim(),
+                        color: cont.querySelector('[data-bcolor="' + k[0] + '"]').value
+                    };
+                });
+                saveConfig({ whatsnewBadges: out }, 'Badges enregistrés.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ whatsnewBadges: out }); whatsnewBadgesState = out; });
+            });
+        }
+
+        // ── BILAN (mapping du fichier de suivi .xlsx) ──
+        // ── AFFECTATION AUTOMATIQUE (L2 #21) ──
+        var AA_FIELDS = [
+            { k: 'comType', label: 'Type de com (canal)' }, { k: 'volumeCible', label: 'Volume cible (canal)' },
+            { k: 'content', label: 'Canal / contenu' }, { k: 'comTypology', label: 'Typologie com (canal)' },
+            { k: 'market', label: 'Marché (campagne)' }, { k: 'typology', label: 'Typologie (campagne)' },
+            { k: 'recurrence', label: 'Récurrence (campagne)' }, { k: 'ubs', label: 'Univers de besoin (campagne)' }
+        ];
+        var AA_OPS = [
+            { k: 'equals', label: '=' }, { k: 'notEquals', label: '≠' }, { k: 'contains', label: 'contient' },
+            { k: 'gt', label: '>' }, { k: 'gte', label: '≥' }, { k: 'lt', label: '<' }, { k: 'lte', label: '≤' }, { k: 'in', label: 'parmi (a,b,c)' }
+        ];
+        function getAaRoles() { return ['com', 'ebf', 'data'].map(function (k) { return { k: k, label: roleLabel(k) }; }); }
+        function _peopleByRole(role) { return (users.USERS || []).filter(function (u) { return u.role === role; }); }
+        // Valeurs possibles d'un champ de condition (remontées automatiquement).
+        function _aaFieldValues(field) {
+            var c = config || {};
+            switch (field) {
+                case 'comType': return c.TYPES_COM || [];
+                case 'comTypology': return c.COM_TYPOLOGIES || [];
+                case 'market': return c.MARCHES || [];
+                case 'typology': return c.TYPOLOGIES || [];
+                case 'recurrence': return c.RECURRENCES || [];
+                case 'content': return c.CANAUX || [];
+                case 'ubs': return c.UNIVERS_BESOINS || [];
+                default: return [];
+            }
+        }
+        function renderAutoAssign() {
+            var host = document.getElementById('autoassign-container');
+            if (!host) return;
+            if (!autoAssignState.length) { host.innerHTML = '<div class="empty-hint">Aucune règle. Cliquez sur « Ajouter une règle ».</div>'; return; }
+            host.innerHTML = autoAssignState.map(function (rule, ri) {
+                var conds = rule.conditions || [];
+                var h = '<div class="admin-card" data-rule="' + ri + '">';
+                h += '<div class="admin-card-title" style="display:flex;gap:8px;align-items:center;"><input type="text" class="admin-input aa-name" value="' + esc(rule.name || '') + '" placeholder="Nom de la règle" style="flex:1;font-weight:700;"><button class="icon-del" data-delrule="' + ri + '">🗑</button></div>';
+                h += '<div style="font-size:12px;font-weight:700;color:var(--muted);margin:6px 0;">SI (toutes ces conditions) :</div>';
+                conds.forEach(function (c, ci) {
+                    h += '<div class="aa-cond" style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap;align-items:center;">';
+                    h += '<select class="admin-select aa-field" data-c="' + ci + '">' + AA_FIELDS.map(function (f) { return '<option value="' + f.k + '"' + (c.field === f.k ? ' selected' : '') + '>' + esc(f.label) + '</option>'; }).join('') + '</select>';
+                    h += '<select class="admin-select aa-op" data-c="' + ci + '">' + AA_OPS.map(function (o) { return '<option value="' + o.k + '"' + (c.op === o.k ? ' selected' : '') + '>' + esc(o.label) + '</option>'; }).join('') + '</select>';
+                    var _vals = _aaFieldValues(c.field), _dl = 'aa-dl-' + ri + '-' + ci;
+                    h += '<input type="text" class="admin-input aa-value" data-c="' + ci + '"' + (_vals.length ? (' list="' + _dl + '"') : '') + ' value="' + esc(c.value == null ? '' : String(c.value)) + '" placeholder="valeur" style="flex:1;min-width:110px;">';
+                    if (_vals.length) h += '<datalist id="' + _dl + '">' + _vals.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('') + '</datalist>';
+                    h += '<button class="icon-del" data-delcond="' + ri + '-' + ci + '">✕</button></div>';
+                });
+                h += '<button type="button" class="btn secondary small" data-addcond="' + ri + '">➕ Condition</button>';
+                h += '<div style="font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 6px;">ALORS affecter (équipe) :</div>';
+                h += '<select class="admin-select aa-role">' + getAaRoles().map(function (r) { return '<option value="' + r.k + '"' + (rule.role === r.k ? ' selected' : '') + '>' + r.label + '</option>'; }).join('') + '</select>';
+                var ppl = _peopleByRole(rule.role || 'com');
+                h += '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">';
+                if (!ppl.length) h += '<span class="empty-hint">Aucune personne dans cette équipe.</span>';
+                ppl.forEach(function (u) {
+                    var ck = (rule.people || []).indexOf(u.name) !== -1 ? ' checked' : '';
+                    h += '<label style="font-size:13px;display:flex;align-items:center;gap:4px;"><input type="checkbox" class="aa-person" value="' + esc(u.name) + '"' + ck + '> ' + esc(u.name) + '</label>';
+                });
+                h += '</div>';
+                h += '<label style="display:flex;align-items:flex-start;gap:6px;margin-top:12px;font-size:13px;line-height:1.4;"><input type="checkbox" class="aa-replace" style="margin-top:2px;"' + (rule.replaceManagerAffectation ? ' checked' : '') + '> <span>Remplacer l\'étape d\'affectation du manager — l\'équipe est posée automatiquement, le manager du service n\'a pas à l\'affecter. <em>(décoché : ajout en renfort sur le canal concerné)</em></span></label>';
+                h += '</div>';
+                return h;
+            }).join('');
+        }
+        function collectAutoAssign() {
+            var host = document.getElementById('autoassign-container');
+            if (!host) return;
+            autoAssignState.forEach(function (rule, ri) {
+                var card = host.querySelector('[data-rule="' + ri + '"]');
+                if (!card) return;
+                var nameEl = card.querySelector('.aa-name'); if (nameEl) rule.name = nameEl.value;
+                var roleEl = card.querySelector('.aa-role'); if (roleEl) rule.role = roleEl.value;
+                rule.replaceManagerAffectation = !!card.querySelector('.aa-replace:checked');
+                rule.people = Array.prototype.map.call(card.querySelectorAll('.aa-person:checked'), function (cb) { return cb.value; });
+                var conds = [];
+                Array.prototype.forEach.call(card.querySelectorAll('.aa-cond'), function (row) {
+                    var f = row.querySelector('.aa-field'), o = row.querySelector('.aa-op'), v = row.querySelector('.aa-value');
+                    conds.push({ field: f ? f.value : 'comType', op: o ? o.value : 'equals', value: v ? v.value : '' });
+                });
+                rule.conditions = conds;
+            });
+        }
+        (function wireAutoAssign() {
+            var addBtn = document.getElementById('autoassign-add');
+            var saveBtn = document.getElementById('autoassign-save');
+            var host = document.getElementById('autoassign-container');
+            if (addBtn) addBtn.addEventListener('click', function () {
+                collectAutoAssign();
+                autoAssignState.push({ name: 'Nouvelle règle', conditions: [{ field: 'comType', op: 'equals', value: '' }], role: 'com', people: [], replaceManagerAffectation: false });
+                renderAutoAssign();
+            });
+            if (saveBtn) saveBtn.addEventListener('click', function () {
+                collectAutoAssign();
+                var clean = autoAssignState.filter(function (r) { return r.role && r.people && r.people.length; });
+                saveConfig({ autoAssignRules: clean }, 'Règles d\'affectation enregistrées.').then(function () { autoAssignState = JSON.parse(JSON.stringify(clean)); renderAutoAssign(); });
+            });
+            if (host) {
+                host.addEventListener('click', function (e) {
+                    var t = e.target;
+                    if (t.getAttribute && t.getAttribute('data-delrule') !== null && t.hasAttribute('data-delrule')) {
+                        collectAutoAssign(); autoAssignState.splice(parseInt(t.getAttribute('data-delrule'), 10), 1); renderAutoAssign(); return;
+                    }
+                    if (t.hasAttribute && t.hasAttribute('data-addcond')) {
+                        collectAutoAssign(); var ri = parseInt(t.getAttribute('data-addcond'), 10);
+                        (autoAssignState[ri].conditions = autoAssignState[ri].conditions || []).push({ field: 'comType', op: 'equals', value: '' }); renderAutoAssign(); return;
+                    }
+                    if (t.hasAttribute && t.hasAttribute('data-delcond')) {
+                        collectAutoAssign(); var parts = t.getAttribute('data-delcond').split('-');
+                        autoAssignState[parseInt(parts[0], 10)].conditions.splice(parseInt(parts[1], 10), 1); renderAutoAssign(); return;
+                    }
+                });
+                // Changement d'équipe → recharger la liste de personnes ;
+                // changement de champ → mettre à jour les valeurs suggérées.
+                host.addEventListener('change', function (e) {
+                    if (e.target && e.target.classList && (e.target.classList.contains('aa-role') || e.target.classList.contains('aa-field'))) { collectAutoAssign(); renderAutoAssign(); }
+                });
+            }
+        })();
+
+        function renderBilanCfg() {
+            var cont = document.getElementById('bilan-container');
+            if (!cont) return;
+            var bc = bilanCfgState;
+            if (!Array.isArray(bc.ident)) bc.ident = [];
+            if (!Array.isArray(bc.kpis)) bc.kpis = [];
+            if (!Array.isArray(bc.chartRates)) bc.chartRates = [];
+            var AGG_OPTS = [['moyenne', 'Moyenne'], ['somme', 'Somme']];
+            function syncKpis() {
+                cont.querySelectorAll('[data-kk]').forEach(function (inp) { var i = +inp.getAttribute('data-kk'); if (bc.kpis[i]) bc.kpis[i].k = inp.value; });
+                cont.querySelectorAll('[data-klabel]').forEach(function (inp) { var i = +inp.getAttribute('data-klabel'); if (bc.kpis[i]) bc.kpis[i].label = inp.value; });
+                cont.querySelectorAll('[data-kpct]').forEach(function (cb) { var i = +cb.getAttribute('data-kpct'); if (bc.kpis[i]) bc.kpis[i].pct = cb.checked; });
+                cont.querySelectorAll('[data-kagg]').forEach(function (sel) { var i = +sel.getAttribute('data-kagg'); if (bc.kpis[i]) bc.kpis[i].agg = sel.value; });
+            }
+            var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>Doit correspondre aux <strong>colonnes du fichier de suivi .xlsx</strong>. À ne modifier que si le format du fichier change.</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Fichier</h3></div>'
+                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Dossier</label><input class="admin-input" id="bilan-folder" value="' + esc(bc.suiviFolder || '') + '"></div>'
+                + '<div class="form-row"><label class="admin-label">Nom de l\'onglet</label><input class="admin-input" id="bilan-sheet" value="' + esc(bc.suiviSheet || '') + '"></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Colonnes d\'identification</h3></div>' + chipsHtml(bc.ident, 'delident')
+                + '<div class="add-row"><input class="admin-input" id="add-ident" placeholder="Nom de colonne…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-ident">+ Ajouter</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs (KPIs)</h3><span class="count-pill">' + bc.kpis.length + '</span></div>';
+            html += '<div class="empty-hint" style="padding-top:0;">« Agrégation » définit comment combiner les lignes d\'un même canal dans les graphiques bilan : Somme (ex. nombre de communications, leads) ou Moyenne (ex. taux, envois).</div>';
+            bc.kpis.forEach(function (kp, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;">'
+                    + '<input class="admin-input" data-kk="' + i + '" value="' + esc(kp.k || '') + '" placeholder="colonne (clé)" style="width:180px;">'
+                    + '<input class="admin-input" data-klabel="' + i + '" value="' + esc(kp.label || '') + '" placeholder="libellé" style="flex:1;min-width:120px;">'
+                    + '<label class="toggle-label"><input type="checkbox" data-kpct="' + i + '"' + (kp.pct ? ' checked' : '') + '> %</label>'
+                    + '<select class="admin-select" data-kagg="' + i + '">' + AGG_OPTS.map(function (o) { return '<option value="' + o[0] + '"' + ((kp.agg || 'moyenne') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'
+                    + '<button class="icon-del" data-delkpi="' + i + '">🗑</button></div>';
+            });
+            html += '<div class="add-row"><button class="btn btn-secondary" id="add-kpi">+ Ajouter un indicateur</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs tracés (graphiques)</h3></div>' + chipsHtml(bc.chartRates, 'delchart')
+                + '<div class="add-row"><input class="admin-input" id="add-chart" placeholder="clé d\'indicateur…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-chart">+ Ajouter</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-bilan">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            document.getElementById('addbtn-ident').addEventListener('click', function () { var el = document.getElementById('add-ident'); var v = (el.value || '').trim(); if (v && bc.ident.indexOf(v) === -1) bc.ident.push(v); syncKpis(); renderBilanCfg(); });
+            document.getElementById('addbtn-chart').addEventListener('click', function () { var el = document.getElementById('add-chart'); var v = (el.value || '').trim(); if (v && bc.chartRates.indexOf(v) === -1) bc.chartRates.push(v); syncKpis(); renderBilanCfg(); });
+            cont.querySelectorAll('[data-delident]').forEach(function (b) { b.addEventListener('click', function () { bc.ident.splice(+b.getAttribute('data-delident'), 1); syncKpis(); renderBilanCfg(); }); });
+            cont.querySelectorAll('[data-delchart]').forEach(function (b) { b.addEventListener('click', function () { bc.chartRates.splice(+b.getAttribute('data-delchart'), 1); syncKpis(); renderBilanCfg(); }); });
+            cont.querySelectorAll('[data-delkpi]').forEach(function (b) { b.addEventListener('click', function () { syncKpis(); bc.kpis.splice(+b.getAttribute('data-delkpi'), 1); renderBilanCfg(); }); });
+            document.getElementById('add-kpi').addEventListener('click', function () { syncKpis(); bc.kpis.push({ k: '', label: '', pct: false, agg: 'moyenne' }); renderBilanCfg(); });
+            document.getElementById('save-bilan').addEventListener('click', function () {
+                syncKpis();
+                var out = {
+                    suiviFolder: (document.getElementById('bilan-folder').value || '').trim(),
+                    suiviSheet: (document.getElementById('bilan-sheet').value || '').trim(),
+                    ident: bc.ident.slice(),
+                    kpis: bc.kpis.filter(function (k) { return (k.k || '').trim(); }).map(function (k) { return { k: k.k.trim(), label: (k.label || '').trim(), pct: !!k.pct, agg: (k.agg === 'somme') ? 'somme' : 'moyenne' }; }),
+                    chartRates: bc.chartRates.slice()
+                };
+                saveConfig({ bilan: out }, 'Bilan enregistré.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ bilan: out }); bilanCfgState = JSON.parse(JSON.stringify(out)); renderBilanCfg(); });
+            });
+        }
+
+        // ── PARAMÈTRES GÉNÉRAUX ──
+        function renderSettings() {
+            var cont = document.getElementById('settings-container');
+            if (!cont) return;
+            var s = config.APP_SETTINGS || {};
+            var rc = config.ROLE_COLORS || {};
+            // 'po' n'est pas une équipe éditable (les clés de rôle restent fixes) — c'est une
+            // ligne de couleur dérivée, dont le libellé suit automatiquement celui de « marketing ».
+            var roles = [['po', 'PO / ' + roleLabel('marketing'), false]]
+                .concat(ROLE_KEYS.map(function (k) { return [k, roleLabel(k), true]; }));
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Réglages</h3></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Nom de la caisse / organisation</label><input class="admin-input" id="set-orgname" style="width:100%;" placeholder="Ex : Crédit Agricole Toulouse 31" value="' + esc(s.orgName || '') + '"><div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Affiché sur l\'écran de connexion.</div></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">URL de la Galerie</label><input class="admin-input" id="set-gallery" style="width:100%;" placeholder="https://…" value="' + esc(s.galleryUrl || '') + '"></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Chemin par défaut du dossier</label><input class="admin-input" id="set-path" style="width:100%;" placeholder="Ex : V://Impulsion_Marketing/Données de production" value="' + esc(s.defaultRootPath || '') + '"><div style="font-size:11.5px;color:var(--muted);margin-top:4px;">Affiché sur l\'écran de connexion, sous le bouton « Se connecter » — c\'est le dossier « Données de production » à sélectionner, pas le dossier racine du dépôt applicatif.</div></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Seuil d\'alerte volume</label><input type="number" min="0" class="admin-input" id="set-volume" value="' + (typeof s.volumeAlertThreshold === 'number' ? s.volumeAlertThreshold : '') + '"></div>';
+            html += '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Échéance « proche » (jours)</label><input type="number" min="0" class="admin-input" id="set-urgent" value="' + (typeof s.urgentThresholdDays === 'number' ? s.urgentThresholdDays : 7) + '"></div>';
+            html += '<div class="form-row"><label class="admin-label">Échéance « urgente / rouge » (jours)</label><input type="number" min="0" class="admin-input" id="set-soon" value="' + (typeof s.dueSoonDays === 'number' ? s.dueSoonDays : 2) + '"></div>';
+            html += '</div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>🔔 Notifications</h3></div>';
+            html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" id="set-notif-sound"' + (s.notifSound !== false ? ' checked' : '') + '> Jouer un <strong>son</strong> à la réception d\'une notification</label>';
+            html += '<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="checkbox" id="set-notif-popup"' + (s.notifPopup !== false ? ' checked' : '') + '> Afficher une <strong>pop-up</strong> à la réception d\'une notification (notification système — visible même fenêtre réduite)</label>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5;">ℹ️ La pop-up utilise les notifications du navigateur. Au premier clic sur la cloche 🔔, Chrome demande une autorisation — il faut cliquer « Autoriser » pour que les pop-up s\'affichent.</div>';
+            html += '</div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>🌐 Champs site web</h3></div>';
+            html += '<label class="admin-label">Typologie(s) de com déclenchant les champs site web</label>';
+            html += '<input class="admin-input" id="set-sitewebtrigger" style="width:100%;" placeholder="Ex : Reprise Natio" value="' + esc((Array.isArray(s.siteWebComTypologies) ? s.siteWebComTypologies : ['Reprise Natio']).join(', ')) + '">';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:4px;margin-bottom:14px;line-height:1.5;">Une ou plusieurs valeurs de la liste « Typologies de communication », séparées par des virgules. Quand un canal a l\'une de ces typologies, les champs « zone site web » (marché, dates, URL Tic et Tac / Com Store…) s\'affichent automatiquement à la création d\'une campagne.</div>';
+            var DAY_NAMES = [['1', 'Lundi'], ['2', 'Mardi'], ['3', 'Mercredi'], ['4', 'Jeudi'], ['5', 'Vendredi'], ['6', 'Samedi'], ['0', 'Dimanche']];
+            var curDay = (typeof s.webSlotStartDay === 'number') ? String(s.webSlotStartDay) : '1';
+            html += '<label class="admin-label">Jour de début des créneaux site web</label>';
+            html += '<select class="admin-select" id="set-webslotday">' + DAY_NAMES.map(function (d) { return '<option value="' + d[0] + '"' + (d[0] === curDay ? ' selected' : '') + '>' + d[1] + '</option>'; }).join('') + '</select>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5;">Les dates saisies pour une zone site web sont automatiquement ramenées au ' + esc((DAY_NAMES.filter(function (d) { return d[0] === curDay; })[0] || DAY_NAMES[0])[1]) + ' le plus proche (créneaux hebdomadaires).</div>';
+            html += '</div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Rôles : libellés &amp; couleurs</h3></div>';
+            html += '<div style="font-size:11.5px;color:var(--muted);margin-bottom:14px;line-height:1.5;">Le libellé affiché de chaque équipe est modifiable ; l\'appartenance à une équipe (utilisée par le moteur de campagne) ne change pas.</div>';
+            html += '<div style="display:flex;flex-wrap:wrap;gap:18px;">';
+            roles.forEach(function (r) {
+                html += '<div style="display:flex;flex-direction:column;gap:5px;">'
+                    + (r[2]
+                        ? '<input type="text" class="admin-input" data-rolelabel="' + r[0] + '" value="' + esc(r[1]) + '" style="width:120px;font-size:12px;padding:6px 8px;">'
+                        : '<span style="font-size:12px;font-weight:600;color:var(--muted);">' + esc(r[1]) + '</span>')
+                    + '<input type="color" data-rolecolor="' + r[0] + '" value="' + (rc[r[0]] || '#64748b') + '" style="width:120px;height:36px;border:1px solid var(--line);border-radius:8px;cursor:pointer;padding:2px;">'
+                    + '</div>';
+            });
+            html += '</div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-settings">💾 Enregistrer les paramètres</button></div>';
+            cont.innerHTML = html;
+            document.getElementById('save-settings').addEventListener('click', function () {
+                var settings = {
+                    orgName: (document.getElementById('set-orgname').value || '').trim(),
+                    galleryUrl: (document.getElementById('set-gallery').value || '').trim(),
+                    defaultRootPath: (document.getElementById('set-path').value || '').trim(),
+                    volumeAlertThreshold: parseInt(document.getElementById('set-volume').value, 10) || 0,
+                    urgentThresholdDays: parseInt(document.getElementById('set-urgent').value, 10) || 0,
+                    dueSoonDays: parseInt(document.getElementById('set-soon').value, 10) || 0,
+                    notifSound: !!document.getElementById('set-notif-sound').checked,
+                    notifPopup: !!document.getElementById('set-notif-popup').checked,
+                    siteWebComTypologies: (document.getElementById('set-sitewebtrigger').value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean),
+                    webSlotStartDay: parseInt(document.getElementById('set-webslotday').value, 10)
+                };
+                if (!settings.siteWebComTypologies.length) settings.siteWebComTypologies = ['Reprise Natio'];
+                var roleColors = {};
+                cont.querySelectorAll('[data-rolecolor]').forEach(function (inp) { roleColors[inp.getAttribute('data-rolecolor')] = inp.value; });
+                var roleLabels = {};
+                cont.querySelectorAll('[data-rolelabel]').forEach(function (inp) {
+                    var v = (inp.value || '').trim();
+                    if (v) roleLabels[inp.getAttribute('data-rolelabel')] = v;
+                });
+                saveConfig({ settings: settings, roleColors: roleColors, roleLabels: roleLabels }, 'Paramètres enregistrés.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ settings: settings, roleColors: roleColors, roleLabels: roleLabels });
+                    renderPeople();
+                });
+            });
+        }
+
+        // ── ZONES SITE WEB ──
+        function renderWebZones() {
+            var cont = document.getElementById('webzones-container');
+            if (!cont) return;
+            var st = webZonesState;
+            function chips(arr, delAttr) {
+                if (!arr.length) return '<div class="empty-hint">Aucune valeur.</div>';
+                return '<div class="chips-wrap">' + arr.map(function (v, i) {
+                    return '<span class="chip">' + esc(v) + '<button type="button" title="Supprimer" data-' + delAttr + '="' + i + '">✕</button></span>';
+                }).join('') + '</div>';
+            }
+            var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>Ces zones alimentent le planning du <strong>Comité éditorial</strong>. Évitez de renommer/supprimer une zone déjà utilisée.</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Zones</h3><span class="count-pill">' + st.zones.length + '</span></div>' + chips(st.zones, 'delzone')
+                + '<div class="add-row"><input class="admin-input" id="add-zone" placeholder="Nouvelle zone…" style="flex:1;min-width:220px;"><button class="btn btn-primary" id="addbtn-zone">+ Ajouter</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Zones réservées à la Banque Privée</h3></div>' + chips(st.bpOnlyZones, 'delbp')
+                + '<div class="add-row"><input class="admin-input" id="add-bp" placeholder="Zone BP…" style="flex:1;min-width:220px;"><button class="btn btn-primary" id="addbtn-bp">+ Ajouter</button></div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Sous-lignes par zone</h3></div>';
+            html += '<div class="empty-hint" style="padding-top:0;">Sous-éléments (ex. Menu Burger) séparés par des virgules.</div>';
+            Object.keys(st.zonesMulti).forEach(function (z) {
+                html += '<div class="form-row" style="margin-top:10px;"><label class="admin-label">' + esc(z) + '</label><input class="admin-input" data-multi="' + esc(z) + '" style="width:100%;" value="' + esc((st.zonesMulti[z] || []).join(', ')) + '"></div>';
+            });
+            html += '</div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-webzones">💾 Enregistrer les zones</button></div>';
+            cont.innerHTML = html;
+
+            function addTo(inputId, arr) {
+                var el = document.getElementById(inputId); var v = (el.value || '').trim();
+                if (v && arr.indexOf(v) === -1) arr.push(v);
+                renderWebZones();
+            }
+            document.getElementById('addbtn-zone').addEventListener('click', function () { addTo('add-zone', st.zones); });
+            document.getElementById('addbtn-bp').addEventListener('click', function () { addTo('add-bp', st.bpOnlyZones); });
+            cont.querySelectorAll('[data-delzone]').forEach(function (b) { b.addEventListener('click', function () { st.zones.splice(+b.getAttribute('data-delzone'), 1); renderWebZones(); }); });
+            cont.querySelectorAll('[data-delbp]').forEach(function (b) { b.addEventListener('click', function () { st.bpOnlyZones.splice(+b.getAttribute('data-delbp'), 1); renderWebZones(); }); });
+            document.getElementById('save-webzones').addEventListener('click', function () {
+                // Relecture des sous-lignes
+                cont.querySelectorAll('[data-multi]').forEach(function (inp) {
+                    var z = inp.getAttribute('data-multi');
+                    st.zonesMulti[z] = (inp.value || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+                });
+                var payload = { zones: st.zones.slice(), bpOnlyZones: st.bpOnlyZones.slice(), zonesMulti: JSON.parse(JSON.stringify(st.zonesMulti)) };
+                saveConfig({ webZones: payload }, 'Zones site web enregistrées.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ webZones: payload });
+                });
+            });
+        }
+
+        // ── MARCHÉS SITE WEB (onglets + cases à cocher « Marché(s) » du planning Comité éditorial) ──
+        function renderMarchesSiteWeb() {
+            var cont = document.getElementById('marchessiteweb-container');
+            if (!cont) return;
+            var st = marchesSiteWebState;
+            var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>'
+                + 'Ces marchés alimentent les <strong>onglets</strong> et les cases « Marché(s) » du planning du <strong>Comité éditorial</strong>. '
+                + 'La « clé » (value) est stockée dans les campagnes existantes : évitez de la renommer une fois utilisée — renommez seulement le libellé affiché.'
+                + '</div></div>';
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Marchés</h3><span class="count-pill">' + st.length + '</span></div>';
+            if (!st.length) html += '<div class="empty-hint">Aucun marché pour le moment.</div>';
+            st.forEach(function (m, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;">'
+                    + '<input class="admin-input" data-msv="' + i + '" value="' + esc(m.value || '') + '" placeholder="clé (ex : part)" style="width:130px;">'
+                    + '<input class="admin-input" data-msl="' + i + '" value="' + esc(m.label || '') + '" placeholder="Libellé affiché (ex : Particuliers)" style="flex:1;min-width:170px;">'
+                    + '<button class="icon-del" data-delms="' + i + '">🗑</button></div>';
+            });
+            html += '<div class="add-row"><button class="btn btn-secondary" id="add-marchesiteweb">+ Ajouter un marché</button></div></div>';
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-marchessiteweb">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+            cont.querySelectorAll('[data-msv]').forEach(function (inp) { var i = +inp.getAttribute('data-msv'); inp.addEventListener('input', function () { st[i].value = inp.value; }); });
+            cont.querySelectorAll('[data-msl]').forEach(function (inp) { var i = +inp.getAttribute('data-msl'); inp.addEventListener('input', function () { st[i].label = inp.value; }); });
+            cont.querySelectorAll('[data-delms]').forEach(function (b) { b.addEventListener('click', function () { st.splice(+b.getAttribute('data-delms'), 1); renderMarchesSiteWeb(); }); });
+            document.getElementById('add-marchesiteweb').addEventListener('click', function () { st.push({ value: '', label: '' }); renderMarchesSiteWeb(); });
+            document.getElementById('save-marchessiteweb').addEventListener('click', function () {
+                var clean = st.filter(function (m) { return (m.value || '').trim(); }).map(function (m) { return { value: m.value.trim(), label: (m.label || '').trim() || m.value.trim() }; });
+                saveConfig({ marchesSiteWeb: clean }, 'Marchés site web enregistrés.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ marchesSiteWeb: clean });
+                    marchesSiteWebState = JSON.parse(JSON.stringify(clean));
+                    renderMarchesSiteWeb();
+                });
+            });
+        }
+
+        // ── WORKFLOW (étapes + applicabilité par canal) ──
+        var WF_ROLES = [['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data'], ['po', 'PO']];
+        // Explication en lecture seule de la condition de déblocage de chaque étape
+        // (la logique elle-même reste dans le moteur — trop de nuances métier pour
+        // être éditable sans risque de configuration invalide ou incohérente).
+        var WF_STEP_HINTS = {
+            com_maquette:             'Débloquée après le kick-off.',
+            po_validation_maquette:   'Débloquée quand la maquette Com est déposée.',
+            com_juridique:            'Débloquée après validation de la maquette — uniquement si la validation juridique est requise sur la campagne.',
+            ebf_bat:                  'Débloquée après validation de la maquette (ou du juridique si requis), ou directement après le kick-off si la maquette Com ne s\'applique pas à ce canal.',
+            po_validation_bat:        'Débloquée quand le BAT est déposé.',
+            data_ciblage:             'Débloquée après le kick-off.',
+            po_validation_ciblage:    'Débloquée quand le ciblage est déposé.',
+            data_lancement_test:      'Débloquée quand le BAT et le ciblage sont validés (les deux, si les deux s\'appliquent à ce canal).',
+            ebf_test_prod:            'Débloquée après le lancement test — ou directement après le BAT validé si le ciblage/lancement test ne s\'applique pas à ce canal (flux réduit, ex. LP).',
+            po_validation_test_prod: 'Débloquée quand le test en prod est déposé.',
+            data_mise_en_prod:        'Débloquée après validation du test en prod — ou directement après le ciblage si le test en prod ne s\'applique pas à ce canal.',
+            ebf_mise_en_prod:         'Débloquée après validation du test en prod (flux type LP, porté par l\'EBF plutôt que par la Data).'
+        };
+        function defaultWorkflowSteps() {
+            var base = (IM.workflow && Array.isArray(IM.workflow.STEPS)) ? IM.workflow.STEPS.slice(3) : [];
+            return base.map(function (s, i) { return { id: s.id, label: s.label, actor: s.actor, order: i }; });
+        }
+        // { canal: { stepId: actor } } ↔ [{canal, stepId, actor}] — la liste à plat
+        // est plus simple à éditer ligne par ligne (ajout/suppression) que l'objet imbriqué.
+        function flattenActorOverrides(obj) {
+            var out = [];
+            Object.keys(obj || {}).forEach(function (canal) {
+                var stepsMap = obj[canal] || {};
+                Object.keys(stepsMap).forEach(function (stepId) { out.push({ canal: canal, stepId: stepId, actor: stepsMap[stepId] }); });
+            });
+            return out;
+        }
+        function unflattenActorOverrides(list) {
+            var out = {};
+            list.forEach(function (o) {
+                if (!o.canal || !o.stepId || !o.actor) return;
+                if (!out[o.canal]) out[o.canal] = {};
+                out[o.canal][o.stepId] = o.actor;
+            });
+            return out;
+        }
+        // Correspondance étape de dépôt → sa validation PO associée (même source
+        // que le moteur — js/workflow-standalone.js) : sert à détecter les
+        // configurations incohérentes (dépôt actif sans sa validation, ou l'inverse).
+        // Une validation peut être nourrie par PLUSIEURS dépôts (ex. « Validation
+        // test » ← « Lancement test » OU « Test en prod », flux LP) — on ne
+        // signale une validation orpheline que si AUCUN de ses dépôts n'est actif.
+        var WF_DEPOT_VALIDATION = (IM.workflow && IM.workflow.depotValidationMap) || {};
+        var WF_VALIDATION_DEPOTS = {};
+        Object.keys(WF_DEPOT_VALIDATION).forEach(function (depotId) {
+            var valId = WF_DEPOT_VALIDATION[depotId];
+            (WF_VALIDATION_DEPOTS[valId] = WF_VALIDATION_DEPOTS[valId] || []).push(depotId);
+        });
+
+        function wfActiveIds(canal, steps) {
+            var allIds = steps.map(function (s) { return s.id; });
+            var active = canalStepsState[canal];
+            if (!active) return allIds; // absent = flux complet
+            return allIds.filter(function (id) { return active.indexOf(id) !== -1; });
+        }
+        // Détecte les incohérences d'une configuration canal : dépôt actif sans sa
+        // validation, validation active sans aucun de ses dépôts, ou aucune étape
+        // active du tout.
+        function wfWarnings(activeIds, labelById) {
+            var warnings = [];
+            if (!activeIds.length) {
+                warnings.push('Aucune étape active : ce canal ne progressera jamais.');
+                return warnings;
+            }
+            var set = {};
+            activeIds.forEach(function (id) { set[id] = true; });
+            Object.keys(WF_DEPOT_VALIDATION).forEach(function (depotId) {
+                var valId = WF_DEPOT_VALIDATION[depotId];
+                if (set[depotId] && !set[valId]) {
+                    warnings.push('« ' + (labelById[depotId] || depotId) + ' » est active mais sa validation « ' + (labelById[valId] || valId) + ' » ne l\'est pas : le flux restera bloqué en attente de validation.');
+                }
+            });
+            Object.keys(WF_VALIDATION_DEPOTS).forEach(function (valId) {
+                if (!set[valId]) return;
+                var depots = WF_VALIDATION_DEPOTS[valId];
+                if (!depots.some(function (d) { return set[d]; })) {
+                    var depotLabels = depots.map(function (d) { return labelById[d] || d; }).join(' ou ');
+                    warnings.push('« ' + (labelById[valId] || valId) + ' » est active mais aucun dépôt associé (' + depotLabels + ') ne l\'est : rien ne pourra jamais y être soumis.');
+                }
+            });
+            return warnings;
+        }
+
+        // Liste des canaux (page d'accueil de « Étapes actives par canal ») — chaque
+        // ligne est cliquable et ouvre la sous-page de personnalisation du canal.
+        function renderCanalListHtml(steps, canaux, labelById) {
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Étapes actives par canal</h3><span class="count-pill">' + canaux.length + '</span></div>';
+            if (!canaux.length) {
+                html += '<div class="empty-hint">Aucun canal. Ajoutez-en dans « Types de livrables / canaux ».</div>';
+            } else {
+                canaux.forEach(function (canal) {
+                    var active = canalStepsState[canal]; // absent = flux complet (toutes les étapes)
+                    var activeIds = wfActiveIds(canal, steps);
+                    var warnings = wfWarnings(activeIds, labelById);
+                    var overrideCount = canalActorOverridesState.filter(function (o) { return o.canal === canal; }).length;
+                    html += '<div class="wf-canal-list-row' + (warnings.length ? ' warn' : '') + '" data-wf-open-canal="' + esc(canal) + '">'
+                        + '<div class="wf-canal-list-main"><span class="wf-canal-list-name">' + esc(canal) + '</span>'
+                        + '<span class="wf-canal-badge ' + (active ? 'custom' : 'default') + '">' + (active ? 'Personnalisé' : 'Flux complet') + '</span>'
+                        + (overrideCount ? '<span class="wf-canal-badge custom" title="Acteur personnalisé sur ' + overrideCount + ' étape(s)">⚙️ acteur</span>' : '')
+                        + (warnings.length ? '<span class="wf-row-warning">⚠️ à vérifier</span>' : '')
+                        + '</div>'
+                        + '<span class="wf-canal-list-meta">' + activeIds.length + '/' + steps.length + ' étapes actives</span>'
+                        + '<span class="wf-canal-list-arrow">→</span>'
+                        + '</div>';
+                });
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // Sous-page d'un canal : les étapes s'affichent en liste verticale (libellé,
+        // explication et acteur toujours visibles côte à côte — plus de tableau large
+        // dont les en-têtes disparaissent au défilement).
+        function renderCanalDetailHtml(canal, steps, canaux, labelById) {
+            var active = canalStepsState[canal];
+            var activeIds = wfActiveIds(canal, steps);
+            var warnings = wfWarnings(activeIds, labelById);
+            var overridesForCanal = {};
+            canalActorOverridesState.forEach(function (o) { if (o.canal === canal) overridesForCanal[o.stepId] = o.actor; });
+
+            var html = '<div class="admin-card">';
+            html += '<div class="wf-canal-detail-head">'
+                + '<button type="button" class="btn-back-lots" id="wf-back-to-canaux">← Tous les canaux</button>'
+                + '<h3>📦 ' + esc(canal) + '</h3>'
+                + '<span class="wf-canal-badge ' + (active ? 'custom' : 'default') + '">' + (active ? 'Personnalisé' : 'Flux complet') + '</span>'
+                + (active ? '<button type="button" class="btn btn-secondary" id="wf-canal-reset" style="margin-left:auto;">↺ Revenir au flux complet</button>' : '')
+                + '</div>';
+            if (warnings.length) {
+                html += '<div class="admin-note" style="background:var(--red-50,#fdeaec);border-color:#f5c2c7;"><span class="admin-note-ic">⚠️</span><div>' + esc(warnings.join(' ')) + '</div></div>';
+            }
+            steps.forEach(function (s) {
+                var checked = !active || active.indexOf(s.id) !== -1;
+                var overrideActor = overridesForCanal[s.id] || '';
+                var hint = WF_STEP_HINTS[s.id] || '';
+                var fieldCount = Array.isArray(customFieldsState[s.id]) ? customFieldsState[s.id].length : 0;
+                html += '<div class="wf-canal-step' + (checked ? '' : ' off') + '">'
+                    + '<div class="wf-canal-step-top">'
+                    + '<label class="wf-canal-step-label"><input type="checkbox" data-wfc="' + esc(canal) + '" data-wfc-step="' + esc(s.id) + '"' + (checked ? ' checked' : '') + '> ' + esc(s.label)
+                    +   (hint ? ' <span class="wf-canal-step-info" title="' + esc(hint) + '">ⓘ</span>' : '')
+                    + '</label>'
+                    + '<span style="display:flex;align-items:center;gap:10px;">'
+                    + '<span class="wf-canal-step-actor">Acteur : <select class="admin-select" data-wfao-canal="' + esc(canal) + '" data-wfao-step="' + esc(s.id) + '" style="padding:4px 8px;font-size:12px;">'
+                    +   '<option value="">' + esc((WF_ROLES.filter(function (r) { return r[0] === s.actor; })[0] || [s.actor, s.actor])[1]) + ' (par défaut)</option>'
+                    +   WF_ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (overrideActor === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('')
+                    + '</select></span>'
+                    + '<button type="button" class="btn btn-secondary" data-wf-cf-shortcut="' + esc(s.id) + '" data-wf-cf-canal="' + esc(canal) + '" style="padding:5px 10px;font-size:12px;white-space:nowrap;">⚙️ Champs' + (fieldCount ? ' (' + fieldCount + ')' : '') + '</button>'
+                    + '</span>'
+                    + '</div>'
+                    + '</div>';
+            });
+            html += '</div>';
+            return html;
+        }
+
+        // Étapes du circuit : cartes réordonnables par glisser-déposer (poignée ⠿
+        // uniquement — la carte elle-même n'est pas draggable, pour ne pas gêner la
+        // sélection de texte dans le champ libellé). L'ordre affiché (#1, #2…) est
+        // toujours dérivé de la position réelle ; il n'y a plus de numéro à saisir.
+        function renderStepsTabHtml(steps) {
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Étapes</h3><span class="count-pill">' + steps.length + '</span></div>';
+            html += '<div class="empty-hint" style="padding:0 0 10px;">Glissez une étape par sa poignée (⠿) pour changer son ordre.</div>';
+            steps.forEach(function (s, pos) {
+                var idx = workflowStepsState.indexOf(s);
+                html += '<div class="wf-step-card" data-drag-idx="' + pos + '">'
+                    + '<span class="wf-step-handle" draggable="true" data-drag-handle="' + pos + '" title="Glisser pour réordonner">⠿</span>'
+                    + '<span class="wf-step-order">#' + (pos + 1) + '</span>'
+                    + '<div class="wf-step-main">'
+                    + '<div class="wf-step-fields">'
+                    + '<input class="admin-input" data-wfs-label="' + idx + '" value="' + esc(s.label || '') + '">'
+                    + '<select class="admin-select" data-wfs-actor="' + idx + '">' + WF_ROLES.map(function (r) { return '<option value="' + r[0] + '"' + (s.actor === r[0] ? ' selected' : '') + '>' + r[1] + '</option>'; }).join('') + '</select>'
+                    + '</div>'
+                    + '<div class="wf-step-hint">' + esc(WF_STEP_HINTS[s.id] || '') + '</div>'
+                    + '</div>'
+                    + '</div>';
+            });
+            html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="wf-reset-steps">↩ Réinitialiser les étapes aux valeurs par défaut</button></div>';
+            html += '</div>';
+            return html;
+        }
+
+        // Câblage du glisser-déposer des cartes d'étapes. `steps` est le tableau trié
+        // affiché à l'écran (les objets sont partagés par référence avec
+        // workflowStepsState : modifier `.order` ici met bien à jour l'état réel).
+        function wireStepDrag(cont, steps) {
+            var dragSrcPos = null;
+            function clearIndicators() {
+                cont.querySelectorAll('.wf-step-card').forEach(function (c) { c.classList.remove('drag-over-top', 'drag-over-bottom'); });
+            }
+            cont.querySelectorAll('[data-drag-handle]').forEach(function (handle) {
+                handle.addEventListener('dragstart', function (e) {
+                    dragSrcPos = +handle.getAttribute('data-drag-handle');
+                    var card = handle.closest('.wf-step-card');
+                    if (card) card.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    try { e.dataTransfer.setData('text/plain', String(dragSrcPos)); } catch (err) { /* Firefox exige setData pour autoriser le drag */ }
+                });
+                handle.addEventListener('dragend', function () {
+                    var card = handle.closest('.wf-step-card');
+                    if (card) card.classList.remove('dragging');
+                    clearIndicators();
+                    dragSrcPos = null;
+                });
+            });
+            cont.querySelectorAll('.wf-step-card[data-drag-idx]').forEach(function (card) {
+                card.addEventListener('dragover', function (e) {
+                    if (dragSrcPos === null) return;
+                    e.preventDefault();
+                    var rect = card.getBoundingClientRect();
+                    var before = (e.clientY - rect.top) < rect.height / 2;
+                    card.classList.toggle('drag-over-top', before);
+                    card.classList.toggle('drag-over-bottom', !before);
+                });
+                card.addEventListener('dragleave', function () { card.classList.remove('drag-over-top', 'drag-over-bottom'); });
+                card.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    if (dragSrcPos === null) return;
+                    var dstPos = +card.getAttribute('data-drag-idx');
+                    var rect = card.getBoundingClientRect();
+                    var before = (e.clientY - rect.top) < rect.height / 2;
+                    var insertPos = before ? dstPos : dstPos + 1;
+                    if (dragSrcPos === insertPos || dragSrcPos + 1 === insertPos) { clearIndicators(); dragSrcPos = null; return; }
+                    var moved = steps.splice(dragSrcPos, 1)[0];
+                    if (dragSrcPos < insertPos) insertPos--;
+                    steps.splice(insertPos, 0, moved);
+                    steps.forEach(function (s, i) { s.order = i; });
+                    dragSrcPos = null;
+                    renderWorkflow();
+                });
+            });
+        }
+
+        function renderWorkflow() {
+            var cont = document.getElementById('workflow-container');
+            if (!cont) return;
+            var steps = workflowStepsState.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); });
+            var canaux = (lists.canaux || []).slice();
+            var labelById = {};
+            steps.forEach(function (s) { labelById[s.id] = s.label; });
+
+            var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>'
+                + 'Le <strong>libellé</strong> et l\'<strong>équipe responsable</strong> de chaque étape sont modifiables ; glissez une carte (⠿) pour changer son ordre. '
+                + 'Un canal absent de l\'onglet « Personnalisation par canal » suit le <strong>flux complet</strong> (toutes les étapes) — c\'est le réglage le plus sûr : ajoutez d\'abord le canal dans « Types de livrables / canaux » si besoin, il apparaît alors automatiquement, prêt à être personnalisé.'
+                + '</div></div>';
+
+            html += '<div class="wf-tabs">'
+                + '<button type="button" class="wf-tab-btn' + (wfActiveTab === 'steps' ? ' active' : '') + '" data-wf-tab="steps">Étapes du circuit</button>'
+                + '<button type="button" class="wf-tab-btn' + (wfActiveTab === 'canaux' ? ' active' : '') + '" data-wf-tab="canaux">Personnalisation par canal</button>'
+                + '</div>';
+
+            if (wfActiveTab === 'canaux') {
+                if (wfActiveCanal && canaux.indexOf(wfActiveCanal) === -1) wfActiveCanal = null; // canal supprimé entre-temps
+                html += wfActiveCanal ? renderCanalDetailHtml(wfActiveCanal, steps, canaux, labelById) : renderCanalListHtml(steps, canaux, labelById);
+            } else {
+                html += renderStepsTabHtml(steps);
+            }
+
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-workflow">💾 Enregistrer le workflow</button></div>';
+
+            cont.innerHTML = html;
+
+            cont.querySelectorAll('[data-wf-tab]').forEach(function (btn) {
+                btn.addEventListener('click', function () { wfActiveTab = btn.getAttribute('data-wf-tab'); renderWorkflow(); });
+            });
+
+            if (wfActiveTab === 'steps') {
+                cont.querySelectorAll('[data-wfs-label]').forEach(function (inp) { var i = +inp.getAttribute('data-wfs-label'); inp.addEventListener('input', function () { workflowStepsState[i].label = inp.value; }); });
+                cont.querySelectorAll('[data-wfs-actor]').forEach(function (sel) { var i = +sel.getAttribute('data-wfs-actor'); sel.addEventListener('change', function () { workflowStepsState[i].actor = sel.value; }); });
+                var resetStepsBtn = document.getElementById('wf-reset-steps');
+                if (resetStepsBtn) resetStepsBtn.addEventListener('click', function () {
+                    if (!confirm('Réinitialiser les libellés, équipes et ordre des étapes aux valeurs par défaut ?')) return;
+                    workflowStepsState = defaultWorkflowSteps();
+                    renderWorkflow();
+                });
+                wireStepDrag(cont, steps);
+            } else {
+                // Liste : ouvrir la sous-page d'un canal. Sous-page : retour à la liste.
+                wireDrilldown(cont, 'data-wf-open-canal', 'wf-back-to-canaux', function (v) { wfActiveCanal = v; }, renderWorkflow);
+
+                // Case cochée/décochée : mise à jour immédiate de l'état + réaffichage de
+                // la sous-page (badge, avertissements) sans revenir à la liste.
+                cont.querySelectorAll('[data-wfc]').forEach(function (cb) {
+                    cb.addEventListener('change', function () {
+                        var canal = cb.getAttribute('data-wfc');
+                        var stepId = cb.getAttribute('data-wfc-step');
+                        // Ne matérialise (et ne stocke) la ligne complète qu'au premier
+                        // changement — les canaux non personnalisés restent absents de la
+                        // config (flux complet par défaut, sans entrée à maintenir).
+                        if (!canalStepsState[canal]) canalStepsState[canal] = steps.map(function (s) { return s.id; });
+                        var list = canalStepsState[canal];
+                        var pos = list.indexOf(stepId);
+                        if (cb.checked && pos === -1) list.push(stepId);
+                        if (!cb.checked && pos !== -1) list.splice(pos, 1);
+                        renderWorkflow();
+                    });
+                });
+                var canalResetBtn = document.getElementById('wf-canal-reset');
+                if (canalResetBtn) canalResetBtn.addEventListener('click', function () {
+                    if (!confirm('Revenir au flux complet pour « ' + wfActiveCanal + ' » ? La personnalisation de ce canal sera perdue (jusqu\'au prochain enregistrement).')) return;
+                    delete canalStepsState[wfActiveCanal];
+                    renderWorkflow();
+                });
+
+                // Raccourci « ⚙️ Champs » : ouvre directement l'éditeur de Champs
+                // personnalisés de cette étape, avec le canal d'origine mis en
+                // évidence (les champs qui ne s'y appliquent pas sont grisés).
+                cont.querySelectorAll('[data-wf-cf-shortcut]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        cfActivePoint = btn.getAttribute('data-wf-cf-shortcut');
+                        cfCanalContext = btn.getAttribute('data-wf-cf-canal');
+                        renderCustomFields();
+                        activateTab('customfields');
+                    });
+                });
+
+                // Acteur par étape (sous-page canal) : « (par défaut) » retire l'exception,
+                // toute autre valeur crée/met à jour l'exception pour ce canal + cette étape.
+                cont.querySelectorAll('[data-wfao-canal][data-wfao-step]').forEach(function (sel) {
+                    sel.addEventListener('change', function () {
+                        var canal = sel.getAttribute('data-wfao-canal');
+                        var stepId = sel.getAttribute('data-wfao-step');
+                        var existing = canalActorOverridesState.filter(function (o) { return o.canal === canal && o.stepId === stepId; })[0];
+                        if (!sel.value) {
+                            if (existing) canalActorOverridesState.splice(canalActorOverridesState.indexOf(existing), 1);
+                        } else if (existing) {
+                            existing.actor = sel.value;
+                        } else {
+                            canalActorOverridesState.push({ canal: canal, stepId: stepId, actor: sel.value });
+                        }
+                    });
+                });
+            }
+
+            document.getElementById('save-workflow').addEventListener('click', function () {
+                var cleanSteps = workflowStepsState.map(function (s) {
+                    return { id: s.id, label: (s.label || '').trim() || s.id, actor: s.actor, order: (typeof s.order === 'number') ? s.order : 0 };
+                });
+                var cleanCanalSteps = {};
+                Object.keys(canalStepsState).forEach(function (k) {
+                    if (Array.isArray(canalStepsState[k])) cleanCanalSteps[k] = canalStepsState[k].slice();
+                });
+                var cleanActorOverrides = unflattenActorOverrides(canalActorOverridesState);
+                var stillFlagged = Object.keys(cleanCanalSteps).filter(function (k) { return wfWarnings(cleanCanalSteps[k], labelById).length > 0; });
+                if (stillFlagged.length && !confirm('Configuration à vérifier pour : ' + stillFlagged.join(', ') + ' (voir le détail en rouge ci-dessus). Enregistrer quand même ?')) return;
+                var payload = { steps: cleanSteps, canalSteps: cleanCanalSteps, canalActorOverrides: cleanActorOverrides };
+                saveConfig({ workflow: payload }, 'Workflow enregistré.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ workflow: payload });
+                    workflowStepsState = JSON.parse(JSON.stringify(cleanSteps));
+                    canalStepsState = JSON.parse(JSON.stringify(cleanCanalSteps));
+                    canalActorOverridesState = flattenActorOverrides(cleanActorOverrides);
+                    renderWorkflow();
+                });
+            });
+        }
+
+        // ── CHAMPS PERSONNALISÉS (formulaire de création + étapes de production) ──
+        // Points d'attache : les étapes de production (mêmes id que le Workflow) +
+        // les emplacements du formulaire de création. Un point « canalScoped » peut
+        // restreindre certains de ses champs à des types de canal précis.
+        var CF_CREATION_POINTS = [
+            { id: 'creation.step1', label: 'Création — Informations générales', canalScoped: false },
+            { id: 'creation.step2', label: 'Création — Segmentation', canalScoped: false },
+            { id: 'creation.step3', label: 'Création — Détails produit', canalScoped: false },
+            { id: 'creation.step3.canal.base', label: 'Création — Canal (socle)', canalScoped: false },
+            { id: 'creation.step3.canal', label: 'Création — Canal (champs additionnels)', canalScoped: true }
+        ];
+        var CF_SHOWIF_OPS = [['eq', 'égal à'], ['neq', 'différent de'], ['in', 'dans la liste'], ['checked', 'coché'], ['unchecked', 'décoché']];
+        function cfAttachPointsList() {
+            var stepPoints = workflowStepsState.slice().sort(function (a, b) { return (a.order || 0) - (b.order || 0); })
+                .map(function (s) { return { id: s.id, label: s.label, canalScoped: true }; });
+            return stepPoints.concat(CF_CREATION_POINTS);
+        }
+        function cfPointMeta(id) { return cfAttachPointsList().filter(function (p) { return p.id === id; })[0] || { id: id, label: id, canalScoped: false }; }
+        function cfFieldsFor(point) {
+            if (!Array.isArray(customFieldsState[point])) customFieldsState[point] = [];
+            return customFieldsState[point];
+        }
+        function cfDefaultField() { return { id: 'champ_' + Math.random().toString(36).slice(2, 8), label: '', type: 'text', order: 0 }; }
+        function cfUpdateShowIf(field, key, value) {
+            field.showIf = field.showIf || { field: '', op: 'eq', value: '' };
+            field.showIf[key] = value;
+            if (!field.showIf.field) delete field.showIf;
+        }
+
+        function renderCfListHtml(points) {
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Points d\'attache</h3><span class="count-pill">' + points.length + '</span></div>';
+            points.forEach(function (p) {
+                var n = Array.isArray(customFieldsState[p.id]) ? customFieldsState[p.id].length : 0;
+                html += '<div class="wf-canal-list-row" data-cf-open-point="' + esc(p.id) + '">'
+                    + '<div class="wf-canal-list-main"><span class="wf-canal-list-name">' + esc(p.label) + '</span>'
+                    + '<span class="wf-canal-badge ' + (n ? 'custom' : 'default') + '">' + (n ? (n + ' champ' + (n > 1 ? 's' : '') + ' perso') : 'Aucun champ perso') + '</span></div>'
+                    + '<span class="wf-canal-list-arrow">→</span></div>';
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function cfFieldCardHtml(f, i, canalScoped, canalContext) {
+            var group = (f.required && typeof f.required === 'object' && f.required.group) ? f.required.group : '';
+            var reqMode = f.required === true ? 'yes' : (group ? 'group' : 'no');
+            var isChoiceType = ['select', 'radio', 'checkbox-group'].indexOf(f.type) !== -1;
+            var isListType = f.type === 'list';
+            var typeLabels = (IM.customFields && IM.customFields.TYPE_LABELS) || {};
+            // Mise en évidence par rapport au canal d'origine (raccourci Workflow ▸ canal) :
+            // un champ sans restriction s'applique à tous les canaux, sinon seulement à ceux listés.
+            var canalBadge = '';
+            var doesNotApply = false;
+            if (canalScoped && canalContext) {
+                var restricted = Array.isArray(f.canalTypes) && f.canalTypes.length > 0;
+                var applies = !restricted || f.canalTypes.indexOf(canalContext) !== -1;
+                doesNotApply = !applies;
+                canalBadge = applies
+                    ? '<span class="wf-canal-badge ' + (restricted ? 'custom' : 'default') + '" style="margin-left:auto;">' + (restricted ? '✓ s\'applique à ' + esc(canalContext) : 'Tous canaux') + '</span>'
+                    : '<span class="wf-canal-badge off" style="margin-left:auto;">⛔ pas sur ' + esc(canalContext) + '</span>';
+            }
+            var html = '<div class="cf-admin-card' + (doesNotApply ? ' cf-admin-card--dimmed' : '') + '">';
+            if (canalBadge) html += '<div class="cf-admin-row">' + canalBadge + '</div>';
+            html += '<div class="cf-admin-row">'
+                + '<input class="admin-input cf-admin-id" data-cfid="' + i + '" value="' + esc(f.id || '') + '" placeholder="id technique" title="Identifiant de stockage — le modifier masque les valeurs déjà saisies sous l\'ancien id (elles restent dans le fichier, rien n\'est supprimé)." style="width:130px;font-family:monospace;font-size:12px;">'
+                + '<input class="admin-input" data-cfl="' + i + '" value="' + esc(f.label || '') + '" placeholder="Libellé affiché" style="flex:2;min-width:160px;">'
+                + '<select class="admin-select" data-cft="' + i + '" style="flex:1;min-width:150px;">' + Object.keys(typeLabels).map(function (t) {
+                    return '<option value="' + t + '"' + (f.type === t ? ' selected' : '') + '>' + esc(typeLabels[t]) + '</option>';
+                }).join('') + '</select>'
+                + '<input type="number" class="admin-input" data-cfo="' + i + '" value="' + (typeof f.order === 'number' ? f.order : 0) + '" title="Ordre" style="width:64px;">'
+                + '<button type="button" class="icon-del" data-cfdel="' + i + '" title="Supprimer">🗑</button>'
+                + '</div>';
+            html += '<div class="cf-admin-row">'
+                + '<label class="cf-admin-mini">Obligatoire : <select class="admin-select" data-cfreq="' + i + '" style="width:auto;">'
+                +   '<option value="no"' + (reqMode === 'no' ? ' selected' : '') + '>Non</option>'
+                +   '<option value="yes"' + (reqMode === 'yes' ? ' selected' : '') + '>Oui</option>'
+                +   '<option value="group"' + (reqMode === 'group' ? ' selected' : '') + '>Au moins un d\'un groupe</option>'
+                + '</select></label>'
+                + (reqMode === 'group' ? '<input class="admin-input" data-cfgroup="' + i + '" value="' + esc(group) + '" placeholder="Nom du groupe" style="width:160px;">' : '')
+                + '</div>';
+            if (isChoiceType) {
+                html += '<div class="cf-admin-row">'
+                    + '<input class="admin-input" data-cfopts="' + i + '" value="' + esc((f.options || []).join(', ')) + '" placeholder="Options séparées par des virgules" style="flex:1;">'
+                    + '<input class="admin-input" data-cfref="' + i + '" value="' + esc(f.configRef || '') + '" placeholder="… ou liste existante (ex : CANAUX, MARCHES)" style="flex:1;">'
+                    + '</div>';
+            }
+            if (isListType) {
+                html += '<div class="cf-admin-row"><label class="cf-admin-mini">Type d\'élément : <select class="admin-select" data-cfitemtype="' + i + '" style="width:auto;">'
+                    + '<option value="url"' + (f.itemType !== 'text' ? ' selected' : '') + '>URL</option>'
+                    + '<option value="text"' + (f.itemType === 'text' ? ' selected' : '') + '>Texte</option>'
+                    + '</select></label></div>';
+            }
+            if (canalScoped) {
+                html += '<div class="cf-admin-row">'
+                    + '<input class="admin-input" data-cfcanaux="' + i + '" value="' + esc((f.canalTypes || []).join(', ')) + '" placeholder="Restreindre à ces canaux (optionnel, virgules — vide = tous)" style="flex:1;">'
+                    + '</div>';
+            }
+            html += '<div class="cf-admin-row">'
+                + '<span class="cf-admin-mini-label">Condition d\'affichage (optionnel) :</span>'
+                + '<input class="admin-input" data-cfsifield="' + i + '" value="' + esc((f.showIf && f.showIf.field) || '') + '" placeholder="id du champ déclencheur" style="width:150px;">'
+                + '<select class="admin-select" data-cfsiop="' + i + '" style="width:auto;">'
+                +   CF_SHOWIF_OPS.map(function (o) { return '<option value="' + o[0] + '"' + ((f.showIf && f.showIf.op) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('')
+                + '</select>'
+                + '<input class="admin-input" data-cfsival="' + i + '" value="' + esc(f.showIf && f.showIf.value !== undefined ? (Array.isArray(f.showIf.value) ? f.showIf.value.join(', ') : f.showIf.value) : '') + '" placeholder="valeur (ou liste, virgules, si « dans la liste »)" style="flex:1;min-width:140px;">'
+                + '</div>';
+            html += '<div class="cf-admin-row">'
+                + '<input class="admin-input" data-cfhelp="' + i + '" value="' + esc(f.help || '') + '" placeholder="Texte d\'aide affiché sous le champ (optionnel)" style="flex:1;">'
+                + '</div>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderCfDetailHtml(point) {
+            var meta = cfPointMeta(point);
+            var fields = cfFieldsFor(point);
+            var canalContext = meta.canalScoped ? cfCanalContext : null;
+            var html = '<div class="admin-card">';
+            html += '<div class="wf-canal-detail-head">'
+                + '<button type="button" class="btn-back-lots" id="cf-back-to-points">← Tous les points d\'attache</button>'
+                + '<h3>🧩 ' + esc(meta.label) + '</h3>'
+                + '</div>';
+            if (canalContext) {
+                html += '<div class="admin-note"><span class="admin-note-ic">📍</span><div>'
+                    + 'Champs mis en évidence pour le canal <strong>' + esc(canalContext) + '</strong> (ouvert depuis Workflow). '
+                    + 'Les champs grisés ne s\'affichent pas sur ce canal — <button type="button" id="cf-clear-canal-context" style="background:none;border:none;padding:0;color:var(--primary,#00875A);font-weight:700;cursor:pointer;text-decoration:underline;">voir tous les canaux</button>.'
+                    + '</div></div>';
+            }
+            if (!fields.length) {
+                html += '<div class="empty-hint">Aucun champ personnalisé ici pour le moment.</div>';
+            } else {
+                fields.forEach(function (f, i) { html += cfFieldCardHtml(f, i, meta.canalScoped, canalContext); });
+            }
+            html += '<div class="add-row"><button type="button" class="btn btn-secondary" id="cf-add-field">+ Ajouter un champ</button></div>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderCustomFields() {
+            var cont = document.getElementById('customfields-container');
+            if (!cont) return;
+            var points = cfAttachPointsList();
+            if (cfActivePoint && points.map(function (p) { return p.id; }).indexOf(cfActivePoint) === -1) cfActivePoint = null;
+
+            var html = '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>'
+                + 'Chaque champ ajouté ici s\'affiche <strong>en plus</strong> des champs déjà présents sur le formulaire — le libellé, le type, l\'ordre et les conditions restent modifiables à tout moment, y compris pour un champ déjà en place.'
+                + '</div></div>';
+            html += cfActivePoint ? renderCfDetailHtml(cfActivePoint) : renderCfListHtml(points);
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-customfields">💾 Enregistrer les champs personnalisés</button></div>';
+            cont.innerHTML = html;
+
+            // Une navigation "normale" (liste ▸ point, ou retour à la liste) quitte le
+            // contexte canal éventuellement posé par le raccourci Workflow ▸ canal.
+            wireDrilldown(cont, 'data-cf-open-point', 'cf-back-to-points', function (v) { cfActivePoint = v; cfCanalContext = null; }, renderCustomFields);
+            var clearCtxBtn = document.getElementById('cf-clear-canal-context');
+            if (clearCtxBtn) clearCtxBtn.addEventListener('click', function () { cfCanalContext = null; renderCustomFields(); });
+
+            if (cfActivePoint) {
+                var fields = cfFieldsFor(cfActivePoint);
+                cont.querySelectorAll('[data-cfid]').forEach(function (inp) { var i = +inp.getAttribute('data-cfid'); inp.addEventListener('input', function () { fields[i].id = inp.value.trim(); }); });
+                cont.querySelectorAll('[data-cfl]').forEach(function (inp) { var i = +inp.getAttribute('data-cfl'); inp.addEventListener('input', function () { fields[i].label = inp.value; }); });
+                cont.querySelectorAll('[data-cft]').forEach(function (sel) { var i = +sel.getAttribute('data-cft'); sel.addEventListener('change', function () { fields[i].type = sel.value; renderCustomFields(); }); });
+                cont.querySelectorAll('[data-cfo]').forEach(function (inp) { var i = +inp.getAttribute('data-cfo'); inp.addEventListener('input', function () { fields[i].order = parseInt(inp.value, 10) || 0; }); });
+                cont.querySelectorAll('[data-cfdel]').forEach(function (b) { b.addEventListener('click', function () {
+                    var i = +b.getAttribute('data-cfdel');
+                    if (!confirm('Supprimer ce champ personnalisé ? Les valeurs déjà saisies par les utilisateurs ne seront plus affichées (elles restent dans le fichier).')) return;
+                    fields.splice(i, 1);
+                    renderCustomFields();
+                }); });
+                cont.querySelectorAll('[data-cfreq]').forEach(function (sel) { var i = +sel.getAttribute('data-cfreq'); sel.addEventListener('change', function () {
+                    if (sel.value === 'yes') fields[i].required = true;
+                    else if (sel.value === 'group') fields[i].required = { group: '' };
+                    else delete fields[i].required;
+                    renderCustomFields();
+                }); });
+                cont.querySelectorAll('[data-cfgroup]').forEach(function (inp) { var i = +inp.getAttribute('data-cfgroup'); inp.addEventListener('input', function () { fields[i].required = { group: inp.value }; }); });
+                cont.querySelectorAll('[data-cfopts]').forEach(function (inp) { var i = +inp.getAttribute('data-cfopts'); inp.addEventListener('input', function () {
+                    fields[i].options = inp.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+                }); });
+                cont.querySelectorAll('[data-cfref]').forEach(function (inp) { var i = +inp.getAttribute('data-cfref'); inp.addEventListener('input', function () { fields[i].configRef = inp.value.trim(); }); });
+                cont.querySelectorAll('[data-cfitemtype]').forEach(function (sel) { var i = +sel.getAttribute('data-cfitemtype'); sel.addEventListener('change', function () { fields[i].itemType = sel.value; }); });
+                cont.querySelectorAll('[data-cfcanaux]').forEach(function (inp) { var i = +inp.getAttribute('data-cfcanaux'); inp.addEventListener('input', function () {
+                    fields[i].canalTypes = inp.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+                }); });
+                cont.querySelectorAll('[data-cfsifield]').forEach(function (inp) { var i = +inp.getAttribute('data-cfsifield'); inp.addEventListener('input', function () { cfUpdateShowIf(fields[i], 'field', inp.value.trim()); }); });
+                cont.querySelectorAll('[data-cfsiop]').forEach(function (sel) { var i = +sel.getAttribute('data-cfsiop'); sel.addEventListener('change', function () { cfUpdateShowIf(fields[i], 'op', sel.value); }); });
+                cont.querySelectorAll('[data-cfsival]').forEach(function (inp) { var i = +inp.getAttribute('data-cfsival'); inp.addEventListener('input', function () {
+                    var op = fields[i].showIf && fields[i].showIf.op;
+                    var val = op === 'in' ? inp.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : inp.value;
+                    cfUpdateShowIf(fields[i], 'value', val);
+                }); });
+                cont.querySelectorAll('[data-cfhelp]').forEach(function (inp) { var i = +inp.getAttribute('data-cfhelp'); inp.addEventListener('input', function () { fields[i].help = inp.value; }); });
+
+                var addBtn = document.getElementById('cf-add-field');
+                if (addBtn) addBtn.addEventListener('click', function () { fields.push(cfDefaultField()); renderCustomFields(); });
+            }
+
+            document.getElementById('save-customfields').addEventListener('click', function () {
+                var clean = {};
+                var dupError = null;
+                Object.keys(customFieldsState).forEach(function (point) {
+                    var seen = {};
+                    var list = (customFieldsState[point] || [])
+                        .filter(function (f) { return (f.label || '').trim() && (f.id || '').trim(); })
+                        .map(function (f, idx) {
+                            var out = { id: f.id.trim(), label: f.label.trim(), type: f.type || 'text', order: typeof f.order === 'number' ? f.order : idx };
+                            if (f.required === true) out.required = true;
+                            else if (f.required && f.required.group) out.required = { group: f.required.group };
+                            if (Array.isArray(f.options) && f.options.length) out.options = f.options.slice();
+                            if (f.configRef) out.configRef = f.configRef;
+                            if (f.itemType) out.itemType = f.itemType;
+                            if (Array.isArray(f.canalTypes) && f.canalTypes.length) out.canalTypes = f.canalTypes.slice();
+                            if (f.showIf && f.showIf.field) out.showIf = { field: f.showIf.field, op: f.showIf.op || 'eq', value: f.showIf.value };
+                            if (f.help) out.help = f.help;
+                            return out;
+                        });
+                    list.forEach(function (f) {
+                        if (seen[f.id]) dupError = 'Identifiant technique en double « ' + f.id + ' » sur « ' + cfPointMeta(point).label + ' ». Corrigez avant d\'enregistrer.';
+                        seen[f.id] = true;
+                    });
+                    if (list.length) clean[point] = list;
+                });
+                if (dupError) { alert(dupError); return; }
+                saveConfig({ customFields: clean }, 'Champs personnalisés enregistrés.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ customFields: clean });
+                    customFieldsState = JSON.parse(JSON.stringify(clean));
+                    renderCustomFields();
+                });
+            });
+        }
+
+        // On attend le signal "ready" de admin-standalone (config déjà appliquée / amorcée).
+        var ready = (adminConfig && adminConfig.ready) ? adminConfig.ready : Promise.resolve();
+        ready.then(function () {
+            loadStateFromConfig();
+            renderAll();
+            loadWhatsNew();
+            // incidents + suivi des lots
+            return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
+                if (res.status !== 'success') return [[], []];
+                return res.handle.getDirectoryHandle('Données').then(function (d) {
+                    function readJson(file) {
+                        return d.getFileHandle(file).then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
+                            .then(function (t) { try { return JSON.parse(t) || []; } catch (e) { return []; } })
+                            .catch(function () { return []; });
+                    }
+                    return Promise.all([readJson('incidents.json'), readJson('signalement_lots.json')]);
+                }).catch(function () { return [[], []]; });
+            });
+        }).then(function (r) {
+            incidents = Array.isArray(r[0]) ? r[0] : [];
+            sigLots = Array.isArray(r[1]) ? r[1] : [];
+            renderIncidents();
+        }).catch(function () {
+            loadStateFromConfig();
+            renderAll(); renderIncidents(); loadWhatsNew();
+        });
+    })();
+</script>
+</body>
+</html>

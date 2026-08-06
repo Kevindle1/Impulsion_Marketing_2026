@@ -66,8 +66,12 @@ var users    = window.ImpulsionMarketing.users;
 Après toute modification d'un fichier `*-standalone.js`, régénérer `bundle.js` :
 
 ```bash
-cd "c:/Users/kevin/OneDrive/Bureau/DEV/IM" && cat js/config-standalone.js js/security-standalone.js js/errors-standalone.js js/performance-standalone.js js/directoryStorage-standalone.js js/users-standalone.js js/user-selector-standalone.js js/workflow-standalone.js js/themes-standalone.js js/help-standalone.js > js/bundle.js
+npm run build
 ```
+
+Le script `build-bundle.mjs` (Node, sans
+dépendance) concatène les modules dans l'ordre ci-dessous. `bundle.js` est **généré** : ne pas l'éditer.
+Pour exécuter les tests : `npm test`.
 
 Ordre de concaténation (respecter les dépendances) :
 1. `config-standalone.js`
@@ -76,12 +80,25 @@ Ordre de concaténation (respecter les dépendances) :
 4. `performance-standalone.js`
 5. `directoryStorage-standalone.js`
 6. `users-standalone.js`
-7. `user-selector-standalone.js`
-8. `workflow-standalone.js`
-9. `themes-standalone.js`
-10. `help-standalone.js`
+7. `workflow-standalone.js`
+8. `help-standalone.js`
+9. `incident-standalone.js`
+10. `admin-standalone.js`
+11. `topbar-standalone.js`
+
+`js/suivi-xlsx.js` (bibliothèque tierce vendorisée) n'entre pas dans le bundle — il est chargé séparément par `pages/details.html`.
 
 > **Ne jamais éditer `bundle.js` directement** — les modifications seraient écrasées à la prochaine régénération.
+
+---
+
+## Tests
+
+Deux suites, toutes deux outils de développement uniquement (aucune n'est déployée sur `V://`) :
+
+- **`npm test`** — tests unitaires (`node --test`) de la logique pure du workflow (`test/workflow.test.mjs`), sans navigateur.
+- **`npm run test:e2e`** — tests de fumée UI (Playwright + Chromium, `e2e/smoke.spec.js`) : chaque page se charge sans erreur JS, et la garde de session (redirection vers `login.html` sans utilisateur connecté) fonctionne. L'app n'ayant pas de backend — toute donnée réelle vient d'un dossier choisi via `showDirectoryPicker`, impossible à simuler en headless —, ce ne sont pas des tests bout-en-bout : ils ne couvrent pas les parcours qui nécessitent un vrai dossier de travail.
+- **`npm run lint`** — ESLint (voir `eslint.config.js`), signal de style/bugs évidents, ne bloque rien.
 
 ---
 
@@ -265,10 +282,15 @@ Si l'accès au dossier racine est perdu (changement de chemin réseau, permissio
 
 ## Déploiement
 
-Le déploiement consiste simplement à copier le dossier sur le lecteur réseau `V://`. Aucune compilation, aucun build.
+Sur `V://`, le déploiement est scindé en deux dossiers indépendants (voir le [README](../README.md#structure-du-dossier-sur-v)) :
+- `Application/` — le code (ce que contient ce dépôt, hors outillage dev) : **remplacé intégralement** à chaque montée de version.
+- `Données de production/` — `_config.json`, `Campagnes/`, `Données/`, `docs/USER_GUIDE.md` : **jamais touché** par un déploiement.
+
+Déployer une nouvelle version = remplacer le contenu de `Application/` par le nouveau. Aucune compilation, aucun build côté V:// (seul `npm run build` doit avoir été lancé avant, côté dépôt de code).
 
 Checklist avant déploiement :
-- [ ] `bundle.js` est à jour (lancer le rebuild)
-- [ ] Tester en ouvrant `Impulsion-Marketing.html` depuis Edge pointant sur `V://`
-- [ ] Vérifier que le dossier `Campagnes/` est accessible et que `_index.json` existe (sinon, cliquer "Reconstruire l'index" au premier lancement)
-- [ ] Vérifier `_notifications.json` à la racine de `Campagnes/` (créé automatiquement si absent)
+- [ ] `Application/js/bundle.js` est à jour (lancer `npm run build`)
+- [ ] Tester en ouvrant `Application/Impulsion-Marketing.html` depuis Edge pointant sur `V://`
+- [ ] Vérifier que `Données de production/Campagnes/` est accessible et que `_index.json` existe (sinon, cliquer "Reconstruire l'index" au premier lancement)
+- [ ] Vérifier `_notifications.json` à la racine de `Données de production/Campagnes/` (créé automatiquement si absent)
+- [ ] Ne **jamais** copier/écraser `Données de production/` lors d'un déploiement

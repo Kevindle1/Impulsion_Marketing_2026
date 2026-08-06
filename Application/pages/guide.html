@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide utilisateur — Impulsion Marketing</title>
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
+    <style>
+        /* Le contenu défile dans #guide-scroll (pas la fenêtre) → ancrage du sommaire fiable */
+        html, body { height: 100%; overflow: hidden; }
+        .main-container { height: 100vh; overflow: hidden; }
+        .guide-container {
+            max-width: 1160px;
+            margin: 0 auto;
+            padding: 32px 40px 60px;
+            font-size: 14.5px;
+            line-height: 1.7;
+            color: var(--ink);
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 244px;
+            gap: 48px;
+            align-items: start;
+        }
+        #guide-body { min-width: 0; }
+        @media (max-width: 940px) {
+            .guide-container { grid-template-columns: 1fr; gap: 24px; }
+            .guide-toc { position: static !important; order: -1; }
+        }
+        .guide-container h1 {
+            font-size: 1.85rem;
+            font-weight: 850;
+            color: var(--ink) !important;
+            -webkit-text-fill-color: var(--ink) !important;
+            background: none !important;
+            margin: 0 0 6px;
+            letter-spacing: -0.6px;
+            text-align: left;
+        }
+        .guide-container h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 36px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--line);
+        }
+        .guide-container h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 24px 0 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .guide-container h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--ink);
+            margin: 18px 0 6px;
+        }
+        .guide-container p { margin: 0 0 12px; }
+        .guide-container ul, .guide-container ol {
+            margin: 0 0 12px;
+            padding-left: 24px;
+        }
+        .guide-container li { margin-bottom: 4px; }
+        .guide-container hr {
+            border: none;
+            border-top: 1px solid var(--line);
+            margin: 28px 0;
+        }
+        .guide-container strong { color: var(--ink); }
+        .guide-container code {
+            background: var(--line-2);
+            border: 1px solid var(--line);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 13px;
+            font-family: monospace;
+            color: var(--primary);
+        }
+        .guide-container a { color: var(--primary); text-decoration: underline; }
+        .guide-container a:hover { color: var(--primary-hover); }
+        .guide-container table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 20px;
+            font-size: 13.5px;
+        }
+        .guide-container th {
+            background: var(--line-2);
+            font-weight: 700;
+            color: var(--gray-700);
+            text-align: left;
+            padding: 9px 12px;
+            border: 1px solid var(--line);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .guide-container td {
+            padding: 8px 12px;
+            border: 1px solid var(--line);
+            vertical-align: top;
+        }
+        .guide-container tr:nth-child(even) td { background: var(--line-2); }
+        .guide-container blockquote {
+            background: var(--green-50);
+            border-left: 4px solid var(--primary);
+            border-radius: 0 8px 8px 0;
+            padding: 10px 16px;
+            margin: 12px 0;
+            color: var(--green-700);
+            font-size: 13.5px;
+        }
+        .guide-subtitle {
+            color: var(--muted);
+            font-size: 13px;
+            margin-bottom: 32px;
+        }
+        #guide-loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted-2);
+            font-size: 15px;
+        }
+        #guide-error {
+            background: var(--red-50);
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 20px;
+            color: #991b1b;
+            text-align: center;
+            margin: 32px auto;
+            max-width: 500px;
+        }
+        .guide-toc {
+            position: sticky;
+            top: 20px;
+            align-self: start;
+            background: var(--bg-card, #fff);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 16px 16px;
+            box-shadow: var(--shadow-xs);
+            margin: 0;
+        }
+        .guide-toc-title {
+            font-size: 10.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--muted-2);
+            margin: 4px 10px 10px;
+        }
+        .guide-toc ul { margin: 0; padding: 0; list-style: none; }
+        .guide-toc li { margin: 0; }
+        .guide-toc a {
+            display: block;
+            padding: 7px 10px;
+            border-radius: 8px;
+            border-left: 2px solid transparent;
+            color: var(--muted);
+            font-size: 12.75px;
+            font-weight: 550;
+            text-decoration: none;
+            line-height: 1.35;
+            transition: background .12s, color .12s, border-color .12s;
+        }
+        .guide-toc a:hover { background: var(--line-2); color: var(--ink); }
+        .guide-toc a.active {
+            background: var(--green-50);
+            color: var(--green-600);
+            border-left-color: var(--primary);
+            font-weight: 700;
+        }
+        /* Décalage d'ancrage pour le scroll (titres pas collés au haut) */
+        #guide-body h2 { scroll-margin-top: 16px; }
+    </style>
+</head>
+<body>
+<div class="dashboard-layout">
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <a href="../Impulsion-Marketing.html" class="brand">
+                <div class="brand-icon" style="font-size:14px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">IM</div>
+                <div class="brand-text"><h1>Impulsion</h1><span>Marketing</span></div>
+            </a>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <span class="nav-section-title">Principal</span>
+                <a href="../Impulsion-Marketing.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="campaign.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    <span>Créer une campagne</span>
+                </a>
+                <a href="pilotage.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                    <span>Pilotage</span>
+                </a>
+                <a href="visualization.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-4-4-4 4"/></svg>
+                    <span>Campagnes</span>
+                </a>
+                <a href="comite-editorial.html" class="nav-link">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6"/>
+                        <line x1="8" y1="2" x2="8" y2="6"/>
+                        <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    <span>Comité Éditorial</span>
+                </a>
+                <a href="guide.html" class="nav-link active">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                    <span>Guide utilisateur</span>
+                </a>
+            </div>
+            <div class="nav-section">
+                <span class="nav-section-title">Externe</span>
+                <a href="#" class="nav-link" data-gallery target="_blank" rel="noopener">
+                    <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    <span>Galerie</span>
+                </a>
+            </div>
+        </nav>
+    </aside>
+
+    <div class="main-container">
+        <div id="guide-scroll" style="flex:1;overflow-y:auto;background:var(--line-2);">
+            <div id="guide-loading">Chargement du guide...</div>
+            <div id="guide-error" style="display:none;"></div>
+            <div class="guide-container" id="guide-content" style="display:none;">
+                <div id="guide-body"></div>
+                <aside class="guide-toc" id="guide-toc"></aside>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../js/bundle.js"></script>
+<script>window.ImpulsionMarketing.topbar.mount();</script>
+<script>
+    // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+    (function () {
+        var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+        if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+    })();
+</script>
+<script>
+    var directoryStorage = window.ImpulsionMarketing.directoryStorage;
+
+    window.addEventListener('load', function() {
+        directoryStorage.getRootHandleWithCheck().then(function(result) {
+            if (result.status !== 'success') {
+                showError('Session expirée. <a href="../login.html">Reconnectez-vous</a> pour recharger le dossier.');
+                return;
+            }
+            return result.handle.getDirectoryHandle('docs')
+                .then(function(d) { return d.getFileHandle('USER_GUIDE.md'); })
+                .then(function(fh) { return fh.getFile(); })
+                .then(function(f) { return f.text(); })
+                .then(function(text) { renderGuide(text); });
+        }).catch(function() {
+            showError('Impossible de charger le guide. Vérifiez que le dossier racine est bien sélectionné.');
+        });
+    });
+
+    function showError(msg) {
+        document.getElementById('guide-loading').style.display = 'none';
+        var el = document.getElementById('guide-error');
+        el.innerHTML = '📖 ' + msg;
+        el.style.display = 'block';
+    }
+
+    // ── Parseur Markdown minimal ──────────────────────────────────────────
+    function renderGuide(md) {
+        var html = parseMarkdown(md);
+        document.getElementById('guide-loading').style.display = 'none';
+        document.getElementById('guide-body').innerHTML = html;
+        document.getElementById('guide-content').style.display = 'grid';
+        buildToc();
+    }
+
+    function inline(s) {
+        return s
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(m, text, href) {
+                return '<a href="' + href + '">' + text + '</a>';
+            });
+    }
+
+    function parseMarkdown(md) {
+        var lines = md.split('\n');
+        var out = '';
+        var inUL = false, inOL = false;
+        var tablePhase = 0; // 0=off, 1=thead, 2=tbody
+
+        function closeLists() {
+            if (inUL) { out += '</ul>'; inUL = false; }
+            if (inOL) { out += '</ol>'; inOL = false; }
+        }
+        function closeTable() {
+            if (tablePhase === 2) out += '</tbody></table>';
+            else if (tablePhase === 1) out += '</thead></table>';
+            tablePhase = 0;
+        }
+
+        lines.forEach(function(raw) {
+            var line = raw;
+
+            // Headings
+            if (/^#### /.test(line)) {
+                closeLists(); closeTable();
+                out += '<h4>' + inline(line.slice(5)) + '</h4>';
+                return;
+            }
+            if (/^### /.test(line)) {
+                closeLists(); closeTable();
+                var txt = line.slice(4);
+                var id = 'h-' + txt.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                out += '<h3 id="' + id + '">' + inline(txt) + '</h3>';
+                return;
+            }
+            if (/^## /.test(line)) {
+                closeLists(); closeTable();
+                var txt = line.slice(3);
+                var id = 'h-' + txt.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                out += '<h2 id="' + id + '">' + inline(txt) + '</h2>';
+                return;
+            }
+            if (/^# /.test(line)) {
+                closeLists(); closeTable();
+                out += '<h1>' + inline(line.slice(2)) + '</h1>';
+                return;
+            }
+
+            // Blockquote
+            if (/^> /.test(line)) {
+                closeLists(); closeTable();
+                out += '<blockquote>' + inline(line.slice(2)) + '</blockquote>';
+                return;
+            }
+
+            // HR
+            if (/^---+$/.test(line.trim())) {
+                closeLists(); closeTable();
+                out += '<hr>';
+                return;
+            }
+
+            // Table
+            if (/^\|/.test(line)) {
+                closeLists();
+                var cells = line.split('|').slice(1, -1);
+                var isSep = cells.every(function(c) { return /^[\s\-:]+$/.test(c); });
+                if (isSep) {
+                    if (tablePhase === 1) { out += '</thead><tbody>'; tablePhase = 2; }
+                    return;
+                }
+                if (tablePhase === 0) {
+                    out += '<table><thead>'; tablePhase = 1;
+                }
+                var tag = tablePhase === 1 ? 'th' : 'td';
+                out += '<tr>' + cells.map(function(c) {
+                    return '<' + tag + '>' + inline(c.trim()) + '</' + tag + '>';
+                }).join('') + '</tr>';
+                return;
+            }
+
+            // Unordered list
+            if (/^- /.test(line)) {
+                closeTable();
+                if (!inUL) { closeLists(); out += '<ul>'; inUL = true; }
+                out += '<li>' + inline(line.slice(2)) + '</li>';
+                return;
+            }
+
+            // Ordered list
+            if (/^\d+\. /.test(line)) {
+                closeTable();
+                if (!inOL) { closeLists(); out += '<ol>'; inOL = true; }
+                out += '<li>' + inline(line.replace(/^\d+\. /, '')) + '</li>';
+                return;
+            }
+
+            // Empty line
+            if (line.trim() === '') {
+                closeLists(); closeTable();
+                return;
+            }
+
+            // Paragraph
+            closeLists(); closeTable();
+            out += '<p>' + inline(line) + '</p>';
+        });
+
+        closeLists(); closeTable();
+        return out;
+    }
+
+    // ── Table des matières + scrollspy ────────────────────────────────────
+    function buildToc() {
+        var headings = Array.prototype.slice.call(document.querySelectorAll('#guide-body h2'));
+        var tocEl = document.getElementById('guide-toc');
+        if (headings.length === 0) { tocEl.style.display = 'none'; return; }
+        var html = '<div class="guide-toc-title">Sommaire</div><ul>';
+        headings.forEach(function(h) {
+            html += '<li><a href="#' + h.id + '" data-spy="' + h.id + '">' + h.textContent + '</a></li>';
+        });
+        html += '</ul>';
+        tocEl.innerHTML = html;
+
+        // Scroll fluide au clic (le conteneur scrollable est #guide-scroll)
+        var scroller = document.getElementById('guide-scroll');
+        var links = Array.prototype.slice.call(tocEl.querySelectorAll('a[data-spy]'));
+        function topInScroller(el) {
+            return el.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+        }
+        links.forEach(function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                var t = document.getElementById(a.getAttribute('data-spy'));
+                if (t) scroller.scrollTo({ top: topInScroller(t) - 14, behavior: 'smooth' });
+            });
+        });
+
+        // Surlignage de la section active au scroll
+        function spy() {
+            var pos = scroller.scrollTop + 90;
+            var current = headings[0];
+            for (var i = 0; i < headings.length; i++) {
+                if (topInScroller(headings[i]) <= pos) current = headings[i]; else break;
+            }
+            links.forEach(function(a) {
+                a.classList.toggle('active', a.getAttribute('data-spy') === current.id);
+            });
+        }
+        scroller.addEventListener('scroll', spy, { passive: true });
+        spy();
+    }
+</script>
+</body>
+</html>

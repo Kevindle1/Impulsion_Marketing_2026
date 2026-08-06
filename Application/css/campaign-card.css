@@ -1,0 +1,212 @@
+/**
+ * campaign-card.css — Card « recto/verso » des campagnes, partagée entre le
+ * Tableau de bord (Impulsion-Marketing.html) et la page Campagnes
+ * (pages/visualization.html).
+ *
+ * Recto : badge type de com + badge étape actuelle (à cheval sur le bord
+ * haut), nom de la campagne, date, équipe. Verso (révélé au survol par un
+ * flip 3D) : progression par canal + repères de dates (dernière mise à
+ * jour, date d'envoi).
+ */
+
+.cc-flip {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    height: 335px;
+    perspective: 1600px;
+}
+
+.cc-flip-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform .55s cubic-bezier(.4, .2, .2, 1);
+    transform-style: preserve-3d;
+}
+
+.cc-flip:hover .cc-flip-inner,
+.cc-flip:focus-visible .cc-flip-inner { transform: rotateY(180deg); }
+
+.cc-face {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: var(--bg-card, #fff);
+    border: 1px solid var(--line, #eaefec);
+    border-radius: var(--radius, 16px);
+    box-shadow: var(--shadow-xs);
+    padding: 24px 18px 14px;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow .18s, border-color .18s;
+}
+
+.cc-flip:hover .cc-face,
+.cc-flip:focus-visible .cc-face { box-shadow: var(--shadow-md); }
+
+.cc-face--back { transform: rotateY(180deg); flex-direction: column; padding: 18px 18px 16px; }
+
+.cc-flip.cc--inactive { opacity: .6; }
+
+/* ── Teinte pastel par type de com (verso uniquement — le recto utilise un
+   dégradé saturé, voir plus bas) ── */
+.cc-flip.ct-com .cc-face--back { background: var(--green-50, #e8f6ef); border-color: var(--green-100, #cdeede); }
+.cc-flip.ct-ges .cc-face--back { background: #eaf1fe; border-color: #cddcfb; }
+.cc-flip.ct-reg .cc-face--back { background: #fdf3e2; border-color: #f6e0ae; }
+.cc-flip.ct-pal3 .cc-face--back { background: #f1eafd; border-color: #ddc9fa; }
+.cc-flip.ct-pal4 .cc-face--back { background: #fde8f2; border-color: #f7c2dd; }
+.cc-flip.ct-pal5 .cc-face--back { background: #e6f6fa; border-color: #b7e6f0; }
+.cc-flip.ct-none .cc-face--back { background: var(--bg-card, #fff); }
+
+/* ── Recto : fond en dégradé saturé par type de com (+ voile sombre en bas
+   pour garantir la lisibilité du texte blanc quelle que soit la teinte) ── */
+.cc-face--front {
+    color: #fff;
+    align-items: center;
+    text-align: center;
+    background-blend-mode: normal;
+}
+.cc-flip.ct-com .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #17D398, #00734C); border-color: transparent; }
+.cc-flip.ct-ges .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #60a5fa, #1d4ed8); border-color: transparent; }
+.cc-flip.ct-reg .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #fbbf24, #b45309); border-color: transparent; }
+.cc-flip.ct-pal3 .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #a78bfa, #6d28d9); border-color: transparent; }
+.cc-flip.ct-pal4 .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #f472b6, #be185d); border-color: transparent; }
+.cc-flip.ct-pal5 .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #22d3ee, #0e7490); border-color: transparent; }
+.cc-flip.ct-none .cc-face--front { background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #cbd5e1, #64748b); border-color: transparent; }
+
+.cc-badge {
+    position: absolute;
+    top: 14px;
+    font-size: 10.5px;
+    font-weight: 800;
+    padding: 5px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+    max-width: calc(50% - 20px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .12);
+}
+
+.cc-badge--type { left: 14px; color: #fff; background: rgba(0, 0, 0, .22); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); box-shadow: none; }
+.cc-badge--step { right: 14px; background: rgba(255, 255, 255, .95); color: var(--muted, #56655e); }
+
+/* ── Recto : titre + date centrés au milieu de la carte ── */
+.cc-front-body { flex: 1; min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.cc-front-body h3 {
+    font-size: 17.5px; font-weight: 800; line-height: 1.3; letter-spacing: -.2px;
+    color: #fff; margin: 0; text-shadow: 0 1px 4px rgba(0, 0, 0, .18);
+    width: 100%;
+    overflow: hidden; text-overflow: ellipsis;
+    word-break: break-word; overflow-wrap: break-word;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+.cc-front-date {
+    font-size: 12px; color: rgba(255, 255, 255, .92); font-weight: 700;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(255, 255, 255, .16); padding: 4px 12px; border-radius: 999px;
+}
+.cc-front-date--urgent { color: #fff; background: rgba(226, 0, 26, .88); }
+
+.cc-foot { display: flex; align-items: center; justify-content: center; border-top: 1px solid rgba(255, 255, 255, .28); padding-top: 11px; margin-top: 8px; width: 100%; }
+.cc-avs { display: flex; }
+.cc-avs .av { width: 27px; height: 27px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, .9); margin-left: -7px; }
+.cc-avs .av:first-child { margin-left: 0; }
+
+/* ── Verso : en-tête (contexte) + progression par canal + timeline ── */
+.cc-back-head {
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 10px; margin-bottom: 12px;
+    border-bottom: 1px solid rgba(0, 0, 0, .09);
+    flex-shrink: 0;
+}
+.cc-back-name {
+    font-size: 12.5px; font-weight: 750; color: var(--ink, #0c1a14);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.cc-back-body { flex: 1; min-height: 0; display: flex; gap: 18px; }
+
+.cc-back-section-label {
+    font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px;
+    color: var(--muted-2, #8b988f); margin-bottom: 3px;
+}
+
+.cc-back-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; overflow: hidden; }
+.cc-chrow { display: flex; flex-direction: column; gap: 4px; }
+.cc-chmore { font-size: 10.5px; font-weight: 700; color: var(--muted, #56655e); }
+.cc-chtop { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.cc-chname { font-size: 11.5px; font-weight: 750; color: var(--ink, #0c1a14); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 58%; }
+.cc-chstat {
+    font-size: 10px; font-weight: 800; white-space: nowrap;
+    background: rgba(255, 255, 255, .7); border-radius: 999px; padding: 1px 8px;
+    color: var(--primary, #00875A);
+}
+.cc-chstat.k-valid { color: #9a6b00; }
+.cc-chstat.k-maq   { color: #1d4ed8; }
+.cc-chstat.k-urgent { color: #b91c1c; }
+.cc-chstat.k-done  { color: #00734C; }
+.cc-chbar { height: 8px; border-radius: 99px; background: rgba(0, 0, 0, .08); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .07); }
+.cc-chbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #12C386, #00875A); }
+.cc-chbar i.k-valid { background: linear-gradient(90deg, #fbbf24, #E8A100); }
+.cc-chbar i.k-maq   { background: linear-gradient(90deg, #60a5fa, #2563EB); }
+.cc-chbar i.k-urgent { background: linear-gradient(90deg, #f87171, #E2001A); }
+.cc-chbar i.k-done  { background: linear-gradient(90deg, #34d399, #00875A); }
+
+.cc-timeline {
+    flex-shrink: 0;
+    width: 94px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 22px;
+    position: relative;
+    padding-left: 16px;
+}
+.cc-timeline::before {
+    content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 2px;
+    background: linear-gradient(180deg, var(--primary, #00875A), rgba(0, 135, 90, .15));
+    border-radius: 2px;
+}
+.cc-tl-point { position: relative; font-size: 10px; color: var(--muted, #56655e); line-height: 1.35; }
+.cc-tl-point::before {
+    content: ""; position: absolute; left: -16px; top: 2px;
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--primary, #00875A); border: 2px solid var(--bg-card, #fff);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
+}
+.cc-tl-label { font-weight: 800; color: var(--ink, #0c1a14); display: block; text-transform: uppercase; font-size: 9px; letter-spacing: .4px; margin-bottom: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .cc-flip-inner { transition: none; }
+}
+
+/* ── Skeleton de chargement — même gabarit que .cc-flip (badges, titre,
+   pastille, avatar) pour ne pas provoquer de saut visuel quand les vraies
+   cards (dégradées) apparaissent. ── */
+@keyframes cc-skel-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+.cc-skel {
+    height: 220px;
+    border-radius: var(--radius, 16px);
+    background: linear-gradient(135deg, #e7ebe8, #dbe1dd);
+    border: 1px solid var(--line, #eaefec);
+    padding: 24px 18px 14px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    animation: cc-skel-pulse 1.4s ease-in-out infinite;
+}
+.cc-skel-badge { position: absolute; top: 14px; height: 22px; width: 74px; border-radius: 999px; background: rgba(255, 255, 255, .55); }
+.cc-skel-badge--l { left: 14px; }
+.cc-skel-badge--r { right: 14px; width: 90px; }
+.cc-skel-title { height: 14px; width: 72%; border-radius: 4px; background: rgba(255, 255, 255, .6); }
+.cc-skel-title--sm { width: 48%; }
+.cc-skel-pill { height: 22px; width: 84px; border-radius: 999px; background: rgba(255, 255, 255, .5); margin-top: 4px; }
+.cc-skel-foot { position: absolute; bottom: 14px; left: 18px; right: 18px; border-top: 1px solid rgba(255, 255, 255, .3); padding-top: 11px; }
+.cc-skel-av { display: inline-block; width: 27px; height: 27px; border-radius: 50%; background: rgba(255, 255, 255, .6); }

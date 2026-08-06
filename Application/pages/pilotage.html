@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilotage - Interface Impulsion Marketing</title>
+    <link rel="stylesheet" href="../css/theme.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/dashboard-layout.css">
+    <link rel="stylesheet" href="../css/topbar.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, var(--line-2) 0%, var(--line) 100%);
+            color: var(--ink);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+        .dashboard-container { max-width: 1400px; margin: 0 auto; }
+
+        /* ── Menu de sections façon « Administration » : page d'accueil en
+           cards (bento) renvoyant vers chaque page de pilotage, chaque page
+           ayant son propre bouton retour vers ce menu. ── */
+        .admin-bento-group + .admin-bento-group { margin-top: 26px; }
+        .admin-bento-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); margin-bottom: 12px; }
+        .admin-bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; box-shadow: 0 4px 12px rgba(12,30,22,.08); }
+        .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.14); transform: translateY(-2px); }
+        .admin-bento-card .admin-bento-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--green-50); }
+        .admin-bento-card .admin-bento-label { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+        .admin-bento-card .admin-bento-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+        .pil-fav-star { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border: none; background: transparent; font-size: 16px; line-height: 26px; text-align: center; cursor: pointer; color: var(--muted-2); padding: 0; border-radius: 50%; transition: color .15s, background .15s; }
+        .pil-fav-star:hover { background: var(--line-2); color: #d9a300; }
+        .pil-fav-star.active { color: #e2a200; }
+        .pil-fav-group .admin-bento-card { border-color: #f3dfa3; background: #fffdf6; }
+        .admin-back-btn { display: inline-flex; align-items: center; gap: 7px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 650; cursor: pointer; padding: 6px 2px; margin-bottom: 12px; }
+        .admin-back-btn:hover { color: var(--primary); }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; animation: pilFade .22s ease; }
+        @keyframes pilFade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+        .admin-sec-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+        .admin-sec-ic { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 23px; background: var(--green-50); flex-shrink: 0; }
+        .admin-sec-head h2 { margin: 0; font-size: 21px; font-weight: 820; letter-spacing: -.4px; color: var(--ink); }
+        .admin-sec-head p { margin: 3px 0 0; font-size: 13.5px; color: var(--muted); }
+
+        /* ---- Filtres ---- */
+        .pil-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; background: var(--line-2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
+        .pil-filter { display: flex; flex-direction: column; gap: 4px; }
+        .pil-filter label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
+        .pil-filter input[type="date"], .pil-filter select {
+            padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+            font-family: inherit; font-size: 13px; color: var(--ink); min-width: 140px;
+        }
+        .pil-filter input:focus, .pil-filter select:focus { outline: none; border-color: var(--primary); }
+        .pil-reset { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
+        .pil-reset:hover { border-color: var(--primary); color: var(--primary); }
+        .pil-count { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--primary); align-self: center; white-space: nowrap; }
+
+        /* ---- Tableau ---- */
+        .pil-table-wrap { overflow-x: auto; }
+        .pil-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .pil-table th { text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted-2); border-bottom: 2px solid var(--line); white-space: nowrap; }
+        .pil-table td { padding: 10px 12px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+        .pil-row { cursor: pointer; transition: background 0.12s; }
+        .pil-row:hover { background: var(--line-2); }
+        .pil-date { font-weight: 700; color: var(--ink); white-space: nowrap; }
+        .pil-date .pil-cond { display: block; font-weight: 400; font-size: 11.5px; color: var(--muted); white-space: normal; }
+        .pil-camp { font-weight: 650; color: var(--ink); }
+        .pil-camp small { display: block; font-weight: 400; color: var(--muted-2); font-size: 11.5px; }
+        .pil-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+        .pil-canal { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
+        .pil-ct-com { background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); }
+        .pil-ct-ges { background: #e8f0fe; color: #2563EB; }
+        .pil-ct-reg { background: #fdf3e2; color: #9a6b00; }
+        .pil-ct-none { background: var(--line-2); color: var(--muted-2); }
+        /* Palette générique (au-delà de 3 « Types de communication » configurés en Administration) */
+        .pil-ct-pal3 { background: #f3e8ff; color: #7C3AED; }
+        .pil-ct-pal4 { background: #fce7f3; color: #9d174d; }
+        .pil-ct-pal5 { background: #cffafe; color: #0e7490; }
+        .pil-empty { text-align: center; padding: 42px 20px; color: var(--muted); font-size: 14px; }
+        .pil-empty .big { font-size: 40px; margin-bottom: 10px; }
+
+        /* Regroupement par semaine (Coms attendues) / par groupe (Retards) */
+        .pil-week td { background: var(--line-2); font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 6px 12px; }
+
+        /* Échéance (Retards & alertes) */
+        .pil-badge-overdue { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .pil-badge-soon { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+
+        /* Statut d'une étape (Validations en attente) */
+        .pil-status-pending { background: var(--line-2); color: var(--muted); }
+        .pil-status-revision { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+
+        /* Équipe / rôle porteur (Validations, Charge de travail, Retards) */
+        .pil-role-po { background: #eef0f2; color: #475569; }
+        .pil-role-com { background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); }
+        .pil-role-ebf { background: #fdf3e2; color: #9a6b00; }
+        .pil-role-data { background: #f3e8ff; color: #7C3AED; }
+        .pil-role-manager { background: var(--line-2); color: var(--muted); }
+
+        /* Indicateurs clés — tuiles chiffrées + tableaux de répartition */
+        .pil-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 26px; }
+        .pil-kpi-tile { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow-xs); }
+        .pil-kpi-num { font-size: 28px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+        .pil-kpi-tile.warn .pil-kpi-num { color: var(--red, #E2001A); }
+        .pil-kpi-label { font-size: 12px; color: var(--muted); margin-top: 5px; }
+        .pil-subhead { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted-2); margin: 24px 0 10px; }
+        .pil-subhead:first-of-type { margin-top: 0; }
+
+        /* Affectation — cartes d'affectation par campagne (managers) */
+        .pil-affect-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: var(--shadow-xs); }
+        .pil-affect-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .pil-affect-head strong { font-size: 15px; color: var(--ink); }
+        .pil-affect-meta { font-size: 12.5px; color: var(--muted); margin-left: 10px; }
+        .pil-affect-state { background: var(--amber-50, #fff8e6); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: #7a5b00; line-height: 1.6; }
+        .pil-affect-teams { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+        .pil-affect-team { flex: 1; min-width: 160px; }
+        .pil-affect-team-label { font-size: 12px; font-weight: 700; margin-bottom: 5px; color: var(--ink); }
+        .pil-affect-team-list { max-height: 130px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; background: var(--line-2); }
+        .pil-affect-team-list label { display: flex; align-items: center; gap: 7px; padding: 3px 0; font-size: 13px; cursor: pointer; }
+        .pil-affect-btn { border: none; border-radius: 8px; background: var(--primary, #00875A); color: #fff; font-weight: 700; font-size: 13px; padding: 9px 18px; cursor: pointer; }
+        .pil-affect-btn:disabled { opacity: .6; cursor: default; }
+        .pil-affect-btn:hover:not(:disabled) { filter: brightness(1.05); }
+
+        /* Points de friction — allers-retours par canal, tous types confondus */
+        .pil-friction-count { font-size: 12px; font-weight: 800; padding: 3px 11px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
+        .pil-friction-count.warn { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+        .pil-friction-count.hot  { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .pil-friction-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+        .pil-friction-chip { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--line-2); color: var(--muted); white-space: nowrap; }
+        .pil-friction-last { font-size: 11.5px; color: var(--muted-2); }
+
+        /* Vue calendrier */
+        .pil-cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .pil-cal-nav { border: 1px solid var(--line); background: #fff; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: var(--muted); }
+        .pil-cal-nav:hover { border-color: var(--primary); color: var(--primary); }
+        .pil-cal-title { font-size: 16px; font-weight: 800; color: var(--ink); text-transform: capitalize; min-width: 160px; }
+        .pil-cal-today { margin-left: auto; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+        .pil-cal-today:hover { border-color: var(--primary); color: var(--primary); }
+        .pil-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        .pil-cal-dow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--muted-2); text-align: center; padding-bottom: 4px; }
+        .pil-cal-day { background: #fff; border: 1px solid var(--line); border-radius: 10px; min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+        .pil-cal-day.pil-cal-out { background: var(--line-2); border-color: transparent; }
+        .pil-cal-day.pil-cal-today-cell { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+        .pil-cal-daynum { font-size: 12px; font-weight: 700; color: var(--ink); }
+        .pil-cal-out .pil-cal-daynum { color: var(--muted-2); }
+        .pil-cal-item { font-size: 10.5px; font-weight: 650; padding: 2px 6px; border-radius: 5px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .pil-cal-item:hover { filter: brightness(0.97); }
+        .pil-cal-more { font-size: 10px; color: var(--muted-2); font-weight: 700; }
+        .pil-cal-note { font-size: 12px; color: var(--muted-2); margin-top: 14px; }
+
+        .loading-container { text-align: center; padding: 80px 20px; }
+        .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; margin: 0 auto 16px; animation: pilspin 0.9s linear infinite; }
+        @keyframes pilspin { to { transform: rotate(360deg); } }
+        .error-banner { background: var(--red-50, #fdeaec); border: 1px solid var(--red, #E2001A); color: var(--red, #E2001A); border-radius: 10px; padding: 14px 18px; font-size: 14px; }
+        @media (max-width: 700px) { .pil-count { margin-left: 0; } }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="../Impulsion-Marketing.html" class="brand">
+                    <div class="brand-icon" style="font-size:14px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">IM</div>
+                    <div class="brand-text">
+                        <h1>Impulsion</h1>
+                        <span>Marketing</span>
+                    </div>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <span class="nav-section-title">Principal</span>
+                    <a href="../Impulsion-Marketing.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                        <span>Tableau de bord</span>
+                    </a>
+                    <a href="campaign.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        <span>Créer une campagne</span>
+                    </a>
+                    <a href="pilotage.html" class="nav-link active">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <span>Pilotage</span>
+                    </a>
+                    <a href="visualization.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 3v18h18"/>
+                            <path d="M18 9l-5 5-4-4-4 4"/>
+                        </svg>
+                        <span>Campagnes</span>
+                    </a>
+                    <a href="comite-editorial.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                        </svg>
+                        <span>Comité Éditorial</span>
+                    </a>
+                    <a href="guide.html" class="nav-link">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                        <span>Guide utilisateur</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <span class="nav-section-title">Externe</span>
+                    <a href="#" class="nav-link" data-gallery target="_blank" rel="noopener">
+                        <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <path d="M21 15l-5-5L5 21"/>
+                        </svg>
+                        <span>Galerie</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="main-container">
+            <main class="content">
+                <div class="dashboard-container">
+
+                    <div id="loadingContainer" class="loading-container">
+                        <div class="loading-spinner"></div>
+                        <p>Chargement des communications…</p>
+                    </div>
+
+                    <div id="pilotageContent" style="display:none;">
+                        <div class="admin-shell">
+                            <div class="admin-panel" id="admin-panel">
+                                <!-- Page d'accueil du Pilotage : cards façon bento renvoyant vers
+                                     chaque page, générées dynamiquement (buildBento()) à partir des
+                                     en-têtes .admin-sec-head des sections ci-dessous. -->
+                                <section class="admin-section active" id="tab-menu">
+                                    <div id="admin-bento-container"></div>
+                                </section>
+
+                                <!-- ═══ Coms attendues sur une période ═══ -->
+                                <section class="admin-section" id="tab-coms" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">📅</div>
+                                        <div>
+                                            <h2>Coms attendues</h2>
+                                            <p>Toutes les communications prévues sur la période choisie — d'après la date de réception client du livrable (à défaut, la date d'envoi client de la campagne).</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="pil-filters">
+                                        <div class="pil-filter">
+                                            <label for="f-du">Du</label>
+                                            <input type="date" id="f-du">
+                                        </div>
+                                        <div class="pil-filter">
+                                            <label for="f-au">Au</label>
+                                            <input type="date" id="f-au">
+                                        </div>
+                                        <div class="pil-filter">
+                                            <label for="f-canal">Canal</label>
+                                            <select id="f-canal"><option value="">Tous</option></select>
+                                        </div>
+                                        <div class="pil-filter">
+                                            <label for="f-type">Type de com</label>
+                                            <select id="f-type"><option value="">Tous</option></select>
+                                        </div>
+                                        <button type="button" class="pil-reset" id="f-reset">Réinitialiser</button>
+                                        <span class="pil-count" id="f-count"></span>
+                                    </div>
+
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="pil-table" style="display:none;">
+                                            <thead><tr>
+                                                <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>PO</th>
+                                            </tr></thead>
+                                            <tbody id="pil-tbody"></tbody>
+                                        </table>
+                                        <div id="pil-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">📭</div>
+                                            Aucune com attendue sur cette période avec ces filtres.
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- ═══ Affectation (managers) ═══ -->
+                                <section class="admin-section" id="tab-affectation" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">👥</div>
+                                        <div>
+                                            <h2>Affectation</h2>
+                                            <p>Campagnes en attente d'affectation pour votre équipe — affectez directement depuis cette page.</p>
+                                        </div>
+                                    </div>
+                                    <div id="affect-list"></div>
+                                </section>
+
+                                <!-- ═══ Retards & alertes ═══ -->
+                                <section class="admin-section" id="tab-retards" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">🔴</div>
+                                        <div>
+                                            <h2>Retards &amp; alertes</h2>
+                                            <p>Livrables en retard ou dont l'échéance approche, tous porteurs confondus.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="ret-table" style="display:none;">
+                                            <thead><tr>
+                                                <th>Échéance</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Étape</th><th>Acteur</th>
+                                            </tr></thead>
+                                            <tbody id="ret-tbody"></tbody>
+                                        </table>
+                                        <div id="ret-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">✅</div>
+                                            Aucun retard ni échéance proche pour le moment.
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- ═══ Validations en attente ═══ -->
+                                <section class="admin-section" id="tab-validations" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">⏳</div>
+                                        <div>
+                                            <h2>Validations en attente</h2>
+                                            <p>Tous les livrables actuellement bloqués sur une action — dépôt, validation ou révision — quel qu'en soit le porteur.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-filters">
+                                        <div class="pil-filter">
+                                            <label for="v-role">Équipe</label>
+                                            <select id="v-role"><option value="">Toutes</option></select>
+                                        </div>
+                                        <div class="pil-filter">
+                                            <label for="v-status">Statut</label>
+                                            <select id="v-status"><option value="">Tous</option></select>
+                                        </div>
+                                        <button type="button" class="pil-reset" id="v-reset">Réinitialiser</button>
+                                        <span class="pil-count" id="v-count"></span>
+                                    </div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="val-table" style="display:none;">
+                                            <thead><tr>
+                                                <th>Campagne</th><th>Livrable</th><th>Canal</th><th>Étape</th><th>Statut</th><th>Acteur</th>
+                                            </tr></thead>
+                                            <tbody id="val-tbody"></tbody>
+                                        </table>
+                                        <div id="val-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">🎉</div>
+                                            Rien en attente avec ces filtres.
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- ═══ Charge de travail ═══ -->
+                                <section class="admin-section" id="tab-charge" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">⚖️</div>
+                                        <div>
+                                            <h2>Charge de travail</h2>
+                                            <p>Répartition des livrables actuellement en attente d'action, par personne.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="ch-table" style="display:none;">
+                                            <thead><tr>
+                                                <th>Personne</th><th>Équipe</th><th>En attente</th><th>Dont urgent</th>
+                                            </tr></thead>
+                                            <tbody id="ch-tbody"></tbody>
+                                        </table>
+                                        <div id="ch-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">🎉</div>
+                                            Personne n'a de livrable en attente pour le moment.
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- ═══ Points de friction ═══ -->
+                                <section class="admin-section" id="tab-friction" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">🔥</div>
+                                        <div>
+                                            <h2>Points de friction</h2>
+                                            <p>Canaux avec le plus d'allers-retours — maquette, BAT, ciblage, test en prod… tous types de révisions confondus.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="fric-table" style="display:none;">
+                                            <thead><tr>
+                                                <th>Campagne</th><th>Livrable</th><th>Canal</th><th>Allers-retours</th><th>Détail</th><th>Dernière demande</th>
+                                            </tr></thead>
+                                            <tbody id="fric-tbody"></tbody>
+                                        </table>
+                                        <div id="fric-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">🎉</div>
+                                            Aucun aller-retour enregistré pour le moment.
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- ═══ Vue calendrier ═══ -->
+                                <section class="admin-section" id="tab-calendrier" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">🗓️</div>
+                                        <div>
+                                            <h2>Vue calendrier</h2>
+                                            <p>Les mêmes communications attendues, en calendrier mensuel.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-cal-head">
+                                        <button type="button" class="pil-cal-nav" id="cal-prev">‹</button>
+                                        <div class="pil-cal-title" id="cal-title"></div>
+                                        <button type="button" class="pil-cal-nav" id="cal-next">›</button>
+                                        <button type="button" class="pil-cal-today" id="cal-today-btn">Aujourd'hui</button>
+                                    </div>
+                                    <div class="pil-cal-grid" id="cal-grid"></div>
+                                    <div class="pil-cal-note" id="cal-note"></div>
+                                </section>
+
+                                <!-- ═══ Indicateurs clés ═══ -->
+                                <section class="admin-section" id="tab-kpi" data-group="Pilotage">
+                                    <div class="admin-sec-head">
+                                        <div class="admin-sec-ic">📊</div>
+                                        <div>
+                                            <h2>Indicateurs clés</h2>
+                                            <p>Vue d'ensemble chiffrée de l'activité en cours.</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-kpi-grid" id="kpi-grid"></div>
+                                    <div class="pil-subhead">Canaux par état</div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table"><thead><tr><th>État</th><th>Canaux</th></tr></thead><tbody id="kpi-etat-tbody"></tbody></table>
+                                    </div>
+                                    <div class="pil-subhead">Canaux par type de com</div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table"><thead><tr><th>Type de com</th><th>Canaux</th></tr></thead><tbody id="kpi-type-tbody"></tbody></table>
+                                    </div>
+                                </section>
+
+                            </div><!-- /admin-panel -->
+                        </div><!-- /admin-shell -->
+                    </div><!-- /pilotageContent -->
+                    <div id="errorContainer" style="display:none;"></div>
+                </div><!-- /dashboard-container -->
+            </main>
+        </div>
+    </div>
+
+    <script src="../js/bundle.js"></script>
+    <script>window.ImpulsionMarketing.topbar.mount();</script>
+    <script>
+        // Garde de session : sans identité (choisie au login), retour à l'écran de connexion
+        (function () {
+            var u = window.ImpulsionMarketing && window.ImpulsionMarketing.users;
+            if (!u || !u.getCurrentUser()) { window.location.replace('../login.html'); }
+        })();
+    </script>
+    <script>
+    (function() {
+        'use strict';
+
+        var IM = window.ImpulsionMarketing;
+        var sec = IM.security;
+        function esc(s) { return sec ? sec.escapeHtml(s == null ? '' : String(s)) : String(s == null ? '' : s); }
+        function $(id) { return document.getElementById(id); }
+
+        // ── Cache métadonnées (mêmes bases que le reste de l'app) ──
+        var MetadataCache = (function() {
+            var DB = 'ImpulsionMetaCache', STORE = 'meta', TTL = 300000;
+            var _db = null;
+            function open() {
+                if (_db) return Promise.resolve(_db);
+                return new Promise(function(res) {
+                    var r = indexedDB.open(DB, 1);
+                    r.onupgradeneeded = function(e) { e.target.result.createObjectStore(STORE, { keyPath: 'k' }); };
+                    r.onsuccess = function(e) { _db = e.target.result; res(_db); };
+                    r.onerror = function() { res(null); };
+                });
+            }
+            return {
+                getMany: function(keys) {
+                    if (!keys.length) return Promise.resolve({});
+                    return open().then(function(db) {
+                        if (!db) return {};
+                        return new Promise(function(res) {
+                            var out = {}, n = keys.length, now = Date.now();
+                            var tx = db.transaction(STORE, 'readonly'), st = tx.objectStore(STORE);
+                            keys.forEach(function(k) {
+                                var q = st.get(k);
+                                q.onsuccess = function(e) {
+                                    var r = e.target.result;
+                                    if (r && (now - r.ts) < TTL) out[k] = r.d;
+                                    if (!--n) res(out);
+                                };
+                                q.onerror = function() { if (!--n) res(out); };
+                            });
+                        });
+                    }).catch(function() { return {}; });
+                },
+                set: function(key, data) {
+                    open().then(function(db) {
+                        if (!db) return;
+                        db.transaction(STORE, 'readwrite').objectStore(STORE).put({ k: key, d: data, ts: Date.now() });
+                    }).catch(function() {});
+                }
+            };
+        })();
+
+        var state = { root: null, campaignsFolder: null, allCampaigns: [], coms: [], pendingItems: [], channelStats: [], hotspots: [] };
+
+        function showError(msg) {
+            $('loadingContainer').style.display = 'none';
+            var c = $('errorContainer');
+            c.style.display = 'block';
+            c.innerHTML = '<div class="error-banner">⚠️ ' + esc(msg) + '</div>';
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // CHARGEMENT — lecture complète des campagne.json (les canaux
+        // portent comType / sendDate, absents du résumé d'index).
+        // ─────────────────────────────────────────────────────────
+        async function loadAllCampaigns() {
+            var perf = IM.performance;
+            var entries = [];
+            for await (var entry of state.campaignsFolder.values()) {
+                if (entry.kind === 'directory') entries.push(entry);
+            }
+            var names = entries.map(function(e) { return e.name; });
+            var cached = await MetadataCache.getMany(names);
+
+            var campaigns = await perf.parallelLimit(entries, async function(entry) {
+                if (cached[entry.name]) {
+                    var d0 = Object.assign({}, cached[entry.name]);
+                    d0.folderName = entry.name;
+                    return d0;
+                }
+                return entry.getFileHandle('campagne.json')
+                    .then(function(fh) { return fh.getFile(); })
+                    .then(function(f)  { return f.text(); })
+                    .then(function(txt) {
+                        var raw = JSON.parse(txt);
+                        MetadataCache.set(entry.name, raw);
+                        var d = Object.assign({}, raw);
+                        d.folderName = entry.name;
+                        return d;
+                    })
+                    .catch(function() { return null; });
+            }, 20);
+
+            state.allCampaigns = campaigns.filter(function(c) { return c && c.actif !== false; });
+            // Repère l'état « tel que lu » de chaque campagne pour la fusion 3-way
+            // à la sauvegarde (page Affectation) — même précaution qu'à l'ouverture
+            // d'une campagne dans details.html.
+            if (IM.workflow && IM.workflow.captureBaseline) {
+                state.allCampaigns.forEach(function(c) { IM.workflow.captureBaseline(c); });
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // COMS ATTENDUES — une ligne par canal (livrable)
+        // Date retenue : sendDate du canal si c'est une vraie date,
+        // sinon la date d'envoi client de la campagne (launchDate).
+        // Un sendDate en texte libre (délai/condition) est affiché en note.
+        // ─────────────────────────────────────────────────────────
+        var ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+        function buildComs() {
+            var coms = [];
+            state.allCampaigns.forEach(function(c) {
+                (c.channels || []).forEach(function(ch, i) {
+                    var sd = (ch.sendDate || '').trim();
+                    var date = ISO_DATE.test(sd) ? sd : (c.launchDate || '');
+                    var cond = (sd && !ISO_DATE.test(sd)) ? sd : '';
+                    coms.push({
+                        date: date,                                  // YYYY-MM-DD ou ''
+                        cond: cond,                                  // délai / condition libre
+                        campagne: c.id || c.folderName,
+                        folderName: c.folderName,
+                        livrable: ch.deliverableName || ('Canal ' + (i + 1)),
+                        canal: ch.content || '',
+                        comType: ch.comType || '',
+                        po: c.po || ''
+                    });
+                });
+            });
+            coms.sort(function(a, b) { return (a.date || '9999').localeCompare(b.date || '9999'); });
+            state.coms = coms;
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // ANALYSE WORKFLOW — commune aux pages Retards / Validations /
+        // Charge de travail / Indicateurs : pour chaque canal de chaque
+        // campagne, l'étape courante (si en attente d'une action) + un
+        // instantané (état, type de com, allers-retours) pour les KPI.
+        // Repose entièrement sur js/workflow-standalone.js (mêmes règles
+        // que le tableau de bord et details.html — aucune règle dupliquée).
+        // ─────────────────────────────────────────────────────────
+        var ROLE_LABEL_FALLBACK = { po: 'PO', manager: 'Manager', com: 'Com', ebf: 'EBF', data: 'Data' };
+        function roleLabel(role) {
+            var rl = (IM.config && IM.config.ROLE_LABELS) || {};
+            return rl[role] || ROLE_LABEL_FALLBACK[role] || role || '—';
+        }
+        function asArr(v) { return Array.isArray(v) ? v : (v ? [v] : []); }
+        var STATUS_LABEL = { pending: 'En attente', revision_requested: 'Révision demandée' };
+        var ETAT_LABEL = { maq: 'Maquette / conception', prod: 'Production', valid: 'En validation', urgent: 'Révision demandée', done: 'Terminé' };
+
+        // Date de référence d'un canal (même règle que « Coms attendues ») :
+        // sendDate si c'est une vraie date, sinon la date d'envoi client.
+        function resolveChannelDate(c, ch) {
+            var sd = ((ch && ch.sendDate) || '').trim();
+            return ISO_DATE.test(sd) ? sd : (c.launchDate || null);
+        }
+
+        // Écart à aujourd'hui, mêmes seuils que le tableau de bord
+        // (Administration ▸ Paramètres généraux : urgentThresholdDays / dueSoonDays).
+        function computeDelay(dateStr) {
+            if (!dateStr) return null;
+            var d = new Date(dateStr + 'T00:00:00');
+            if (isNaN(d.getTime())) return null;
+            var today = new Date(); today.setHours(0, 0, 0, 0);
+            var diff = Math.round((d - today) / 86400000);
+            var s = (IM.config && IM.config.APP_SETTINGS) || {};
+            var near = (s.urgentThresholdDays != null) ? s.urgentThresholdDays : 7;
+            var soon = (s.dueSoonDays != null) ? s.dueSoonDays : 2;
+            if (diff < 0)    return { days: diff, overdue: true,  urgent: true,                text: 'Retard de ' + (-diff) + ' j' };
+            if (diff === 0)  return { days: 0,     overdue: false, urgent: true,                text: "Aujourd'hui" };
+            if (diff <= near) return { days: diff, overdue: false, urgent: diff <= soon,         text: 'Dans ' + diff + ' j' };
+            return               { days: diff, overdue: false, urgent: false,                    text: 'Dans ' + diff + ' j' };
+        }
+
+        function buildAnalytics() {
+            var wf = IM.workflow;
+            var pending = [], channelStats = [], hotspots = [];
+            state.allCampaigns.forEach(function (c) {
+                wf.initWorkflow(c);
+                var jur = wf.juridiqueRequired(c);
+                var channels = c.channels || [];
+                var cs = (c.workflow && c.workflow.channelSteps) || {};
+                var progress = wf.getChannelProgress(c);
+                channels.forEach(function (ch, idx) {
+                    var content = ch && ch.content;
+                    var ids = wf.channelStepIds(c.requiredTeams, content, jur);
+                    var steps = cs[idx] || {};
+                    var log = wf.getChannelRevisionLog(c, idx);
+
+                    channelStats.push({
+                        comType: (ch && ch.comType) || '',
+                        progressKey: (progress[idx] && progress[idx].key) || 'maq',
+                        revisionCount: log.length
+                    });
+
+                    // Points de friction : TOUTES les révisions du canal, quelle que soit
+                    // l'étape reprise (maquette, BAT, test en prod, ciblage…) — pas
+                    // seulement le BAT. groupées par étape pour voir où ça coince.
+                    if (log.length) {
+                        var byStep = {};
+                        log.forEach(function (entry) {
+                            var key = entry.stepId;
+                            if (!byStep[key]) byStep[key] = { stepId: key, stepLabel: wf.stepLabel(key), count: 0 };
+                            byStep[key].count++;
+                        });
+                        var last = log[log.length - 1];
+                        hotspots.push({
+                            campaignName: c.id || c.folderName, folderName: c.folderName,
+                            deliverableName: (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (idx + 1)),
+                            canal: content || '',
+                            total: log.length,
+                            byStep: Object.keys(byStep).map(function (k) { return byStep[k]; }).sort(function (a, b) { return b.count - a.count; }),
+                            last: { stepLabel: wf.stepLabel(last.stepId), author: last.author, date: last.date, comment: last.comment }
+                        });
+                    }
+
+                    // Une seule étape par canal est réellement « actionnable » à la fois —
+                    // pending ou revision_requested, même définition que getAvailableActions().
+                    // Un dépôt marqué « submitted » n'est plus actionnable par son propre acteur :
+                    // la main est passée à l'étape de validation suivante (déjà 'pending'), qu'on
+                    // trouvera en continuant la boucle. On affiche donc toujours l'étape
+                    // réellement bloquante, jamais un dépôt déjà effectué.
+                    for (var k = 0; k < ids.length; k++) {
+                        var id = ids[k];
+                        var status = steps[id] || 'locked';
+                        if (status === 'pending' || status === 'revision_requested') {
+                            var role = wf.stepActor(id, content);
+                            var names = (role === 'po')
+                                ? [c.po].concat(asArr(c.coPo)).filter(Boolean)
+                                : wf.channelAssignees(c, idx, role);
+                            if (!names.length) names = ['(non affecté)'];
+                            var dateRef = resolveChannelDate(c, ch);
+                            pending.push({
+                                campaignName: c.id || c.folderName, folderName: c.folderName,
+                                deliverableName: (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (idx + 1)),
+                                canal: content || '',
+                                stepId: id, stepLabel: wf.stepLabel(id), status: status,
+                                role: role, names: names,
+                                dateRef: dateRef, delay: computeDelay(dateRef)
+                            });
+                            break; // une seule étape « courante » par canal
+                        }
+                    }
+                });
+            });
+            state.pendingItems = pending;
+            state.channelStats = channelStats;
+            hotspots.sort(function (a, b) { return b.total - a.total; });
+            state.hotspots = hotspots;
+        }
+
+        // ── Affectation (managers) ──
+        // Mêmes règles de visibilité et de complétion que le bloc « Manager :
+        // affectation » de details.html (users.isCurrentUserManager(),
+        // managerAffectationDone, isGeneralManager) — appliquées à TOUTES
+        // les campagnes plutôt qu'à une seule, pour affecter sans ouvrir
+        // chaque campagne une par une.
+        function computeAssignmentTargets() {
+            var user = IM.users.getCurrentUser();
+            if (!user || !IM.users.isCurrentUserManager()) return [];
+            var isGeneral = (user.role === 'marketing' && user.isManager === true) || user.isSuperAdmin === true;
+            var out = [];
+            state.allCampaigns.forEach(function (c) {
+                IM.workflow.initWorkflow(c);
+                var steps = c.workflow.steps || {};
+                if (steps.manager_affectation !== 'pending') return;
+                if (IM.workflow.managerAffectationDone(user, c)) return;
+                var req = c.requiredTeams || [];
+                var needsCom  = req.length === 0 || req.indexOf('Com')  !== -1;
+                var needsEbf  = req.length === 0 || req.indexOf('EBF')  !== -1;
+                var needsData = req.length === 0 || req.indexOf('Data') !== -1;
+                var showCom  = (isGeneral || user.role === 'com')  && needsCom;
+                var showEbf  = (isGeneral || user.role === 'ebf')  && needsEbf;
+                var showData = (isGeneral || user.role === 'data') && needsData;
+                if (!showCom && !showEbf && !showData) return;
+                out.push({ campaign: c, isGeneral: isGeneral, showCom: showCom, showEbf: showEbf, showData: showData, needsCom: needsCom, needsEbf: needsEbf, needsData: needsData });
+            });
+            return out;
+        }
+
+        function renderAffectation() {
+            var cont = $('affect-list');
+            if (!cont) return; // section retirée du DOM (utilisateur non manager)
+            var targets = computeAssignmentTargets();
+            if (!targets.length) {
+                cont.innerHTML = '<div class="pil-empty"><div class="big">🎉</div>Aucune campagne en attente d\'affectation pour votre équipe.</div>';
+                return;
+            }
+            cont.innerHTML = targets.map(function (t) {
+                var c = t.campaign;
+                var assignments = (c.workflow && c.workflow.assignments) || {};
+                function teamBlock(role, label, teamUsers) {
+                    var cur = asArr(assignments[role]);
+                    var h = '<div class="pil-affect-team"><div class="pil-affect-team-label">' + esc(label) + '</div><div class="pil-affect-team-list">';
+                    if (!teamUsers.length) h += '<span style="font-size:12px;color:var(--muted-2);">Aucune personne dans cette équipe.</span>';
+                    teamUsers.forEach(function (u) {
+                        var checked = cur.indexOf(u.name) !== -1 ? ' checked' : '';
+                        h += '<label><input type="checkbox" data-role="' + role + '" value="' + esc(u.name) + '"' + checked + '> ' + esc(u.name) + '</label>';
+                    });
+                    h += '</div></div>';
+                    return h;
+                }
+                var teamsHtml = '';
+                if (t.showCom)  teamsHtml += teamBlock('com', roleLabel('com'), IM.users.getUsersByRole('com'));
+                if (t.showEbf)  teamsHtml += teamBlock('ebf', roleLabel('ebf'), IM.users.getUsersByRole('ebf'));
+                if (t.showData) teamsHtml += teamBlock('data', roleLabel('data'), IM.users.getUsersByRole('data'));
+
+                var stateHtml = '';
+                if (!t.isGeneral) {
+                    var parts = [];
+                    if (t.needsCom)  parts.push((asArr(assignments.com).length ? '✅' : '⏳') + ' ' + esc(roleLabel('com')) + ' : ' + esc(asArr(assignments.com).join(', ') || 'non assigné'));
+                    if (t.needsEbf)  parts.push((asArr(assignments.ebf).length ? '✅' : '⏳') + ' ' + esc(roleLabel('ebf')) + ' : ' + esc(asArr(assignments.ebf).join(', ') || 'non assigné'));
+                    if (t.needsData) parts.push((asArr(assignments.data).length ? '✅' : '⏳') + ' ' + esc(roleLabel('data')) + ' : ' + esc(asArr(assignments.data).join(', ') || 'non assigné'));
+                    stateHtml = '<div class="pil-affect-state">' + parts.join(' &nbsp;|&nbsp; ') + '</div>';
+                }
+
+                var reqAttr = [t.needsCom ? 'com' : '', t.needsEbf ? 'ebf' : '', t.needsData ? 'data' : ''].filter(Boolean).join(',');
+                var btnLabel = t.isGeneral ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation';
+                return '<div class="pil-affect-card" data-folder="' + esc(c.folderName) + '">'
+                    + '<div class="pil-affect-head"><strong>' + esc(c.id || c.folderName) + '</strong>'
+                    + '<span class="pil-affect-meta">PO : ' + esc(c.po || '—') + (c.launchDate ? ' · Envoi client : ' + frDate(c.launchDate) : '') + '</span></div>'
+                    + stateHtml
+                    + '<div class="pil-affect-teams">' + teamsHtml + '</div>'
+                    + '<button type="button" class="pil-affect-btn" data-general="' + t.isGeneral + '" data-required="' + reqAttr + '">' + btnLabel + '</button>'
+                    + '</div>';
+            }).join('');
+
+            cont.querySelectorAll('.pil-affect-btn').forEach(function (btn, i) {
+                btn.addEventListener('click', function () { submitAffectation(targets[i], btn); });
+            });
+        }
+
+        function submitAffectation(target, btn) {
+            var c = target.campaign;
+            var card = btn.closest('.pil-affect-card');
+            var user = IM.users.getCurrentUser();
+            function collect(role) {
+                return Array.prototype.map.call(card.querySelectorAll('input[data-role="' + role + '"]:checked'), function (cb) { return cb.value; });
+            }
+            IM.workflow.initWorkflow(c);
+            if (target.isGeneral) {
+                var com = target.showCom ? collect('com') : [];
+                var ebf = target.showEbf ? collect('ebf') : [];
+                var dat = target.showData ? collect('data') : [];
+                var missing = (target.needsCom && !com.length) || (target.needsEbf && !ebf.length) || (target.needsData && !dat.length);
+                if (missing) { notifyPil('Sélectionnez au moins une personne pour chaque équipe requise.', 'warning'); return; }
+                if (com.length) c.workflow.assignments.com  = com;
+                if (ebf.length) c.workflow.assignments.ebf  = ebf;
+                if (dat.length) c.workflow.assignments.data = dat;
+                c.workflow.assignments.manager = user.name;
+                IM.workflow.advanceStep(c, 'manager_affectation', 'validated');
+            } else {
+                var role = target.showCom ? 'com' : (target.showEbf ? 'ebf' : 'data');
+                var vals = collect(role);
+                if (!vals.length) { notifyPil('Sélectionnez au moins une personne.', 'warning'); return; }
+                c.workflow.assignments[role] = vals;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Enregistrement…';
+            IM.workflow.saveCampaignWorkflow(state.root, c.folderName, c)
+                .then(function () {
+                    // Après sauvegarde, c reflète la fusion disque (affectations faites
+                    // entre-temps par d'autres managers) : on revalide l'étape si l'équipe
+                    // est maintenant complète, comme le fait details.html.
+                    var a = c.workflow.assignments || {};
+                    var reqArr = [target.needsCom ? 'com' : '', target.needsEbf ? 'ebf' : '', target.needsData ? 'data' : ''].filter(Boolean);
+                    function teamOK(k) { return reqArr.indexOf(k) === -1 || (a[k] && a[k].length); }
+                    var complete = teamOK('com') && teamOK('ebf') && teamOK('data');
+                    var steps = c.workflow.steps || {};
+                    var notValidated = steps.manager_affectation !== 'validated' && steps.manager_affectation !== 'completed';
+                    if (complete && notValidated) {
+                        if (!a.manager) a.manager = user.name;
+                        IM.workflow.advanceStep(c, 'manager_affectation', 'validated');
+                        return IM.workflow.saveCampaignWorkflow(state.root, c.folderName, c).then(function () {
+                            notifyPil('Affectation complète — étape validée ✅', 'success');
+                        });
+                    }
+                    notifyPil(target.isGeneral ? 'Affectation enregistrée.' : 'Affectation enregistrée — en attente des autres équipes.', 'success');
+                })
+                .then(function () {
+                    buildAnalytics();
+                    renderAffectation();
+                    renderRetards();
+                    renderValidations();
+                    renderCharge();
+                    renderKpi();
+                })
+                .catch(function (err) {
+                    btn.disabled = false;
+                    btn.textContent = target.isGeneral ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation';
+                    notifyPil('Erreur : ' + (err && err.message || err), 'error');
+                });
+        }
+        function notifyPil(msg, type) {
+            if (IM.errors && IM.errors.showNotification) IM.errors.showNotification(msg, type);
+        }
+
+        function wireRowNav(tbody) {
+            tbody.querySelectorAll('.pil-row').forEach(function (row) {
+                row.addEventListener('click', function () {
+                    window.location.href = 'details.html?name=' + encodeURIComponent(row.getAttribute('data-name'));
+                });
+            });
+        }
+
+        // ── Retards & alertes ──
+        function renderRetards() {
+            var items = state.pendingItems.filter(function (it) { return it.delay && it.delay.urgent; });
+            items.sort(function (a, b) { return a.delay.days - b.delay.days; });
+            var table = $('ret-table'), empty = $('ret-empty'), tbody = $('ret-tbody');
+            if (!items.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+            var html = '', lastGroup = null;
+            items.forEach(function (it) {
+                var group = it.delay.overdue ? 'En retard' : 'Échéance proche';
+                if (group !== lastGroup) { lastGroup = group; html += '<tr class="pil-week"><td colspan="6">' + esc(group) + '</td></tr>'; }
+                html += '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
+                    + '<td><span class="pil-badge ' + (it.delay.overdue ? 'pil-badge-overdue' : 'pil-badge-soon') + '">' + esc(it.delay.text) + '</span></td>'
+                    + '<td class="pil-camp">' + esc(it.campaignName) + '</td>'
+                    + '<td>' + esc(it.deliverableName) + '</td>'
+                    + '<td>' + (it.canal ? '<span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '—') + '</td>'
+                    + '<td>' + esc(it.stepLabel) + '</td>'
+                    + '<td>' + esc(it.names.join(', ')) + ' <span class="pil-badge pil-role-' + esc(it.role) + '">' + esc(roleLabel(it.role)) + '</span></td>'
+                    + '</tr>';
+            });
+            tbody.innerHTML = html;
+            wireRowNav(tbody);
+        }
+
+        // ── Validations en attente ──
+        function populateValidationFilters() {
+            var roles = ['po', 'com', 'ebf', 'data'];
+            $('v-role').innerHTML = '<option value="">Toutes</option>' + roles.map(function (r) {
+                return '<option value="' + r + '">' + esc(roleLabel(r)) + '</option>';
+            }).join('');
+            $('v-status').innerHTML = '<option value="">Tous</option>' + Object.keys(STATUS_LABEL).map(function (s) {
+                return '<option value="' + s + '">' + esc(STATUS_LABEL[s]) + '</option>';
+            }).join('');
+        }
+        function renderValidations() {
+            var role = $('v-role').value, status = $('v-status').value;
+            var items = state.pendingItems.filter(function (it) {
+                if (role && it.role !== role) return false;
+                if (status && it.status !== status) return false;
+                return true;
+            });
+            $('v-count').textContent = items.length + ' livrable' + (items.length > 1 ? 's' : '') + ' en attente';
+            var table = $('val-table'), empty = $('val-empty'), tbody = $('val-tbody');
+            if (!items.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+            items.sort(function (a, b) { return a.campaignName.localeCompare(b.campaignName); });
+            var html = '';
+            items.forEach(function (it) {
+                var statusClass = it.status === 'revision_requested' ? 'pil-status-revision' : 'pil-status-pending';
+                html += '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
+                    + '<td class="pil-camp">' + esc(it.campaignName) + '</td>'
+                    + '<td>' + esc(it.deliverableName) + '</td>'
+                    + '<td>' + (it.canal ? '<span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '—') + '</td>'
+                    + '<td>' + esc(it.stepLabel) + '</td>'
+                    + '<td><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
+                    + '<td>' + esc(it.names.join(', ')) + ' <span class="pil-badge pil-role-' + esc(it.role) + '">' + esc(roleLabel(it.role)) + '</span></td>'
+                    + '</tr>';
+            });
+            tbody.innerHTML = html;
+            wireRowNav(tbody);
+        }
+        function wireValidationFilters() {
+            ['v-role', 'v-status'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
+            $('v-reset').addEventListener('click', function () { $('v-role').value = ''; $('v-status').value = ''; renderValidations(); });
+        }
+
+        // ── Charge de travail ──
+        function renderCharge() {
+            var byPerson = {};
+            state.pendingItems.forEach(function (it) {
+                it.names.forEach(function (name) {
+                    if (name === '(non affecté)') return;
+                    if (!byPerson[name]) byPerson[name] = { role: it.role, total: 0, urgent: 0 };
+                    byPerson[name].total++;
+                    if (it.delay && it.delay.urgent) byPerson[name].urgent++;
+                });
+            });
+            var rows = Object.keys(byPerson).map(function (name) { return Object.assign({ name: name }, byPerson[name]); });
+            rows.sort(function (a, b) { return b.total - a.total; });
+            var table = $('ch-table'), empty = $('ch-empty'), tbody = $('ch-tbody');
+            if (!rows.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+            tbody.innerHTML = rows.map(function (r) {
+                return '<tr>'
+                    + '<td class="pil-camp">' + esc(r.name) + '</td>'
+                    + '<td><span class="pil-badge pil-role-' + esc(r.role) + '">' + esc(roleLabel(r.role)) + '</span></td>'
+                    + '<td>' + r.total + '</td>'
+                    + '<td>' + (r.urgent ? '<span class="pil-badge pil-badge-overdue">' + r.urgent + '</span>' : '0') + '</td>'
+                    + '</tr>';
+            }).join('');
+        }
+
+        // ── Indicateurs clés ──
+        function renderKpi() {
+            var totalCampaigns = state.allCampaigns.length;
+            var totalChannels = state.channelStats.length;
+            var totalPending = state.pendingItems.length;
+            var totalOverdue = state.pendingItems.filter(function (it) { return it.delay && it.delay.overdue; }).length;
+            var totalRevisions = state.channelStats.reduce(function (s, c) { return s + c.revisionCount; }, 0);
+            var avgRevisions = totalChannels ? (totalRevisions / totalChannels) : 0;
+
+            var tiles = [
+                { num: totalCampaigns, label: 'Campagnes actives' },
+                { num: totalChannels, label: 'Canaux actifs' },
+                { num: totalPending, label: 'Livrables en attente' },
+                { num: totalOverdue, label: 'Livrables en retard', warn: totalOverdue > 0 },
+                { num: avgRevisions.toFixed(1), label: 'Allers-retours / canal (moy.)' }
+            ];
+            $('kpi-grid').innerHTML = tiles.map(function (t) {
+                return '<div class="pil-kpi-tile' + (t.warn ? ' warn' : '') + '"><div class="pil-kpi-num">' + esc(t.num) + '</div><div class="pil-kpi-label">' + esc(t.label) + '</div></div>';
+            }).join('');
+
+            var etatCounts = {};
+            state.channelStats.forEach(function (c) { etatCounts[c.progressKey] = (etatCounts[c.progressKey] || 0) + 1; });
+            $('kpi-etat-tbody').innerHTML = Object.keys(ETAT_LABEL).map(function (k) {
+                return '<tr><td>' + esc(ETAT_LABEL[k]) + '</td><td>' + (etatCounts[k] || 0) + '</td></tr>';
+            }).join('');
+
+            var typeCounts = {};
+            state.channelStats.forEach(function (c) { var t = c.comType || '(non renseigné)'; typeCounts[t] = (typeCounts[t] || 0) + 1; });
+            var typeKeys = Object.keys(typeCounts).sort(function (a, b) { return typeCounts[b] - typeCounts[a]; });
+            $('kpi-type-tbody').innerHTML = typeKeys.map(function (t) {
+                return '<tr><td><span class="pil-badge ' + ctBadgeClass(t) + '">' + esc(t) + '</span></td><td>' + typeCounts[t] + '</td></tr>';
+            }).join('');
+        }
+
+        // ── Points de friction ──
+        function renderFriction() {
+            var items = state.hotspots;
+            var table = $('fric-table'), empty = $('fric-empty'), tbody = $('fric-tbody');
+            if (!items.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+            tbody.innerHTML = items.map(function (h) {
+                var countClass = h.total >= 3 ? 'hot' : (h.total >= 2 ? 'warn' : '');
+                var chips = h.byStep.map(function (s) {
+                    return '<span class="pil-friction-chip">' + esc(s.stepLabel) + ' ×' + s.count + '</span>';
+                }).join('');
+                var lastTitle = h.last.comment ? ' title="' + esc(h.last.comment) + '"' : '';
+                return '<tr class="pil-row" data-name="' + esc(h.folderName) + '">'
+                    + '<td class="pil-camp">' + esc(h.campaignName) + '</td>'
+                    + '<td>' + esc(h.deliverableName) + '</td>'
+                    + '<td>' + (h.canal ? '<span class="pil-badge pil-canal">' + esc(h.canal) + '</span>' : '—') + '</td>'
+                    + '<td><span class="pil-friction-count ' + countClass + '">' + h.total + '</span></td>'
+                    + '<td><div class="pil-friction-chips">' + chips + '</div></td>'
+                    + '<td' + lastTitle + '><div class="pil-friction-last">' + esc(h.last.stepLabel) + '<br>' + esc(h.last.date || '—') + (h.last.author ? ' · ' + esc(h.last.author) : '') + '</div></td>'
+                    + '</tr>';
+            }).join('');
+            wireRowNav(tbody);
+        }
+
+        // ── Vue calendrier ── (réutilise state.coms, déjà construit par buildComs())
+        var calDate = (function () { var n = new Date(); return new Date(n.getFullYear(), n.getMonth(), 1); })();
+        var MONTH_NAMES = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        var DOW_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        function isoOf(d) {
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        }
+        function renderCalendar() {
+            var y = calDate.getFullYear(), m = calDate.getMonth();
+            $('cal-title').textContent = MONTH_NAMES[m] + ' ' + y;
+
+            var firstOfMonth = new Date(y, m, 1);
+            var startOffset = (firstOfMonth.getDay() + 6) % 7; // jours à reculer jusqu'au lundi
+            var gridStart = new Date(y, m, 1 - startOffset);
+            var todayIso = isoOf(new Date());
+
+            var byDate = {};
+            state.coms.forEach(function (co) { if (co.date) (byDate[co.date] || (byDate[co.date] = [])).push(co); });
+
+            var html = DOW_NAMES.map(function (d) { return '<div class="pil-cal-dow">' + d + '</div>'; }).join('');
+            for (var i = 0; i < 42; i++) {
+                var cellDate = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + i);
+                var cellIso = isoOf(cellDate);
+                var outOfMonth = cellDate.getMonth() !== m;
+                var items = byDate[cellIso] || [];
+                var cls = 'pil-cal-day' + (outOfMonth ? ' pil-cal-out' : '') + (cellIso === todayIso ? ' pil-cal-today-cell' : '');
+                var itemsHtml = items.slice(0, 3).map(function (co) {
+                    return '<div class="pil-cal-item" data-name="' + esc(co.folderName) + '" title="' + esc(co.campagne + ' — ' + co.livrable) + '">' + esc(co.livrable) + '</div>';
+                }).join('');
+                if (items.length > 3) itemsHtml += '<div class="pil-cal-more">+ ' + (items.length - 3) + ' autre' + (items.length - 3 > 1 ? 's' : '') + '</div>';
+                html += '<div class="' + cls + '"><div class="pil-cal-daynum">' + cellDate.getDate() + '</div>' + itemsHtml + '</div>';
+            }
+            $('cal-grid').innerHTML = html;
+            $('cal-grid').querySelectorAll('.pil-cal-item').forEach(function (el) {
+                el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
+            });
+
+            var undated = state.coms.filter(function (co) { return !co.date; }).length;
+            $('cal-note').textContent = undated
+                ? (undated + ' communication' + (undated > 1 ? 's' : '') + ' sans date exploitable, non affichée' + (undated > 1 ? 's' : '') + ' ici — voir « Coms attendues ».')
+                : '';
+        }
+        function wireCalendarNav() {
+            $('cal-prev').addEventListener('click', function () { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); });
+            $('cal-next').addEventListener('click', function () { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); });
+            $('cal-today-btn').addEventListener('click', function () {
+                var n = new Date(); calDate = new Date(n.getFullYear(), n.getMonth(), 1); renderCalendar();
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // FILTRES
+        // ─────────────────────────────────────────────────────────
+        function isoPlusDays(n) {
+            var d = new Date(); d.setDate(d.getDate() + n);
+            return d.toISOString().slice(0, 10);
+        }
+        function setDefaultPeriod() {
+            $('f-du').value = isoPlusDays(0);
+            $('f-au').value = isoPlusDays(30);
+        }
+        function populateFilters() {
+            var cfg = IM.config || {};
+            // Canaux : liste de la config + valeurs réellement présentes dans les données.
+            var canaux = (cfg.CANAUX || []).slice();
+            var types  = (cfg.TYPES_COM || []).slice();
+            state.coms.forEach(function(co) {
+                if (co.canal && canaux.indexOf(co.canal) === -1) canaux.push(co.canal);
+                if (co.comType && types.indexOf(co.comType) === -1) types.push(co.comType);
+            });
+            function fill(id, list) {
+                var sel = $(id), cur = sel.value;
+                sel.innerHTML = '<option value="">Tous</option>' + list.map(function(v) {
+                    return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+                }).join('');
+                sel.value = cur;
+            }
+            fill('f-canal', canaux);
+            fill('f-type', types);
+        }
+
+        // Couleur du badge « Type de com » dérivée de la position dans IM.config.TYPES_COM
+        // (piloté par _config.json / Administration) — aucun nom de catégorie codé en dur.
+        var PIL_CT_PALETTE = ['pil-ct-com', 'pil-ct-ges', 'pil-ct-reg', 'pil-ct-pal3', 'pil-ct-pal4', 'pil-ct-pal5'];
+        function ctBadgeClass(t) {
+            var types = (window.ImpulsionMarketing.config.TYPES_COM || []);
+            var idx = types.indexOf(t);
+            if (idx === -1) return 'pil-ct-none';
+            return PIL_CT_PALETTE[idx % PIL_CT_PALETTE.length];
+        }
+        function frDate(iso) {
+            if (!iso) return '—';
+            var p = iso.split('-');
+            return p.length === 3 ? (p[2] + '/' + p[1] + '/' + p[0]) : iso;
+        }
+        // Lundi de la semaine ISO d'une date (pour le regroupement).
+        function mondayOf(iso) {
+            var d = new Date(iso + 'T00:00:00');
+            var day = (d.getDay() + 6) % 7;
+            d.setDate(d.getDate() - day);
+            return d.toISOString().slice(0, 10);
+        }
+
+        function render() {
+            var du = $('f-du').value, au = $('f-au').value;
+            var canal = $('f-canal').value, type = $('f-type').value;
+
+            var list = state.coms.filter(function(co) {
+                if (!co.date) return false;                          // pas de date exploitable
+                if (du && co.date < du) return false;
+                if (au && co.date > au) return false;
+                if (canal && co.canal !== canal) return false;
+                if (type && co.comType !== type) return false;
+                return true;
+            });
+
+            $('f-count').textContent = list.length + ' com' + (list.length > 1 ? 's' : '') + ' attendue' + (list.length > 1 ? 's' : '');
+
+            var table = $('pil-table'), empty = $('pil-empty'), tbody = $('pil-tbody');
+            if (!list.length) {
+                table.style.display = 'none';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            table.style.display = 'table';
+
+            var html = '', lastWeek = null;
+            list.forEach(function(co) {
+                var wk = mondayOf(co.date);
+                if (wk !== lastWeek) {
+                    lastWeek = wk;
+                    html += '<tr class="pil-week"><td colspan="6">Semaine du ' + frDate(wk) + '</td></tr>';
+                }
+                html += '<tr class="pil-row" data-name="' + esc(co.folderName) + '">'
+                    + '<td class="pil-date">' + frDate(co.date)
+                    + (co.cond ? '<span class="pil-cond">⏱ ' + esc(co.cond) + '</span>' : '') + '</td>'
+                    + '<td class="pil-camp">' + esc(co.campagne) + '</td>'
+                    + '<td>' + esc(co.livrable) + '</td>'
+                    + '<td>' + (co.canal ? '<span class="pil-badge pil-canal">' + esc(co.canal) + '</span>' : '—') + '</td>'
+                    + '<td><span class="pil-badge ' + ctBadgeClass(co.comType) + '">' + esc(co.comType || '—') + '</span></td>'
+                    + '<td>' + esc(co.po || '—') + '</td>'
+                    + '</tr>';
+            });
+            tbody.innerHTML = html;
+
+            tbody.querySelectorAll('.pil-row').forEach(function(row) {
+                row.addEventListener('click', function() {
+                    window.location.href = 'details.html?name=' + encodeURIComponent(row.getAttribute('data-name'));
+                });
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // MENU (façon Administration) — page d'accueil en cards, une
+        // section par page de pilotage, groupées par data-group.
+        // ─────────────────────────────────────────────────────────
+        // ── Favoris (accès rapide) ── stockés localement, 4 maximum, indépendants
+        // du groupe d'origine — remontent en haut du menu dans leur propre rangée.
+        var FAV_KEY = 'im_pilotage_favorites';
+        var FAV_MAX = 4;
+        function getFavorites() {
+            try { var arr = JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); return Array.isArray(arr) ? arr : []; }
+            catch (e) { return []; }
+        }
+        function setFavorites(arr) {
+            try { localStorage.setItem(FAV_KEY, JSON.stringify(arr)); } catch (e) {}
+        }
+        function toggleFavorite(key) {
+            var favs = getFavorites();
+            var idx = favs.indexOf(key);
+            if (idx !== -1) {
+                favs.splice(idx, 1);
+            } else {
+                if (favs.length >= FAV_MAX) { notifyPil('Maximum ' + FAV_MAX + ' favoris — retirez-en un avant d\'en ajouter un nouveau.', 'warning'); return; }
+                favs.push(key);
+            }
+            setFavorites(favs);
+            buildBento();
+        }
+
+        function buildBento() {
+            var cont = $('admin-bento-container');
+            if (!cont) return;
+            var groups = {}, order = [], sectionByKey = {};
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                var g = sec.getAttribute('data-group');
+                if (!groups[g]) { groups[g] = []; order.push(g); }
+                groups[g].push(sec);
+                sectionByKey[sec.id.replace(/^tab-/, '')] = sec;
+            });
+            var favorites = getFavorites().filter(function (k) { return sectionByKey[k]; });
+
+            function cardHtml(sec) {
+                var key = sec.id.replace(/^tab-/, '');
+                var ic = (sec.querySelector('.admin-sec-ic') || {}).textContent || '';
+                var label = (sec.querySelector('.admin-sec-head h2') || {}).textContent || key;
+                var desc = (sec.querySelector('.admin-sec-head p') || {}).textContent || '';
+                var isFav = favorites.indexOf(key) !== -1;
+                return '<button type="button" class="admin-bento-card" data-tab="' + esc(key) + '">'
+                    + '<button type="button" class="pil-fav-star' + (isFav ? ' active' : '') + '" data-fav="' + esc(key) + '" title="' + (isFav ? 'Retirer des favoris' : 'Ajouter aux favoris') + '">' + (isFav ? '★' : '☆') + '</button>'
+                    + '<span class="admin-bento-ic">' + ic + '</span>'
+                    + '<span class="admin-bento-label">' + esc(label) + '</span>'
+                    + (desc ? '<span class="admin-bento-desc">' + esc(desc) + '</span>' : '')
+                    + '</button>';
+            }
+
+            var html = '';
+            if (favorites.length) {
+                html += '<div class="admin-bento-group pil-fav-group"><div class="admin-bento-title">⭐ Favoris — accès rapide</div><div class="admin-bento-grid">';
+                favorites.forEach(function (key) { html += cardHtml(sectionByKey[key]); });
+                html += '</div></div>';
+            }
+            order.forEach(function (g) {
+                html += '<div class="admin-bento-group"><div class="admin-bento-title">' + esc(g) + '</div><div class="admin-bento-grid">';
+                groups[g].forEach(function (sec) { html += cardHtml(sec); });
+                html += '</div></div>';
+            });
+            cont.innerHTML = html;
+            cont.querySelectorAll('.admin-bento-card').forEach(function (card) {
+                card.addEventListener('click', function (e) {
+                    if (e.target.closest('.pil-fav-star')) return; // géré séparément ci-dessous
+                    activateTab(card.getAttribute('data-tab'));
+                });
+            });
+            cont.querySelectorAll('.pil-fav-star').forEach(function (star) {
+                star.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    toggleFavorite(star.getAttribute('data-fav'));
+                });
+            });
+        }
+        function addBackButtons() {
+            document.querySelectorAll('.admin-section[data-group]').forEach(function (sec) {
+                if (sec.querySelector('.admin-back-btn')) return;
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'admin-back-btn';
+                btn.innerHTML = '← Retour au menu';
+                btn.addEventListener('click', function () { activateTab('menu'); });
+                sec.insertBefore(btn, sec.firstChild);
+            });
+        }
+        function activateTab(key) {
+            document.querySelectorAll('.admin-section').forEach(function (s) { s.classList.remove('active'); });
+            var sec = $('tab-' + key);
+            if (sec) sec.classList.add('active');
+            document.querySelector('.content').scrollTop = 0;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function wireFilters() {
+            ['f-du', 'f-au', 'f-canal', 'f-type'].forEach(function(id) {
+                $(id).addEventListener('change', render);
+            });
+            $('f-reset').addEventListener('click', function() {
+                setDefaultPeriod();
+                $('f-canal').value = '';
+                $('f-type').value = '';
+                render();
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // INIT
+        // ─────────────────────────────────────────────────────────
+        async function init() {
+            try {
+                var result = await IM.directoryStorage.getRootHandleWithCheck();
+                if (result.status !== 'success') {
+                    showError('Session expirée. Reconnectez-vous pour recharger le dossier.');
+                    return;
+                }
+                state.root = result.handle;
+                state.campaignsFolder = await state.root.getDirectoryHandle('Campagnes');
+
+                await loadAllCampaigns();
+                buildComs();
+                buildAnalytics();
+
+                setDefaultPeriod();
+                populateFilters();
+                wireFilters();
+                render();
+
+                populateValidationFilters();
+                wireValidationFilters();
+                renderRetards();
+                renderValidations();
+                renderCharge();
+                renderKpi();
+                renderFriction();
+                wireCalendarNav();
+                renderCalendar();
+
+                // Page réservée aux responsables d'équipe : retirée du menu pour
+                // tout le monde d'autre (au lieu d'afficher une page vide/bloquée).
+                if (!IM.users.isCurrentUserManager()) {
+                    var affectSection = $('tab-affectation');
+                    if (affectSection) affectSection.remove();
+                } else {
+                    renderAffectation();
+                }
+
+                buildBento();
+                addBackButtons();
+
+                $('loadingContainer').style.display = 'none';
+                $('pilotageContent').style.display = 'block';
+            } catch (e) {
+                console.error('Erreur pilotage :', e);
+                showError('Erreur lors du chargement des données. Vérifiez que le dossier Campagnes existe.');
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Impulsion Marketing — Connexion</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23006A4E'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'%3EIM%3C/text%3E%3C/svg%3E">
+
+    <link rel="stylesheet" href="css/theme.css">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            color: var(--ink, #0c1a14);
+            -webkit-font-smoothing: antialiased;
+            background: var(--bg, #f4f7f5);
+        }
+        .login-wrap { display: flex; min-height: 100vh; }
+
+        /* ── Panneau de marque (gauche) ── */
+        .login-aside {
+            flex: 1.05;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(150deg, #005C3D 0%, #00875A 52%, #0FB07E 100%);
+            color: #fff;
+            padding: 48px 52px;
+            display: flex;
+            flex-direction: column;
+        }
+        .login-aside::before { content: ""; position: absolute; top: -120px; right: -120px; width: 420px; height: 420px; border-radius: 50%; background: rgba(255,255,255,0.07); }
+        .login-aside::after  { content: ""; position: absolute; bottom: -160px; left: -80px; width: 360px; height: 360px; border-radius: 50%; background: rgba(255,255,255,0.06); }
+
+        .aside-brand { display: flex; align-items: center; gap: 12px; position: relative; z-index: 2; }
+        .aside-brand .mark { width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,0.16); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; letter-spacing: -1px; }
+        .aside-brand .nm { font-weight: 800; font-size: 17px; }
+        .aside-brand .nm span { display: block; font-size: 10px; font-weight: 700; letter-spacing: 2px; opacity: 0.8; text-transform: uppercase; }
+
+        .aside-body { position: relative; z-index: 2; margin-top: auto; margin-bottom: auto; max-width: 460px; }
+        .aside-body h1 { font-size: 34px; font-weight: 850; line-height: 1.15; letter-spacing: -1px; }
+        .aside-body .lead { font-size: 15px; opacity: 0.92; margin-top: 14px; line-height: 1.6; }
+        .feats { margin-top: 28px; display: flex; flex-direction: column; gap: 13px; }
+        .feat { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 550; }
+        .feat .chk { width: 26px; height: 26px; border-radius: 8px; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+        .aside-foot { position: relative; z-index: 2; font-size: 12.5px; opacity: 0.8; font-weight: 500; }
+
+        /* Aperçu produit flottant — même langage visuel que les cards campagne
+           (fond dégradé saturé, badges à l'intérieur, titre en gras). */
+        .float-card {
+            position: absolute; z-index: 2; right: 46px; top: 96px; width: 268px;
+            background: linear-gradient(180deg, rgba(0,0,0,0), rgba(0,0,0,.16)), linear-gradient(135deg, #a78bfa, #6d28d9);
+            border: 1px solid rgba(255,255,255,0.22); border-radius: 16px; padding: 16px;
+            box-shadow: 0 18px 40px rgba(0,40,26,0.28);
+            color: #fff;
+        }
+        .float-card .fc-top { display: flex; align-items: center; justify-content: space-between; }
+        .float-card .fc-badge { font-size: 9.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: rgba(0,0,0,0.22); }
+        .float-card .fc-pill { font-size: 9.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: rgba(255,255,255,0.94); color: #4c1d95; }
+        .float-card .fc-t { font-size: 14.5px; font-weight: 800; line-height: 1.3; margin-top: 15px; text-shadow: 0 1px 3px rgba(0,0,0,.15); }
+        .float-card .fc-bar { height: 7px; border-radius: 99px; background: rgba(0,0,0,0.2); margin-top: 14px; overflow: hidden; }
+        .float-card .fc-bar i { display: block; height: 100%; width: 70%; border-radius: 99px; background: linear-gradient(90deg, #fff, #f3e8ff); }
+        .float-card .fc-lab { display: flex; justify-content: space-between; font-size: 10.5px; opacity: 0.92; margin-top: 8px; font-weight: 650; }
+        .float-chip {
+            position: absolute; z-index: 2; right: 92px; top: 296px;
+            background: #fff; color: var(--ink); border-radius: 14px; padding: 12px 16px;
+            box-shadow: 0 18px 40px rgba(0,40,26,0.28); display: flex; align-items: center; gap: 11px;
+        }
+        .float-chip .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--green-50); color: var(--primary); display: flex; align-items: center; justify-content: center; }
+        .float-chip .big { font-size: 19px; font-weight: 850; line-height: 1; letter-spacing: -.5px; }
+        .float-chip .sm { font-size: 11px; color: var(--muted); font-weight: 600; }
+
+        /* ── Formulaire (droite) ── */
+        .login-main { flex: 0.95; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+        .login-box { width: 100%; max-width: 400px; }
+        .login-box h2 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+        .login-box .sub { font-size: 14px; color: var(--muted, #56655e); margin-top: 6px; }
+
+        .field { margin-top: 18px; }
+        .field label { display: block; font-size: 13px; font-weight: 650; margin-bottom: 7px; }
+        .field select {
+            width: 100%; padding: 13px 14px; font-size: 15px; font-family: inherit;
+            border: 1px solid var(--line, #eaefec); border-radius: 12px; background: #fff; color: var(--ink, #0c1a14);
+            cursor: pointer; transition: border-color .15s, box-shadow .15s;
+        }
+        .field select:disabled { background: #f3f6f4; color: #9aa8a0; cursor: not-allowed; }
+        .field select:focus { outline: none; border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
+
+        /* Aperçu utilisateur sélectionné */
+        .user-preview { display: none; align-items: center; gap: 12px; margin-top: 20px; padding: 12px 14px; border: 1px solid var(--line, #eaefec); border-radius: 14px; background: var(--green-50, #e8f6ef); }
+        .user-preview.show { display: flex; }
+        .user-preview .av { width: 40px; height: 40px; border-radius: 50%; background: var(--primary, #00875A); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 750; font-size: 14px; }
+        .user-preview .nm { font-size: 14px; font-weight: 750; line-height: 1.25; }
+        .user-preview .nm span { display: block; font-size: 12px; color: var(--green-600, #00734C); font-weight: 600; }
+
+        .btn-connect {
+            width: 100%; margin-top: 22px; padding: 14px; font-size: 16px; font-weight: 700;
+            border: none; border-radius: 12px; cursor: pointer; color: #fff;
+            background: var(--gradient, linear-gradient(135deg, #12C386, #00734C));
+            box-shadow: 0 8px 20px rgba(0,135,90,0.28);
+            transition: filter .2s ease, transform .1s ease, box-shadow .2s ease;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-connect:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 10px 26px rgba(0,135,90,0.34); }
+        .btn-connect:active:not(:disabled) { transform: translateY(1px); }
+        .btn-connect:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+        .login-hint { margin-top: 18px; font-size: 12px; color: var(--muted-2, #8b988f); text-align: center; line-height: 1.6; }
+        .login-error { display: none; margin-top: 18px; padding: 12px 14px; border-radius: 12px; background: var(--red-50, #fdeaec); border: 1px solid #fecaca; color: #991b1b; font-size: 14px; line-height: 1.4; }
+        .login-error.show { display: block; }
+        #compat-banner { display: none; margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #fdeaec; border: 1px solid #f5c2c7; color: #842029; font-size: 13px; line-height: 1.5; }
+
+        /* Logo mobile (caché en desktop) */
+        .mobile-brand { display: none; }
+
+        @media (max-width: 920px) {
+            .login-aside { display: none; }
+            .login-main { flex: 1; }
+            .mobile-brand { display: flex; align-items: center; justify-content: center; gap: 11px; margin-bottom: 26px; }
+            .mobile-brand .mark { width: 44px; height: 44px; border-radius: 12px; background: var(--gradient); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; box-shadow: 0 6px 14px rgba(0,135,90,0.3); }
+            .mobile-brand .nm { font-weight: 800; font-size: 17px; }
+            .mobile-brand .nm span { display: block; font-size: 9.5px; font-weight: 700; letter-spacing: 1.8px; color: var(--muted-2); text-transform: uppercase; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="login-wrap">
+    <!-- Panneau de marque -->
+    <aside class="login-aside">
+        <div class="aside-brand">
+            <div class="mark">IM</div>
+            <div class="nm">Impulsion<span>Marketing</span></div>
+        </div>
+
+        <!-- Aperçu produit flottant -->
+        <div class="float-card">
+            <div class="fc-top">
+                <span class="fc-badge">PUSH</span>
+                <span class="fc-pill">En prod</span>
+            </div>
+            <div class="fc-t">Push Notif MaBanque</div>
+            <div class="fc-bar"><i></i></div>
+            <div class="fc-lab"><span>Réalisation BAT</span><span>70%</span></div>
+        </div>
+        <div class="float-chip">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/></svg></div>
+            <div><div class="big">24</div><div class="sm">campagnes actives</div></div>
+        </div>
+
+        <div class="aside-body">
+            <h1>Vos campagnes, du brief à la mise en production.</h1>
+            <p class="lead" id="brand-lead">L'espace de pilotage des campagnes marketing de votre caisse régionale.</p>
+            <div class="feats">
+                <div class="feat"><span class="chk">✓</span> Workflow COM · EBF · Data centralisé</div>
+                <div class="feat"><span class="chk">✓</span> Validation et suivi en temps réel</div>
+                <div class="feat"><span class="chk">✓</span> Comité éditorial & zones du site web</div>
+            </div>
+        </div>
+
+        <div class="aside-foot" id="brand-foot">© 2026 — Usage interne</div>
+    </aside>
+
+    <!-- Formulaire -->
+    <main class="login-main">
+        <div class="login-box">
+            <div class="mobile-brand"><div class="mark">IM</div><div class="nm">Impulsion<span>Marketing</span></div></div>
+
+            <h2>Connexion</h2>
+            <p class="sub">Choisissez votre service et votre nom pour accéder à votre espace.</p>
+
+            <div id="compat-banner" role="alert">
+                <strong>⚠️ Navigateur non compatible.</strong>
+                Cette application nécessite <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>
+                (version 86+) sur ordinateur. Firefox, Safari et les navigateurs mobiles ne sont pas supportés.
+            </div>
+
+            <div id="login-error" class="login-error" role="alert"></div>
+
+            <div class="field">
+                <label for="login-team">Service</label>
+                <select id="login-team">
+                    <option value="">Sélectionnez votre service…</option>
+                    <option value="superadmin" id="opt-role-superadmin">Super Admin</option>
+                    <option value="marketing" id="opt-role-marketing">Marketing</option>
+                    <option value="com" id="opt-role-com">Com</option>
+                    <option value="ebf" id="opt-role-ebf">EBF</option>
+                    <option value="data" id="opt-role-data">Data</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="login-name">Nom</label>
+                <select id="login-name" disabled>
+                    <option value="">Sélectionnez d'abord un service…</option>
+                </select>
+            </div>
+
+            <div id="user-preview" class="user-preview">
+                <div class="av" id="preview-av">?</div>
+                <div class="nm" id="preview-nm">—<span id="preview-role">—</span></div>
+            </div>
+
+            <button id="btn-connect" class="btn-connect" disabled>
+                Se connecter
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+
+            <p class="login-hint" id="root-path-hint" style="display:none;"></p>
+
+            <p class="login-hint">
+                Le dossier de travail est rechargé automatiquement.<br>
+                La sélection du dossier n'est demandée qu'à la première connexion.
+            </p>
+        </div>
+    </main>
+</div>
+
+    <!-- Modules applicatifs -->
+    <script src="js/bundle.js"></script>
+    <script>
+        (function () {
+            'use strict';
+            var IM = window.ImpulsionMarketing;
+            var users = IM.users;
+            var directoryStorage = IM.directoryStorage;
+
+            var teamSelect = document.getElementById('login-team');
+            var nameSelect = document.getElementById('login-name');
+            var btnConnect = document.getElementById('btn-connect');
+            var errorBox = document.getElementById('login-error');
+            var preview = document.getElementById('user-preview');
+
+            function showError(msg) { errorBox.innerHTML = msg; errorBox.classList.add('show'); }
+            function clearError() { errorBox.classList.remove('show'); }
+
+            // Nom de la caisse / organisation : entièrement paramétrable depuis
+            // Administration → Paramètres généraux (aucun nom codé en dur).
+            function applyOrgName() {
+                var orgName = (IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.orgName) || '';
+                var leadEl = document.getElementById('brand-lead');
+                var footEl = document.getElementById('brand-foot');
+                if (leadEl) leadEl.textContent = orgName
+                    ? ('L\'espace de pilotage des campagnes marketing du ' + orgName + '.')
+                    : 'L\'espace de pilotage des campagnes marketing de votre caisse régionale.';
+                if (footEl) footEl.textContent = '© ' + new Date().getFullYear() + (orgName ? ' ' + orgName : '') + ' — Usage interne';
+            }
+            applyOrgName();
+
+            // Libellés des équipes (Service) : clés fixes, libellés éditables depuis
+            // Administration ▸ Paramètres généraux ▸ Rôles (aucun nom codé en dur).
+            var DEFAULT_ROLE_LABELS = { superadmin: 'Super Admin', marketing: 'Marketing', com: 'Com', ebf: 'EBF', data: 'Data' };
+            function applyRoleLabels() {
+                var rl = (IM.config && IM.config.ROLE_LABELS) || {};
+                Object.keys(DEFAULT_ROLE_LABELS).forEach(function (k) {
+                    var opt = document.getElementById('opt-role-' + k);
+                    if (opt) opt.textContent = rl[k] || DEFAULT_ROLE_LABELS[k];
+                });
+            }
+            applyRoleLabels();
+
+            // Chemin du dossier à sélectionner (Administration ▸ Paramètres généraux
+            // ▸ Chemin par défaut du dossier) : c'est le dossier « Données de
+            // production », pas le dossier racine du dépôt applicatif — un point de
+            // confusion fréquent. Purement informatif (le navigateur ne permet pas de
+            // pré-remplir showDirectoryPicker), affiché seulement si l'admin l'a
+            // renseigné (repli silencieux sinon, ex. tout premier lancement sur un
+            // poste où aucun dossier n'a encore jamais été connecté).
+            function applyRootPathHint() {
+                var path = (IM.config && IM.config.DEFAULT_ROOT_PATH) || '';
+                var hintEl = document.getElementById('root-path-hint');
+                if (!hintEl) return;
+                if (path) {
+                    hintEl.innerHTML = 'Dossier à sélectionner : <strong>' + path.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</strong>';
+                    hintEl.style.display = 'block';
+                } else {
+                    hintEl.style.display = 'none';
+                }
+            }
+            applyRootPathHint();
+
+            // Compatibilité navigateur (File System Access API)
+            if (typeof window.showDirectoryPicker !== 'function') {
+                document.getElementById('compat-banner').style.display = 'block';
+                teamSelect.disabled = true;
+                btnConnect.disabled = true;
+                return;
+            }
+
+            function initialsOf(name) {
+                return name.trim().split(/\s+/).map(function (p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
+            }
+
+            function updatePreview() {
+                var name = nameSelect.value;
+                if (!name) { preview.classList.remove('show'); return; }
+                var user = users.getUsersByRole(teamSelect.value).filter(function (u) { return u.name === name; })[0];
+                document.getElementById('preview-av').textContent = initialsOf(name);
+                document.getElementById('preview-nm').firstChild.textContent = name;
+                document.getElementById('preview-role').textContent = user ? user.roleLabel : '';
+                preview.classList.add('show');
+            }
+
+            function populateNames(role) {
+                nameSelect.innerHTML = '';
+                if (!role) {
+                    nameSelect.innerHTML = '<option value="">Sélectionnez d\'abord un service…</option>';
+                    nameSelect.disabled = true;
+                    updateButtonState();
+                    return;
+                }
+                var list = users.getUsersByRole(role);
+                var opt = document.createElement('option');
+                opt.value = ''; opt.textContent = 'Sélectionnez votre nom…';
+                nameSelect.appendChild(opt);
+                list.forEach(function (u) {
+                    var o = document.createElement('option');
+                    o.value = u.name; o.textContent = u.name;
+                    nameSelect.appendChild(o);
+                });
+                nameSelect.disabled = false;
+                updateButtonState();
+            }
+
+            function hasUsers() { return !!(users.USERS && users.USERS.length); }
+            function updateButtonState() {
+                // Premier lancement : aucun utilisateur chargé (le _config.json n'a pas encore
+                // été lu). Le bouton sert alors à connecter le dossier pour le charger.
+                if (!hasUsers()) { btnConnect.disabled = false; btnConnect.textContent = 'Connecter le dossier'; return; }
+                btnConnect.textContent = 'Se connecter';
+                btnConnect.disabled = !nameSelect.value;
+            }
+
+            // Pré-remplir si un utilisateur est déjà connu
+            var current = users.getCurrentUser();
+            if (current) {
+                teamSelect.value = current.role;
+                populateNames(current.role);
+                nameSelect.value = current.name;
+                updateButtonState();
+                updatePreview();
+            }
+
+            teamSelect.addEventListener('change', function () { clearError(); populateNames(teamSelect.value); updatePreview(); });
+            nameSelect.addEventListener('change', function () { clearError(); updateButtonState(); updatePreview(); });
+
+            // Les utilisateurs peuvent avoir été modifiés dans l'Administration (_config.json).
+            // Une fois la config chargée, on rafraîchit la liste des noms du service sélectionné.
+            var _acReady = directoryStorage && window.ImpulsionMarketing.adminConfig && window.ImpulsionMarketing.adminConfig.ready;
+            if (_acReady) {
+                _acReady.then(function () {
+                    applyOrgName();
+                    applyRoleLabels();
+                    if (!teamSelect.value) return;
+                    var keep = nameSelect.value;
+                    populateNames(teamSelect.value);
+                    if (keep) {
+                        nameSelect.value = keep;
+                        if (nameSelect.value !== keep) nameSelect.value = '';
+                    }
+                    updateButtonState();
+                    updatePreview();
+                });
+            }
+
+            btnConnect.addEventListener('click', function () {
+                // Premier lancement : aucun utilisateur chargé → on connecte d'abord le dossier
+                // pour lire _config.json, puis on repeuple la liste (sans se connecter tout de suite).
+                if (!hasUsers()) {
+                    clearError();
+                    btnConnect.disabled = true;
+                    btnConnect.textContent = 'Chargement…';
+                    directoryStorage.promptAndSaveDirectory()
+                        .then(function () {
+                            var ac = window.ImpulsionMarketing.adminConfig;
+                            return (ac && ac.reload) ? ac.reload() : null;
+                        })
+                        .then(function () {
+                            if (teamSelect.value) populateNames(teamSelect.value);
+                            updatePreview();
+                            if (!hasUsers()) showError('Aucun utilisateur dans _config.json. Vérifiez le fichier de configuration à la racine du dossier de travail.');
+                        })
+                        .catch(function (e) {
+                            var msg = (e && e.message) ? e.message : 'Erreur inconnue';
+                            if (!/annul/i.test(msg)) showError('Impossible de charger la configuration : ' + msg);
+                        })
+                        .then(function () { updateButtonState(); });
+                    return;
+                }
+                var name = nameSelect.value;
+                if (!name) { showError('Veuillez sélectionner votre nom.'); return; }
+                clearError();
+                users.setCurrentUser(name);
+
+                btnConnect.disabled = true;
+                btnConnect.textContent = 'Connexion…';
+
+                connectFolder()
+                    .then(function () {
+                        // Journal des connexions (Données/connexions.json) : purement
+                        // best-effort, ne doit jamais retarder ni bloquer la connexion —
+                        // erreur ignorée volontairement (ex. permission en écriture
+                        // refusée sur le dossier, réseau temporairement indisponible).
+                        var cl = window.ImpulsionMarketing.connectionLog;
+                        if (cl) cl.record(users.getCurrentUser()).catch(function () {});
+                        window.location.href = 'Impulsion-Marketing.html';
+                    })
+                    .catch(function (err) {
+                        btnConnect.disabled = false;
+                        btnConnect.textContent = 'Se connecter';
+                        var msg = (err && err.message) ? err.message : 'Erreur inconnue';
+                        if (/annul/i.test(msg)) {
+                            showError('Sélection du dossier annulée. Cliquez à nouveau sur « Se connecter » et choisissez le dossier racine.');
+                        } else {
+                            showError('Impossible de charger le dossier : ' + msg);
+                        }
+                    });
+            });
+
+            // Reconnexion au dossier mémorisé : on tente d'abord une simple redemande de
+            // permission (un clic, sans re-sélection). On garde la chaîne TRÈS courte ici
+            // (reconnect appelle requestPermission quasi-immédiatement) pour ne pas perdre
+            // le "user activation" du clic. On n'ouvre le sélecteur complet que si aucun
+            // dossier n'est mémorisé ou si la permission est refusée.
+            function connectFolder() {
+                return directoryStorage.reconnect().then(function (res) {
+                    if (res.status === 'success') return true;
+                    if (res.status === 'no_handle') {
+                        return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
+                    }
+                    // Permission refusée : proposer quand même la re-sélection complète.
+                    return directoryStorage.promptAndSaveDirectory().then(function () { return true; });
+                });
+            }
+        })();
+    </script>
+</body>
+</html>

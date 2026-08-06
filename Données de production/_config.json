@@ -1,0 +1,685 @@
+{
+  "users": [
+    {
+      "name": "Olivier",
+      "role": "superadmin",
+      "roleLabel": "Super Admin",
+      "isSuperAdmin": true,
+      "isManager": true
+    },
+    {
+      "name": "Sébastien Langlois",
+      "role": "marketing",
+      "roleLabel": "Resp. Marketing",
+      "isManager": true
+    },
+    {
+      "name": "Agnès grapin",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Caroline Legrand",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Charlene Garrigues",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Georges Duchet",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Julie Sarramiac",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Nicolas Martel",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Nicolas Palomba",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Adrien Lechevalier",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Guillaume Jaillon",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Cecile Devillard",
+      "role": "marketing",
+      "roleLabel": "Marketing"
+    },
+    {
+      "name": "Marlène Le Rue",
+      "role": "com",
+      "roleLabel": "Resp. Com",
+      "isManager": true
+    },
+    {
+      "name": "Camille Breteche",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Celia Terzi",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Clara Tigier",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Clothilde Portal",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Cyrielle Blanc",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Dorian Fedrigo",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Julie Riviere",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Melissa Pontery",
+      "role": "com",
+      "roleLabel": "Com"
+    },
+    {
+      "name": "Laurent Minier",
+      "role": "ebf",
+      "roleLabel": "Resp. EBF",
+      "isManager": true
+    },
+    {
+      "name": "Benjamin Aribaud",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Benjamin Le",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Kévin Dolie",
+      "role": "ebf",
+      "roleLabel": "EBF",
+      "isSuperAdmin": true
+    },
+    {
+      "name": "Marc Favre",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Sébastien Rouanet",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Sébastien Siguenza",
+      "role": "ebf",
+      "roleLabel": "EBF"
+    },
+    {
+      "name": "Dimitri Garcia",
+      "role": "data",
+      "roleLabel": "Resp. Data",
+      "isManager": true
+    },
+    {
+      "name": "Alain Marchois",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Aurélien Dubroue",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Ghaya Zarrouk",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Marie-Jo Bonadei",
+      "role": "data",
+      "roleLabel": "Data"
+    },
+    {
+      "name": "Vincent Breque",
+      "role": "data",
+      "roleLabel": "Data"
+    }
+  ],
+  "canaux": [
+    "LP",
+    "MAIL",
+    "COURRIER",
+    "SMS",
+    "MDC",
+    "PUSH / NOTIF MA BANQUE",
+    "PERSO MA BANQUE",
+    "Zone de Gauche ( synthese des comptes)",
+    "Bandeau Hero",
+    "ZAC HOME PAGE",
+    "E-message",
+    "Zone de droite ( synthese des comptes)",
+    "Article",
+    "Newsletter",
+    "ZAC",
+    "Menu Burger",
+    "MAIL + E-MESSAGE"
+  ],
+  "universBesoins": [
+    "Epargne / Collecte",
+    "Crédits",
+    "Assurances",
+    "Conquête",
+    "BAQ",
+    "Immobilier",
+    "Spécialisés",
+    "Monétique"
+  ],
+  "typesCom": [
+    "Commerciales",
+    "Gestion",
+    "Réglementaire"
+  ],
+  "typologies": [
+    "PR",
+    "Campagne"
+  ],
+  "marches": [
+    "Particuliers",
+    "Spécialisés",
+    "Tous"
+  ],
+  "recurrences": [
+    "One shot",
+    "hebdomadaire",
+    "Mensuel",
+    "trimestriel",
+    "Annuelle"
+  ],
+  "lots": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "Création"
+  ],
+  "produits": [],
+  "marchesSiteWeb": [
+    {
+      "value": "part",
+      "label": "Particuliers"
+    },
+    {
+      "value": "bp",
+      "label": "Banque Privée"
+    },
+    {
+      "value": "pro",
+      "label": "Pro"
+    },
+    {
+      "value": "agri",
+      "label": "Agri"
+    }
+  ],
+  "segmentsGroups": [
+    {
+      "group": "Particuliers",
+      "items": [
+        {
+          "value": "Actif",
+          "label": "Actif"
+        },
+        {
+          "value": "Etudiant",
+          "label": "Etudiant"
+        },
+        {
+          "value": "GP",
+          "label": "GP"
+        },
+        {
+          "value": "Senior",
+          "label": "Senior"
+        },
+        {
+          "value": "BP",
+          "label": "BP"
+        },
+        {
+          "value": "Sociétaire",
+          "label": "Sociétaire"
+        },
+        {
+          "value": "Patri Tradi",
+          "label": "Patri Tradi"
+        },
+        {
+          "value": "Patri Dynamique",
+          "label": "Patri Dynamique"
+        },
+        {
+          "value": "Intermédiaire Tradi",
+          "label": "Interméd. Tradi"
+        },
+        {
+          "value": "Intermédiaire Dynamique",
+          "label": "Interméd. Dynamique"
+        },
+        {
+          "value": "PP Majeur",
+          "label": "PP Majeur"
+        },
+        {
+          "value": "Jeunes Actif 18-25ans",
+          "label": "Jeunes 18-25 ans"
+        },
+        {
+          "value": "Jeunes 18-30ans",
+          "label": "Jeunes 18-30 ans"
+        },
+        {
+          "value": "Jeunes 12-17 ans",
+          "label": "Jeunes 12-17 ans"
+        },
+        {
+          "value": "Jeunes 0-11 ans",
+          "label": "Jeunes 0-11 ans"
+        },
+        {
+          "value": "Mineurs",
+          "label": "Mineurs"
+        }
+      ]
+    },
+    {
+      "group": "Pro",
+      "items": [
+        {
+          "value": "Pro - PLS",
+          "label": "Pro - PLS"
+        },
+        {
+          "value": "Pro - Commerçants",
+          "label": "Pro - Commerçants"
+        },
+        {
+          "value": "Pro - Artisans",
+          "label": "Pro - Artisans"
+        },
+        {
+          "value": "Pro - Micro entrepreneurs",
+          "label": "Pro - Micro-entrepreneurs"
+        },
+        {
+          "value": "Associations",
+          "label": "Associations"
+        },
+        {
+          "value": "Entreprises",
+          "label": "Entreprises"
+        }
+      ]
+    },
+    {
+      "group": "Agri",
+      "items": [
+        {
+          "value": "Agri - Managers",
+          "label": "Agri - Managers"
+        },
+        {
+          "value": "Agris",
+          "label": "Agris"
+        },
+        {
+          "value": "Agris - JA",
+          "label": "Agris - JA"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "orgName": "Crédit Agricole Toulouse 31",
+    "galleryUrl": "https://e.ca-toulouse31.fr/images/index.php",
+    "defaultRootPath": "V:/Impulsion Marketing/Données de production",
+    "volumeAlertThreshold": 100000,
+    "urgentThresholdDays": 7,
+    "dueSoonDays": 2,
+    "siteWebComTypologies": [
+      "Reprise Natio"
+    ],
+    "webSlotStartDay": 1
+  },
+  "roleColors": {
+    "po": "#7C3AED",
+    "superadmin": "#0F766E",
+    "marketing": "#7C3AED",
+    "com": "#2563EB",
+    "ebf": "#E8A100",
+    "data": "#00875A"
+  },
+  "webZones": {
+    "zones": [
+      "Zone de Gauche ( synthese des comptes)",
+      "Zone de Gauche ( Authentification)",
+      "Bandeau Hero",
+      "ZAC HOME PAGE Gauche",
+      "ZAC HOME PAGE Droite",
+      "Zone de droite ( synthese des comptes)",
+      "ZAC",
+      "Menu Burger"
+    ],
+    "bpOnlyZones": [
+      "ZAC"
+    ],
+    "zonesMulti": {
+      "Menu Burger": [
+        "Compte et carte",
+        "Epargne",
+        "Assurance",
+        "Crédit"
+      ],
+      "Zone de Gauche ( Authentification)": [
+        "Emplacement 1",
+        "Emplacement 2",
+        "Emplacement 3",
+        "Emplacement 4",
+        "Emplacement 5"
+      ]
+    }
+  },
+  "reponseStatuts": [
+    {
+      "value": "resolu",
+      "label": "✅ Résolu",
+      "incStatut": "traité"
+    },
+    {
+      "value": "pris_compte",
+      "label": "🕒 Pris en compte (bientôt)",
+      "incStatut": "en cours"
+    },
+    {
+      "value": "rejete",
+      "label": "❌ Ne sera pas traité",
+      "incStatut": "traité"
+    },
+    {
+      "value": "autre",
+      "label": "💬 Autre / info",
+      "incStatut": "en cours"
+    }
+  ],
+  "whatsnewBadges": {
+    "new": {
+      "icon": "🆕",
+      "label": "Nouveau",
+      "color": "#16a34a"
+    },
+    "fix": {
+      "icon": "🛠️",
+      "label": "Correction",
+      "color": "#0d6efd"
+    },
+    "improve": {
+      "icon": "✨",
+      "label": "Amélioration",
+      "color": "#7c3aed"
+    }
+  },
+  "bilan": {
+    "suiviFolder": "Suivi",
+    "suiviSheet": "détail-tous",
+    "ident": [
+      "Canal",
+      "ID_ACTION",
+      "code_communication",
+      "CAMPAGNE",
+      "ACTION"
+    ],
+    "kpis": [
+      {
+        "k": "Nb_Envois",
+        "label": "Envois",
+        "pct": false,
+        "agg": "moyenne"
+      },
+      {
+        "k": "Nb_communications",
+        "label": "Comm.",
+        "pct": false,
+        "agg": "somme"
+      },
+      {
+        "k": "Nb_MDC_Actifs",
+        "label": "MDC actifs",
+        "pct": false,
+        "agg": "moyenne"
+      },
+      {
+        "k": "Tx_Ouvreurs",
+        "label": "Tx ouv.",
+        "pct": true,
+        "agg": "moyenne"
+      },
+      {
+        "k": "Tx_Cliqueurs",
+        "label": "Tx clic",
+        "pct": true,
+        "agg": "moyenne"
+      },
+      {
+        "k": "Tx_Desabonnement",
+        "label": "Tx désab.",
+        "pct": true,
+        "agg": "moyenne"
+      },
+      {
+        "k": "Tx_Reussite",
+        "label": "Tx réussite",
+        "pct": true,
+        "agg": "moyenne"
+      },
+      {
+        "k": "Nb_leads",
+        "label": "Leads",
+        "pct": false,
+        "agg": "somme"
+      }
+    ],
+    "chartRates": [
+      "Tx_Ouvreurs",
+      "Tx_Cliqueurs",
+      "Tx_Desabonnement",
+      "Tx_Reussite"
+    ]
+  },
+  "comTypologies": [
+    "Création Caisse",
+    "Reprise Natio"
+  ],
+  "notificationLabels": {
+    "zone_conflit_attente": "⚠️ Conflit zone site web",
+    "zone_approuvee": "✅ Zone approuvée",
+    "zone_refusee": "❌ Zone refusée",
+    "campagne_inactive": "🔴 Campagne à débrancher",
+    "publication_fin": "📅 Fin de publication site web",
+    "mention": "💬 Mention dans une discussion",
+    "signalement_reponse": "🔔 Réponse à votre signalement",
+    "workflow_a_faire": "▶️ À toi de jouer",
+    "workflow_a_valider": "🕓 À valider",
+    "workflow_revision": "🔄 Révision demandée",
+    "workflow_info": "📣 Campagne"
+  },
+  "autoAssignRules": [],
+  "roleLabels": {
+    "marketing": "Marketing",
+    "com": "Com",
+    "ebf": "EBF",
+    "data": "Data",
+    "superadmin": "Super Admin"
+  },
+  "workflow": {
+    "steps": [
+      {
+        "id": "com_maquette",
+        "label": "Maquette Com",
+        "actor": "com",
+        "order": 0
+      },
+      {
+        "id": "po_validation_maquette",
+        "label": "Validation maquette",
+        "actor": "po",
+        "order": 1
+      },
+      {
+        "id": "com_juridique",
+        "label": "Validation juridique",
+        "actor": "com",
+        "order": 2
+      },
+      {
+        "id": "ebf_bat",
+        "label": "Réalisation BAT",
+        "actor": "ebf",
+        "order": 3
+      },
+      {
+        "id": "po_validation_bat",
+        "label": "Validation BAT",
+        "actor": "po",
+        "order": 4
+      },
+      {
+        "id": "data_ciblage",
+        "label": "Ciblage Data",
+        "actor": "data",
+        "order": 5
+      },
+      {
+        "id": "po_validation_ciblage",
+        "label": "Validation ciblage",
+        "actor": "po",
+        "order": 6
+      },
+      {
+        "id": "data_lancement_test",
+        "label": "Lancement test",
+        "actor": "data",
+        "order": 7
+      },
+      {
+        "id": "ebf_test_prod",
+        "label": "Test en prod",
+        "actor": "ebf",
+        "order": 8
+      },
+      {
+        "id": "po_validation_test_prod",
+        "label": "Validation test",
+        "actor": "po",
+        "order": 9
+      },
+      {
+        "id": "data_mise_en_prod",
+        "label": "Mise en prod",
+        "actor": "data",
+        "order": 10
+      },
+      {
+        "id": "ebf_mise_en_prod",
+        "label": "Mise en prod LP",
+        "actor": "ebf",
+        "order": 11
+      }
+    ],
+    "canalSteps": {
+      "LP": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "ebf_test_prod",
+        "po_validation_test_prod",
+        "ebf_mise_en_prod"
+      ],
+      "MDC": [
+        "data_ciblage",
+        "po_validation_ciblage",
+        "data_mise_en_prod"
+      ],
+      "Bandeau Hero": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "data_mise_en_prod"
+      ],
+      "ZAC HOME PAGE": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "data_mise_en_prod"
+      ],
+      "Menu Burger": [
+        "com_maquette",
+        "po_validation_maquette",
+        "com_juridique",
+        "ebf_bat",
+        "po_validation_bat",
+        "data_mise_en_prod"
+      ],
+      "PERSO MA BANQUE": [
+        "ebf_bat",
+        "po_validation_bat",
+        "data_ciblage",
+        "po_validation_ciblage",
+        "data_lancement_test",
+        "ebf_test_prod",
+        "po_validation_test_prod",
+        "data_mise_en_prod"
+      ]
+    }
+  }
+}
