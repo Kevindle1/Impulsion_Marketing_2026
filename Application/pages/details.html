@@ -2416,7 +2416,15 @@
         if (!ch) return;
         var old = document.querySelector('.cf-fields-block[data-cf-attach="' + stepId + '"]');
         if (!old || !old.parentNode) return;
-        var html = customFields.renderFields(stepId, values || {}, { canalType: ch.content });
+        // idSuffix impératif ici : le premier rendu synchrone (customFieldsSectionHtml,
+        // avant chargement du dépôt) génère les ids DOM des champs migrés avec
+        // idSuffix (ex. « data-codeproj-0 »). Sans le refournir ici, ce remplacement
+        // régénère des ids différents (préfixe auto) et casse silencieusement toute
+        // collecte ultérieure par id (collectDataDepot, setVal…) : au prochain dépôt,
+        // les champs migrés sont relus comme vides — bug remonté sur Ciblage Data
+        // après une demande de modification (le rechargement du dépôt existant
+        // déclenche ce remplacement avant la resoumission).
+        var html = customFields.renderFields(stepId, values || {}, { canalType: ch.content, idSuffix: idx });
         if (!html) return;
         var wrapper = document.createElement('div');
         wrapper.innerHTML = html;

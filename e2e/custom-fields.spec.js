@@ -1036,4 +1036,140 @@ test.describe('data_ciblage — migration sans casser les campagnes existantes',
     console.log('errors (migration data_ciblage, campagne existante):', errors);
     expect(errors).toEqual([]);
   });
+
+  // Variante de installFakeDirectory supportant un dépôt de canal pré-existant
+  // (Campagnes/<id>/<dossier canal>/depotdata.json) — nécessaire pour rejouer
+  // le rechargement async d'un dépôt déjà soumis (cas d'une demande de
+  // modification), que installFakeDirectory (campagne.json seul) ne couvre pas.
+  // Cache le fichier dépôt UNE SEULE FOIS (objet persistant) : sinon chaque
+  // getDirectoryHandle recrée un fichier vierge et les écritures de l'app
+  // deviennent invisibles à la relecture suivante — piège vécu en investiguant
+  // ce bug, à ne pas reproduire ici.
+  async function installFakeDirectoryWithDepot(page, campaign, depotByChannelFolder) {
+    await page.addInitScript((args) => {
+      var campaign = args.campaign, depotByChannelFolder = args.depotByChannelFolder;
+      function makeFakeFile(initial) {
+        var content = initial;
+        return {
+          getFile: function () { return Promise.resolve({ text: function () { return Promise.resolve(content); } }); },
+          createWritable: function () { return Promise.resolve({ write: function (data) { if (typeof data === 'string') content = data; return Promise.resolve(); }, close: function () { return Promise.resolve(); } }); }
+        };
+      }
+      function makeEmptyDir() {
+        return {
+          getDirectoryHandle: function (name, opts) { if (opts && opts.create) return Promise.resolve(makeEmptyDir()); return Promise.reject(new Error('nf: ' + name)); },
+          getFileHandle: function (name, opts) { if (opts && opts.create) return Promise.resolve(makeFakeFile('')); return Promise.reject(new Error('nf: ' + name)); }
+        };
+      }
+      var depotFileCache = {};
+      function channelDir(folderName) {
+        return {
+          getDirectoryHandle: function () { return Promise.resolve(makeEmptyDir()); },
+          getFileHandle: function (fname, opts) {
+            if (fname === 'depotdata.json') {
+              if (!depotFileCache[folderName] && depotByChannelFolder[folderName]) {
+                depotFileCache[folderName] = makeFakeFile(JSON.stringify(depotByChannelFolder[folderName], null, 2));
+              }
+              if (depotFileCache[folderName]) return Promise.resolve(depotFileCache[folderName]);
+              if (opts && opts.create) { depotFileCache[folderName] = makeFakeFile(''); return Promise.resolve(depotFileCache[folderName]); }
+              return Promise.reject(new Error('nf: ' + fname));
+            }
+            if (opts && opts.create) return Promise.resolve(makeFakeFile(''));
+            return Promise.reject(new Error('nf: ' + fname));
+          }
+        };
+      }
+      var campaignFile = makeFakeFile(JSON.stringify(campaign, null, 2));
+      function campaignDirH() {
+        return {
+          kind: 'directory', name: campaign.id,
+          getDirectoryHandle: function (name) { return Promise.resolve(channelDir(name)); },
+          getFileHandle: function (fname, opts) {
+            if (fname === 'campagne.json') return Promise.resolve(campaignFile);
+            if (opts && opts.create) return Promise.resolve(makeFakeFile(''));
+            return Promise.reject(new Error('nf: ' + fname));
+          }
+        };
+      }
+      var indexFile = makeFakeFile('{}');
+      function campagnesDir() {
+        return {
+          getDirectoryHandle: function () { return Promise.resolve(campaignDirH()); },
+          getFileHandle: function (fname, opts) { if (fname === '_index.json') return Promise.resolve(indexFile); if (opts && opts.create) return Promise.resolve(makeFakeFile('')); return Promise.reject(new Error('nf')); },
+          values: function () {
+            var i = 0, names = [campaign.id];
+            return { next: function () { if (i < names.length) { var d = campaignDirH(); i++; return Promise.resolve({ value: d, done: false }); } return Promise.resolve({ value: undefined, done: true }); }, [Symbol.asyncIterator]: function () { return this; } };
+          }
+        };
+      }
+      var fakeRoot = { name: 'FakeRoot', getDirectoryHandle: function (name) { return name === 'Campagnes' ? Promise.resolve(campagnesDir()) : Promise.resolve(makeEmptyDir()); }, getFileHandle: function () { return Promise.reject(new Error('n/a')); } };
+      var tries = 0;
+      var iv = setInterval(function () {
+        tries++;
+        var IM = window.ImpulsionMarketing;
+        if (IM && IM.directoryStorage) { clearInterval(iv); IM.directoryStorage.getRootHandleWithCheck = function () { return Promise.resolve({ handle: fakeRoot, status: 'success' }); }; }
+        else if (tries > 200) clearInterval(iv);
+      }, 1);
+    }, { campaign: campaign, depotByChannelFolder: depotByChannelFolder });
+  }
+
+  test('reprise après demande de modification : le dépôt existant se recharge sans perdre les ids DOM des champs migrés, et la resoumission conserve les champs non modifiés', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    const campaign = {
+      id: 'CF DataCiblage Revision', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['Marketing', 'Data'],
+      channels: [
+        { content: 'MAIL', deliverableLabel: 'Test', deliverableName: 'MAIL - Test', comType: 'Commerciales', targetingCriteria: 'Tous', comTypology: 'Création Caisse', volumeCible: 12000 }
+      ],
+      workflow: {
+        steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' },
+        assignments: { data: [PO_USER.name] },
+        channelSteps: { 0: { data_ciblage: 'revision_requested', po_validation_ciblage: 'locked' } },
+        channelRevisionComments: { 0: { data_ciblage: 'Merci de corriger le code projet.' } },
+        channelDates: {}
+      }
+    };
+    // Dépôt déjà soumis une première fois — même forme que ce que l'app écrit
+    // réellement (collectDataDepot + collectCustomFields tournent tous les deux
+    // au moment d'une soumission, donc les deux représentations coexistent).
+    const existingDepot = {
+      campaign: campaign.id, channel: 'MAIL - Test', channelIndex: 0, step: 'data_ciblage',
+      codeProjet: 'PRJ-OLD', codeAction: 'ACT-OLD', codeMK: 'MK-OLD',
+      cheminRequete: 'chemin-old', urlEchantillon: 'https://exemple.fr/echantillon-old',
+      customFieldValues: {
+        'data-codeproj-': 'PRJ-OLD', 'data-codeaction-': 'ACT-OLD', 'data-codemk-': 'MK-OLD',
+        'data-chemin-': 'chemin-old', 'data-urlechantillon-': 'https://exemple.fr/echantillon-old'
+      },
+      status: 'submitted', depositDate: '2026-08-01T00:00:00.000Z'
+    };
+
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectoryWithDepot(page, campaign, { 'MAIL - Test': existingDepot });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent(campaign.id)));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(1200); // laisse le rechargement async du dépôt s'exécuter
+
+    // Les ids DOM des champs migrés doivent survivre au rechargement, avec les
+    // valeurs de l'ancien dépôt pré-remplies.
+    await expect(page.locator('#data-codeproj-0')).toHaveValue('PRJ-OLD', { timeout: 10000 });
+    await expect(page.locator('#data-codeaction-0')).toHaveValue('ACT-OLD');
+
+    // Correction du seul champ demandé, puis resoumission.
+    await page.locator('#data-codeproj-0').fill('PRJ-NEW');
+    await page.locator('.btn-submit-canal-data[data-ch="0"]').click();
+    await page.waitForTimeout(1200);
+
+    // Le récapitulatif de validation PO doit refléter la correction ET les
+    // champs non modifiés — pas un bloc vide (bug remonté en production).
+    const readonly = page.locator('#data-readonly-0');
+    await expect(readonly).toBeVisible({ timeout: 10000 });
+    await expect(readonly).toContainText('PRJ-NEW');
+    await expect(readonly).toContainText('ACT-OLD');
+    await expect(readonly).toContainText('MK-OLD');
+
+    console.log('errors (reprise après révision, data_ciblage):', errors);
+    expect(errors).toEqual([]);
+  });
 });
