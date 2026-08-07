@@ -970,6 +970,127 @@ test.describe('ebf_bat — migration sans casser les campagnes existantes', () =
     console.log('errors (ebf_bat, canal SMS, objet email masqué):', errors);
     expect(errors).toEqual([]);
   });
+
+  // Variante de installFakeDirectory supportant un dépôt EBF pré-existant
+  // (Campagnes/<id>/<dossier canal>/depotebf.json) — même piège de fond que
+  // pour data_ciblage (cf. installFakeDirectoryWithDepot ci-dessous) : le
+  // fichier dépôt doit être un objet PERSISTANT, sinon les écritures d'un
+  // appel sont invisibles à l'appel suivant.
+  async function installFakeDirectoryWithEbfDepot(page, campaign, depotByChannelFolder) {
+    await page.addInitScript((args) => {
+      var campaign = args.campaign, depotByChannelFolder = args.depotByChannelFolder;
+      function makeFakeFile(initial) {
+        var content = initial;
+        return {
+          getFile: function () { return Promise.resolve({ text: function () { return Promise.resolve(content); } }); },
+          createWritable: function () { return Promise.resolve({ write: function (data) { if (typeof data === 'string') content = data; return Promise.resolve(); }, close: function () { return Promise.resolve(); } }); }
+        };
+      }
+      function makeEmptyDir() {
+        return {
+          getDirectoryHandle: function (n, o) { if (o && o.create) return Promise.resolve(makeEmptyDir()); return Promise.reject(new Error('nf')); },
+          getFileHandle: function (n, o) { if (o && o.create) return Promise.resolve(makeFakeFile('')); return Promise.reject(new Error('nf')); }
+        };
+      }
+      var depotFileCache = {};
+      function channelDir(folderName) {
+        return {
+          getDirectoryHandle: function () { return Promise.resolve(makeEmptyDir()); },
+          getFileHandle: function (fname, opts) {
+            if (fname === 'depotebf.json') {
+              if (!depotFileCache[folderName] && depotByChannelFolder[folderName]) {
+                depotFileCache[folderName] = makeFakeFile(JSON.stringify(depotByChannelFolder[folderName], null, 2));
+              }
+              if (depotFileCache[folderName]) return Promise.resolve(depotFileCache[folderName]);
+              if (opts && opts.create) { depotFileCache[folderName] = makeFakeFile(''); return Promise.resolve(depotFileCache[folderName]); }
+              return Promise.reject(new Error('nf'));
+            }
+            if (opts && opts.create) return Promise.resolve(makeFakeFile(''));
+            return Promise.reject(new Error('nf'));
+          }
+        };
+      }
+      var campaignFile = makeFakeFile(JSON.stringify(campaign, null, 2));
+      function campaignDirH() {
+        return {
+          kind: 'directory', name: campaign.id,
+          getDirectoryHandle: function (name) { return Promise.resolve(channelDir(name)); },
+          getFileHandle: function (fname, opts) {
+            if (fname === 'campagne.json') return Promise.resolve(campaignFile);
+            if (opts && opts.create) return Promise.resolve(makeFakeFile(''));
+            return Promise.reject(new Error('nf'));
+          }
+        };
+      }
+      var indexFile = makeFakeFile('{}');
+      function campagnesDir() {
+        return {
+          getDirectoryHandle: function () { return Promise.resolve(campaignDirH()); },
+          getFileHandle: function (fname, opts) { if (fname === '_index.json') return Promise.resolve(indexFile); if (opts && opts.create) return Promise.resolve(makeFakeFile('')); return Promise.reject(new Error('nf')); },
+          values: function () {
+            var i = 0, names = [campaign.id];
+            return { next: function () { if (i < names.length) { var d = campaignDirH(); i++; return Promise.resolve({ value: d, done: false }); } return Promise.resolve({ value: undefined, done: true }); }, [Symbol.asyncIterator]: function () { return this; } };
+          }
+        };
+      }
+      var fakeRoot = { name: 'FakeRoot', getDirectoryHandle: function (name) { return name === 'Campagnes' ? Promise.resolve(campagnesDir()) : Promise.resolve(makeEmptyDir()); }, getFileHandle: function () { return Promise.reject(new Error('n/a')); } };
+      var tries = 0;
+      var iv = setInterval(function () {
+        tries++;
+        var IM = window.ImpulsionMarketing;
+        if (IM && IM.directoryStorage) { clearInterval(iv); IM.directoryStorage.getRootHandleWithCheck = function () { return Promise.resolve({ handle: fakeRoot, status: 'success' }); }; }
+        else if (tries > 200) clearInterval(iv);
+      }, 1);
+    }, { campaign: campaign, depotByChannelFolder: depotByChannelFolder });
+  }
+
+  test('reprise après demande de modification : l\'objet de l\'email reste présent et remonte dans le bloc « à valider » du PO', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    const campaign = {
+      id: 'CF EbfBat Revision', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: ['EBF'],
+      channels: [
+        { content: 'MAIL', deliverableLabel: 'Test', deliverableName: 'MAIL - Test', comType: 'Commerciales', targetingCriteria: 'Tous' }
+      ],
+      workflow: {
+        steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' },
+        assignments: { ebf: [PO_USER.name] },
+        channelSteps: { 0: { ebf_bat: 'revision_requested', po_validation_bat: 'locked' } },
+        channelRevisionComments: { 0: { ebf_bat: 'Merci de revoir le CTA.' } },
+        channelDates: {}
+      }
+    };
+    const existingDepot = {
+      campaign: campaign.id, channel: 'MAIL - Test', channelIndex: 0, step: 'ebf_bat',
+      webmaster: PO_USER.name, codeCom: 'COM-OLD', refParacom: 'PARA-OLD', emailObject: 'Objet OLD', numCta: 0,
+      customFieldValues: { 'ebf-emailobject-': 'Objet OLD', 'ebf-codecom-': 'COM-OLD' },
+      status: 'submitted', depositDate: '2026-08-01T00:00:00.000Z'
+    };
+
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectoryWithEbfDepot(page, campaign, { 'MAIL - Test': existingDepot });
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent(campaign.id)));
+    await page.waitForTimeout(1200);
+    await page.locator('#nav-item-0').click();
+    await page.waitForTimeout(1200);
+
+    // L'id doit survivre au rechargement, pré-rempli avec l'ancienne valeur.
+    await expect(page.locator('#ebf-emailobject-0')).toHaveValue('Objet OLD', { timeout: 10000 });
+
+    await page.locator('#ebf-emailobject-0').fill('Objet NEW');
+    await page.locator('.btn-submit-canal-ebf[data-ch="0"]').click();
+    await page.waitForTimeout(1200);
+
+    // Bug remonté en production : ce bloc restait vide (l'objet ne « remontait
+    // pas ») car l'id du champ était perdu au rechargement.
+    const poExtra = page.locator('#po-extra-po_validation_bat-0');
+    await expect(poExtra).toContainText('Objet NEW', { timeout: 10000 });
+    await expect(poExtra).toContainText("J'ai vérifié et je valide l'objet du mail");
+
+    console.log('errors (reprise après révision, ebf_bat / objet email):', errors);
+    expect(errors).toEqual([]);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────
