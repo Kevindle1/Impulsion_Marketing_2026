@@ -2092,9 +2092,21 @@
                     + '</select></label></div>';
             }
             if (canalScoped) {
-                html += '<div class="cf-admin-row">'
-                    + '<input class="admin-input" data-cfcanaux="' + i + '" value="' + esc((f.canalTypes || []).join(', ')) + '" placeholder="Restreindre à ces canaux (optionnel, virgules — vide = tous)" style="flex:1;">'
-                    + '</div>';
+                var canauxOptions = (IM.config && IM.config.CANAUX) || [];
+                var selectedCanaux = f.canalTypes || [];
+                html += '<div class="cf-admin-row" style="align-items:flex-start;">'
+                    + '<span class="cf-admin-mini-label" style="padding-top:3px;white-space:nowrap;">Restreindre à ces canaux <span style="font-weight:400;">(optionnel — vide = tous)</span> :</span>';
+                if (canauxOptions.length) {
+                    html += '<div style="display:flex;flex-wrap:wrap;gap:6px 14px;flex:1;">'
+                        + canauxOptions.map(function (c) {
+                            var checked = selectedCanaux.indexOf(c) !== -1;
+                            return '<label class="toggle-label"><input type="checkbox" class="cf-canal-cb" data-cfcanaux="' + i + '" value="' + esc(c) + '"' + (checked ? ' checked' : '') + '> ' + esc(c) + '</label>';
+                        }).join('')
+                        + '</div>';
+                } else {
+                    html += '<span class="empty-hint" style="padding:0;">Aucun canal configuré (Administration ▸ Types de livrables / canaux).</span>';
+                }
+                html += '</div>';
             }
             html += '<div class="cf-admin-row">'
                 + '<span class="cf-admin-mini-label">Condition d\'affichage (optionnel) :</span>'
@@ -2179,8 +2191,9 @@
                 }); });
                 cont.querySelectorAll('[data-cfref]').forEach(function (inp) { var i = +inp.getAttribute('data-cfref'); inp.addEventListener('input', function () { fields[i].configRef = inp.value.trim(); }); });
                 cont.querySelectorAll('[data-cfitemtype]').forEach(function (sel) { var i = +sel.getAttribute('data-cfitemtype'); sel.addEventListener('change', function () { fields[i].itemType = sel.value; }); });
-                cont.querySelectorAll('[data-cfcanaux]').forEach(function (inp) { var i = +inp.getAttribute('data-cfcanaux'); inp.addEventListener('input', function () {
-                    fields[i].canalTypes = inp.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+                cont.querySelectorAll('.cf-canal-cb').forEach(function (cb) { cb.addEventListener('change', function () {
+                    var i = +cb.getAttribute('data-cfcanaux');
+                    fields[i].canalTypes = Array.prototype.map.call(cont.querySelectorAll('.cf-canal-cb[data-cfcanaux="' + i + '"]:checked'), function (c) { return c.value; });
                 }); });
                 cont.querySelectorAll('[data-cfsifield]').forEach(function (inp) { var i = +inp.getAttribute('data-cfsifield'); inp.addEventListener('input', function () { cfUpdateShowIf(fields[i], 'field', inp.value.trim()); }); });
                 cont.querySelectorAll('[data-cfsiop]').forEach(function (sel) { var i = +sel.getAttribute('data-cfsiop'); sel.addEventListener('change', function () { cfUpdateShowIf(fields[i], 'op', sel.value); }); });
