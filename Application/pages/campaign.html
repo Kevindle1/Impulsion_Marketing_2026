@@ -1696,7 +1696,7 @@
                     return;
                 }
 
-                var filtered = users.USERS.filter(function(u) { return u.role === team; });
+                var filtered = users.USERS.filter(function(u) { return u.role === team && !u.inactive; });
                 poSelect.innerHTML = '<option value="">Choisir la personne...</option>';
                 filtered.forEach(function(u) {
                     var opt = document.createElement('option');
