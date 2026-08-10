@@ -1262,7 +1262,8 @@
                             });
                     })
                     .catch(function(error) {
-                        noteRoot("❌ Erreur : " + error.message);
+                        var IMerr = window.ImpulsionMarketing.errors;
+                        noteRoot("❌ Erreur : " + ((IMerr && IMerr.getErrorMessage) ? IMerr.getErrorMessage(error) : 'erreur inconnue'));
                     });
             }
 
@@ -1300,7 +1301,8 @@
                         populateForm(data);
                     } catch (error) {
                         console.error("Erreur lors du chargement de la campagne:", error);
-                        notify("Erreur lors du chargement de la campagne : " + error.message, 'error');
+                        var IMerr1 = window.ImpulsionMarketing.errors;
+                        notify("Erreur lors du chargement de la campagne : " + ((IMerr1 && IMerr1.getErrorMessage) ? IMerr1.getErrorMessage(error) : 'erreur inconnue'), 'error');
                     }
                 } else if (duplicateCampaignName) {
                     // Mode duplication : pré-remplir mais créer un nouveau dossier
@@ -1325,7 +1327,8 @@
                         populateForm(data);
                     } catch (error) {
                         console.error("Erreur lors du chargement de la campagne source:", error);
-                        notify("Erreur lors du chargement de la campagne source : " + error.message, 'error');
+                        var IMerr2 = window.ImpulsionMarketing.errors;
+                        notify("Erreur lors du chargement de la campagne source : " + ((IMerr2 && IMerr2.getErrorMessage) ? IMerr2.getErrorMessage(error) : 'erreur inconnue'), 'error');
                     }
                 }
             }
@@ -1696,7 +1699,7 @@
                     return;
                 }
 
-                var filtered = users.USERS.filter(function(u) { return u.role === team; });
+                var filtered = users.USERS.filter(function(u) { return u.role === team && !u.inactive; });
                 poSelect.innerHTML = '<option value="">Choisir la personne...</option>';
                 filtered.forEach(function(u) {
                     var opt = document.createElement('option');
@@ -2611,10 +2614,11 @@
                     }, 1000);
                 } catch (error) {
                     var errors = window.ImpulsionMarketing.errors;
+                    var friendlyMsg = (errors && errors.getErrorMessage) ? errors.getErrorMessage(error) : 'erreur inconnue';
                     if (errors && errors.showNotification) {
-                        errors.showNotification('Erreur : ' + error.message, 'error');
+                        errors.showNotification('Erreur : ' + friendlyMsg, 'error');
                     } else {
-                        notify("Erreur : " + error.message, 'error');
+                        notify("Erreur : " + friendlyMsg, 'error');
                     }
                     $("#btnSubmit").disabled = false;
                     $("#btnSubmit").textContent = state.editMode ? "Modifier la campagne" : "Créer la campagne";
@@ -2983,7 +2987,7 @@
                     console.error('[Impulsion] Échec mise à jour _index.json :', e);
                     const errMod = window.ImpulsionMarketing && window.ImpulsionMarketing.errors;
                     if (errMod && errMod.showNotification) {
-                        errMod.showNotification('⚠️ Campagne sauvegardée mais l\'index n\'a pas pu être mis à jour : ' + e.message, 'error', 6000);
+                        errMod.showNotification('⚠️ Campagne sauvegardée mais l\'index n\'a pas pu être mis à jour : ' + errMod.getErrorMessage(e), 'error', 6000);
                     }
                 }
 

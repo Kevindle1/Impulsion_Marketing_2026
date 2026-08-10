@@ -508,7 +508,7 @@
                     var _ac = window.ImpulsionMarketing && window.ImpulsionMarketing.adminConfig;
                     if (_ac && _ac.reload) _ac.reload().then(populateFilters).catch(function () {});
                 })
-                .catch(function(error) { showError('Erreur : ' + error.message); });
+                .catch(function(error) { showError('Erreur : ' + errors.getErrorMessage(error)); });
         }
 
         function setupEventListeners() {

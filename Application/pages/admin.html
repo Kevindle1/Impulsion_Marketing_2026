@@ -459,7 +459,7 @@
             var teamSelectOptions = TEAMS.map(function (t) { return '<option value="' + t.role + '">' + t.label + '</option>'; }).join('');
             var html = '';
             TEAMS.forEach(function (t) {
-                var members = people.filter(function (p) { return p.role === t.role; });
+                var members = people.filter(function (p) { return p.role === t.role && !p.inactive; });
                 html += '<div class="admin-card"><div class="admin-card-title"><h3>' + esc(t.label) + '</h3><span class="count-pill">' + members.length + '</span></div>';
                 if (!members.length) html += '<div class="empty-hint">Aucune personne dans cette équipe.</div>';
                 members.forEach(function (p) {
@@ -470,7 +470,8 @@
                         + '<label class="toggle-label"><input type="checkbox" class="cb-mgr" data-i="' + idx + '"' + (p.isManager ? ' checked' : '') + '> Responsable</label>'
                         + '<label class="toggle-label" title="Accès admin complet, sur toutes les équipes, en plus de son rôle ci-dessous."><input type="checkbox" class="cb-superadmin" data-i="' + idx + '"' + (p.isSuperAdmin ? ' checked' : '') + '> Super Admin</label>'
                         + '<select class="admin-select sel-team" data-i="' + idx + '">' + teamSelectOptions + '</select>'
-                        + '<button class="icon-del" data-del="' + idx + '">🗑</button>'
+                        + '<button class="icon-del" data-inactivate="' + idx + '" title="Rendre inactif — n\'apparaîtra plus dans les listes de sélection ni à la connexion">⏸</button>'
+                        + '<button class="icon-del" data-del="' + idx + '" title="Supprimer définitivement">🗑</button>'
                         + '</div>';
                 });
                 html += '</div>';
@@ -482,6 +483,25 @@
                 + '<label class="toggle-label"><input type="checkbox" id="add-mgr"> Responsable</label>'
                 + '<button class="btn btn-primary" id="add-person-btn">+ Ajouter</button>'
                 + '</div></div>';
+            // Personnes inactives : liste à part, ne comptent plus dans les équipes
+            // ci-dessus et disparaissent des listes de sélection (affectation,
+            // co-PO, mentions…) et de l'écran de connexion.
+            var inactive = people.filter(function (p) { return p.inactive; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Personnes inactives</h3><span class="count-pill">' + inactive.length + '</span></div>';
+            if (!inactive.length) {
+                html += '<div class="empty-hint">Aucune personne inactive.</div>';
+            } else {
+                inactive.forEach(function (p) {
+                    var idx = people.indexOf(p);
+                    html += '<div class="person-row">'
+                        + '<span class="av-ini" style="background:' + (ROLE_COLOR[p.role] || '#64748b') + ';opacity:.5;">' + esc(initials(p.name)) + '</span>'
+                        + '<span class="person-name" style="color:var(--muted);">' + esc(p.name) + ' <span class="pill-mgr" style="background:var(--line-2);color:var(--muted);">' + esc(roleLabel(p.role)) + '</span></span>'
+                        + '<button class="btn btn-secondary" data-reactivate="' + idx + '">↩️ Réactiver</button>'
+                        + '<button class="icon-del" data-del="' + idx + '" title="Supprimer définitivement">🗑</button>'
+                        + '</div>';
+                });
+            }
+            html += '</div>';
             html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-people">💾 Enregistrer les équipes</button></div>';
             document.getElementById('people-container').innerHTML = html;
 
@@ -501,6 +521,17 @@
             document.querySelectorAll('[data-del]').forEach(function (b) {
                 b.addEventListener('click', function () { people.splice(+b.getAttribute('data-del'), 1); renderPeople(); });
             });
+            document.querySelectorAll('[data-inactivate]').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    var i = +b.getAttribute('data-inactivate');
+                    if (!confirm('Rendre « ' + people[i].name + ' » inactif ? Elle disparaîtra des listes de sélection et ne pourra plus se connecter — réactivable à tout moment.')) return;
+                    people[i].inactive = true;
+                    renderPeople();
+                });
+            });
+            document.querySelectorAll('[data-reactivate]').forEach(function (b) {
+                b.addEventListener('click', function () { people[+b.getAttribute('data-reactivate')].inactive = false; renderPeople(); });
+            });
             document.getElementById('add-person-btn').addEventListener('click', function () {
                 var name = document.getElementById('add-name').value.trim();
                 var role = document.getElementById('add-team').value;
@@ -516,6 +547,7 @@
                 var o = { name: p.name, role: p.role, roleLabel: p.roleLabel || labelFor(p.role, p.isManager) };
                 if (p.isManager) o.isManager = true;
                 if (p.isSuperAdmin) o.isSuperAdmin = true;
+                if (p.inactive) o.inactive = true;
                 return o;
             });
             saveConfig({ users: clean }, 'Équipes enregistrées.').then(function () { users.applyUsers(clean); });
@@ -1020,7 +1052,7 @@
                     return writeJson('Données', 'incidents.json', incidents, 'Réponse enregistrée — auteur notifié.');
                 })
                 .then(function () { renderIncidents(); })
-                .catch(function (e) { btn.disabled = false; btn.textContent = '💬 Répondre & notifier'; notify('Échec : ' + (e && e.message), 'error'); });
+                .catch(function (e) { btn.disabled = false; btn.textContent = '💬 Répondre & notifier'; notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         // Ajoute une notification destinée à l'auteur du signalement.
@@ -1068,7 +1100,7 @@
             return adminConfig.load().then(function (cur) {
                 Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
                 return adminConfig.save(cur);
-            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); throw e; });
+            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); throw e; });
         }
         function writeJson(dir, file, data, okMsg) {
             return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
@@ -1078,7 +1110,7 @@
                 return d.getFileHandle(file, { create: true }).then(function (fh) {
                     return fh.createWritable().then(function (w) { return w.write(JSON.stringify(data, null, 2)).then(function () { return w.close(); }); });
                 });
-            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         // ── QUOI DE NEUF (annonces) ──────────────────────────────────────────────
@@ -1195,7 +1227,7 @@
             whatsNewList.push(entry);
             writeWhatsNewFile(whatsNewList)
                 .then(function () { notify('Annonce publiée.'); renderWhatsNew(); })
-                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+                .catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         function deleteWhatsNew(id) {
@@ -1203,7 +1235,7 @@
             whatsNewList = whatsNewList.filter(function (e) { return e.id !== id; });
             writeWhatsNewFile(whatsNewList)
                 .then(function () { notify('Annonce supprimée.'); renderWhatsNew(); })
-                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+                .catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         // ── Init : charger config + incidents puis rendre ──
@@ -1326,7 +1358,7 @@
             { k: 'gt', label: '>' }, { k: 'gte', label: '≥' }, { k: 'lt', label: '<' }, { k: 'lte', label: '≤' }, { k: 'in', label: 'parmi (a,b,c)' }
         ];
         function getAaRoles() { return ['com', 'ebf', 'data'].map(function (k) { return { k: k, label: roleLabel(k) }; }); }
-        function _peopleByRole(role) { return (users.USERS || []).filter(function (u) { return u.role === role; }); }
+        function _peopleByRole(role) { return (users.USERS || []).filter(function (u) { return u.role === role && !u.inactive; }); }
         // Valeurs possibles d'un champ de condition (remontées automatiquement).
         function _aaFieldValues(field) {
             var c = config || {};

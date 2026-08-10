@@ -862,7 +862,8 @@
             await loadAndRender();
         } catch(e) {
             if (e.message !== 'Sélection du dossier annulée') {
-                notify('Erreur connexion : ' + e.message, 'error');
+                var IMerr = window.ImpulsionMarketing.errors;
+                notify('Erreur connexion : ' + ((IMerr && IMerr.getErrorMessage) ? IMerr.getErrorMessage(e) : 'erreur inconnue'), 'error');
             }
         }
     }
@@ -883,7 +884,8 @@
                 await connectFresh();
             }
         } catch(e) {
-            notify('Erreur reconnexion : ' + e.message, 'error');
+            var IMerr2 = window.ImpulsionMarketing.errors;
+            notify('Erreur reconnexion : ' + ((IMerr2 && IMerr2.getErrorMessage) ? IMerr2.getErrorMessage(e) : 'erreur inconnue'), 'error');
         }
     }
 
@@ -933,7 +935,8 @@
                 } catch(err) { /* skip folders without campagne.json */ }
             }
         } catch(e) {
-            notify('Erreur chargement campagnes : ' + e.message, 'error');
+            var IMerr3 = window.ImpulsionMarketing.errors;
+            notify('Erreur chargement campagnes : ' + ((IMerr3 && IMerr3.getErrorMessage) ? IMerr3.getErrorMessage(e) : 'erreur inconnue'), 'error');
             return;
         }
         renderGantt();
@@ -1342,7 +1345,8 @@
                     await wfMod.updateCampaignIndex(state.root, target.folderName, data);
                 }
             } catch(e) {
-                showNotifToast('⚠️ Erreur sauvegarde fichier : ' + e.message);
+                var IMerr4 = window.ImpulsionMarketing.errors;
+                showNotifToast('⚠️ Erreur sauvegarde fichier : ' + ((IMerr4 && IMerr4.getErrorMessage) ? IMerr4.getErrorMessage(e) : 'erreur inconnue'));
             }
         }
 
@@ -1401,7 +1405,8 @@
             await loadAndRender();
             showNotifToast(newStatus === 'confirmed' ? 'Zone approuvée.' : 'Zone refusée. Le chargé a été notifié.');
         } catch(e) {
-            notify('Erreur : ' + e.message, 'error');
+            var IMerr5 = window.ImpulsionMarketing.errors;
+            notify('Erreur : ' + ((IMerr5 && IMerr5.getErrorMessage) ? IMerr5.getErrorMessage(e) : 'erreur inconnue'), 'error');
         }
     }
 

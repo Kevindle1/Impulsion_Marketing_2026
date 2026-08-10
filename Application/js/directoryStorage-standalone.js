@@ -232,10 +232,12 @@ window.ImpulsionMarketing.directoryStorage = (function() {
       })
       .catch(function(error) {
         console.error('Erreur lors de la récupération du handle:', error);
+        var IM = window.ImpulsionMarketing;
+        var friendly = (IM && IM.errors && IM.errors.getErrorMessage) ? IM.errors.getErrorMessage(error) : 'Une erreur inattendue est survenue.';
         return {
           handle: null,
           status: 'error',
-          message: 'Erreur: ' + error.message
+          message: 'Erreur : ' + friendly
         };
       });
   }
@@ -265,7 +267,9 @@ window.ImpulsionMarketing.directoryStorage = (function() {
           return { handle: null, status: 'no_permission' };
         })
         .catch(function(err) {
-          return { handle: null, status: 'no_permission', message: err && err.message };
+          var IM = window.ImpulsionMarketing;
+          var friendly = (IM && IM.errors && IM.errors.getErrorMessage) ? IM.errors.getErrorMessage(err) : 'Une erreur inattendue est survenue.';
+          return { handle: null, status: 'no_permission', message: friendly };
         });
     });
   }

@@ -682,6 +682,11 @@ window.ImpulsionMarketing.errors = (function() {
     PERMISSION_DENIED: 'PERMISSION_DENIED',
     FILE_NOT_FOUND: 'FILE_NOT_FOUND',
     DIRECTORY_NOT_FOUND: 'DIRECTORY_NOT_FOUND',
+    ABORTED: 'ABORTED',
+    QUOTA_EXCEEDED: 'QUOTA_EXCEEDED',
+    NOT_READABLE: 'NOT_READABLE',
+    SECURITY: 'SECURITY',
+    CORRUPTED_FILE: 'CORRUPTED_FILE',
     INVALID_DATA: 'INVALID_DATA',
     NETWORK_ERROR: 'NETWORK_ERROR',
     VALIDATION_ERROR: 'VALIDATION_ERROR',
@@ -689,20 +694,31 @@ window.ImpulsionMarketing.errors = (function() {
   };
 
   /**
-   * Messages d'erreur localisés
+   * Messages d'erreur localisés — toujours en français, explicites, JAMAIS le
+   * message brut d'une exception navigateur (souvent en anglais, ex.
+   * DOMException). Tout le contenu utilisateur (toasts, bannières) doit
+   * passer par getErrorMessage() plutôt que par error.message directement.
    */
   var ErrorMessages = {
-    PERMISSION_DENIED: 'Permission refusée. Veuillez autoriser l\'accès au dossier.',
-    FILE_NOT_FOUND: 'Fichier introuvable.',
-    DIRECTORY_NOT_FOUND: 'Dossier introuvable.',
+    PERMISSION_DENIED: 'Accès refusé — autorisez l\'accès au dossier partagé pour continuer.',
+    FILE_NOT_FOUND: 'Fichier introuvable — il a peut-être été déplacé, renommé ou supprimé.',
+    DIRECTORY_NOT_FOUND: 'Dossier introuvable — il a peut-être été déplacé, renommé ou supprimé.',
+    ABORTED: 'Opération annulée.',
+    QUOTA_EXCEEDED: 'Espace disque insuffisant sur le dossier partagé.',
+    NOT_READABLE: 'Le fichier n\'a pas pu être lu — il est peut-être ouvert dans un autre programme.',
+    SECURITY: 'Accès bloqué par le navigateur pour des raisons de sécurité.',
+    CORRUPTED_FILE: 'Le fichier est illisible ou corrompu.',
     INVALID_DATA: 'Données invalides.',
-    NETWORK_ERROR: 'Erreur réseau. Vérifiez votre connexion.',
+    NETWORK_ERROR: 'Erreur réseau — vérifiez votre connexion.',
     VALIDATION_ERROR: 'Erreur de validation.',
-    UNKNOWN: 'Une erreur inattendue s\'est produite.'
+    UNKNOWN: 'Une erreur inattendue est survenue. Réessayez ; si le problème persiste, contactez le support.'
   };
 
   /**
-   * Détermine le type d'erreur à partir d'une exception
+   * Détermine le type d'erreur à partir d'une exception — d'abord par son
+   * .name (fiable : c'est ainsi que le navigateur/File System Access API
+   * distingue ses erreurs, quelle que soit la langue du message), en repli
+   * sur des indices dans le .message pour les erreurs génériques.
    * @param {Error} error - Erreur à classifier
    * @returns {string} Type d'erreur
    */
@@ -711,25 +727,29 @@ window.ImpulsionMarketing.errors = (function() {
       return ErrorTypes.UNKNOWN;
     }
 
-    var message = error.message || '';
+    var message = (error.message || '').toLowerCase();
     var name = error.name || '';
 
-    // Erreurs File System Access API
-    if (name === 'NotFoundError') {
-      return ErrorTypes.FILE_NOT_FOUND;
-    }
+    // Erreurs File System Access API (identifiées par leur .name — stable,
+    // indépendant de la langue du navigateur)
+    if (name === 'NotFoundError') return ErrorTypes.FILE_NOT_FOUND;
+    if (name === 'NotAllowedError') return ErrorTypes.PERMISSION_DENIED;
+    if (name === 'AbortError') return ErrorTypes.ABORTED;
+    if (name === 'QuotaExceededError') return ErrorTypes.QUOTA_EXCEEDED;
+    if (name === 'NotReadableError' || name === 'NoModificationAllowedError') return ErrorTypes.NOT_READABLE;
+    if (name === 'SecurityError') return ErrorTypes.SECURITY;
+    if (name === 'SyntaxError') return ErrorTypes.CORRUPTED_FILE;
 
-    if (name === 'NotAllowedError' || message.includes('permission')) {
-      return ErrorTypes.PERMISSION_DENIED;
-    }
+    if (message.indexOf('permission') !== -1) return ErrorTypes.PERMISSION_DENIED;
+    if (message.indexOf('unexpected token') !== -1 || message.indexOf('json') !== -1) return ErrorTypes.CORRUPTED_FILE;
 
     // Erreurs réseau
-    if (name === 'NetworkError' || message.includes('network')) {
+    if (name === 'NetworkError' || message.indexOf('network') !== -1 || message.indexOf('fetch') !== -1) {
       return ErrorTypes.NETWORK_ERROR;
     }
 
     // Erreurs de validation
-    if (message.includes('invalid') || message.includes('validation')) {
+    if (message.indexOf('invalid') !== -1 || message.indexOf('validation') !== -1) {
       return ErrorTypes.VALIDATION_ERROR;
     }
 
@@ -1676,10 +1696,12 @@ window.ImpulsionMarketing.directoryStorage = (function() {
       })
       .catch(function(error) {
         console.error('Erreur lors de la récupération du handle:', error);
+        var IM = window.ImpulsionMarketing;
+        var friendly = (IM && IM.errors && IM.errors.getErrorMessage) ? IM.errors.getErrorMessage(error) : 'Une erreur inattendue est survenue.';
         return {
           handle: null,
           status: 'error',
-          message: 'Erreur: ' + error.message
+          message: 'Erreur : ' + friendly
         };
       });
   }
@@ -1709,7 +1731,9 @@ window.ImpulsionMarketing.directoryStorage = (function() {
           return { handle: null, status: 'no_permission' };
         })
         .catch(function(err) {
-          return { handle: null, status: 'no_permission', message: err && err.message };
+          var IM = window.ImpulsionMarketing;
+          var friendly = (IM && IM.errors && IM.errors.getErrorMessage) ? IM.errors.getErrorMessage(err) : 'Une erreur inattendue est survenue.';
+          return { handle: null, status: 'no_permission', message: friendly };
         });
     });
   }
@@ -1866,6 +1890,10 @@ window.ImpulsionMarketing.users = (function () {
         // Vérifier que l'utilisateur existe toujours dans la liste (nom + rôle pour éviter les homonymes)
         var found = USERS.find(function (u) { return u.name === parsed.name && u.role === parsed.role; });
         if (!found) found = USERS.find(function (u) { return u.name === parsed.name; });
+        // Une personne rendue inactive (Administration ▸ Équipes & personnes) perd
+        // immédiatement l'accès — y compris si elle était déjà connectée (session
+        // encore présente en localStorage) : traité comme non connecté.
+        if (found && found.inactive) return null;
         return found || null;
       }
     } catch (e) {}
@@ -1884,12 +1912,14 @@ window.ImpulsionMarketing.users = (function () {
   }
 
   /**
-   * Retourne les utilisateurs d'un rôle donné
+   * Retourne les utilisateurs ACTIFS d'un rôle donné — utilisé pour peupler les
+   * listes de sélection (connexion, affectation…). Une personne inactive
+   * (Administration ▸ Équipes & personnes) n'y apparaît plus.
    * @param {string} role
    * @returns {Array}
    */
   function getUsersByRole(role) {
-    return USERS.filter(function (u) { return u.role === role; });
+    return USERS.filter(function (u) { return u.role === role && !u.inactive; });
   }
 
   /**
@@ -4134,7 +4164,7 @@ window.ImpulsionMarketing.incident = (function () {
       })
       .catch(function (e) {
         btn.disabled = false; btn.textContent = 'Envoyer';
-        showErr('Échec de l\'enregistrement : ' + (e && e.message ? e.message : 'erreur inconnue'));
+        showErr('Échec de l\'enregistrement : ' + ((IM.errors && IM.errors.getErrorMessage) ? IM.errors.getErrorMessage(e) : 'erreur inconnue'));
       });
   }
 
@@ -4601,7 +4631,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
         setTimeout(function () { window.location.reload(); }, 450);
       }).catch(function (e) {
         btn.disabled = false; if (lbl) lbl.textContent = 'Rafraîchir';
-        notify('Échec : ' + (e && e.message), 'error');
+        notify('Échec : ' + (IM.errors ? IM.errors.getErrorMessage(e) : ''), 'error');
       });
     });
   }
@@ -4755,7 +4785,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
         var updated = current.map(function (n) { if (n.destinataire === me && !n.lu) n.lu = true; return n; });
         writeNotifications(updated, renderNotifications._root || rootHandle)
           .then(function () { renderNotifications([], updated, renderNotifications._root || rootHandle); })
-          .catch(function (err) { notify('Échec : ' + err.message, 'error'); });
+          .catch(function (err) { notify('Échec : ' + (IM.errors ? IM.errors.getErrorMessage(err) : ''), 'error'); });
       });
     }
     renderNotifications._all = allNotifs;
@@ -4800,7 +4830,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
           }
         }
         if (rootHandle) {
-          writeNotifications(updated, rootHandle).then(go).catch(function (err) { notify('La notification n\'a pas pu être marquée comme lue : ' + err.message, 'error'); go(); });
+          writeNotifications(updated, rootHandle).then(go).catch(function (err) { notify('La notification n\'a pas pu être marquée comme lue : ' + (IM.errors ? IM.errors.getErrorMessage(err) : ''), 'error'); go(); });
         } else { go(); }
       });
     });

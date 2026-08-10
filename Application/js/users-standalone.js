@@ -50,6 +50,10 @@ window.ImpulsionMarketing.users = (function () {
         // Vérifier que l'utilisateur existe toujours dans la liste (nom + rôle pour éviter les homonymes)
         var found = USERS.find(function (u) { return u.name === parsed.name && u.role === parsed.role; });
         if (!found) found = USERS.find(function (u) { return u.name === parsed.name; });
+        // Une personne rendue inactive (Administration ▸ Équipes & personnes) perd
+        // immédiatement l'accès — y compris si elle était déjà connectée (session
+        // encore présente en localStorage) : traité comme non connecté.
+        if (found && found.inactive) return null;
         return found || null;
       }
     } catch (e) {}
@@ -68,12 +72,14 @@ window.ImpulsionMarketing.users = (function () {
   }
 
   /**
-   * Retourne les utilisateurs d'un rôle donné
+   * Retourne les utilisateurs ACTIFS d'un rôle donné — utilisé pour peupler les
+   * listes de sélection (connexion, affectation…). Une personne inactive
+   * (Administration ▸ Équipes & personnes) n'y apparaît plus.
    * @param {string} role
    * @returns {Array}
    */
   function getUsersByRole(role) {
-    return USERS.filter(function (u) { return u.role === role; });
+    return USERS.filter(function (u) { return u.role === role && !u.inactive; });
   }
 
   /**

@@ -128,7 +128,7 @@
         setTimeout(function () { window.location.reload(); }, 450);
       }).catch(function (e) {
         btn.disabled = false; if (lbl) lbl.textContent = 'Rafraîchir';
-        notify('Échec : ' + (e && e.message), 'error');
+        notify('Échec : ' + (IM.errors ? IM.errors.getErrorMessage(e) : ''), 'error');
       });
     });
   }
@@ -282,7 +282,7 @@
         var updated = current.map(function (n) { if (n.destinataire === me && !n.lu) n.lu = true; return n; });
         writeNotifications(updated, renderNotifications._root || rootHandle)
           .then(function () { renderNotifications([], updated, renderNotifications._root || rootHandle); })
-          .catch(function (err) { notify('Échec : ' + err.message, 'error'); });
+          .catch(function (err) { notify('Échec : ' + (IM.errors ? IM.errors.getErrorMessage(err) : ''), 'error'); });
       });
     }
     renderNotifications._all = allNotifs;
@@ -327,7 +327,7 @@
           }
         }
         if (rootHandle) {
-          writeNotifications(updated, rootHandle).then(go).catch(function (err) { notify('La notification n\'a pas pu être marquée comme lue : ' + err.message, 'error'); go(); });
+          writeNotifications(updated, rootHandle).then(go).catch(function (err) { notify('La notification n\'a pas pu être marquée comme lue : ' + (IM.errors ? IM.errors.getErrorMessage(err) : ''), 'error'); go(); });
         } else { go(); }
       });
     });
