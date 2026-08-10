@@ -610,7 +610,7 @@
                             + ' par ' + cu.name + ' — motif : ' + motif);
                     })
                     .catch(function(err) {
-                        errors.showNotification('Erreur : ' + err.message, 'error');
+                        errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error');
                     });
             }
         });
@@ -650,7 +650,7 @@
                 setTimeout(function() { window.location.href = '../Impulsion-Marketing.html'; }, 1600);
             })
             .catch(function(err) {
-                errors.showNotification('Erreur lors de la suppression : ' + err.message, 'error');
+                errors.showNotification('Erreur lors de la suppression : ' + errors.getErrorMessage(err), 'error');
             });
     }
 
@@ -672,7 +672,7 @@
             .catch(function(err) {
                 // Annuler le splice si la sauvegarde échoue
                 currentCampaignData.channels.splice(idx, 0, ch);
-                errors.showNotification('Erreur : ' + err.message, 'error');
+                errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error');
             });
     }
 
@@ -773,7 +773,7 @@
                     });
             })
             .catch(function(err) {
-                showError('Impossible de charger la campagne : ' + err.message);
+                showError('Impossible de charger la campagne : ' + errors.getErrorMessage(err));
             });
     }
 
@@ -3244,7 +3244,7 @@
                     workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                         .catch(function(err) {
                             console.error('Échec de la sauvegarde de la date de dépôt maquette :', err);
-                            errors.showNotification('La date de dépôt n\'a pas pu être enregistrée : ' + err.message, 'error');
+                            errors.showNotification('La date de dépôt n\'a pas pu être enregistrée : ' + errors.getErrorMessage(err), 'error');
                         });
                 }
                 disableBtn(btnSaveCom, 'Enregistrement...');
@@ -3263,7 +3263,7 @@
                                 .then(function() { loadComFilePreview(idx, folder, depot.pdfComSavedName); })
                                 .catch(function(err) {
                                     console.error('Échec de l\'enregistrement du fichier maquette :', err);
-                                    errors.showNotification('Le fichier maquette n\'a pas pu être enregistré : ' + err.message, 'error');
+                                    errors.showNotification('Le fichier maquette n\'a pas pu être enregistré : ' + errors.getErrorMessage(err), 'error');
                                 });
                         }
                     })
@@ -3271,7 +3271,7 @@
                         enableBtn(btnSaveCom, '💾 Enregistrer');
                         errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                     })
-                    .catch(function(err) { enableBtn(btnSaveCom, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnSaveCom, '💾 Enregistrer'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3305,7 +3305,7 @@
                                 .then(function(w) { return comFileToSave.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
                                 .catch(function(err) {
                                     console.error('Échec de l\'enregistrement du fichier maquette :', err);
-                                    errors.showNotification('Le fichier maquette n\'a pas pu être enregistré : ' + err.message, 'error');
+                                    errors.showNotification('Le fichier maquette n\'a pas pu être enregistré : ' + errors.getErrorMessage(err), 'error');
                                 });
                         }
                         // v2 : avancement direct du canal
@@ -3315,7 +3315,7 @@
                         enableBtn(btnSubmitCom, '📤 Soumettre ce canal');
                         errors.showNotification('Canal soumis !', 'success', 2000);
                     })
-                    .catch(function(err) { enableBtn(btnSubmitCom, '📤 Soumettre ce canal'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnSubmitCom, '📤 Soumettre ce canal'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3351,7 +3351,7 @@
                                 .then(function(w) { return prepared.blob.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
                                 .catch(function(err) {
                                     console.error('Échec de l\'enregistrement du fichier EBF :', err);
-                                    errors.showNotification('Le fichier n\'a pas pu être enregistré : ' + err.message, 'error');
+                                    errors.showNotification('Le fichier n\'a pas pu être enregistré : ' + errors.getErrorMessage(err), 'error');
                                 });
                         }
                     });
@@ -3360,7 +3360,7 @@
                     errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                 }).catch(function(err) {
                     enableBtn(btn, '💾 Enregistrer');
-                    errors.showNotification('Erreur : ' + (err && err.message), 'error');
+                    errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error');
                 });
             });
         });
@@ -3404,7 +3404,7 @@
                                 .then(function(w) { return prepared.blob.arrayBuffer().then(function(buf) { return w.write(buf).then(function() { return w.close(); }); }); })
                                 .catch(function(err) {
                                     console.error('Échec de l\'enregistrement du fichier EBF :', err);
-                                    errors.showNotification('Le fichier n\'a pas pu être enregistré : ' + err.message, 'error');
+                                    errors.showNotification('Le fichier n\'a pas pu être enregistré : ' + errors.getErrorMessage(err), 'error');
                                 });
                         }
                         // v2 : avancement direct du canal
@@ -3422,7 +3422,7 @@
                     errors.showNotification('Canal soumis !', 'success', 2000);
                 }).catch(function(err) {
                     enableBtn(btn, btnLabel);
-                    errors.showNotification('Erreur : ' + (err && err.message), 'error');
+                    errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error');
                 });
             });
         });
@@ -3457,7 +3457,7 @@
                 disableBtn(btn, 'Enregistrement...');
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '💾 Enregistrer'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '💾 Enregistrer'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         });
 
@@ -3516,7 +3516,7 @@
                     return workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData);
                 })
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '✅ Valider ce canal'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '✅ Valider ce canal'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         });
         document.querySelectorAll('.btn-po-ask-revision-ch').forEach(function(btn) {
@@ -3542,7 +3542,7 @@
                 workflow.requestChannelRevision(currentCampaignData, stepId, sourceId, channelIdx, comment, _currentUserName(), _nowStamp());
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '📤 Envoyer la demande'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '📤 Envoyer la demande'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         });
 
@@ -3565,7 +3565,7 @@
                 workflow.reopenChannelStep(currentCampaignData, channelIdx, stepId, field.html, _currentUserName(), _nowStamp());
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '↩️ Renvoyer à cette étape'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '↩️ Renvoyer à cette étape'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         });
 
@@ -3593,7 +3593,7 @@
                         enableBtn(btnSaveCiblage, '💾 Enregistrer');
                         errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                     })
-                    .catch(function(err) { enableBtn(btnSaveCiblage, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnSaveCiblage, '💾 Enregistrer'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3644,7 +3644,7 @@
                         enableBtn(btnSubmitData, btnLabel);
                         errors.showNotification('Canal soumis !', 'success', 2000);
                     })
-                    .catch(function(err) { enableBtn(btnSubmitData, btnLabel); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnSubmitData, btnLabel); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3675,7 +3675,7 @@
                         enableBtn(btnSaveDataTest, '💾 Enregistrer');
                         errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                     })
-                    .catch(function(err) { enableBtn(btnSaveDataTest, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnSaveDataTest, '💾 Enregistrer'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3705,7 +3705,7 @@
                         enableBtn(btnDataTest, '🧪 Confirmer le lancement test');
                         errors.showNotification('Lancement test confirmé !', 'success', 2000);
                     })
-                    .catch(function(err) { enableBtn(btnDataTest, '🧪 Confirmer le lancement test'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnDataTest, '🧪 Confirmer le lancement test'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3726,7 +3726,7 @@
                         enableBtn(btnSaveDataMep, '💾 Enregistrer');
                         errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                     })
-                    .catch(function(err) { enableBtn(btnSaveDataMep, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnSaveDataMep, '💾 Enregistrer'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3750,7 +3750,7 @@
                         enableBtn(btnMep, '🚀 Confirmer la mise en production');
                         errors.showNotification('MEP confirmée !', 'success', 2000);
                     })
-                    .catch(function(err) { enableBtn(btnMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3772,7 +3772,7 @@
                         enableBtn(btnSaveEbfMep, '💾 Enregistrer');
                         errors.showNotification('Enregistré (brouillon, pas encore soumis).', 'success', 2500);
                     })
-                    .catch(function(err) { enableBtn(btnSaveEbfMep, '💾 Enregistrer'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnSaveEbfMep, '💾 Enregistrer'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3795,7 +3795,7 @@
                         enableBtn(btnEbfMep, '🚀 Confirmer la mise en production');
                         errors.showNotification('MEP LP confirmée !', 'success', 2000);
                     })
-                    .catch(function(err) { enableBtn(btnEbfMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnEbfMep, '🚀 Confirmer la mise en production'); errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3812,7 +3812,7 @@
                 workflow.advanceChannelStep(currentCampaignData, channelIdx, 'com_juridique', 'validated');
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '✅ Valider juridiquement'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '✅ Valider juridiquement'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         });
         document.querySelectorAll('.btn-juridique-refuse-canal').forEach(function(btn) {
@@ -3825,7 +3825,7 @@
                 workflow.refuseChannelJuridique(currentCampaignData, channelIdx, reason, _currentUserName(), _nowStamp());
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() { refreshCurrentPage(); })
-                    .catch(function(err) { enableBtn(btn, '❌ Refuser (retour Com)'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btn, '❌ Refuser (retour Com)'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         });
     }
@@ -3866,7 +3866,7 @@
                         logActivity(currentCampaignName, 'campagne', 'Co-PO mis à jour : ' + (sel.length ? sel.join(', ') : 'aucun'));
                         refreshCurrentPage();
                     })
-                    .catch(function(err) { enableBtn(btnCoPoSave, '💾 Enregistrer'); notify('Erreur : ' + err.message, 'error'); });
+                    .catch(function(err) { enableBtn(btnCoPoSave, '💾 Enregistrer'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
         }
 
@@ -3925,7 +3925,7 @@
                     })
                     .catch(function(err) {
                         enableBtn(btnAssign, (btnAssign.getAttribute('data-general') === 'true') ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation');
-                        notify('Erreur : ' + err.message, 'error');
+                        notify('Erreur : ' + errors.getErrorMessage(err), 'error');
                     });
             });
         }
@@ -3954,7 +3954,7 @@
                     .then(function() { refreshCurrentPage(); })
                     .catch(function(err) {
                         enableBtn(btnKickoff, '✅ Kick-off réalisé');
-                        notify('Erreur : ' + err.message, 'error');
+                        notify('Erreur : ' + errors.getErrorMessage(err), 'error');
                     });
             });
         }
@@ -3978,7 +3978,7 @@
                     })
                     .catch(function(err) {
                         enableBtn(btnSaveNote, '💾 Sauvegarder ma note');
-                        notify('Erreur : ' + err.message, 'error');
+                        notify('Erreur : ' + errors.getErrorMessage(err), 'error');
                     });
             });
         }
@@ -4854,7 +4854,7 @@
                         campDir.getDirectoryHandle('documents', { create: true })
                             .then(function(docsDir) { return docsDir.getDirectoryHandle(safe, { create: true }); })
                             .then(function() { notify('Dossier « ' + safe + ' » créé.', 'success'); logActivity(campaignName, 'document', 'Dossier créé : ' + safe); loadDocuments(campaignName); })
-                            .catch(function(e) { notify('Erreur : ' + e.message, 'error'); });
+                            .catch(function(e) { notify('Erreur : ' + errors.getErrorMessage(e), 'error'); });
                     }
                 });
             });
@@ -4915,7 +4915,7 @@
             })
             .catch(function(e) {
                 if (banner) banner.remove();
-                notify('Erreur upload : ' + e.message, 'error');
+                notify('Erreur upload : ' + errors.getErrorMessage(e), 'error');
             });
     }
 
@@ -4961,7 +4961,7 @@
                 }
                 setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
             })
-            .catch(function(e) { notify('Impossible d\'ouvrir le fichier : ' + e.message, 'error'); });
+            .catch(function(e) { notify('Impossible d\'ouvrir le fichier : ' + errors.getErrorMessage(e), 'error'); });
     }
 
     // ── Discussion ──────────────────────────────────────────
@@ -5195,7 +5195,7 @@
                     }).catch(function(e) {
                         messages.pop(); // annule l'ajout local : la sauvegarde a échoué
                         submitBtn.disabled = false;
-                        notify('Impossible de publier le commentaire : ' + (e && e.message), 'error');
+                        notify('Impossible de publier le commentaire : ' + errors.getErrorMessage(e), 'error');
                     });
                 };
                 setupMentionAutocomplete(input);

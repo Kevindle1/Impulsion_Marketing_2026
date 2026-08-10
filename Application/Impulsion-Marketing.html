@@ -832,9 +832,8 @@
                 directoryStorage.promptAndSaveDirectory()
                     .then(function() { window.location.reload(); })
                     .catch(function(err) {
-                        var msg = (err && err.message) || '';
-                        if (/annul/i.test(msg)) return;
-                        errors.showNotification('Erreur : ' + msg, 'error');
+                        if (err && err.name === 'AbortError') return; // sélection annulée
+                        errors.showNotification('Erreur : ' + errors.getErrorMessage(err), 'error');
                     });
             };
         }
@@ -1282,7 +1281,7 @@
                             renderNotifications([], updated, renderNotifications._root || rootHandle);
                         })
                         .catch(function(err) {
-                            if (errors && errors.showNotification) errors.showNotification('Échec : ' + err.message, 'error');
+                            if (errors && errors.showNotification) errors.showNotification('Échec : ' + errors.getErrorMessage(err), 'error');
                         });
                 });
             }
@@ -1339,7 +1338,7 @@
                     if (rootHandle) {
                         writeNotifications(updated, rootHandle).then(go).catch(function(err) {
                             console.error('Échec de la mise à jour de _notifications.json :', err);
-                            if (errors && errors.showNotification) errors.showNotification('La notification n\'a pas pu être marquée comme lue : ' + err.message, 'error');
+                            if (errors && errors.showNotification) errors.showNotification('La notification n\'a pas pu être marquée comme lue : ' + errors.getErrorMessage(err), 'error');
                             go();
                         });
                     } else {

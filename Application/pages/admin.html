@@ -1052,7 +1052,7 @@
                     return writeJson('Données', 'incidents.json', incidents, 'Réponse enregistrée — auteur notifié.');
                 })
                 .then(function () { renderIncidents(); })
-                .catch(function (e) { btn.disabled = false; btn.textContent = '💬 Répondre & notifier'; notify('Échec : ' + (e && e.message), 'error'); });
+                .catch(function (e) { btn.disabled = false; btn.textContent = '💬 Répondre & notifier'; notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         // Ajoute une notification destinée à l'auteur du signalement.
@@ -1100,7 +1100,7 @@
             return adminConfig.load().then(function (cur) {
                 Object.keys(patch).forEach(function (k) { cur[k] = patch[k]; });
                 return adminConfig.save(cur);
-            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); throw e; });
+            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); throw e; });
         }
         function writeJson(dir, file, data, okMsg) {
             return IM.directoryStorage.getRootHandleWithCheck().then(function (res) {
@@ -1110,7 +1110,7 @@
                 return d.getFileHandle(file, { create: true }).then(function (fh) {
                     return fh.createWritable().then(function (w) { return w.write(JSON.stringify(data, null, 2)).then(function () { return w.close(); }); });
                 });
-            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+            }).then(function () { notify(okMsg); }).catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         // ── QUOI DE NEUF (annonces) ──────────────────────────────────────────────
@@ -1227,7 +1227,7 @@
             whatsNewList.push(entry);
             writeWhatsNewFile(whatsNewList)
                 .then(function () { notify('Annonce publiée.'); renderWhatsNew(); })
-                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+                .catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         function deleteWhatsNew(id) {
@@ -1235,7 +1235,7 @@
             whatsNewList = whatsNewList.filter(function (e) { return e.id !== id; });
             writeWhatsNewFile(whatsNewList)
                 .then(function () { notify('Annonce supprimée.'); renderWhatsNew(); })
-                .catch(function (e) { notify('Échec : ' + (e && e.message), 'error'); });
+                .catch(function (e) { notify('Échec : ' + errors.getErrorMessage(e), 'error'); });
         }
 
         // ── Init : charger config + incidents puis rendre ──

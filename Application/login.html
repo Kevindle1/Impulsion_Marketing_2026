@@ -384,8 +384,14 @@
                             if (!hasUsers()) showError('Aucun utilisateur dans _config.json. Vérifiez le fichier de configuration à la racine du dossier de travail.');
                         })
                         .catch(function (e) {
-                            var msg = (e && e.message) ? e.message : 'Erreur inconnue';
-                            if (!/annul/i.test(msg)) showError('Impossible de charger la configuration : ' + msg);
+                            // Annulation du sélecteur de dossier (croix, Échap…) : pas une
+                            // vraie erreur, ne rien afficher. Détecté par e.name (fiable,
+                            // indépendant de la langue du navigateur) plutôt que par un
+                            // texte français cherché dans un message qui est en anglais.
+                            if (e && e.name === 'AbortError') return;
+                            var IMerr = window.ImpulsionMarketing.errors;
+                            var msg = (IMerr && IMerr.getErrorMessage) ? IMerr.getErrorMessage(e) : 'Erreur inconnue.';
+                            showError('Impossible de charger la configuration : ' + msg);
                         })
                         .then(function () { updateButtonState(); });
                     return;
@@ -411,10 +417,11 @@
                     .catch(function (err) {
                         btnConnect.disabled = false;
                         btnConnect.textContent = 'Se connecter';
-                        var msg = (err && err.message) ? err.message : 'Erreur inconnue';
-                        if (/annul/i.test(msg)) {
+                        if (err && err.name === 'AbortError') {
                             showError('Sélection du dossier annulée. Cliquez à nouveau sur « Se connecter » et choisissez le dossier racine.');
                         } else {
+                            var IMerr = window.ImpulsionMarketing.errors;
+                            var msg = (IMerr && IMerr.getErrorMessage) ? IMerr.getErrorMessage(err) : 'Erreur inconnue.';
                             showError('Impossible de charger le dossier : ' + msg);
                         }
                     });

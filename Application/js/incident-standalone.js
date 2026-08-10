@@ -77,7 +77,7 @@ window.ImpulsionMarketing.incident = (function () {
       })
       .catch(function (e) {
         btn.disabled = false; btn.textContent = 'Envoyer';
-        showErr('Échec de l\'enregistrement : ' + (e && e.message ? e.message : 'erreur inconnue'));
+        showErr('Échec de l\'enregistrement : ' + ((IM.errors && IM.errors.getErrorMessage) ? IM.errors.getErrorMessage(e) : 'erreur inconnue'));
       });
   }
 
