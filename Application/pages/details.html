@@ -5177,6 +5177,11 @@
             var submitBtn = document.getElementById('discussion-submit');
             var input     = document.getElementById('discussion-input');
             if (submitBtn && input) {
+                // Le bouton n'est jamais recréé (seul #discussion-list est remplacé à
+                // chaque rendu) : sans ce reset, le « disabled = true » posé pendant
+                // l'envoi restait figé après le succès — impossible de publier un
+                // 2e commentaire sans recharger la page.
+                submitBtn.disabled = false;
                 submitBtn.onclick = function() {
                     var text = input.value.trim();
                     if (!text) return;
@@ -5187,6 +5192,10 @@
                         input.value = '';
                         renderDiscussionMessages(merged || messages);
                         notifyMentions(text, currentCampaignName, currentUser.name);
+                    }).catch(function(e) {
+                        messages.pop(); // annule l'ajout local : la sauvegarde a échoué
+                        submitBtn.disabled = false;
+                        notify('Impossible de publier le commentaire : ' + (e && e.message), 'error');
                     });
                 };
                 setupMentionAutocomplete(input);

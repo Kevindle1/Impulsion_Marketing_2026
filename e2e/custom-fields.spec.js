@@ -1294,3 +1294,108 @@ test.describe('data_ciblage — migration sans casser les campagnes existantes',
     expect(errors).toEqual([]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// Fil de discussion (details.html) — le bouton « Publier » n'était jamais
+// réactivé après un envoi réussi (#discussion-submit n'est pas recréé par
+// renderDiscussionMessages, seul son .disabled était posé à true) :
+// impossible de publier un 2e commentaire sans recharger la page.
+// ─────────────────────────────────────────────────────────────
+test.describe('Fil de discussion', () => {
+  function discussionCampaign() {
+    return {
+      id: 'CF Discussion', description: 'x', po: PO_USER.name,
+      launchDate: '2026-09-01', instantiation: '2026-08-01', typology: 'Commerciale',
+      market: 'part', recurrence: 'Ponctuelle', requiredTeams: [], channels: [],
+      workflow: { steps: { po_saisie: 'completed', manager_affectation: 'completed', po_kickoff: 'completed' }, assignments: {}, channelSteps: {}, channelDates: {} }
+    };
+  }
+
+  // Variante de installFakeDirectory qui simule un discussion.json absent au
+  // départ (comme une vraie campagne sans commentaire) puis créé/persisté au
+  // fil des envois — nécessaire pour rejouer un 2e envoi après un 1er réussi.
+  async function installFakeDirectoryWithDiscussion(page, campaign) {
+    await page.addInitScript((campaign) => {
+      function makeFakeFile(initial) {
+        var content = initial;
+        return {
+          getFile: function () { return Promise.resolve({ text: function () { return Promise.resolve(content); } }); },
+          createWritable: function () { return Promise.resolve({ write: function (data) { if (typeof data === 'string') content = data; return Promise.resolve(); }, close: function () { return Promise.resolve(); } }); }
+        };
+      }
+      function makeEmptyDir() {
+        return {
+          getDirectoryHandle: function (n, o) { if (o && o.create) return Promise.resolve(makeEmptyDir()); return Promise.reject(new Error('nf')); },
+          getFileHandle: function (n, o) { if (o && o.create) return Promise.resolve(makeFakeFile('')); return Promise.reject(new Error('nf')); }
+        };
+      }
+      var discussionFile = null;
+      function campaignDirH() {
+        return {
+          kind: 'directory', name: campaign.id,
+          getDirectoryHandle: function () { return Promise.resolve(makeEmptyDir()); },
+          getFileHandle: function (fname, opts) {
+            if (fname === 'campagne.json') return Promise.resolve(makeFakeFile(JSON.stringify(campaign, null, 2)));
+            if (fname === 'discussion.json') {
+              if (discussionFile) return Promise.resolve(discussionFile);
+              if (opts && opts.create) { discussionFile = makeFakeFile(''); return Promise.resolve(discussionFile); }
+              return Promise.reject(new Error('nf'));
+            }
+            if (opts && opts.create) return Promise.resolve(makeFakeFile(''));
+            return Promise.reject(new Error('nf'));
+          }
+        };
+      }
+      var indexFile = makeFakeFile('{}');
+      function campagnesDir() {
+        return {
+          getDirectoryHandle: function () { return Promise.resolve(campaignDirH()); },
+          getFileHandle: function (fname, opts) { if (fname === '_index.json') return Promise.resolve(indexFile); if (opts && opts.create) return Promise.resolve(makeFakeFile('')); return Promise.reject(new Error('nf')); },
+          values: function () {
+            var i = 0, names = [campaign.id];
+            return { next: function () { if (i < names.length) { var d = campaignDirH(); i++; return Promise.resolve({ value: d, done: false }); } return Promise.resolve({ value: undefined, done: true }); }, [Symbol.asyncIterator]: function () { return this; } };
+          }
+        };
+      }
+      var fakeRoot = {
+        name: 'FakeRoot',
+        getDirectoryHandle: function (name) { return name === 'Campagnes' ? Promise.resolve(campagnesDir()) : Promise.resolve(makeEmptyDir()); },
+        getFileHandle: function (fname, opts) { if (opts && opts.create) return Promise.resolve(makeFakeFile('')); return Promise.reject(new Error('n/a')); }
+      };
+      var tries = 0;
+      var iv = setInterval(function () {
+        tries++;
+        var IM = window.ImpulsionMarketing;
+        if (IM && IM.directoryStorage) { clearInterval(iv); IM.directoryStorage.getRootHandleWithCheck = function () { return Promise.resolve({ handle: fakeRoot, status: 'success' }); }; }
+        else if (tries > 200) clearInterval(iv);
+      }, 1);
+    }, campaign);
+  }
+
+  test('publier un 2e commentaire juste après le 1er, sans recharger la page', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    const campaign = discussionCampaign();
+    await seedUser(page, PO_USER, {});
+    await installFakeDirectoryWithDiscussion(page, campaign);
+    await page.goto(url('pages/details.html?name=' + encodeURIComponent(campaign.id)));
+    await page.waitForTimeout(1200);
+
+    const submitBtn = page.locator('#discussion-submit');
+    const input = page.locator('#discussion-input');
+
+    await input.fill('Premier commentaire');
+    await submitBtn.click();
+    await expect(page.locator('.discussion-msg')).toHaveCount(1, { timeout: 10000 });
+
+    // Bug remonté en production : ce bouton restait désactivé après le succès.
+    await expect(submitBtn).toBeEnabled({ timeout: 10000 });
+
+    await input.fill('Deuxième commentaire, directement');
+    await submitBtn.click({ timeout: 5000 });
+    await expect(page.locator('.discussion-msg')).toHaveCount(2, { timeout: 10000 });
+    await expect(page.locator('.discussion-msg-text').last()).toHaveText('Deuxième commentaire, directement');
+
+    console.log('errors (fil de discussion, 2 commentaires consécutifs):', errors);
+    expect(errors).toEqual([]);
+  });
+});
