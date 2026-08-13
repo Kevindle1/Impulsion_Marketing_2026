@@ -31,6 +31,35 @@
   function currentUserName() { var u = currentUser(); return u ? u.name : ''; }
   function $(id) { return document.getElementById(id); }
 
+  // ── Notifications : couleurs par type, découpage icône/texte, date FR ──
+  var NOTIF_COLORS = {
+    workflow_a_valider: { bg: '#fef3c7', fg: '#b45309' },
+    workflow_a_faire: { bg: '#dbeafe', fg: '#1d4ed8' },
+    workflow_info: { bg: '#dbeafe', fg: '#1d4ed8' },
+    workflow: { bg: '#dbeafe', fg: '#1d4ed8' },
+    workflow_revision: { bg: '#fee2e2', fg: '#b91c1c' },
+    zone_conflit_attente: { bg: '#fee2e2', fg: '#b91c1c' },
+    mention: { bg: '#ede9fe', fg: '#6d28d9' },
+    signalement_reponse: { bg: '#dcfce7', fg: '#15803d' },
+    publication_fin: { bg: '#f1f5f9', fg: '#475569' },
+    campagne_inactive: { bg: '#f1f5f9', fg: '#64748b' }
+  };
+  var DEFAULT_NOTIF_COLOR = { bg: '#f1f5f9', fg: '#475569' };
+  function notifColor(type) { return NOTIF_COLORS[type] || DEFAULT_NOTIF_COLOR; }
+  // Les libellés suivent la convention « emoji + espace + texte » (cf. NOTIFICATION_LABELS) —
+  // on sépare sur le premier espace plutôt que par une regex Unicode, plus robuste.
+  function splitLabel(label) {
+    var s = (label || '🔔 Notification');
+    var i = s.indexOf(' ');
+    if (i === -1) return { icon: '🔔', text: s };
+    return { icon: s.slice(0, i), text: s.slice(i + 1) };
+  }
+  function frNotifDate(iso) {
+    if (!iso) return '';
+    var d = iso.slice(0, 10).split('-');
+    return d.length === 3 ? (d[2] + '/' + d[1] + '/' + d[0]) : iso.slice(0, 10);
+  }
+
   // ── Icônes (SVG inline) ──
   var SVG = {
     search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
@@ -53,7 +82,7 @@
     // position:fixed (coordonnées calculées à l'ouverture, cf. wireNotifications) —
     // pas position:absolute : la sidebar a overflow-x:hidden, qui rognait le
     // panneau au lieu de le laisser déborder à droite de la barre de nav.
-    var panelStyle = 'display:none;position:fixed;width:340px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
+    var panelStyle = 'display:none;position:fixed;width:368px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
     return '<div class="sidebar-actions">'
       + '<button id="topbar-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">'
       + SVG.gift + '<span id="topbar-whatsnew-dot" style="' + dotStyle + '"></span></button>'
@@ -289,23 +318,31 @@
     renderNotifications._root = rootHandle;
 
     if (mine.length === 0) {
-      list.innerHTML = '<div style="padding:16px;text-align:center;color:#94a3b8;font-size:13px;">Aucune notification</div>';
+      list.innerHTML = '<div style="padding:32px 16px;text-align:center;color:#94a3b8;">'
+        + '<div style="font-size:28px;margin-bottom:6px;">🔕</div>'
+        + '<div style="font-size:13px;">Aucune notification</div></div>';
       return;
     }
     var typeLabels = (IM.config && IM.config.NOTIFICATION_LABELS) || {};
     var html = '';
     mine.forEach(function (n) {
-      var label = typeLabels[n.type] || '🔔 Notification';
-      var date = n.dateCreation ? n.dateCreation.slice(0, 10) : '';
-      html += '<div class="notif-item" data-id="' + n.id + '" style="padding:12px 16px;border-bottom:1px solid #f1f5f9;cursor:pointer;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">';
-      html += '<div style="font-size:12px;font-weight:700;color:#374151;">' + label + '</div>';
-      html += '<div style="font-size:13px;color:#374151;margin:4px 0;">' + esc(n.campagneTitre || '') + '</div>';
-      if (n.statutReponse) html += '<div style="font-size:12px;font-weight:700;color:#0f766e;margin:2px 0;">' + esc(n.statutReponse) + '</div>';
-      if (n.message) html += '<div style="font-size:12.5px;color:#374151;margin:3px 0;white-space:pre-wrap;background:#f1f5f9;border-radius:6px;padding:6px 8px;">' + esc(n.message) + '</div>';
-      if (n.auteur) html += '<div style="font-size:11px;color:#64748b;">par ' + esc(n.auteur) + '</div>';
-      if (n.zone) html += '<div style="font-size:11px;color:#64748b;">Zone : ' + esc(n.zone) + (n.marche ? ' — ' + esc(n.marche) : '') + (n.dateFin ? ' — Fin : ' + esc(n.dateFin) : '') + '</div>';
-      html += '<div style="font-size:11px;color:#94a3b8;margin-top:4px;">' + date + '</div>';
-      html += '</div>';
+      var parts = splitLabel(typeLabels[n.type]);
+      var col = notifColor(n.type);
+      var date = frNotifDate(n.dateCreation);
+      var unread = !n.lu;
+      var primary = n.message || n.campagneTitre || '';
+      var secondary = (n.message && n.campagneTitre) ? n.campagneTitre : '';
+      html += '<div class="notif-item" data-id="' + n.id + '" style="position:relative;display:flex;gap:10px;padding:12px 16px 12px 14px;border-bottom:1px solid #f1f5f9;cursor:pointer;background:' + (unread ? '#f7fbf9' : '#fff') + ';" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'' + (unread ? '#f7fbf9' : '#fff') + '\'">';
+      if (unread) html += '<span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--primary,#00875A);"></span>';
+      html += '<div style="flex:none;width:32px;height:32px;border-radius:50%;background:' + col.bg + ';color:' + col.fg + ';display:flex;align-items:center;justify-content:center;font-size:15px;">' + esc(parts.icon) + '</div>';
+      html += '<div style="flex:1;min-width:0;">';
+      html += '<span style="display:inline-block;font-size:11px;font-weight:700;color:' + col.fg + ';background:' + col.bg + ';border-radius:5px;padding:2px 7px;margin-bottom:4px;">' + esc(parts.text) + '</span>';
+      html += '<div style="font-size:13.5px;font-weight:' + (unread ? '700' : '500') + ';color:#1f2937;line-height:1.4;white-space:pre-wrap;">' + esc(primary) + '</div>';
+      if (secondary) html += '<div style="font-size:12px;color:#64748b;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(secondary) + '</div>';
+      if (n.statutReponse) html += '<div style="font-size:12px;font-weight:700;color:#0f766e;margin-top:4px;">' + esc(n.statutReponse) + '</div>';
+      if (n.zone) html += '<div style="font-size:11.5px;color:#64748b;margin-top:3px;">Zone : ' + esc(n.zone) + (n.marche ? ' — ' + esc(n.marche) : '') + (n.dateFin ? ' — Fin : ' + esc(n.dateFin) : '') + '</div>';
+      html += '<div style="font-size:11px;color:#94a3b8;margin-top:5px;">' + (n.auteur ? 'par ' + esc(n.auteur) + ' · ' : '') + date + '</div>';
+      html += '</div></div>';
     });
     list.innerHTML = html;
 
