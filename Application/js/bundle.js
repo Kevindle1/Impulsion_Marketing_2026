@@ -2791,27 +2791,28 @@ window.ImpulsionMarketing.workflow = (function () {
    * Retourne la liste des étapes disponibles pour un utilisateur sur une campagne
    * Agrège toutes les étapes actives de tous les canaux
    */
-  // Manager général (marketing) ou super-admin : a la main sur toute l'étape
-  // d'affectation jusqu'à sa validation.
+  // Manager général : seul un super-admin a la main sur toute l'étape
+  // d'affectation (les 3 équipes) jusqu'à sa validation. Le manager marketing
+  // n'a pas de statut particulier ici : comme les managers de service, il
+  // n'affecte que son équipe — mais l'équipe « Marketing » n'a pas de
+  // dropdown dans cette étape (le PO en tient lieu), donc il n'a simplement
+  // rien à y faire (cf. teamLabel null ci-dessous).
   function isGeneralManager(currentUser) {
-    return !!currentUser && (
-      (currentUser.role === 'marketing' && currentUser.isManager === true) ||
-      currentUser.isSuperAdmin === true
-    );
+    return !!currentUser && currentUser.isSuperAdmin === true;
   }
 
   // #14 — Un manager de SERVICE (com/ebf/data) a terminé sa part d'affectation
   // dès qu'au moins une personne de son équipe est affectée — ou si son équipe
   // n'est pas requise par la campagne. On cesse alors de lui proposer l'action
   // d'affectation : la carte disparaît du tableau de bord « à produire » et le
-  // bloc d'affectation n'est plus présenté. Le manager général garde la main
-  // jusqu'à la validation de l'étape globale.
+  // bloc d'affectation n'est plus présenté. Le manager général (super-admin)
+  // garde la main jusqu'à la validation de l'étape globale.
   function managerAffectationDone(currentUser, campaignData) {
     if (!currentUser || currentUser.isManager !== true || !campaignData) return false;
     if (isGeneralManager(currentUser)) return false;
     var role = currentUser.role;
     var teamLabel = role === 'com' ? 'Com' : (role === 'ebf' ? 'EBF' : (role === 'data' ? 'Data' : null));
-    if (!teamLabel) return false; // rôle non concerné par l'affectation d'équipe
+    if (!teamLabel) return true; // rôle non concerné par l'affectation d'équipe (rien à faire pour lui)
     var requiredTeams = campaignData.requiredTeams || [];
     if (!isTeamRequired(requiredTeams, teamLabel)) return true; // rien à affecter pour ce service
     var assignments = (campaignData.workflow && campaignData.workflow.assignments) || {};

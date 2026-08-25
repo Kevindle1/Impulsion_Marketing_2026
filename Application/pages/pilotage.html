@@ -723,7 +723,12 @@
         function computeAssignmentTargets() {
             var user = IM.users.getCurrentUser();
             if (!user || !IM.users.isCurrentUserManager()) return [];
-            var isGeneral = (user.role === 'marketing' && user.isManager === true) || user.isSuperAdmin === true;
+            // isGeneral = super-admin uniquement. Le manager marketing n'affecte que
+            // son équipe comme les autres managers de service — mais l'équipe
+            // Marketing n'a pas de dropdown ici (le PO en tient lieu), donc les 3
+            // "show*" ci-dessous restent tous faux pour lui : aucune campagne ne lui
+            // est proposée sur cette page.
+            var isGeneral = user.isSuperAdmin === true;
             var out = [];
             state.allCampaigns.forEach(function (c) {
                 IM.workflow.initWorkflow(c);
