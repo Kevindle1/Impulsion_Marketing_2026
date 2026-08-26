@@ -2006,9 +2006,12 @@
         // #14 : un manager de service ayant déjà affecté son équipe ne voit plus le bloc.
         if (users.isCurrentUserManager() && steps.manager_affectation === 'pending'
             && !workflow.managerAffectationDone(currentUser, data)) {
-            // isGeneralManager = marketing manager (Sébastien L) → voit les 3 dropdowns
-            // Les managers de service (com/ebf/data) ne voient que leur propre dropdown (item 15)
-            var isGeneralManager = (currentUser.role === 'marketing' && currentUser.isManager === true) || (currentUser.isSuperAdmin === true);
+            // isGeneralManager = super-admin uniquement → voit les 3 dropdowns.
+            // Les managers de service (com/ebf/data), y compris le manager marketing,
+            // ne voient que leur propre dropdown (item 15) — le manager marketing n'a
+            // d'ailleurs jamais ce bloc affiché : managerAffectationDone() le considère
+            // « rien à faire » puisque l'équipe Marketing n'a pas de dropdown ici.
+            var isGeneralManager = currentUser.isSuperAdmin === true;
             // Filtrer les équipes selon les services requis par la campagne
             var _requiredTeams = data.requiredTeams || [];
             var _needsCom  = _requiredTeams.length === 0 || _requiredTeams.indexOf('Com')  !== -1;
