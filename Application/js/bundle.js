@@ -2177,7 +2177,8 @@ window.ImpulsionMarketing.workflow = (function () {
         steps:                    Object.assign({}, DEFAULT_GLOBAL_STEPS),
         channelSteps:             {},
         revisionComments:         {},
-        channelRevisionComments:  {}
+        channelRevisionComments:  {},
+        channelStepDates:         {}
       };
     } else {
       if (!campaignData.workflow.assignments) {
@@ -2191,6 +2192,9 @@ window.ImpulsionMarketing.workflow = (function () {
       }
       if (!campaignData.workflow.channelRevisionComments) {
         campaignData.workflow.channelRevisionComments = {};
+      }
+      if (!campaignData.workflow.channelStepDates) {
+        campaignData.workflow.channelStepDates = {};
       }
     }
 
@@ -2477,6 +2481,41 @@ window.ImpulsionMarketing.workflow = (function () {
   function getChannelRevisionLog(campaignData, channelIdx) {
     var log = campaignData.workflow && campaignData.workflow.channelRevisionLog;
     return (log && log[channelIdx]) ? log[channelIdx] : [];
+  }
+
+  // Date à laquelle l'étape stepId du canal channelIdx est passée à son statut
+  // ACTUEL (cf. _stampChannelStepDates, alimenté à chaque sauvegarde). Absente
+  // pour un statut déjà en place avant l'introduction de ce suivi — auquel cas
+  // l'appelant doit prévoir un repli (ex. « — »).
+  function getChannelStepDate(campaignData, channelIdx, stepId) {
+    var dates = campaignData.workflow && campaignData.workflow.channelStepDates;
+    var forChannel = dates && dates[channelIdx];
+    return (forChannel && forChannel[stepId]) || null;
+  }
+
+  // Horodate, à la sauvegarde, chaque étape canal dont le statut vient de
+  // changer par rapport à la baseline (état du disque au chargement) — permet
+  // d'afficher « depuis combien de temps » une étape est dans son statut
+  // courant (Pilotage ▸ Suivi de campagne). Le moteur reste sans horloge
+  // propre ailleurs (author/when fournis par l'appelant) ; ici l'horodatage
+  // est un simple sous-produit de la sauvegarde, pas une action métier propre,
+  // donc Date.now() y est utilisé directement.
+  function _stampChannelStepDates(campaignData, baseline) {
+    var wf = campaignData.workflow;
+    if (!wf || !wf.channelSteps) return;
+    if (!wf.channelStepDates) wf.channelStepDates = {};
+    var baseCs = (baseline && baseline.workflow && baseline.workflow.channelSteps) || {};
+    var now = new Date().toISOString();
+    Object.keys(wf.channelSteps).forEach(function (idx) {
+      var cur = wf.channelSteps[idx] || {};
+      var base = baseCs[idx] || {};
+      Object.keys(cur).forEach(function (stepId) {
+        if (cur[stepId] !== base[stepId]) {
+          if (!wf.channelStepDates[idx]) wf.channelStepDates[idx] = {};
+          wf.channelStepDates[idx][stepId] = now;
+        }
+      });
+    });
   }
 
   /**
@@ -3079,6 +3118,7 @@ window.ImpulsionMarketing.workflow = (function () {
       })
       .then(function (diskData) {
         var baseline = _baselines ? _baselines.get(campaignData) : null;
+        _stampChannelStepDates(campaignData, baseline);
         if (diskData && baseline) {
           var merged = threeWayMerge(baseline, campaignData, diskData);
           _replaceInPlace(campaignData, merged); // l'objet en mémoire reflète la fusion
@@ -3329,6 +3369,7 @@ window.ImpulsionMarketing.workflow = (function () {
     requestChannelRevision:   requestChannelRevision,
     reopenChannelStep:        reopenChannelStep,
     getChannelRevisionLog:    getChannelRevisionLog,
+    getChannelStepDate:       getChannelStepDate,
     channelAssignees:         channelAssignees,
     applyAutoAssignments:     applyAutoAssignments,
     initChannelValidations:   initChannelValidations,

@@ -67,6 +67,19 @@
         .pil-date { font-weight: 700; color: var(--ink); white-space: nowrap; }
         .pil-date .pil-cond { display: block; font-weight: 400; font-size: 11.5px; color: var(--muted); white-space: normal; }
         .pil-camp { font-weight: 650; color: var(--ink); }
+
+        /* ---- Filtres par colonne (Suivi de campagne) ---- */
+        .pil-table th.pil-col-filter-th { padding: 6px 8px 10px; border-bottom: 2px solid var(--line); }
+        .pil-col-filter-th input, .pil-col-filter-th select {
+            width: 100%; box-sizing: border-box; padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px;
+            background: #fff; font-family: inherit; font-size: 12px; color: var(--ink); font-weight: 400;
+        }
+        .pil-col-filter-th input:focus, .pil-col-filter-th select:focus { outline: none; border-color: var(--primary); }
+        .pil-team-cell { font-size: 12.5px; color: var(--ink); }
+        .pil-team-empty { color: var(--muted-2); }
+        .pil-since { font-weight: 650; color: var(--ink); white-space: nowrap; }
+        .pil-since.pil-since-urgent { color: var(--red, #E2001A); }
+        .pil-since.pil-since-unknown { color: var(--muted-2); font-weight: 400; }
         .pil-camp small { display: block; font-weight: 400; color: var(--muted-2); font-size: 11.5px; }
         .pil-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
         .pil-canal { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
@@ -327,32 +340,47 @@
                                     </div>
                                 </section>
 
-                                <!-- ═══ Validations en attente ═══ -->
+                                <!-- ═══ Suivi de campagne ═══ -->
                                 <section class="admin-section" id="tab-validations" data-group="Pilotage">
                                     <div class="admin-sec-head">
-                                        <div class="admin-sec-ic">⏳</div>
+                                        <div class="admin-sec-ic">🧭</div>
                                         <div>
-                                            <h2>Validations en attente</h2>
-                                            <p>Tous les livrables actuellement bloqués sur une action — dépôt, validation ou révision — quel qu'en soit le porteur.</p>
+                                            <h2>Suivi de campagne</h2>
+                                            <p>Chaque livrable en cours, son étape actuelle, l'équipe engagée et depuis quand ça n'a pas bougé — un filtre par colonne.</p>
                                         </div>
                                     </div>
                                     <div class="pil-filters">
-                                        <div class="pil-filter">
-                                            <label for="v-role">Équipe</label>
-                                            <select id="v-role"><option value="">Toutes</option></select>
-                                        </div>
-                                        <div class="pil-filter">
-                                            <label for="v-status">Statut</label>
-                                            <select id="v-status"><option value="">Tous</option></select>
-                                        </div>
-                                        <button type="button" class="pil-reset" id="v-reset">Réinitialiser</button>
+                                        <button type="button" class="pil-reset" id="v-reset">Réinitialiser les filtres</button>
                                         <span class="pil-count" id="v-count"></span>
                                     </div>
                                     <div class="pil-table-wrap">
                                         <table class="pil-table" id="val-table" style="display:none;">
-                                            <thead><tr>
-                                                <th>Campagne</th><th>Livrable</th><th>Canal</th><th>Étape</th><th>Statut</th><th>Acteur</th>
-                                            </tr></thead>
+                                            <thead>
+                                                <tr>
+                                                    <th>Nom de la tâche</th><th>Livrable</th><th>Étape actuelle</th>
+                                                    <th>PO</th><th>Com</th><th>EBF</th><th>Data</th>
+                                                    <th>Doit produire</th><th>Depuis</th>
+                                                </tr>
+                                                <tr>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-camp" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-livrable" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><select id="v-f-etape"><option value="">Toutes</option></select></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-po" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-com" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-ebf" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-data" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-producteur" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th">
+                                                        <select id="v-f-depuis">
+                                                            <option value="">Toutes durées</option>
+                                                            <option value="lt3">Moins de 3 j</option>
+                                                            <option value="3-7">3 à 7 j</option>
+                                                            <option value="gt7">Plus de 7 j</option>
+                                                            <option value="unk">Inconnu</option>
+                                                        </select>
+                                                    </th>
+                                                </tr>
+                                            </thead>
                                             <tbody id="val-tbody"></tbody>
                                         </table>
                                         <div id="val-empty" class="pil-empty" style="display:none;">
@@ -637,6 +665,22 @@
             return               { days: diff, overdue: false, urgent: false,                    text: 'Dans ' + diff + ' j' };
         }
 
+        // Depuis quand une étape est dans son statut courant (horodatage posé à
+        // la sauvegarde, cf. workflow.getChannelStepDate/_stampChannelStepDates).
+        // Absent pour un statut déjà en place avant l'introduction de ce suivi —
+        // dans ce cas on ne sait pas depuis quand, on l'affiche donc distinctement
+        // (« — ») plutôt que de laisser croire à une durée nulle.
+        function elapsedSince(iso) {
+            if (!iso) return { days: null, urgent: false, text: '—', unknown: true };
+            var d = new Date(iso);
+            if (isNaN(d.getTime())) return { days: null, urgent: false, text: '—', unknown: true };
+            var days = Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+            var s = (IM.config && IM.config.APP_SETTINGS) || {};
+            var near = (s.urgentThresholdDays != null) ? s.urgentThresholdDays : 7;
+            var text = days === 0 ? "Aujourd'hui" : (days === 1 ? '1 jour' : days + ' jours');
+            return { days: days, urgent: days >= near, text: text, unknown: false };
+        }
+
         function buildAnalytics() {
             var wf = IM.workflow;
             var pending = [], channelStats = [], hotspots = [];
@@ -695,13 +739,25 @@
                                 : wf.channelAssignees(c, idx, role);
                             if (!names.length) names = ['(non affecté)'];
                             var dateRef = resolveChannelDate(c, ch);
+                            var poNames = [c.po].concat(asArr(c.coPo)).filter(Boolean);
+                            var sinceIso = wf.getChannelStepDate(c, idx, id);
                             pending.push({
                                 campaignName: c.id || c.folderName, folderName: c.folderName,
                                 deliverableName: (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (idx + 1)),
                                 canal: content || '',
                                 stepId: id, stepLabel: wf.stepLabel(id), status: status,
                                 role: role, names: names,
-                                dateRef: dateRef, delay: computeDelay(dateRef)
+                                // Composition de l'équipe sur CE canal, une entrée par service +
+                                // le PO — indépendant de qui a la main à l'instant T (role/names
+                                // ci-dessus), pour donner une vue d'ensemble de l'équipe engagée.
+                                team: {
+                                    po:   poNames.length ? poNames : ['(non affecté)'],
+                                    com:  (function () { var a = wf.channelAssignees(c, idx, 'com');  return a.length ? a : ['—']; })(),
+                                    ebf:  (function () { var a = wf.channelAssignees(c, idx, 'ebf');  return a.length ? a : ['—']; })(),
+                                    data: (function () { var a = wf.channelAssignees(c, idx, 'data'); return a.length ? a : ['—']; })()
+                                },
+                                dateRef: dateRef, delay: computeDelay(dateRef),
+                                sinceIso: sinceIso, since: elapsedSince(sinceIso)
                             });
                             break; // une seule étape « courante » par canal
                         }
@@ -851,6 +907,7 @@
                     buildAnalytics();
                     renderAffectation();
                     renderRetards();
+                    populateValidationFilters();
                     renderValidations();
                     renderCharge();
                     renderKpi();
@@ -897,46 +954,98 @@
             wireRowNav(tbody);
         }
 
-        // ── Validations en attente ──
+        // ── Suivi de campagne (ex « Validations en attente ») ──
+        // Filtrage par colonne : champs texte (sous-chaîne, insensible à la
+        // casse) pour tout ce qui est nominatif, select pour l'étape (valeurs
+        // finies) et pour la durée (tranches). Chaque item de state.pendingItems
+        // = un canal actuellement bloqué sur une action (cf. buildAnalytics()).
+        function matchesText(hay, needle) {
+            if (!needle) return true;
+            return String(hay || '').toLowerCase().indexOf(needle.toLowerCase()) !== -1;
+        }
         function populateValidationFilters() {
-            var roles = ['po', 'com', 'ebf', 'data'];
-            $('v-role').innerHTML = '<option value="">Toutes</option>' + roles.map(function (r) {
-                return '<option value="' + r + '">' + esc(roleLabel(r)) + '</option>';
+            var sel = $('v-f-etape');
+            var current = sel.value;
+            var byId = {};
+            state.pendingItems.forEach(function (it) { byId[it.stepId] = it.stepLabel; });
+            var ids = Object.keys(byId).sort(function (a, b) { return byId[a].localeCompare(byId[b]); });
+            sel.innerHTML = '<option value="">Toutes</option>' + ids.map(function (id) {
+                return '<option value="' + esc(id) + '">' + esc(byId[id]) + '</option>';
             }).join('');
-            $('v-status').innerHTML = '<option value="">Tous</option>' + Object.keys(STATUS_LABEL).map(function (s) {
-                return '<option value="' + s + '">' + esc(STATUS_LABEL[s]) + '</option>';
-            }).join('');
+            if (ids.indexOf(current) !== -1) sel.value = current;
         }
         function renderValidations() {
-            var role = $('v-role').value, status = $('v-status').value;
+            var fCamp = $('v-f-camp').value.trim();
+            var fLivrable = $('v-f-livrable').value.trim();
+            var fEtape = $('v-f-etape').value;
+            var fPo = $('v-f-po').value.trim();
+            var fCom = $('v-f-com').value.trim();
+            var fEbf = $('v-f-ebf').value.trim();
+            var fData = $('v-f-data').value.trim();
+            var fProd = $('v-f-producteur').value.trim();
+            var fDepuis = $('v-f-depuis').value;
+
             var items = state.pendingItems.filter(function (it) {
-                if (role && it.role !== role) return false;
-                if (status && it.status !== status) return false;
+                if (!matchesText(it.campaignName, fCamp)) return false;
+                if (!matchesText(it.deliverableName + ' ' + it.canal, fLivrable)) return false;
+                if (fEtape && it.stepId !== fEtape) return false;
+                if (!matchesText(it.team.po.join(', '), fPo)) return false;
+                if (!matchesText(it.team.com.join(', '), fCom)) return false;
+                if (!matchesText(it.team.ebf.join(', '), fEbf)) return false;
+                if (!matchesText(it.team.data.join(', '), fData)) return false;
+                if (!matchesText(it.names.join(', '), fProd)) return false;
+                if (fDepuis) {
+                    var d = it.since;
+                    if (fDepuis === 'unk' && !d.unknown) return false;
+                    if (fDepuis === 'lt3' && (d.unknown || d.days >= 3)) return false;
+                    if (fDepuis === '3-7' && (d.unknown || d.days < 3 || d.days > 7)) return false;
+                    if (fDepuis === 'gt7' && (d.unknown || d.days <= 7)) return false;
+                }
                 return true;
             });
-            $('v-count').textContent = items.length + ' livrable' + (items.length > 1 ? 's' : '') + ' en attente';
+
+            $('v-count').textContent = items.length + ' livrable' + (items.length > 1 ? 's' : '') + ' en cours';
             var table = $('val-table'), empty = $('val-empty'), tbody = $('val-tbody');
             if (!items.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
             empty.style.display = 'none'; table.style.display = 'table';
             items.sort(function (a, b) { return a.campaignName.localeCompare(b.campaignName); });
+
+            function teamCell(names) {
+                if (!names.length || (names.length === 1 && (names[0] === '—' || names[0] === '(non affecté)'))) {
+                    return '<span class="pil-team-empty">' + esc(names[0] || '—') + '</span>';
+                }
+                return esc(names.join(', '));
+            }
+
             var html = '';
             items.forEach(function (it) {
                 var statusClass = it.status === 'revision_requested' ? 'pil-status-revision' : 'pil-status-pending';
+                var sinceClass = it.since.unknown ? 'pil-since-unknown' : (it.since.urgent ? 'pil-since-urgent' : '');
                 html += '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
                     + '<td class="pil-camp">' + esc(it.campaignName) + '</td>'
-                    + '<td>' + esc(it.deliverableName) + '</td>'
-                    + '<td>' + (it.canal ? '<span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '—') + '</td>'
-                    + '<td>' + esc(it.stepLabel) + '</td>'
-                    + '<td><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
+                    + '<td>' + esc(it.deliverableName) + (it.canal ? ' <span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '') + '</td>'
+                    + '<td>' + esc(it.stepLabel) + '<br><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.po) + '</td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.com) + '</td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.ebf) + '</td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.data) + '</td>'
                     + '<td>' + esc(it.names.join(', ')) + ' <span class="pil-badge pil-role-' + esc(it.role) + '">' + esc(roleLabel(it.role)) + '</span></td>'
+                    + '<td class="pil-since ' + sinceClass + '">' + esc(it.since.text) + '</td>'
                     + '</tr>';
             });
             tbody.innerHTML = html;
             wireRowNav(tbody);
         }
         function wireValidationFilters() {
-            ['v-role', 'v-status'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
-            $('v-reset').addEventListener('click', function () { $('v-role').value = ''; $('v-status').value = ''; renderValidations(); });
+            ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) {
+                $(id).addEventListener('input', renderValidations);
+            });
+            ['v-f-etape', 'v-f-depuis'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
+            $('v-reset').addEventListener('click', function () {
+                ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) { $(id).value = ''; });
+                ['v-f-etape', 'v-f-depuis'].forEach(function (id) { $(id).value = ''; });
+                renderValidations();
+            });
         }
 
         // ── Charge de travail ──
