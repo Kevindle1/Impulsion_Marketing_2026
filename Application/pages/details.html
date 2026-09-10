@@ -362,22 +362,22 @@
         #discussion-submit:hover:not(:disabled) { background: var(--green-100, #ccebdd); }
         #discussion-submit:disabled { opacity: .5; cursor: not-allowed; }
 
-        /* ── Discussion : bulle flottante (bas droite), on clique pour ouvrir ──
-           Empilée au-dessus du bouton d'aide existant (#help-button, même coin,
-           z-index 999) pour ne pas le recouvrir. ── */
-        .chat-bubble-btn { position: fixed; bottom: 92px; right: 24px; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #12C386, #00734C); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 24px rgba(0,115,76,.38), 0 2px 5px rgba(12,30,22,.12); z-index: 50; border: 3px solid #fff; transition: transform .15s, box-shadow .15s; padding: 0; }
+        /* ── Discussion : bulle flottante (bas droite), on clique pour ouvrir.
+           La bulle d'aide (?) de cette page a été retirée (elle chevauchait ce
+           coin) : plus besoin d'empiler les deux. ── */
+        .chat-bubble-btn { position: fixed; bottom: 24px; right: 24px; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #12C386, #00734C); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 24px rgba(0,115,76,.38), 0 2px 5px rgba(12,30,22,.12); z-index: 50; border: 3px solid #fff; transition: transform .15s, box-shadow .15s; padding: 0; }
         .chat-bubble-btn:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 14px 28px rgba(0,115,76,.42), 0 2px 5px rgba(12,30,22,.12); }
         .chat-bubble-btn svg { width: 24px; height: 24px; }
         .chat-bubble-badge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--red, #E2001A); color: #fff; font-size: 11px; font-weight: 800; display: none; align-items: center; justify-content: center; border: 2.5px solid #fff; }
-        .chat-panel { display: none; position: fixed; bottom: 158px; right: 24px; width: 340px; max-height: 65vh; background: #fff; border-radius: 16px; box-shadow: 0 16px 40px rgba(12,30,22,.22); border: 1px solid var(--line, #eaefec); overflow: hidden; flex-direction: column; z-index: 51; }
+        .chat-panel { display: none; position: fixed; bottom: 90px; right: 24px; width: 340px; max-height: 65vh; background: #fff; border-radius: 16px; box-shadow: 0 16px 40px rgba(12,30,22,.22); border: 1px solid var(--line, #eaefec); overflow: hidden; flex-direction: column; z-index: 51; }
         .chat-panel.open { display: flex; }
         .chat-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; background: linear-gradient(135deg, #12C386, #00734C); color: #fff; font-size: 13.5px; font-weight: 750; flex-shrink: 0; }
         .chat-panel-close { cursor: pointer; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; opacity: .9; border: none; background: none; color: #fff; padding: 0; }
         .chat-panel-close:hover { background: rgba(255,255,255,.18); opacity: 1; }
         .chat-panel-body { padding: 14px; overflow-y: auto; flex: 1; }
         @media (max-width: 768px) {
-            .chat-bubble-btn { width: 48px; height: 48px; bottom: 74px; right: 16px; }
-            .chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 132px; }
+            .chat-bubble-btn { width: 48px; height: 48px; bottom: 16px; right: 16px; }
+            .chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 74px; }
         }
         /* ── Éditeur de texte enrichi (demande de modification) ── */
         .rich-editor { border: 1px solid var(--amber, #E8A100); border-radius: 6px; overflow: hidden; background: #fff; }
@@ -477,7 +477,6 @@
     var directoryStorage = window.ImpulsionMarketing.directoryStorage;
     var security         = window.ImpulsionMarketing.security;
     var errors           = window.ImpulsionMarketing.errors;
-    var help             = window.ImpulsionMarketing.help;
     var users            = window.ImpulsionMarketing.users;
     var workflow         = window.ImpulsionMarketing.workflow;
     var customFields     = window.ImpulsionMarketing.customFields;
@@ -570,7 +569,8 @@
     var submittedInSession = { com: new Set(), ebf: new Set(), data: new Set(), dataTest: new Set() };
 
     window.addEventListener('load', function() {
-        help.initHelp('details');
+        // Bulle d'aide (?) retirée de cette page : elle chevauchait la bulle
+        // de discussion, dans le même coin de l'écran (cf. #chat-bubble-btn).
         loadCampaignDetails();
     });
 
@@ -965,6 +965,50 @@
         });
     }
 
+    // Composition de l'équipe (Com/EBF/Data) + Co-PO (suppléance) : un seul
+    // bloc, dans l'onglet Infos générales (déplacé depuis le haut du Workflow,
+    // à la demande). Le Co-PO reste éditable ici pour le PO — mêmes ids
+    // #btn-copo-toggle / #copo-form / #btn-copo-save / .copo-cb, wiring
+    // inchangé dans setupGlobalEvents.
+    function buildTeamInfoBlock(data) {
+        var assignments = (data.workflow && data.workflow.assignments) || {};
+        var currentUser = users && users.getCurrentUser && users.getCurrentUser();
+        var teamParts = [];
+        [['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data']].forEach(function(t) {
+            if (!isTeamRequired(data, t[1])) return;
+            var disp = assigneesDisplay(assignments, t[0]);
+            teamParts.push(t[1] + ' : ' + (disp || '<em style="color:var(--muted-2);font-style:italic;">en attente d\'affectation</em>'));
+        });
+        var showCoPo = currentUser && users.isCurrentUserPO(data);
+        if (!teamParts.length && !showCoPo) return '';
+
+        var html = '<div class="detail-section"><h3>👥 Équipe</h3>';
+        if (teamParts.length) {
+            html += '<div style="font-size:13px;"><strong>Composition :</strong> ' + teamParts.join(' &nbsp;|&nbsp; ') + '</div>';
+        }
+        if (showCoPo) {
+            var coPo = Array.isArray(data.coPo) ? data.coPo : [];
+            html += '<div style="' + (teamParts.length ? 'margin-top:12px;padding-top:12px;border-top:1px solid var(--line);' : '') + 'font-size:13px;">';
+            html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+            html += '<span><strong>Co-PO (suppléance) :</strong> ' + (coPo.length ? coPo.map(security.escapeHtml).join(', ') : '<em style="color:var(--muted-2);">aucun</em>') + '</span>';
+            html += '<button id="btn-copo-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Gérer</button>';
+            html += '</div>';
+            html += '<div id="copo-form" style="display:none;margin-top:8px;">';
+            html += '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Un co-PO a les mêmes droits que vous sur cette campagne (validations, retours, test en prod…). Idéal pour vos congés.</div>';
+            html += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
+            users.USERS.filter(function(u) { return u.name !== data.po && !u.inactive; }).forEach(function(u) {
+                var ck = coPo.indexOf(u.name) !== -1 ? ' checked' : '';
+                html += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" class="copo-cb" value="' + security.escapeHtml(u.name) + '"' + ck + '> ' + security.escapeHtml(u.name) + ' <span style="font-size:11px;color:var(--muted-2);">(' + security.escapeHtml(u.role || '') + ')</span></label>';
+            });
+            html += '</div>';
+            html += '<button id="btn-copo-save" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
+            html += '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
     // Bandeau d'action sticky (haut de l'onglet Infos) : parmi tous les canaux,
     // l'étape actionnable (pending / revision_requested) qui attend depuis le
     // plus longtemps, avec un raccourci direct vers son bloc. Repose sur
@@ -1137,7 +1181,7 @@
             + '<button type="button" class="subtab-btn" data-subtab="docs">📁 Documents</button>'
             + '<button type="button" class="subtab-btn" data-subtab="act">🕒 Activité</button>'
             + '</div>'
-            + '<div class="subtab-panel active" data-subpanel="info">' + infoGen + smallCards + jurHtml + '</div>'
+            + '<div class="subtab-panel active" data-subpanel="info">' + infoGen + buildTeamInfoBlock(data) + smallCards + jurHtml + '</div>'
             + '<div class="subtab-panel" data-subpanel="docs">' + docsPanel + '</div>'
             + '<div class="subtab-panel" data-subpanel="act">' + actPanel + '</div>'
             + '</div>';
@@ -2105,50 +2149,14 @@
             return html;
         }
 
-        // Composition de l'équipe : affichée dès le départ (même à l'étape
-        // d'affectation, avant que quiconque soit affecté), pour chaque service
-        // REQUIS par la campagne. Un service sans personne affectée affiche
-        // « en attente d'affectation » plutôt que de disparaître.
-        // Le manager qui a fait l'affectation n'est pas affiché comme « affecté »
-        // à la tâche : seules les équipes réellement affectées le sont.
-        var _teamParts = [];
-        [['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data']].forEach(function(t) {
-            if (!isTeamRequired(data, t[1])) return;
-            var disp = assigneesDisplay(assignments, t[0]);
-            _teamParts.push(t[1] + ' : ' + (disp || '<em style="color:var(--muted-2);font-style:italic;">en attente d\'affectation</em>'));
-        });
-        if (_teamParts.length) {
-            html += '<div style="background:var(--line-2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
-            html += '<strong>Composition de l\'équipe :</strong> ';
-            html += _teamParts.join(' &nbsp;|&nbsp; ');
-            html += '</div>';
-        }
-
+        // Composition de l'équipe + Co-PO : déplacés dans l'onglet Infos
+        // générales (cf. buildTeamInfoBlock, appelée depuis renderInfoPage) —
+        // seule la garde ci-dessous (utilisateur non identifié) reste ici, pour
+        // les sections d'action qui suivent (affectation, kick-off...).
         if (!currentUser) {
             html += '<p style="color:#888;font-size:13px;">Sélectionnez un utilisateur pour voir vos actions disponibles.</p>';
             html += '</div>';
             return html;
-        }
-
-        // ── Co-PO (suppléance congés) : le PO — ou un co-PO / super-admin — peut
-        // ajouter un autre PO qui aura les mêmes droits sur cette campagne. ──
-        if (users.isCurrentUserPO(data)) {
-            var _coPo = Array.isArray(data.coPo) ? data.coPo : [];
-            html += '<div style="background:var(--line-2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
-            html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
-            html += '<span><strong>Co-PO (suppléance) :</strong> ' + (_coPo.length ? _coPo.map(security.escapeHtml).join(', ') : '<em style="color:var(--muted-2);">aucun</em>') + '</span>';
-            html += '<button id="btn-copo-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Gérer</button>';
-            html += '</div>';
-            html += '<div id="copo-form" style="display:none;margin-top:8px;">';
-            html += '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Un co-PO a les mêmes droits que vous sur cette campagne (validations, retours, test en prod…). Idéal pour vos congés.</div>';
-            html += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
-            users.USERS.filter(function(u) { return u.name !== data.po && !u.inactive; }).forEach(function(u) {
-                var ck = _coPo.indexOf(u.name) !== -1 ? ' checked' : '';
-                html += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" class="copo-cb" value="' + security.escapeHtml(u.name) + '"' + ck + '> ' + security.escapeHtml(u.name) + ' <span style="font-size:11px;color:var(--muted-2);">(' + security.escapeHtml(u.role || '') + ')</span></label>';
-            });
-            html += '</div>';
-            html += '<button id="btn-copo-save" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
-            html += '</div></div>';
         }
 
         // Manager : affectation
