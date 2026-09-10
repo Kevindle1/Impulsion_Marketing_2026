@@ -216,6 +216,32 @@
         .wf-step--link:hover .wf-node { border-color: var(--primary, #00875A); color: var(--primary, #00875A); box-shadow: 0 0 0 4px var(--green-50, #e8f6ef); }
         .wf-step--link.done:hover .wf-node { color: #fff; }
         .wf-step--link:hover .wf-label { color: var(--primary, #00875A); text-decoration: underline; }
+        .wf-step--link:hover .wf-cal { border-color: var(--primary, #00875A); }
+
+        /* Pastille-date (timeline canal) : date du dépôt/de la validation
+           directement dans la pastille — jour + mois pour une étape terminée,
+           « Depuis Xj » pour une étape en cours ou en révision. Un rond simple
+           (34px) reste utilisé quand aucune date n'est encore connue pour
+           cette étape (donnée antérieure à l'introduction de ce suivi) — les
+           deux formes sont donc alignées à 40px sur une même ligne.
+           Cf. workflow.getChannelStepDate(). */
+        .wf-stepper--cal .wf-node { width: 40px; height: 40px; }
+        .wf-stepper--cal .wf-step::before { top: 20px; }
+        .wf-cal { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 2px solid var(--line, #eaefec); background: #fff; flex-shrink: 0; display: flex; flex-direction: column; z-index: 1; }
+        .wf-cal-tag { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; text-align: center; padding: 2.5px 0; background: var(--muted-2, #8b988f); color: #fff; }
+        .wf-cal-num { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--ink, #0c1a14); font-variant-numeric: tabular-nums; }
+        .wf-step.done .wf-cal { border-color: var(--primary, #00875A); }
+        .wf-step.done .wf-cal-tag { background: var(--primary, #00875A); }
+        .wf-step.done .wf-cal-num { color: var(--primary-hover, #00734C); }
+        .wf-step.current .wf-cal { border-color: var(--amber, #E8A100); box-shadow: 0 0 0 4px var(--amber-50, #fdf3e2); }
+        .wf-step.current .wf-cal-tag { background: var(--amber, #E8A100); }
+        .wf-step.current .wf-cal-num { color: #9a6b00; }
+        .wf-step.submitted .wf-cal { border-color: var(--blue, #2563EB); box-shadow: 0 0 0 4px var(--blue-50, #e8f0fe); }
+        .wf-step.submitted .wf-cal-tag { background: var(--blue, #2563EB); }
+        .wf-step.submitted .wf-cal-num { color: var(--blue, #2563EB); }
+        .wf-step.revision .wf-cal { border-color: var(--red, #E2001A); box-shadow: 0 0 0 4px var(--red-50, #fdeaec); }
+        .wf-step.revision .wf-cal-tag { background: var(--red, #E2001A); }
+        .wf-step.revision .wf-cal-num { color: var(--red, #E2001A); }
         @keyframes wfFlash { 0% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } 25% { box-shadow: 0 0 0 4px rgba(0,135,90,.28); } 100% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } }
         .wf-flash { animation: wfFlash 1.6s ease; }
         .wf-chan-date { font-size: 12px; color: var(--muted, #56655e); margin: -2px 0 12px; }
@@ -1874,17 +1900,40 @@
             if (s === 'pending') return 'current';
             return 'locked';
         }
+        // Pastille-date : jour + mois pour une étape terminée (dépôt/validation
+        // déjà horodatés), « Depuis Xj » pour une étape en cours ou en révision
+        // (pas de date de fin, on montre l'attente). null si aucune date connue
+        // pour cette étape (retombe sur le rond simple côté appelant).
+        var WF_MONTHS = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+        function wfDateTile(cls, iso) {
+            var d = new Date(iso);
+            if (isNaN(d.getTime())) return null;
+            if (cls === 'current' || cls === 'revision') {
+                var days = Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+                var num = days === 0 ? 'Auj.' : (days + 'j');
+                return '<div class="wf-cal"><div class="wf-cal-tag">Depuis</div><div class="wf-cal-num">' + num + '</div></div>';
+            }
+            var day = String(d.getDate()).padStart(2, '0');
+            return '<div class="wf-cal"><div class="wf-cal-tag">' + WF_MONTHS[d.getMonth()] + '</div><div class="wf-cal-num">' + day + '</div></div>';
+        }
         function wfStepper(stepDefs, getStatus, chIdx) {
             var linkable = (chIdx !== undefined && chIdx !== null);
-            var h = '<div class="wf-stepper">';
+            var h = '<div class="wf-stepper' + (linkable ? ' wf-stepper--cal' : '') + '">';
             stepDefs.forEach(function(step, i) {
                 var st = getStatus(step, i);
                 var cls = wfStateClass(st);
-                var content = (cls === 'done') ? '✓' : String(i + 1);
                 var classAttr = 'wf-step ' + cls + (linkable ? ' wf-step--link' : '');
                 var dataAttr = linkable ? (' data-ch="' + chIdx + '" data-step="' + security.escapeHtml(step.id) + '"') : '';
                 var titleTxt = security.escapeHtml(step.label) + (linkable ? ' — cliquer pour ouvrir le bloc' : '');
-                h += '<div class="' + classAttr + '"' + dataAttr + '><div class="wf-node" title="' + titleTxt + '">' + content + '</div><div class="wf-label">' + security.escapeHtml(step.label) + '</div></div>';
+                // Date dans la pastille : uniquement pour les étapes canal (pas la
+                // timeline « Préparation », globale) atteintes (pas 'locked') et
+                // pour lesquelles un horodatage existe déjà (cf. workflow.
+                // getChannelStepDate / _stampChannelStepDates — nouveau suivi, ne
+                // couvre pas les étapes déjà en place avant son introduction).
+                var iso = (linkable && cls !== 'locked') ? workflow.getChannelStepDate(data, chIdx, step.id) : null;
+                var tile = iso ? wfDateTile(cls, iso) : null;
+                var nodeHtml = tile || ('<div class="wf-node">' + ((cls === 'done') ? '✓' : String(i + 1)) + '</div>');
+                h += '<div class="' + classAttr + '"' + dataAttr + ' title="' + titleTxt + '">' + nodeHtml + '<div class="wf-label">' + security.escapeHtml(step.label) + '</div></div>';
             });
             h += '</div>';
             return h;
