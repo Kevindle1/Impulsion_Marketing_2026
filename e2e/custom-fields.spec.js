@@ -1380,6 +1380,10 @@ test.describe('Fil de discussion', () => {
     await page.goto(url('pages/details.html?name=' + encodeURIComponent(campaign.id)));
     await page.waitForTimeout(1200);
 
+    // La discussion est maintenant repliée dans une bulle flottante (cf.
+    // #chat-bubble-btn) : il faut l'ouvrir avant d'accéder au formulaire.
+    await page.locator('#chat-bubble-btn').click();
+
     const submitBtn = page.locator('#discussion-submit');
     const input = page.locator('#discussion-input');
 
