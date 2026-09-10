@@ -980,11 +980,43 @@
             teamParts.push(t[1] + ' : ' + (disp || '<em style="color:var(--muted-2);font-style:italic;">en attente d\'affectation</em>'));
         });
         var showCoPo = currentUser && users.isCurrentUserPO(data);
-        if (!teamParts.length && !showCoPo) return '';
+
+        // Rôles que l'utilisateur courant peut modifier — un manager (de service,
+        // général ou super-admin) pour n'importe quel rôle requis, ou un membre
+        // déjà affecté pour SON propre rôle uniquement (cf. teamEditMode, sans
+        // idx = portée campagne). Vide → pas de bouton d'ajout.
+        var editableRoles = ['com', 'ebf', 'data'].filter(function(r) {
+            return isTeamRequired(data, ROLE_LABELS_TEAM[r]) && teamEditMode(data, r);
+        });
+        if (!teamParts.length && !showCoPo && !editableRoles.length) return '';
 
         var html = '<div class="detail-section"><h3>👥 Équipe</h3>';
         if (teamParts.length) {
             html += '<div style="font-size:13px;"><strong>Composition :</strong> ' + teamParts.join(' &nbsp;|&nbsp; ') + '</div>';
+        }
+        // Ajout d'un membre à l'équipe (à tout moment, motif obligatoire, tracé
+        // dans l'onglet Activité) — la personne sur la tâche ajoute à son propre
+        // rôle, un manager à n'importe quel rôle qu'il gère.
+        if (editableRoles.length) {
+            html += '<div style="' + (teamParts.length ? 'margin-top:10px;' : '') + '">';
+            html += '<button type="button" id="btn-team-add-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">➕ Ajouter quelqu\'un à l\'équipe</button>';
+            html += '</div>';
+            html += '<div id="team-add-form" style="display:none;margin-top:10px;background:var(--line-2);border-radius:6px;padding:10px 12px;">';
+            html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">La personne ajoutée devient affectée sur toute la campagne. Le motif est obligatoire — l\'ajout est tracé dans l\'onglet Activité.</div>';
+            html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+            if (editableRoles.length > 1) {
+                html += '<select id="team-add-role" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-family:inherit;">';
+                editableRoles.forEach(function(r) { html += '<option value="' + r + '">' + ROLE_LABELS_TEAM[r] + '</option>'; });
+                html += '</select>';
+            } else {
+                html += '<input type="hidden" id="team-add-role" value="' + editableRoles[0] + '">';
+                html += '<span style="font-size:12px;font-weight:700;padding:6px 4px;">' + ROLE_LABELS_TEAM[editableRoles[0]] + '</span>';
+            }
+            html += '<select id="team-add-person" style="flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-family:inherit;"></select>';
+            html += '</div>';
+            html += '<textarea id="team-add-motif" placeholder="Motif (obligatoire) — ex. congés, renfort ponctuel…" rows="2" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>';
+            html += '<button type="button" id="btn-team-add-save" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Ajouter</button>';
+            html += '</div>';
         }
         if (showCoPo) {
             var coPo = Array.isArray(data.coPo) ? data.coPo : [];
@@ -1171,7 +1203,7 @@
         var actPanel = '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:8px;">'
             + '<select id="activity-filter" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;">'
             + '<option value="">Tout</option><option value="workflow">Workflow</option><option value="document">Documents</option>'
-            + '<option value="statut">Statut</option><option value="campagne">Campagne</option></select></div>'
+            + '<option value="statut">Statut</option><option value="campagne">Campagne</option><option value="affectation">Affectation</option></select></div>'
             + '<div id="activity-loading" style="color:var(--muted-2);font-size:13px;">Chargement...</div>'
             + '<div id="activity-content" style="display:none;"></div>';
 
@@ -1310,6 +1342,9 @@
     function isTeamRequired(data, team) {
         return workflow.isTeamRequired(data.requiredTeams, team);
     }
+
+    // Libellés des rôles d'équipe (ajout de membre, cf. buildTeamInfoBlock).
+    var ROLE_LABELS_TEAM = { com: 'Com', ebf: 'EBF', data: 'Data' };
 
     // ─────────────────────────────────────────────
     // PAGE : CANAL
@@ -4051,6 +4086,55 @@
             });
         }
 
+        // ── Équipe (Infos générales) : ajout d'un membre, motif obligatoire,
+        // tracé dans l'onglet Activité (cf. buildTeamInfoBlock). ──
+        var btnTeamAddToggle = document.getElementById('btn-team-add-toggle');
+        if (btnTeamAddToggle) {
+            var teamAddForm   = document.getElementById('team-add-form');
+            var teamAddRoleEl = document.getElementById('team-add-role');
+            var teamAddPersonEl = document.getElementById('team-add-person');
+            function populateTeamAddPerson() {
+                var role = teamAddRoleEl.value;
+                var already = getAssignees(currentCampaignData.workflow.assignments, role);
+                var candidates = users.getUsersByRole(role).filter(function(u) { return already.indexOf(u.name) === -1; });
+                teamAddPersonEl.innerHTML = candidates.length
+                    ? candidates.map(function(u) { return '<option value="' + security.escapeHtml(u.name) + '">' + security.escapeHtml(u.name) + '</option>'; }).join('')
+                    : '<option value="">Toute l\'équipe est déjà affectée</option>';
+            }
+            populateTeamAddPerson();
+            if (teamAddRoleEl.tagName === 'SELECT') teamAddRoleEl.addEventListener('change', populateTeamAddPerson);
+
+            btnTeamAddToggle.addEventListener('click', function() {
+                teamAddForm.style.display = teamAddForm.style.display === 'none' ? 'block' : 'none';
+            });
+
+            var btnTeamAddSave = document.getElementById('btn-team-add-save');
+            if (btnTeamAddSave) {
+                btnTeamAddSave.addEventListener('click', function() {
+                    var role   = teamAddRoleEl.value;
+                    var person = teamAddPersonEl.value;
+                    var motif  = (document.getElementById('team-add-motif').value || '').trim();
+                    if (!person) { notify('Sélectionnez une personne à ajouter.', 'warning'); return; }
+                    if (!motif)  { notify('Le motif est obligatoire.', 'warning'); return; }
+                    disableBtn(btnTeamAddSave, 'Ajout...');
+                    var assignments = currentCampaignData.workflow.assignments;
+                    var cur = getAssignees(assignments, role);
+                    if (cur.indexOf(person) === -1) cur.push(person);
+                    assignments[role] = cur;
+                    workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                        .then(function() {
+                            var roleLabel = ROLE_LABELS_TEAM[role] || role;
+                            logActivity(currentCampaignName, 'affectation', 'Ajout de ' + person + ' à l\'équipe ' + roleLabel + ' — motif : ' + motif);
+                            refreshCurrentPage();
+                        })
+                        .catch(function(err) {
+                            enableBtn(btnTeamAddSave, '💾 Ajouter');
+                            notify('Erreur : ' + errors.getErrorMessage(err), 'error');
+                        });
+                });
+            }
+        }
+
         // ── Manager : affectation ──
         var btnAssign = document.getElementById('btn-validate-assignment');
         if (btnAssign) {
@@ -4190,7 +4274,7 @@
         ebf_mise_en_prod: 'Mise en prod LP'
     };
     var ACT_STATUS_LABELS = { submitted: 'soumis', validated: 'validé', completed: 'terminé', revision_requested: 'révision demandée' };
-    var ACT_ICONS = { workflow: '🔄', document: '📁', statut: '🔌', campagne: '📝' };
+    var ACT_ICONS = { workflow: '🔄', document: '📁', statut: '🔌', campagne: '📝', affectation: '👥' };
     var _activityCache = [];
 
     function logActivity(campaignName, type, detail) {
