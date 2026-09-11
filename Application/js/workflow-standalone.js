@@ -1203,36 +1203,40 @@ window.ImpulsionMarketing.workflow = (function () {
   }
 
   // #27 — Agrège tous les champs cherchables (références canaux + champs
-  // campagne) en une chaîne minuscule, pour la recherche du tableau de bord.
+  // campagne) en une chaîne minuscule, pour la recherche du tableau de bord
+  // et de la page Campagnes.
+  //
+  // Générique plutôt qu'une liste figée : TOUT champ à plat sur l'objet
+  // campagne ou sur un canal (y compris un champ personnalisé ajouté depuis
+  // Administration ▸ Champs personnalisés sur un point d'attache saisi à la
+  // création/l'édition — po_saisie / cible / produit / canal) est
+  // automatiquement couvert, sans maintenance à chaque nouveau champ.
+  // Hors périmètre : les champs saisis plus tard dans le workflow (dépôts
+  // Com/EBF/Data étape par étape) vivent dans des fichiers séparés par canal
+  // (depotcom.json…), jamais chargés sur les pages de liste — les inclure
+  // demanderait de lire un fichier de plus par canal et par campagne.
   function buildSearchBlob(campaignData) {
     var parts = [];
     function add(v) {
-      if (!v) return;
+      if (v == null || v === '' || v === false) return;
       if (Array.isArray(v)) { v.forEach(add); return; }
+      if (typeof v === 'object') return; // structures dédiées (workflow, siteWeb…), traitées à part
       parts.push(String(v));
     }
-    add(campaignData.id);
-    add(campaignData.po);
-    add(campaignData.coPo);
+    Object.keys(campaignData).forEach(function (k) {
+      if (k === 'workflow' || k === 'channels') return; // structures dédiées
+      add(campaignData[k]);
+    });
     // Personnes affectées (manager + Com/EBF/Data) : permet de rechercher par le
     // nom d'une personne et de retrouver TOUTES ses campagnes (pas que le PO).
     var _asn = (campaignData.workflow && campaignData.workflow.assignments) || {};
     add(_asn.manager); add(_asn.com); add(_asn.ebf); add(_asn.data);
-    add(campaignData.description);
-    add(campaignData.market);
-    add(campaignData.typology);
-    add(campaignData.recurrence);
-    add(campaignData.segments);
-    add(campaignData.ubs);
-    add(campaignData.campagneLiee);
-    add(campaignData.targetProducts);
-    add(campaignData.targetProduct);
-    add(campaignData.prospectSource);
     (campaignData.channels || []).forEach(function (c) {
-      add(c.deliverableName); add(c.content); add(c.emailObject);
-      add(c.comType); add(c.comTypology); add(c.targetingCriteria); add(c.ubs);
-      add(c.codeCom); add(c.refParacom); add(c.codeProjet); add(c.codeAction); add(c.codeMK);
-      add(c.urlTicTac); add(c.urlComStore); add(c.urlsComStore); add(c.urlLccx);
+      Object.keys(c).forEach(function (k) {
+        if (k === 'siteWeb') return; // structure dédiée
+        add(c[k]);
+      });
+      if (c.siteWeb) Object.keys(c.siteWeb).forEach(function (k) { add(c.siteWeb[k]); });
     });
     return parts.join(' ').toLowerCase();
   }
