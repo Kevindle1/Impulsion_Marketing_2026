@@ -120,6 +120,18 @@
         .pil-status-pending { background: var(--line-2); color: var(--muted); }
         .pil-status-revision { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
 
+        /* Thèmes mis en avant (Coms attendues) : Produit / Selfcare / Promotion —
+           champs renseignés à la création (bloc « Produit ») sur la campagne. */
+        .pil-chip-toggle { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+        .pil-chip-toggle:hover { border-color: var(--primary); color: var(--primary); }
+        .pil-chip-toggle.active { background: var(--green-50, #e8f6ef); border-color: var(--primary); color: var(--green-600, #00734C); }
+        .pil-theme-produit { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
+        .pil-theme-selfcare { background: #f3e8ff; color: #7C3AED; }
+        .pil-theme-promo { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+        /* Canaux & volumes associés (vue d'ensemble de TOUS les canaux d'une même
+           campagne, pas seulement celui de la ligne) */
+        .pil-vol-chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--line-2); color: var(--ink); white-space: nowrap; margin: 1px 3px 1px 0; }
+
         /* Équipe / rôle porteur (Validations, Charge de travail, Retards) */
         .pil-role-po { background: #eef0f2; color: #475569; }
         .pil-role-com { background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); }
@@ -304,7 +316,7 @@
                                         <div class="admin-sec-ic">📅</div>
                                         <div>
                                             <h2>Coms attendues</h2>
-                                            <p>Toutes les communications prévues sur la période choisie — d'après la date de réception client du livrable (à défaut, la date d'envoi client de la campagne).</p>
+                                            <p>Toutes les communications sur la période choisie — passée ou à venir — d'après la date de réception client du livrable (à défaut, la date d'envoi client de la campagne). Filtrez par thème (produit, selfcare, promotion) et retrouvez, pour chaque communication, les canaux et volumes associés.</p>
                                         </div>
                                     </div>
 
@@ -325,6 +337,9 @@
                                             <label for="f-type">Type de com</label>
                                             <select id="f-type"><option value="">Tous</option></select>
                                         </div>
+                                        <button type="button" class="pil-chip-toggle" id="f-theme-produit" data-theme="hasProduct" title="Fiche produit renseignée (URL)">📦 Produit</button>
+                                        <button type="button" class="pil-chip-toggle" id="f-theme-selfcare" data-theme="selfcare" title="Parcours selfcare = Oui">🖥️ Selfcare</button>
+                                        <button type="button" class="pil-chip-toggle" id="f-theme-promo" data-theme="promo" title="Offre promotionnelle = Oui">🎁 Promotion</button>
                                         <button type="button" class="pil-reset" id="f-reset">Réinitialiser</button>
                                         <span class="pil-count" id="f-count"></span>
                                     </div>
@@ -332,13 +347,13 @@
                                     <div class="pil-table-wrap">
                                         <table class="pil-table" id="pil-table" style="display:none;">
                                             <thead><tr>
-                                                <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>PO</th>
+                                                <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>Thèmes</th><th>Canaux &amp; volumes</th><th>PO</th>
                                             </tr></thead>
                                             <tbody id="pil-tbody"></tbody>
                                         </table>
                                         <div id="pil-empty" class="pil-empty" style="display:none;">
                                             <div class="big">📭</div>
-                                            Aucune com attendue sur cette période avec ces filtres.
+                                            Aucune communication sur cette période avec ces filtres.
                                         </div>
                                     </div>
                                 </section>
@@ -674,6 +689,12 @@
         function buildComs() {
             var coms = [];
             state.allCampaigns.forEach(function(c) {
+                // Canaux & volumes associés : vue d'ensemble de TOUS les canaux de cette
+                // même campagne (calculée une fois, partagée par chaque ligne ci-dessous)
+                // pour voir le dispositif complet sans ouvrir la fiche.
+                var siblings = (c.channels || []).map(function(ch2, j) {
+                    return { canal: ch2.content || '', livrable: ch2.deliverableName || ('Canal ' + (j + 1)), volume: ch2.volumeCible || 0 };
+                });
                 (c.channels || []).forEach(function(ch, i) {
                     var sd = (ch.sendDate || '').trim();
                     var date = ISO_DATE.test(sd) ? sd : (c.launchDate || '');
@@ -686,7 +707,14 @@
                         livrable: ch.deliverableName || ('Canal ' + (i + 1)),
                         canal: ch.content || '',
                         comType: ch.comType || '',
-                        po: c.po || ''
+                        po: c.po || '',
+                        // Thèmes mis en avant (champs du bloc « Produit », renseignés à la
+                        // création) : permettent de retrouver les communications parlant
+                        // d'un produit, en selfcare ou en promotion.
+                        hasProduct: !!(c.productUrl || '').trim(),
+                        selfcare: c.parcoursSelfcare === 'Oui',
+                        promo: c.offrePromo === 'Oui',
+                        siblings: siblings
                     });
                 });
             });
@@ -1393,6 +1421,10 @@
         function render() {
             var du = $('f-du').value, au = $('f-au').value;
             var canal = $('f-canal').value, type = $('f-type').value;
+            // Thèmes actifs (📦 Produit / 🖥️ Selfcare / 🎁 Promotion) : logique OU — une
+            // communication matche dès qu'elle correspond à au moins un thème coché.
+            var activeThemes = Array.prototype.slice.call(document.querySelectorAll('.pil-chip-toggle.active'))
+                .map(function(b) { return b.getAttribute('data-theme'); });
 
             var list = state.coms.filter(function(co) {
                 if (!co.date) return false;                          // pas de date exploitable
@@ -1400,6 +1432,7 @@
                 if (au && co.date > au) return false;
                 if (canal && co.canal !== canal) return false;
                 if (type && co.comType !== type) return false;
+                if (activeThemes.length && !activeThemes.some(function(t) { return co[t]; })) return false;
                 return true;
             });
 
@@ -1419,8 +1452,16 @@
                 var wk = mondayOf(co.date);
                 if (wk !== lastWeek) {
                     lastWeek = wk;
-                    html += '<tr class="pil-week"><td colspan="6">Semaine du ' + frDate(wk) + '</td></tr>';
+                    html += '<tr class="pil-week"><td colspan="8">Semaine du ' + frDate(wk) + '</td></tr>';
                 }
+                var themeBadges = '';
+                if (co.hasProduct) themeBadges += '<span class="pil-badge pil-theme-produit">📦 Produit</span> ';
+                if (co.selfcare) themeBadges += '<span class="pil-badge pil-theme-selfcare">🖥️ Selfcare</span> ';
+                if (co.promo) themeBadges += '<span class="pil-badge pil-theme-promo">🎁 Promo</span> ';
+                if (!themeBadges) themeBadges = '<span class="pil-team-empty">—</span>';
+                var volsHtml = co.siblings.map(function(s) {
+                    return '<span class="pil-vol-chip">' + esc(s.canal || s.livrable) + (s.volume ? ' · ' + s.volume.toLocaleString('fr-FR') : '') + '</span>';
+                }).join('');
                 html += '<tr class="pil-row" data-name="' + esc(co.folderName) + '">'
                     + '<td class="pil-date">' + frDate(co.date)
                     + (co.cond ? '<span class="pil-cond">⏱ ' + esc(co.cond) + '</span>' : '') + '</td>'
@@ -1428,6 +1469,8 @@
                     + '<td>' + esc(co.livrable) + '</td>'
                     + '<td>' + (co.canal ? '<span class="pil-badge pil-canal">' + esc(co.canal) + '</span>' : '—') + '</td>'
                     + '<td><span class="pil-badge ' + ctBadgeClass(co.comType) + '">' + esc(co.comType || '—') + '</span></td>'
+                    + '<td>' + themeBadges + '</td>'
+                    + '<td>' + volsHtml + '</td>'
                     + '<td>' + esc(co.po || '—') + '</td>'
                     + '</tr>';
             });
@@ -1542,10 +1585,14 @@
             ['f-du', 'f-au', 'f-canal', 'f-type'].forEach(function(id) {
                 $(id).addEventListener('change', render);
             });
+            document.querySelectorAll('.pil-chip-toggle').forEach(function(btn) {
+                btn.addEventListener('click', function() { btn.classList.toggle('active'); render(); });
+            });
             $('f-reset').addEventListener('click', function() {
                 setDefaultPeriod();
                 $('f-canal').value = '';
                 $('f-type').value = '';
+                document.querySelectorAll('.pil-chip-toggle.active').forEach(function(btn) { btn.classList.remove('active'); });
                 render();
             });
         }
