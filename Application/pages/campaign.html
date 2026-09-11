@@ -1720,6 +1720,50 @@
                 return channels;
             }
 
+            // Diminuer le nombre de canaux ne doit pas retirer arbitrairement les
+            // derniers de la liste (ex : passer de 3 à 2 supprimait toujours le
+            // canal 3, même si c'était le 1 ou le 2 qu'on voulait enlever) — on
+            // demande explicitement lequel/lesquels retirer, informations des
+            // autres canaux inchangées.
+            function escChRm(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+            function promptRemoveChannels(existing, countToRemove, onConfirm, onCancel) {
+                var overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;';
+                var box = document.createElement('div');
+                box.style.cssText = 'background:#fff;border-radius:10px;padding:22px;width:min(440px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
+                var plural = countToRemove > 1 ? 'aux' : '';
+                var itemsHtml = existing.map(function (ch, i) {
+                    var label = ch.deliverableName || ch.content || ('Canal ' + (i + 1));
+                    return '<label style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;font-size:13.5px;">'
+                        + '<input type="checkbox" class="rm-ch-cb" data-idx="' + i + '" style="width:16px;height:16px;flex-shrink:0;">'
+                        + '<span>' + escChRm(label) + (ch.content ? ' <span style="color:var(--muted-2);font-size:11.5px;">(' + escChRm(ch.content) + ')</span>' : '') + '</span>'
+                        + '</label>';
+                }).join('');
+                box.innerHTML =
+                    '<h3 style="margin:0 0 6px;font-size:16px;color:var(--gray-700);">Quel' + plural + ' canal' + plural + ' retirer ?</h3>'
+                    + '<p style="margin:0 0 14px;font-size:13px;color:var(--muted-2);">Choisissez ' + countToRemove + ' canal' + plural + ' à retirer — les informations des autres canaux sont conservées.</p>'
+                    + '<div>' + itemsHtml + '</div>'
+                    + '<p class="rm-ch-err" style="display:none;color:var(--red);font-size:12.5px;margin:0 0 10px;">Sélectionnez exactement ' + countToRemove + ' canal' + plural + '.</p>'
+                    + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+                    + '<button type="button" data-act="cancel" style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">Annuler</button>'
+                    + '<button type="button" data-act="ok" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">Confirmer</button>'
+                    + '</div>';
+                overlay.appendChild(box);
+                document.body.appendChild(overlay);
+                function close() { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+                function cancel() { close(); if (onCancel) onCancel(); }
+                function onEsc(e) { if (e.key === 'Escape') cancel(); }
+                box.querySelector('[data-act="cancel"]').addEventListener('click', cancel);
+                box.querySelector('[data-act="ok"]').addEventListener('click', function () {
+                    var checked = Array.from(box.querySelectorAll('.rm-ch-cb:checked')).map(function (cb) { return +cb.getAttribute('data-idx'); });
+                    if (checked.length !== countToRemove) { box.querySelector('.rm-ch-err').style.display = 'block'; return; }
+                    close();
+                    onConfirm(existing.filter(function (_, i) { return checked.indexOf(i) === -1; }));
+                });
+                overlay.addEventListener('click', function (e) { if (e.target === overlay) cancel(); });
+                document.addEventListener('keydown', onEsc);
+            }
+
             // Peuple la liste de personnes selon l'équipe PO sélectionnée
             function updatePoPersons() {
                 var team = document.getElementById('poTeam').value;
@@ -1783,12 +1827,28 @@
                     // Idem pour les canaux dépliés à la main (accordéon) : sinon
                     // ajouter un canal replierait ceux qu'on venait d'ouvrir.
                     const openCh = Array.from(document.querySelectorAll('#channelsContainer > .channel-block.open')).map(b => b.getAttribute('data-ch'));
-                    generateChannelFields(newCount);
-                    if (existing.length) restoreChannelFields(existing.slice(0, newCount));
-                    openCh.forEach(ch => {
-                        const block = document.querySelector('#channelsContainer > .channel-block[data-ch="' + ch + '"]');
-                        if (block) block.classList.add('open');
-                    });
+
+                    function applyChannels(remaining) {
+                        generateChannelFields(newCount);
+                        if (remaining.length) restoreChannelFields(remaining.slice(0, newCount));
+                        openCh.forEach(ch => {
+                            const block = document.querySelector('#channelsContainer > .channel-block[data-ch="' + ch + '"]');
+                            if (block) block.classList.add('open');
+                        });
+                    }
+
+                    if (newCount < existing.length) {
+                        // On retire des canaux : demander lesquels plutôt que de
+                        // toujours supprimer les derniers de la liste (ce qui
+                        // effaçait potentiellement un canal qu'on voulait garder).
+                        promptRemoveChannels(existing, existing.length - newCount, applyChannels, function () {
+                            // Annulé : revenir au nombre de canaux réellement affiché.
+                            var prevRadio = document.querySelector('input[name="numChannels"][value="' + existing.length + '"]');
+                            if (prevRadio) prevRadio.checked = true;
+                        });
+                    } else {
+                        applyChannels(existing);
+                    }
                 });
             });
 
