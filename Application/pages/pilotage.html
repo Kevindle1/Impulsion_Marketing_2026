@@ -80,6 +80,21 @@
         .pil-since { font-weight: 650; color: var(--ink); white-space: nowrap; }
         .pil-since.pil-since-urgent { color: var(--red, #E2001A); }
         .pil-since.pil-since-unknown { color: var(--muted-2); font-weight: 400; }
+
+        /* Date d'envoi de la communication (Suivi de campagne) : permet de croiser
+           combien de temps un livrable est bloqué avec l'échéance d'envoi réelle,
+           pour repérer les envois à risque. */
+        .pil-envoi { font-weight: 650; color: var(--ink); white-space: nowrap; }
+        .pil-envoi.pil-envoi-none { color: var(--muted-2); font-weight: 400; }
+        .pil-envoi-tag { display: block; font-weight: 700; font-size: 11px; }
+        .pil-envoi.pil-envoi-overdue .pil-envoi-tag { color: var(--red, #E2001A); }
+        .pil-envoi.pil-envoi-urgent .pil-envoi-tag { color: #9a6b00; }
+        .pil-envoi-tag.pil-envoi-far { color: var(--muted-2); font-weight: 400; }
+
+        /* Lignes de regroupement (Étape / Statut / Acteur) : même style que le
+           regroupement par semaine (Coms attendues) / par groupe (Retards). */
+        .pil-group-row td { background: var(--line-2); font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 7px 12px; }
+        .pil-group-row .pil-group-count { font-weight: 700; color: var(--primary); margin-left: 6px; text-transform: none; letter-spacing: normal; }
         .pil-camp small { display: block; font-weight: 400; color: var(--muted-2); font-size: 11.5px; }
         .pil-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
         .pil-canal { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
@@ -350,6 +365,15 @@
                                         </div>
                                     </div>
                                     <div class="pil-filters">
+                                        <div class="pil-filter">
+                                            <label for="v-f-groupby">Grouper par</label>
+                                            <select id="v-f-groupby">
+                                                <option value="">Aucun</option>
+                                                <option value="stepId">Étape</option>
+                                                <option value="status">Statut</option>
+                                                <option value="actor">Acteur (doit produire)</option>
+                                            </select>
+                                        </div>
                                         <button type="button" class="pil-reset" id="v-reset">Réinitialiser les filtres</button>
                                         <span class="pil-count" id="v-count"></span>
                                     </div>
@@ -359,7 +383,7 @@
                                                 <tr>
                                                     <th>Nom de la tâche</th><th>Livrable</th><th>Étape actuelle</th>
                                                     <th>PO</th><th>Com</th><th>EBF</th><th>Data</th>
-                                                    <th>Doit produire</th><th>Depuis</th>
+                                                    <th>Doit produire</th><th>Date d'envoi</th><th>Depuis</th>
                                                 </tr>
                                                 <tr>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-camp" placeholder="Filtrer…"></th>
@@ -370,6 +394,15 @@
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-ebf" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-data" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-producteur" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th">
+                                                        <select id="v-f-envoi" title="Pour repérer les envois de communication à risque : bloqués en validation alors que la date d'envoi approche ou est dépassée.">
+                                                            <option value="">Tout risque</option>
+                                                            <option value="overdue">Envoi dépassé</option>
+                                                            <option value="urgent">Envoi imminent</option>
+                                                            <option value="ok">Envoi lointain</option>
+                                                            <option value="none">Sans date</option>
+                                                        </select>
+                                                    </th>
                                                     <th class="pil-col-filter-th">
                                                         <select id="v-f-depuis">
                                                             <option value="">Toutes durées</option>
@@ -974,6 +1007,43 @@
             }).join('');
             if (ids.indexOf(current) !== -1) sel.value = current;
         }
+        // Regroupements disponibles pour le tableau (Étape / Statut / Acteur) : une
+        // clé de groupe stable + un libellé affiché, dérivés du même item que les
+        // colonnes déjà rendues (aucune donnée dupliquée).
+        var VALIDATION_GROUPS = {
+            stepId: { key: function (it) { return it.stepId; }, label: function (it) { return it.stepLabel; } },
+            status: { key: function (it) { return it.status; }, label: function (it) { return STATUS_LABEL[it.status] || it.status; } },
+            actor: { key: function (it) { return it.names.join('|'); }, label: function (it) { return it.names.join(', '); } }
+        };
+        function groupValidationItems(items, groupBy) {
+            var def = VALIDATION_GROUPS[groupBy];
+            if (!def) return null;
+            var groups = {}, order = [];
+            items.forEach(function (it) {
+                var k = def.key(it);
+                if (!groups[k]) { groups[k] = { label: def.label(it), items: [] }; order.push(k); }
+                groups[k].items.push(it);
+            });
+            var list = order.map(function (k) { return groups[k]; });
+            // Groupes les plus chargés en premier (là où le risque se concentre),
+            // à égalité on trie par libellé pour un ordre stable et prévisible.
+            list.sort(function (a, b) {
+                if (b.items.length !== a.items.length) return b.items.length - a.items.length;
+                return a.label.localeCompare(b.label);
+            });
+            return list;
+        }
+
+        // Catégorise le risque d'un livrable au regard de la date d'envoi de la
+        // communication (dateRef/delay, cf. buildAnalytics ▸ computeDelay) — sert
+        // au filtre « risque » et à la couleur de la colonne Date d'envoi.
+        function envoiRiskBucket(it) {
+            if (!it.delay) return 'none';
+            if (it.delay.overdue) return 'overdue';
+            if (it.delay.urgent) return 'urgent';
+            return 'ok';
+        }
+
         function renderValidations() {
             var fCamp = $('v-f-camp').value.trim();
             var fLivrable = $('v-f-livrable').value.trim();
@@ -983,7 +1053,9 @@
             var fEbf = $('v-f-ebf').value.trim();
             var fData = $('v-f-data').value.trim();
             var fProd = $('v-f-producteur').value.trim();
+            var fEnvoi = $('v-f-envoi').value;
             var fDepuis = $('v-f-depuis').value;
+            var fGroupBy = $('v-f-groupby').value;
 
             var items = state.pendingItems.filter(function (it) {
                 if (!matchesText(it.campaignName, fCamp)) return false;
@@ -994,6 +1066,7 @@
                 if (!matchesText(it.team.ebf.join(', '), fEbf)) return false;
                 if (!matchesText(it.team.data.join(', '), fData)) return false;
                 if (!matchesText(it.names.join(', '), fProd)) return false;
+                if (fEnvoi && envoiRiskBucket(it) !== fEnvoi) return false;
                 if (fDepuis) {
                     var d = it.since;
                     if (fDepuis === 'unk' && !d.unknown) return false;
@@ -1017,11 +1090,13 @@
                 return esc(names.join(', '));
             }
 
-            var html = '';
-            items.forEach(function (it) {
+            function renderRow(it) {
                 var statusClass = it.status === 'revision_requested' ? 'pil-status-revision' : 'pil-status-pending';
                 var sinceClass = it.since.unknown ? 'pil-since-unknown' : (it.since.urgent ? 'pil-since-urgent' : '');
-                html += '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
+                var risk = envoiRiskBucket(it);
+                var envoiClass = risk === 'none' ? 'pil-envoi-none' : 'pil-envoi-' + risk;
+                var envoiTag = it.delay ? '<span class="pil-envoi-tag' + (risk === 'ok' ? ' pil-envoi-far' : '') + '">' + esc(it.delay.text) + '</span>' : '';
+                return '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
                     + '<td class="pil-camp">' + esc(it.campaignName) + '</td>'
                     + '<td>' + esc(it.deliverableName) + (it.canal ? ' <span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '') + '</td>'
                     + '<td>' + esc(it.stepLabel) + '<br><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
@@ -1030,9 +1105,21 @@
                     + '<td class="pil-team-cell">' + teamCell(it.team.ebf) + '</td>'
                     + '<td class="pil-team-cell">' + teamCell(it.team.data) + '</td>'
                     + '<td>' + esc(it.names.join(', ')) + ' <span class="pil-badge pil-role-' + esc(it.role) + '">' + esc(roleLabel(it.role)) + '</span></td>'
+                    + '<td class="pil-envoi ' + envoiClass + '">' + frDate(it.dateRef) + envoiTag + '</td>'
                     + '<td class="pil-since ' + sinceClass + '">' + esc(it.since.text) + '</td>'
                     + '</tr>';
-            });
+            }
+
+            var html = '';
+            var groups = fGroupBy ? groupValidationItems(items, fGroupBy) : null;
+            if (groups) {
+                groups.forEach(function (g) {
+                    html += '<tr class="pil-group-row"><td colspan="10">' + esc(g.label) + '<span class="pil-group-count">' + g.items.length + '</span></td></tr>';
+                    g.items.forEach(function (it) { html += renderRow(it); });
+                });
+            } else {
+                items.forEach(function (it) { html += renderRow(it); });
+            }
             tbody.innerHTML = html;
             wireRowNav(tbody);
         }
@@ -1040,10 +1127,10 @@
             ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) {
                 $(id).addEventListener('input', renderValidations);
             });
-            ['v-f-etape', 'v-f-depuis'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
+            ['v-f-etape', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
             $('v-reset').addEventListener('click', function () {
                 ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) { $(id).value = ''; });
-                ['v-f-etape', 'v-f-depuis'].forEach(function (id) { $(id).value = ''; });
+                ['v-f-etape', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).value = ''; });
                 renderValidations();
             });
         }
