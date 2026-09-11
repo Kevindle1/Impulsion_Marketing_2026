@@ -32,11 +32,6 @@
                 </div>
             </div>
 
-            <div class="sidebar-search">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="campaign-search" placeholder="Rechercher : nom, PO, code projet/action, réf com/paracom…">
-            </div>
-
             <nav class="sidebar-nav">
                 <div class="nav-section">
                     <span class="nav-section-title">Principal</span>
@@ -112,25 +107,28 @@
                         <div id="notif-list" style="padding:8px 0;"></div>
                     </div>
                 </div>
-                <button id="btn-rebuild-index" class="icon-btn icon-btn--text" title="Rafraîchir : reconstruire l'index des campagnes">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-                    <span class="icon-btn-label">Rafraîchir</span>
-                </button>
             </div>
         </aside>
 
         <!-- Main Content Area -->
         <div class="main-container">
             <main class="content">
-                <!-- Bandeau d'accueil + KPI sur la même ligne -->
-                <div class="dash-top-row">
-                    <div class="dash-hero">
-                        <div class="dash-hero-text">
-                            <h1 id="hero-greeting">Bonjour 👋</h1>
+                <!-- En-tête de page : date + recherche (plus dans le menu, cf. #27) -->
+                <div class="page-topbar">
+                    <div class="page-topbar-left">
+                        <div class="today" id="page-today"></div>
+                    </div>
+                    <div class="page-topbar-right">
+                        <div class="top-search">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            <input type="text" id="campaign-search" placeholder="Rechercher une campagne…">
+                            <span class="search-info">?<span class="tip">Cherche aussi par PO, code Projet/Action/MK, réf Com/Paracom.</span></span>
                         </div>
                     </div>
-                    <div class="kpi-row" id="kpi-row" style="display:none;"></div>
                 </div>
+
+                <!-- Indicateurs -->
+                <div class="kpi-row" id="kpi-row" style="display:none;"></div>
 
                 <!-- Filtre par étape -->
                 <div class="dashboard-toolbar" id="dashboard-toolbar" style="display:none;">
@@ -356,16 +354,15 @@
             if (btn) btn.addEventListener('click', openWhatsNewManually);
         }
 
-        // Affiche le badge utilisateur (lecture seule) et gère la déconnexion
+        // Date du jour affichée en haut de page (remplace l'ancien message d'accueil
+        // « Bonjour » — jugé sans intérêt réel). L'avatar et la déconnexion vivent
+        // dans le bloc utilisateur de la barre de navigation (topbar.mountSidebarUser).
         function initHeaderUser() {
-            // L'avatar et la déconnexion vivent désormais dans le bloc utilisateur de la
-            // barre de navigation (topbar.mountSidebarUser). Ici, seul le message d'accueil.
-            var currentUser = users.getCurrentUser();
-            if (currentUser) {
-                var firstName = currentUser.name.trim().split(/\s+/)[0];
-                var hero = document.getElementById('hero-greeting');
-                if (hero) hero.textContent = 'Bonjour ' + firstName + ' 👋';
-            }
+            var el = document.getElementById('page-today');
+            if (!el) return;
+            var d = new Date();
+            var main = d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+            el.innerHTML = security.escapeHtml(main) + ' <span>· ' + d.getFullYear() + '</span>';
         }
 
         function hideCampaignSections() {
@@ -436,32 +433,6 @@
                 });
             }
 
-            document.getElementById('btn-rebuild-index').addEventListener('click', function() {
-                var btn = this;
-                if (!_currentRootHandle) {
-                    errors.showNotification('Chargez d\'abord le dossier racine', 'error');
-                    return;
-                }
-                var REBUILD_ICON = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>';
-                btn.disabled = true;
-                btn.innerHTML = REBUILD_ICON + '<span class="icon-btn-label">Rafraîchissement…</span>';
-                var REBUILD_BTN_HTML = REBUILD_ICON + '<span class="icon-btn-label">Rafraîchir</span>';
-                window.ImpulsionMarketing.workflow.buildFullIndex(_currentRootHandle)
-                    .then(function(index) {
-                        var count = Object.keys((index && index.campaigns) || {}).length;
-                        btn.disabled = false;
-                        btn.innerHTML = REBUILD_BTN_HTML;
-                        _lastIndexSig = computeIndexSig(index);
-                        updateRefreshLabel();
-                        errors.showNotification('Index reconstruit — ' + count + ' campagnes indexées', 'success');
-                        loadMyCampaigns();
-                    })
-                    .catch(function(e) {
-                        errors.handleError(e, 'Reconstruction index');
-                        btn.disabled = false;
-                        btn.innerHTML = REBUILD_BTN_HTML;
-                    });
-            });
         }
 
         // ── Rendu filtré + paginé (appelé à chaque frappe de recherche ou changement de page) ──
@@ -511,7 +482,7 @@
                     h1 += '</div>';
                     myTurnList.innerHTML = h1;
                 } else {
-                    myTurnList.innerHTML = '<p class="empty-text">' + (query ? 'Aucune campagne ne correspond à « ' + security.escapeHtml(query) + ' »' : 'Rien à produire pour le moment 👍') + '</p>';
+                    myTurnList.innerHTML = emptyStateHtml(query ? 'Aucune campagne ne correspond à « ' + security.escapeHtml(query) + ' »' : 'Rien à produire pour le moment');
                 }
                 myTurnSection.style.display = 'block';
             } else {
@@ -548,7 +519,7 @@
                     var msg = query
                         ? 'Aucune campagne ne correspond à « ' + security.escapeHtml(query) + ' »'
                         : 'Aucune campagne active vous concernant';
-                    allMineList.innerHTML = '<p class="empty-text">' + msg + '</p>';
+                    allMineList.innerHTML = emptyStateHtml(msg);
                     loadMoreBar.style.display = 'none';
                 }
                 allMineSection.style.display = 'block';
@@ -767,17 +738,6 @@
             return parts.join('|');
         }
 
-        function updateRefreshLabel() {
-            var btn = document.getElementById('btn-rebuild-index');
-            if (!btn) return;
-            var lbl = btn.querySelector('.icon-btn-label');
-            if (lbl) {
-                var d = new Date();
-                lbl.textContent = 'À jour · ' + ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-            }
-            btn.title = 'Données actualisées automatiquement (toutes les 30 s). Cliquez pour forcer une actualisation complète.';
-        }
-
         function autoRefreshTick() {
             if (document.hidden || !_currentRootHandle || _autoRefreshing) return;
             var workflowModule = window.ImpulsionMarketing.workflow;
@@ -791,7 +751,6 @@
                         processAndRender(indexToEntries(idx), currentUser, workflowModule, true); // silencieux
                     }
                     loadNotifications(_currentRootHandle, currentUser);
-                    updateRefreshLabel();
                 })
                 .catch(function(err) { console.debug('Auto-rafraîchissement échoué :', err && err.message); })
                 .then(function() { _autoRefreshing = false; });
@@ -804,16 +763,15 @@
             document.addEventListener('visibilitychange', function() {
                 if (!document.hidden) autoRefreshTick();
             });
-            updateRefreshLabel();
         }
 
         // Affiché quand le dossier chargé ne contient pas de dossier « Campagnes »
         // (mauvais dossier sélectionné). On propose de charger un autre dossier ;
-        // on masque le hero pour ne pas permettre de créer une campagne au mauvais endroit.
+        // on masque la barre de recherche (rien à chercher tant que rien n'est chargé).
         function showFolderError() {
             hideCampaignSections();
-            var hero = document.querySelector('.dash-hero');
-            if (hero) hero.style.display = 'none';
+            var topbar = document.querySelector('.page-topbar');
+            if (topbar) topbar.style.display = 'none';
             var content = document.querySelector('.content');
             var box = document.getElementById('folder-error-box');
             if (!box) {
@@ -1049,6 +1007,15 @@
             return html;
         }
 
+        // État « rien à afficher » avec icône — remplace le texte gris seul
+        // (aligné sur le patron déjà utilisé côté Comité Éditorial, cf. #27).
+        function emptyStateHtml(msg) {
+            return '<div class="empty-state-ic">'
+                + '<div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>'
+                + '<p>' + msg + '</p>'
+                + '</div>';
+        }
+
         // buildCard utilisé par renderFiltered — doit être accessible dans le scope
         // Card « recto/verso » : le recto (badge type de com + étape, nom, date,
         // équipe) pivote au survol pour révéler le verso (progression par canal +
@@ -1141,16 +1108,15 @@
                 { ic: 'g', svg: '<path d="M3 3v18h18"/><path d="M7 13l3-3 4 4 5-6"/>', num: allMine.length, cap: 'Campagnes en cours', link: 'encours' },
                 { ic: 'b', svg: '<path d="M5 12l5 5L20 7"/>', num: myTurn.length, cap: 'À produire (mon tour)', link: 'aproduire' },
                 { ic: 'a', svg: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', num: aValider, cap: 'En attente de validation', link: 'validation' },
-                { ic: 'r', svg: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', num: urgent, cap: 'Échéance < ' + _uNear + ' jours', delta: urgent > 0 ? 'r' : '', link: 'urgent' }
+                { ic: 'r', svg: '<path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>', num: urgent, cap: 'Échéance < ' + _uNear + ' jours', link: 'urgent' }
             ];
             var h = '';
             cards.forEach(function (k) {
                 // Chaque carte KPI ouvre la vue complète (Visualisation) pré-filtrée sur sa catégorie.
                 var href = 'pages/visualization.html?filter=' + k.link;
-                h += '<a class="kpi" href="' + href + '" title="Voir ces campagnes"><div class="kpi-top"><div class="kpi-ic ' + k.ic + '">';
-                h += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + k.svg + '</svg></div>';
-                h += '<span class="kpi-delta ' + (k.delta || '') + '">' + (k.ic === 'r' ? 'Urgent' : k.ic === 'a' ? 'À traiter' : 'Actif') + '</span></div>';
-                h += '<div class="kpi-num">' + k.num + '</div><div class="kpi-cap">' + k.cap + '</div></a>';
+                h += '<a class="kpi ' + k.ic + '" href="' + href + '" title="Voir ces campagnes">';
+                h += '<div class="kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' + k.svg + '</svg></div>';
+                h += '<div class="kpi-body"><div class="kpi-num">' + k.num + '</div><div class="kpi-cap">' + k.cap + '</div></div></a>';
             });
             row.innerHTML = h;
             row.style.display = 'grid';
@@ -1392,7 +1358,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f8fafc;
+            background: linear-gradient(160deg, #eef3f0 0%, #e7efe9 45%, #eef3f0 100%);
             color: #0f172a;
             line-height: 1.6;
             overflow-x: hidden;
@@ -1713,24 +1679,24 @@
             color: #15803d;
         }
 
-        /* ── Bascule À produire / Mes campagnes en cours — traitée comme une vraie
-           navigation primaire (pas un simple filtre discret) : onglet actif en
-           aplat vert plein + ombre, nettement détaché de l'onglet inactif. ── */
-        .dash-tabs { display: flex; gap: 10px; margin: 4px 0 20px; flex-wrap: wrap; }
+        /* ── Bascule À produire / Mes campagnes en cours : contrôle segmenté (un
+           seul bloc, l'onglet actif ressort en pastille blanche) plutôt que deux
+           boutons flottants séparés. ── */
+        .dash-tabs { display: inline-flex; gap: 3px; padding: 4px; background: var(--line-2, #f0f4f1); border-radius: 14px; margin: 2px 0 24px; }
         .dash-tab-btn {
-            display: flex; align-items: center; gap: 10px;
-            padding: 13px 22px; border-radius: 13px; border: 1.5px solid var(--line, #eaefec);
-            background: #fff; color: var(--ink, #0c1a14);
-            font-size: 15px; font-weight: 700; font-family: inherit; cursor: pointer;
-            transition: background .12s, border-color .12s, box-shadow .12s, color .12s;
+            display: flex; align-items: center; gap: 9px;
+            padding: 10px 18px; border-radius: 11px; border: none;
+            background: transparent; color: var(--muted, #56655e);
+            font-size: 13.5px; font-weight: 700; font-family: inherit; cursor: pointer;
+            transition: background .15s, color .15s, box-shadow .15s;
         }
-        .dash-tab-btn:hover { background: var(--line-2, #f0f4f1); }
+        .dash-tab-btn:hover { color: var(--ink, #0c1a14); }
         .dash-tab-btn.active {
-            background: var(--primary, #00875A); color: #fff; border-color: transparent;
-            box-shadow: 0 8px 18px rgba(0, 135, 90, .28);
+            background: #fff; color: var(--ink, #0c1a14);
+            box-shadow: 0 3px 10px rgba(12,30,22,.1);
         }
-        .dash-tab-count { font-size: 12.5px; font-weight: 800; background: var(--line-2, #f0f4f1); color: var(--muted, #56655e); border-radius: 999px; padding: 2px 10px; }
-        .dash-tab-btn.active .dash-tab-count { background: rgba(255, 255, 255, .24); color: #fff; }
+        .dash-tab-count { font-size: 11.5px; font-weight: 800; background: var(--line, #eaefec); color: var(--muted, #56655e); border-radius: 999px; padding: 2px 9px; }
+        .dash-tab-btn.active .dash-tab-count { background: var(--green-50, #e8f6ef); color: var(--primary-hover, #00734C); }
 
         /* ── Campaigns Section ── */
         .campaigns-section { margin-top: 12px; }
@@ -1742,82 +1708,63 @@
             margin-bottom: 20px;
         }
 
-        /* ── Bandeau d'accueil + KPI sur la même ligne (au-delà de 1280px — voir
-           media query plus bas pour l'empilement en dessous) ── */
-        .dash-top-row { display: flex; align-items: stretch; gap: 14px; margin-bottom: 14px; }
+        /* ── Barre d'en-tête : date à gauche, recherche à droite (#27 — sortie du
+           menu latéral pour lui laisser toute la largeur nécessaire). ── */
+        .page-topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+        .page-topbar-left .today { font-size: 20px; font-weight: 800; letter-spacing: -.4px; color: var(--ink, #0c1a14); text-transform: capitalize; }
+        .page-topbar-left .today span { color: var(--muted-2, #8b988f); font-weight: 600; font-size: 14px; margin-left: 2px; }
+        .page-topbar-right { display: flex; align-items: center; gap: 10px; }
+        .top-search { display: flex; align-items: center; gap: 9px; background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 10px 15px; width: 300px; color: var(--muted-2, #8b988f); box-shadow: var(--shadow-xs); transition: box-shadow .15s, border-color .15s; }
+        .top-search input { border: 0; background: none; outline: 0; font-family: inherit; font-size: 13.5px; color: var(--ink, #0c1a14); width: 100%; min-width: 0; }
+        .top-search:focus-within { border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), .12); }
+        .top-search .search-info { flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--line, #eaefec); color: var(--muted, #56655e); font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; position: relative; cursor: default; }
+        .top-search .search-info .tip { display: none; position: absolute; top: calc(100% + 8px); right: -8px; width: 220px; background: var(--ink, #0c1a14); color: #fff; font-size: 11px; font-weight: 500; line-height: 1.5; padding: 9px 11px; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,.2); z-index: 20; text-align: left; }
+        .top-search .search-info:hover .tip { display: block; }
 
-        /* ── Hero d'accueil (juste le message de bienvenue — le bouton "Créer une
-           campagne" est déjà dans la navigation latérale, pas besoin de le
-           dupliquer ici) ── */
-        .dash-hero {
-            background: var(--gradient-hero, linear-gradient(120deg, #00734C, #0FA56E));
-            border-radius: 16px;
-            padding: 14px 22px;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            flex: 0 1 240px;
-            min-width: 200px;
-            box-shadow: 0 10px 22px rgba(0, 115, 76, 0.22);
-            position: relative;
-            overflow: hidden;
-        }
-        .dash-hero::after {
-            content: "";
-            position: absolute;
-            right: -40px; top: -60px;
-            width: 240px; height: 240px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.08);
-        }
-        .dash-hero-text { position: relative; z-index: 1; }
-        .dash-hero h1 {
-            font-size: 17px; font-weight: 800; letter-spacing: -0.4px; margin: 0;
-            white-space: nowrap;
-            color: #fff !important;
-            background: none !important;
-            -webkit-text-fill-color: #fff !important;
-            -webkit-background-clip: initial !important;
-            background-clip: initial !important;
-        }
-
-        /* ── KPIs ── */
-        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; flex: 1; min-width: 0; }
+        /* ── KPIs : icône en chip dégradé + fond légèrement teinté par catégorie ── */
+        .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 26px; }
         .kpi {
-            background: var(--bg-card, #fff);
+            display: flex; align-items: center; gap: 15px;
             border: 1px solid var(--line, #eaefec);
-            border-radius: 14px;
-            padding: 11px 14px;
+            border-radius: 18px;
+            padding: 19px 20px;
             box-shadow: var(--shadow-xs);
+            position: relative;
         }
-        a.kpi { display: block; text-decoration: none; color: inherit; cursor: pointer; transition: box-shadow .18s, transform .18s, border-color .18s; }
-        a.kpi:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); border-color: var(--green-100, #a7f3d0); }
+        a.kpi { text-decoration: none; color: inherit; cursor: pointer; transition: box-shadow .2s, transform .2s; }
+        a.kpi:hover { box-shadow: 0 18px 40px rgba(12,30,22,.14); transform: translateY(-3px); }
         a.kpi:focus-visible { outline: 2px solid var(--primary, #00875A); outline-offset: 2px; }
-        .kpi-top { display: flex; align-items: center; justify-content: space-between; }
-        .kpi-ic { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; }
-        .kpi-ic svg { width: 15px; height: 15px; }
-        .kpi-ic.g { background: var(--green-50); color: var(--primary); }
-        .kpi-ic.b { background: var(--blue-50); color: var(--blue); }
-        .kpi-ic.a { background: var(--amber-50); color: var(--amber); }
-        .kpi-ic.r { background: var(--red-50); color: var(--red); }
-        .kpi-delta { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
-        .kpi-delta.r { background: var(--red-50); color: var(--red); }
-        .kpi-num { font-size: 21px; font-weight: 850; letter-spacing: -.7px; margin-top: 7px; line-height: 1; color: var(--ink); }
-        .kpi-cap { font-size: 11.5px; color: var(--muted); margin-top: 3px; font-weight: 600; }
+        .kpi.g { background: linear-gradient(165deg, #fff 55%, var(--green-50) 130%); }
+        .kpi.b { background: linear-gradient(165deg, #fff 55%, var(--blue-50) 130%); }
+        .kpi.a { background: linear-gradient(165deg, #fff 55%, var(--amber-50) 130%); }
+        .kpi.r { background: linear-gradient(165deg, #fff 45%, var(--red-50) 130%); border-color: #f6c9ce; }
+        .kpi-ic { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 6px 14px -4px var(--shadow-c, rgba(0,135,90,.4)); }
+        .kpi.g .kpi-ic { background: linear-gradient(135deg, #17D398, var(--primary-hover, #00734C)); --shadow-c: rgba(0,135,90,.4); }
+        .kpi.b .kpi-ic { background: linear-gradient(135deg, #60a5fa, #1d4ed8); --shadow-c: rgba(37,99,235,.35); }
+        .kpi.a .kpi-ic { background: linear-gradient(135deg, #fbbf24, #b45309); --shadow-c: rgba(232,161,0,.35); }
+        .kpi.r .kpi-ic { background: linear-gradient(135deg, #f87171, #b91c1c); --shadow-c: rgba(226,0,26,.35); }
+        .kpi-ic svg { width: 22px; height: 22px; color: #fff; }
+        .kpi-body { min-width: 0; }
+        .kpi-num { font-size: 27px; font-weight: 850; letter-spacing: -1px; line-height: 1; color: var(--ink, #0c1a14); }
+        .kpi-cap { font-size: 12px; color: var(--muted, #56655e); margin-top: 5px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .kpi.r .kpi-num { color: var(--red, #E2001A); }
 
         /* ── Cartes campagne riches : voir css/campaign-card.css (partagé avec
            pages/visualization.html) pour les styles .cc-flip / .cc-face / etc. ── */
 
         .section-title {
             font-size: 18px;
-            font-weight: 750;
+            font-weight: 800;
             color: var(--ink, #0c1a14);
             margin-bottom: 2px;
             letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
         }
+        .section-title::before { content: ''; width: 5px; height: 18px; border-radius: 3px; background: var(--primary, #00875A); flex-shrink: 0; }
 
-        .section-subtitle { font-size: 13px; color: var(--muted, #56655e); font-weight: 400; }
+        .section-subtitle { font-size: 13px; color: var(--muted, #56655e); font-weight: 400; margin: 0 0 0 14px; }
 
         .campaigns-grid {
             display: grid;
@@ -2049,6 +1996,20 @@
 
         .error-text { color: #ef4444; }
 
+        /* État vide avec icône (#27) : remplace le texte gris seul sur les listes
+           « À produire » / « Mes campagnes en cours », aligné sur le patron déjà
+           utilisé côté Comité Éditorial. */
+        .empty-state-ic {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 48px 20px; color: var(--muted-2, #8b988f); text-align: center;
+            background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 14px;
+        }
+        .empty-state-ic .ic {
+            width: 48px; height: 48px; border-radius: 50%; background: var(--green-50, #e8f6ef);
+            color: var(--primary, #00875A); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+        }
+        .empty-state-ic p { margin: 0; font-size: 14px; color: var(--muted, #56655e); font-weight: 600; }
+
         /* ── Responsive ── */
         @media (max-width: 1024px) {
             .sidebar { width: 230px; }
@@ -2063,16 +2024,13 @@
             .top-cards-row { grid-template-columns: 1fr; }
             .campaigns-grid { grid-template-columns: 1fr; }
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
-            .dash-hero { flex-direction: column; align-items: flex-start; gap: 14px; }
-            .icon-btn--text .icon-btn-label { display: none; }
-            .icon-btn--text { width: 40px; padding: 0; }
         }
-        /* En dessous de 900px, le bandeau (désormais juste le message d'accueil,
-           sans bouton) + les 4 KPI ne tiennent plus proprement sur une seule
-           ligne : on les réempile comme avant. */
+        /* En dessous de 900px, la barre d'en-tête (date + recherche) et les 4 KPI
+           ne tiennent plus proprement sur une seule ligne : on les réempile. */
         @media (max-width: 899px) {
-            .dash-top-row { flex-direction: column; }
-            .dash-hero { flex: none; width: 100%; min-width: 0; }
+            .page-topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .page-topbar-right { width: 100%; }
+            .top-search { width: 100%; }
             .kpi-row { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
