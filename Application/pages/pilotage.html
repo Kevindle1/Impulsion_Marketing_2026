@@ -175,8 +175,31 @@
         .pil-cal-out .pil-cal-daynum { color: var(--muted-2); }
         .pil-cal-item { font-size: 10.5px; font-weight: 650; padding: 2px 6px; border-radius: 5px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         .pil-cal-item:hover { filter: brightness(0.97); }
-        .pil-cal-more { font-size: 10px; color: var(--muted-2); font-weight: 700; }
+        .pil-cal-more { font-size: 10px; color: var(--muted-2); font-weight: 700; cursor: pointer; text-align: left; background: none; border: none; padding: 2px 6px; font-family: inherit; }
+        .pil-cal-more:hover { color: var(--primary); text-decoration: underline; }
         .pil-cal-note { font-size: 12px; color: var(--muted-2); margin-top: 14px; }
+
+        /* Modal « Coms attendues » du jour (clic sur une cellule ou sur « +N autres ») */
+        .pil-cal-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background: rgba(12, 26, 20, 0.45); align-items: center; justify-content: center; padding: 20px;
+        }
+        .pil-cal-modal-overlay.show { display: flex; }
+        .pil-cal-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 480px; max-height: 82vh;
+            display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(12,30,22,.25); }
+        .pil-cal-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+        .pil-cal-modal-head h3 { margin: 0; font-size: 15.5px; font-weight: 800; color: var(--ink); text-transform: capitalize; }
+        .pil-cal-modal-head .sub { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted-2); margin-top: 2px; text-transform: none; }
+        .pil-cal-modal-close { border: none; background: var(--line-2); width: 30px; height: 30px; border-radius: 50%; font-size: 16px; color: var(--muted); cursor: pointer; flex-shrink: 0; }
+        .pil-cal-modal-close:hover { background: var(--line); color: var(--ink); }
+        .pil-cal-modal-body { overflow-y: auto; padding: 8px 12px; }
+        .pil-cal-modal-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 9px; cursor: pointer; }
+        .pil-cal-modal-row:hover { background: var(--line-2); }
+        .pil-cal-modal-row + .pil-cal-modal-row { border-top: 1px solid var(--line-2); }
+        .pil-cal-modal-info { flex: 1; min-width: 0; }
+        .pil-cal-modal-livrable { font-size: 13px; font-weight: 700; color: var(--ink); }
+        .pil-cal-modal-camp { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+        .pil-cal-modal-cond { font-size: 10.5px; color: var(--muted-2); font-style: italic; margin-top: 1px; }
 
         .loading-container { text-align: center; padding: 80px 20px; }
         .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; margin: 0 auto 16px; animation: pilspin 0.9s linear infinite; }
@@ -487,6 +510,20 @@
                                     <div class="pil-cal-grid" id="cal-grid"></div>
                                     <div class="pil-cal-note" id="cal-note"></div>
                                 </section>
+
+                                <!-- Modal : toutes les coms attendues d'un jour (clic sur « +N autres ») -->
+                                <div class="pil-cal-modal-overlay" id="cal-day-modal">
+                                    <div class="pil-cal-modal">
+                                        <div class="pil-cal-modal-head">
+                                            <div>
+                                                <h3 id="cal-day-modal-title"></h3>
+                                                <span class="sub" id="cal-day-modal-sub"></span>
+                                            </div>
+                                            <button type="button" class="pil-cal-modal-close" id="cal-day-modal-close" aria-label="Fermer">✕</button>
+                                        </div>
+                                        <div class="pil-cal-modal-body" id="cal-day-modal-body"></div>
+                                    </div>
+                                </div>
 
                                 <!-- ═══ Indicateurs clés ═══ -->
                                 <section class="admin-section" id="tab-kpi" data-group="Pilotage">
@@ -1248,18 +1285,49 @@
                 var itemsHtml = items.slice(0, 3).map(function (co) {
                     return '<div class="pil-cal-item" data-name="' + esc(co.folderName) + '" title="' + esc(co.campagne + ' — ' + co.livrable) + '">' + esc(co.livrable) + '</div>';
                 }).join('');
-                if (items.length > 3) itemsHtml += '<div class="pil-cal-more">+ ' + (items.length - 3) + ' autre' + (items.length - 3 > 1 ? 's' : '') + '</div>';
+                if (items.length > 3) itemsHtml += '<button type="button" class="pil-cal-more" data-iso="' + cellIso + '">+ ' + (items.length - 3) + ' autre' + (items.length - 3 > 1 ? 's' : '') + '</button>';
                 html += '<div class="' + cls + '"><div class="pil-cal-daynum">' + cellDate.getDate() + '</div>' + itemsHtml + '</div>';
             }
             $('cal-grid').innerHTML = html;
             $('cal-grid').querySelectorAll('.pil-cal-item').forEach(function (el) {
                 el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
             });
+            $('cal-grid').querySelectorAll('.pil-cal-more').forEach(function (el) {
+                el.addEventListener('click', function () { openComDayModal(el.getAttribute('data-iso')); });
+            });
 
             var undated = state.coms.filter(function (co) { return !co.date; }).length;
             $('cal-note').textContent = undated
                 ? (undated + ' communication' + (undated > 1 ? 's' : '') + ' sans date exploitable, non affichée' + (undated > 1 ? 's' : '') + ' ici — voir « Coms attendues ».')
                 : '';
+        }
+
+        // Modal listant TOUTES les coms attendues d'un jour (pas seulement celles
+        // masquées par « +N autres ») : ouverte depuis ce bouton, cf. renderCalendar.
+        function openComDayModal(iso) {
+            var items = state.coms.filter(function (co) { return co.date === iso; });
+            var d = new Date(iso + 'T00:00:00');
+            $('cal-day-modal-title').textContent = d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+            $('cal-day-modal-sub').textContent = items.length + ' communication' + (items.length > 1 ? 's' : '') + ' attendue' + (items.length > 1 ? 's' : '') + ' ce jour-là';
+            var body = $('cal-day-modal-body');
+            body.innerHTML = items.map(function (co) {
+                return '<div class="pil-cal-modal-row" data-name="' + esc(co.folderName) + '">'
+                    + '<div class="pil-cal-modal-info">'
+                    + '<div class="pil-cal-modal-livrable">' + esc(co.livrable) + (co.canal ? ' <span class="pil-badge pil-canal">' + esc(co.canal) + '</span>' : '') + '</div>'
+                    + '<div class="pil-cal-modal-camp">' + esc(co.campagne) + (co.po ? ' · PO : ' + esc(co.po) : '') + '</div>'
+                    + (co.cond ? '<div class="pil-cal-modal-cond">' + esc(co.cond) + '</div>' : '')
+                    + '</div></div>';
+            }).join('');
+            body.querySelectorAll('.pil-cal-modal-row').forEach(function (el) {
+                el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
+            });
+            $('cal-day-modal').classList.add('show');
+        }
+        function closeComDayModal() { $('cal-day-modal').classList.remove('show'); }
+        function wireComDayModal() {
+            $('cal-day-modal-close').addEventListener('click', closeComDayModal);
+            $('cal-day-modal').addEventListener('click', function (e) { if (e.target === this) closeComDayModal(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeComDayModal(); });
         }
         function wireCalendarNav() {
             $('cal-prev').addEventListener('click', function () { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); });
@@ -1512,6 +1580,7 @@
                 renderKpi();
                 renderFriction();
                 wireCalendarNav();
+                wireComDayModal();
                 renderCalendar();
 
                 // Page réservée aux responsables d'équipe : retirée du menu pour
