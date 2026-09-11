@@ -5436,7 +5436,11 @@
         }
 
         if (currentUser) {
-            if (form)   form.style.display = 'block';
+            // 'flex' et non 'block' : .discussion-form est un flex-row (avatar +
+            // champ + bouton alignés) — 'block' cassait la mise en page en
+            // empilant les éléments (champ qui ne prend pas toute la largeur,
+            // bouton d'envoi qui retombe en dessous).
+            if (form)   form.style.display = 'flex';
             if (noUser) noUser.style.display = 'none';
 
             // Bouton publier
