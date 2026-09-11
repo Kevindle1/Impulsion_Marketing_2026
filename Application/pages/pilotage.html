@@ -67,6 +67,34 @@
         .pil-date { font-weight: 700; color: var(--ink); white-space: nowrap; }
         .pil-date .pil-cond { display: block; font-weight: 400; font-size: 11.5px; color: var(--muted); white-space: normal; }
         .pil-camp { font-weight: 650; color: var(--ink); }
+
+        /* ---- Filtres par colonne (Suivi de campagne) ---- */
+        .pil-table th.pil-col-filter-th { padding: 6px 8px 10px; border-bottom: 2px solid var(--line); }
+        .pil-col-filter-th input, .pil-col-filter-th select {
+            width: 100%; box-sizing: border-box; padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px;
+            background: #fff; font-family: inherit; font-size: 12px; color: var(--ink); font-weight: 400;
+        }
+        .pil-col-filter-th input:focus, .pil-col-filter-th select:focus { outline: none; border-color: var(--primary); }
+        .pil-team-cell { font-size: 12.5px; color: var(--ink); }
+        .pil-team-empty { color: var(--muted-2); }
+        .pil-since { font-weight: 650; color: var(--ink); white-space: nowrap; }
+        .pil-since.pil-since-urgent { color: var(--red, #E2001A); }
+        .pil-since.pil-since-unknown { color: var(--muted-2); font-weight: 400; }
+
+        /* Date d'envoi de la communication (Suivi de campagne) : permet de croiser
+           combien de temps un livrable est bloqué avec l'échéance d'envoi réelle,
+           pour repérer les envois à risque. */
+        .pil-envoi { font-weight: 650; color: var(--ink); white-space: nowrap; }
+        .pil-envoi.pil-envoi-none { color: var(--muted-2); font-weight: 400; }
+        .pil-envoi-tag { display: block; font-weight: 700; font-size: 11px; }
+        .pil-envoi.pil-envoi-overdue .pil-envoi-tag { color: var(--red, #E2001A); }
+        .pil-envoi.pil-envoi-urgent .pil-envoi-tag { color: #9a6b00; }
+        .pil-envoi-tag.pil-envoi-far { color: var(--muted-2); font-weight: 400; }
+
+        /* Lignes de regroupement (Étape / Statut / Acteur) : même style que le
+           regroupement par semaine (Coms attendues) / par groupe (Retards). */
+        .pil-group-row td { background: var(--line-2); font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); padding: 7px 12px; }
+        .pil-group-row .pil-group-count { font-weight: 700; color: var(--primary); margin-left: 6px; text-transform: none; letter-spacing: normal; }
         .pil-camp small { display: block; font-weight: 400; color: var(--muted-2); font-size: 11.5px; }
         .pil-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
         .pil-canal { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
@@ -91,6 +119,18 @@
         /* Statut d'une étape (Validations en attente) */
         .pil-status-pending { background: var(--line-2); color: var(--muted); }
         .pil-status-revision { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+
+        /* Thèmes mis en avant (Coms attendues) : Produit / Selfcare / Promotion —
+           champs renseignés à la création (bloc « Produit ») sur la campagne. */
+        .pil-chip-toggle { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+        .pil-chip-toggle:hover { border-color: var(--primary); color: var(--primary); }
+        .pil-chip-toggle.active { background: var(--green-50, #e8f6ef); border-color: var(--primary); color: var(--green-600, #00734C); }
+        .pil-theme-produit { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
+        .pil-theme-selfcare { background: #f3e8ff; color: #7C3AED; }
+        .pil-theme-promo { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+        /* Canaux & volumes associés (vue d'ensemble de TOUS les canaux d'une même
+           campagne, pas seulement celui de la ligne) */
+        .pil-vol-chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--line-2); color: var(--ink); white-space: nowrap; margin: 1px 3px 1px 0; }
 
         /* Équipe / rôle porteur (Validations, Charge de travail, Retards) */
         .pil-role-po { background: #eef0f2; color: #475569; }
@@ -147,8 +187,31 @@
         .pil-cal-out .pil-cal-daynum { color: var(--muted-2); }
         .pil-cal-item { font-size: 10.5px; font-weight: 650; padding: 2px 6px; border-radius: 5px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         .pil-cal-item:hover { filter: brightness(0.97); }
-        .pil-cal-more { font-size: 10px; color: var(--muted-2); font-weight: 700; }
+        .pil-cal-more { font-size: 10px; color: var(--muted-2); font-weight: 700; cursor: pointer; text-align: left; background: none; border: none; padding: 2px 6px; font-family: inherit; }
+        .pil-cal-more:hover { color: var(--primary); text-decoration: underline; }
         .pil-cal-note { font-size: 12px; color: var(--muted-2); margin-top: 14px; }
+
+        /* Modal « Coms attendues » du jour (clic sur une cellule ou sur « +N autres ») */
+        .pil-cal-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            background: rgba(12, 26, 20, 0.45); align-items: center; justify-content: center; padding: 20px;
+        }
+        .pil-cal-modal-overlay.show { display: flex; }
+        .pil-cal-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 480px; max-height: 82vh;
+            display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(12,30,22,.25); }
+        .pil-cal-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+        .pil-cal-modal-head h3 { margin: 0; font-size: 15.5px; font-weight: 800; color: var(--ink); text-transform: capitalize; }
+        .pil-cal-modal-head .sub { display: block; font-size: 11.5px; font-weight: 600; color: var(--muted-2); margin-top: 2px; text-transform: none; }
+        .pil-cal-modal-close { border: none; background: var(--line-2); width: 30px; height: 30px; border-radius: 50%; font-size: 16px; color: var(--muted); cursor: pointer; flex-shrink: 0; }
+        .pil-cal-modal-close:hover { background: var(--line); color: var(--ink); }
+        .pil-cal-modal-body { overflow-y: auto; padding: 8px 12px; }
+        .pil-cal-modal-row { display: flex; align-items: center; gap: 10px; padding: 10px 8px; border-radius: 9px; cursor: pointer; }
+        .pil-cal-modal-row:hover { background: var(--line-2); }
+        .pil-cal-modal-row + .pil-cal-modal-row { border-top: 1px solid var(--line-2); }
+        .pil-cal-modal-info { flex: 1; min-width: 0; }
+        .pil-cal-modal-livrable { font-size: 13px; font-weight: 700; color: var(--ink); }
+        .pil-cal-modal-camp { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+        .pil-cal-modal-cond { font-size: 10.5px; color: var(--muted-2); font-style: italic; margin-top: 1px; }
 
         .loading-container { text-align: center; padding: 80px 20px; }
         .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--line); border-top-color: var(--primary); border-radius: 50%; margin: 0 auto 16px; animation: pilspin 0.9s linear infinite; }
@@ -253,7 +316,7 @@
                                         <div class="admin-sec-ic">📅</div>
                                         <div>
                                             <h2>Coms attendues</h2>
-                                            <p>Toutes les communications prévues sur la période choisie — d'après la date de réception client du livrable (à défaut, la date d'envoi client de la campagne).</p>
+                                            <p>Toutes les communications sur la période choisie — passée ou à venir — d'après la date de réception client du livrable (à défaut, la date d'envoi client de la campagne). Filtrez par thème (produit, selfcare, promotion) et retrouvez, pour chaque communication, les canaux et volumes associés.</p>
                                         </div>
                                     </div>
 
@@ -274,6 +337,9 @@
                                             <label for="f-type">Type de com</label>
                                             <select id="f-type"><option value="">Tous</option></select>
                                         </div>
+                                        <button type="button" class="pil-chip-toggle" id="f-theme-produit" data-theme="hasProduct" title="Fiche produit renseignée (URL)">📦 Produit</button>
+                                        <button type="button" class="pil-chip-toggle" id="f-theme-selfcare" data-theme="selfcare" title="Parcours selfcare = Oui">🖥️ Selfcare</button>
+                                        <button type="button" class="pil-chip-toggle" id="f-theme-promo" data-theme="promo" title="Offre promotionnelle = Oui">🎁 Promotion</button>
                                         <button type="button" class="pil-reset" id="f-reset">Réinitialiser</button>
                                         <span class="pil-count" id="f-count"></span>
                                     </div>
@@ -281,13 +347,13 @@
                                     <div class="pil-table-wrap">
                                         <table class="pil-table" id="pil-table" style="display:none;">
                                             <thead><tr>
-                                                <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>PO</th>
+                                                <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>Thèmes</th><th>Canaux &amp; volumes</th><th>PO</th>
                                             </tr></thead>
                                             <tbody id="pil-tbody"></tbody>
                                         </table>
                                         <div id="pil-empty" class="pil-empty" style="display:none;">
                                             <div class="big">📭</div>
-                                            Aucune com attendue sur cette période avec ces filtres.
+                                            Aucune communication sur cette période avec ces filtres.
                                         </div>
                                     </div>
                                 </section>
@@ -327,32 +393,65 @@
                                     </div>
                                 </section>
 
-                                <!-- ═══ Validations en attente ═══ -->
+                                <!-- ═══ Suivi de campagne ═══ -->
                                 <section class="admin-section" id="tab-validations" data-group="Pilotage">
                                     <div class="admin-sec-head">
-                                        <div class="admin-sec-ic">⏳</div>
+                                        <div class="admin-sec-ic">🧭</div>
                                         <div>
-                                            <h2>Validations en attente</h2>
-                                            <p>Tous les livrables actuellement bloqués sur une action — dépôt, validation ou révision — quel qu'en soit le porteur.</p>
+                                            <h2>Suivi de campagne</h2>
+                                            <p>Chaque livrable en cours, son étape actuelle, l'équipe engagée et depuis quand ça n'a pas bougé — un filtre par colonne.</p>
                                         </div>
                                     </div>
                                     <div class="pil-filters">
                                         <div class="pil-filter">
-                                            <label for="v-role">Équipe</label>
-                                            <select id="v-role"><option value="">Toutes</option></select>
+                                            <label for="v-f-groupby">Grouper par</label>
+                                            <select id="v-f-groupby">
+                                                <option value="">Aucun</option>
+                                                <option value="stepId">Étape</option>
+                                                <option value="status">Statut</option>
+                                                <option value="actor">Acteur (doit produire)</option>
+                                            </select>
                                         </div>
-                                        <div class="pil-filter">
-                                            <label for="v-status">Statut</label>
-                                            <select id="v-status"><option value="">Tous</option></select>
-                                        </div>
-                                        <button type="button" class="pil-reset" id="v-reset">Réinitialiser</button>
+                                        <button type="button" class="pil-reset" id="v-reset">Réinitialiser les filtres</button>
                                         <span class="pil-count" id="v-count"></span>
                                     </div>
                                     <div class="pil-table-wrap">
                                         <table class="pil-table" id="val-table" style="display:none;">
-                                            <thead><tr>
-                                                <th>Campagne</th><th>Livrable</th><th>Canal</th><th>Étape</th><th>Statut</th><th>Acteur</th>
-                                            </tr></thead>
+                                            <thead>
+                                                <tr>
+                                                    <th>Nom de la tâche</th><th>Livrable</th><th>Étape actuelle</th>
+                                                    <th>PO</th><th>Com</th><th>EBF</th><th>Data</th>
+                                                    <th>Doit produire</th><th>Date d'envoi</th><th>Depuis</th>
+                                                </tr>
+                                                <tr>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-camp" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-livrable" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><select id="v-f-etape"><option value="">Toutes</option></select></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-po" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-com" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-ebf" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-data" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"><input type="text" id="v-f-producteur" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th">
+                                                        <select id="v-f-envoi" title="Pour repérer les envois de communication à risque : bloqués en validation alors que la date d'envoi approche ou est dépassée.">
+                                                            <option value="">Tout risque</option>
+                                                            <option value="overdue">Envoi dépassé</option>
+                                                            <option value="urgent">Envoi imminent</option>
+                                                            <option value="ok">Envoi lointain</option>
+                                                            <option value="none">Sans date</option>
+                                                        </select>
+                                                    </th>
+                                                    <th class="pil-col-filter-th">
+                                                        <select id="v-f-depuis">
+                                                            <option value="">Toutes durées</option>
+                                                            <option value="lt3">Moins de 3 j</option>
+                                                            <option value="3-7">3 à 7 j</option>
+                                                            <option value="gt7">Plus de 7 j</option>
+                                                            <option value="unk">Inconnu</option>
+                                                        </select>
+                                                    </th>
+                                                </tr>
+                                            </thead>
                                             <tbody id="val-tbody"></tbody>
                                         </table>
                                         <div id="val-empty" class="pil-empty" style="display:none;">
@@ -426,6 +525,20 @@
                                     <div class="pil-cal-grid" id="cal-grid"></div>
                                     <div class="pil-cal-note" id="cal-note"></div>
                                 </section>
+
+                                <!-- Modal : toutes les coms attendues d'un jour (clic sur « +N autres ») -->
+                                <div class="pil-cal-modal-overlay" id="cal-day-modal">
+                                    <div class="pil-cal-modal">
+                                        <div class="pil-cal-modal-head">
+                                            <div>
+                                                <h3 id="cal-day-modal-title"></h3>
+                                                <span class="sub" id="cal-day-modal-sub"></span>
+                                            </div>
+                                            <button type="button" class="pil-cal-modal-close" id="cal-day-modal-close" aria-label="Fermer">✕</button>
+                                        </div>
+                                        <div class="pil-cal-modal-body" id="cal-day-modal-body"></div>
+                                    </div>
+                                </div>
 
                                 <!-- ═══ Indicateurs clés ═══ -->
                                 <section class="admin-section" id="tab-kpi" data-group="Pilotage">
@@ -576,6 +689,12 @@
         function buildComs() {
             var coms = [];
             state.allCampaigns.forEach(function(c) {
+                // Canaux & volumes associés : vue d'ensemble de TOUS les canaux de cette
+                // même campagne (calculée une fois, partagée par chaque ligne ci-dessous)
+                // pour voir le dispositif complet sans ouvrir la fiche.
+                var siblings = (c.channels || []).map(function(ch2, j) {
+                    return { canal: ch2.content || '', livrable: ch2.deliverableName || ('Canal ' + (j + 1)), volume: ch2.volumeCible || 0 };
+                });
                 (c.channels || []).forEach(function(ch, i) {
                     var sd = (ch.sendDate || '').trim();
                     var date = ISO_DATE.test(sd) ? sd : (c.launchDate || '');
@@ -588,7 +707,14 @@
                         livrable: ch.deliverableName || ('Canal ' + (i + 1)),
                         canal: ch.content || '',
                         comType: ch.comType || '',
-                        po: c.po || ''
+                        po: c.po || '',
+                        // Thèmes mis en avant (champs du bloc « Produit », renseignés à la
+                        // création) : permettent de retrouver les communications parlant
+                        // d'un produit, en selfcare ou en promotion.
+                        hasProduct: !!(c.productUrl || '').trim(),
+                        selfcare: c.parcoursSelfcare === 'Oui',
+                        promo: c.offrePromo === 'Oui',
+                        siblings: siblings
                     });
                 });
             });
@@ -635,6 +761,22 @@
             if (diff === 0)  return { days: 0,     overdue: false, urgent: true,                text: "Aujourd'hui" };
             if (diff <= near) return { days: diff, overdue: false, urgent: diff <= soon,         text: 'Dans ' + diff + ' j' };
             return               { days: diff, overdue: false, urgent: false,                    text: 'Dans ' + diff + ' j' };
+        }
+
+        // Depuis quand une étape est dans son statut courant (horodatage posé à
+        // la sauvegarde, cf. workflow.getChannelStepDate/_stampChannelStepDates).
+        // Absent pour un statut déjà en place avant l'introduction de ce suivi —
+        // dans ce cas on ne sait pas depuis quand, on l'affiche donc distinctement
+        // (« — ») plutôt que de laisser croire à une durée nulle.
+        function elapsedSince(iso) {
+            if (!iso) return { days: null, urgent: false, text: '—', unknown: true };
+            var d = new Date(iso);
+            if (isNaN(d.getTime())) return { days: null, urgent: false, text: '—', unknown: true };
+            var days = Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+            var s = (IM.config && IM.config.APP_SETTINGS) || {};
+            var near = (s.urgentThresholdDays != null) ? s.urgentThresholdDays : 7;
+            var text = days === 0 ? "Aujourd'hui" : (days === 1 ? '1 jour' : days + ' jours');
+            return { days: days, urgent: days >= near, text: text, unknown: false };
         }
 
         function buildAnalytics() {
@@ -695,13 +837,25 @@
                                 : wf.channelAssignees(c, idx, role);
                             if (!names.length) names = ['(non affecté)'];
                             var dateRef = resolveChannelDate(c, ch);
+                            var poNames = [c.po].concat(asArr(c.coPo)).filter(Boolean);
+                            var sinceIso = wf.getChannelStepDate(c, idx, id);
                             pending.push({
                                 campaignName: c.id || c.folderName, folderName: c.folderName,
                                 deliverableName: (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (idx + 1)),
                                 canal: content || '',
                                 stepId: id, stepLabel: wf.stepLabel(id), status: status,
                                 role: role, names: names,
-                                dateRef: dateRef, delay: computeDelay(dateRef)
+                                // Composition de l'équipe sur CE canal, une entrée par service +
+                                // le PO — indépendant de qui a la main à l'instant T (role/names
+                                // ci-dessus), pour donner une vue d'ensemble de l'équipe engagée.
+                                team: {
+                                    po:   poNames.length ? poNames : ['(non affecté)'],
+                                    com:  (function () { var a = wf.channelAssignees(c, idx, 'com');  return a.length ? a : ['—']; })(),
+                                    ebf:  (function () { var a = wf.channelAssignees(c, idx, 'ebf');  return a.length ? a : ['—']; })(),
+                                    data: (function () { var a = wf.channelAssignees(c, idx, 'data'); return a.length ? a : ['—']; })()
+                                },
+                                dateRef: dateRef, delay: computeDelay(dateRef),
+                                sinceIso: sinceIso, since: elapsedSince(sinceIso)
                             });
                             break; // une seule étape « courante » par canal
                         }
@@ -851,6 +1005,7 @@
                     buildAnalytics();
                     renderAffectation();
                     renderRetards();
+                    populateValidationFilters();
                     renderValidations();
                     renderCharge();
                     renderKpi();
@@ -897,46 +1052,152 @@
             wireRowNav(tbody);
         }
 
-        // ── Validations en attente ──
-        function populateValidationFilters() {
-            var roles = ['po', 'com', 'ebf', 'data'];
-            $('v-role').innerHTML = '<option value="">Toutes</option>' + roles.map(function (r) {
-                return '<option value="' + r + '">' + esc(roleLabel(r)) + '</option>';
-            }).join('');
-            $('v-status').innerHTML = '<option value="">Tous</option>' + Object.keys(STATUS_LABEL).map(function (s) {
-                return '<option value="' + s + '">' + esc(STATUS_LABEL[s]) + '</option>';
-            }).join('');
+        // ── Suivi de campagne (ex « Validations en attente ») ──
+        // Filtrage par colonne : champs texte (sous-chaîne, insensible à la
+        // casse) pour tout ce qui est nominatif, select pour l'étape (valeurs
+        // finies) et pour la durée (tranches). Chaque item de state.pendingItems
+        // = un canal actuellement bloqué sur une action (cf. buildAnalytics()).
+        function matchesText(hay, needle) {
+            if (!needle) return true;
+            return String(hay || '').toLowerCase().indexOf(needle.toLowerCase()) !== -1;
         }
+        function populateValidationFilters() {
+            var sel = $('v-f-etape');
+            var current = sel.value;
+            var byId = {};
+            state.pendingItems.forEach(function (it) { byId[it.stepId] = it.stepLabel; });
+            var ids = Object.keys(byId).sort(function (a, b) { return byId[a].localeCompare(byId[b]); });
+            sel.innerHTML = '<option value="">Toutes</option>' + ids.map(function (id) {
+                return '<option value="' + esc(id) + '">' + esc(byId[id]) + '</option>';
+            }).join('');
+            if (ids.indexOf(current) !== -1) sel.value = current;
+        }
+        // Regroupements disponibles pour le tableau (Étape / Statut / Acteur) : une
+        // clé de groupe stable + un libellé affiché, dérivés du même item que les
+        // colonnes déjà rendues (aucune donnée dupliquée).
+        var VALIDATION_GROUPS = {
+            stepId: { key: function (it) { return it.stepId; }, label: function (it) { return it.stepLabel; } },
+            status: { key: function (it) { return it.status; }, label: function (it) { return STATUS_LABEL[it.status] || it.status; } },
+            actor: { key: function (it) { return it.names.join('|'); }, label: function (it) { return it.names.join(', '); } }
+        };
+        function groupValidationItems(items, groupBy) {
+            var def = VALIDATION_GROUPS[groupBy];
+            if (!def) return null;
+            var groups = {}, order = [];
+            items.forEach(function (it) {
+                var k = def.key(it);
+                if (!groups[k]) { groups[k] = { label: def.label(it), items: [] }; order.push(k); }
+                groups[k].items.push(it);
+            });
+            var list = order.map(function (k) { return groups[k]; });
+            // Groupes les plus chargés en premier (là où le risque se concentre),
+            // à égalité on trie par libellé pour un ordre stable et prévisible.
+            list.sort(function (a, b) {
+                if (b.items.length !== a.items.length) return b.items.length - a.items.length;
+                return a.label.localeCompare(b.label);
+            });
+            return list;
+        }
+
+        // Catégorise le risque d'un livrable au regard de la date d'envoi de la
+        // communication (dateRef/delay, cf. buildAnalytics ▸ computeDelay) — sert
+        // au filtre « risque » et à la couleur de la colonne Date d'envoi.
+        function envoiRiskBucket(it) {
+            if (!it.delay) return 'none';
+            if (it.delay.overdue) return 'overdue';
+            if (it.delay.urgent) return 'urgent';
+            return 'ok';
+        }
+
         function renderValidations() {
-            var role = $('v-role').value, status = $('v-status').value;
+            var fCamp = $('v-f-camp').value.trim();
+            var fLivrable = $('v-f-livrable').value.trim();
+            var fEtape = $('v-f-etape').value;
+            var fPo = $('v-f-po').value.trim();
+            var fCom = $('v-f-com').value.trim();
+            var fEbf = $('v-f-ebf').value.trim();
+            var fData = $('v-f-data').value.trim();
+            var fProd = $('v-f-producteur').value.trim();
+            var fEnvoi = $('v-f-envoi').value;
+            var fDepuis = $('v-f-depuis').value;
+            var fGroupBy = $('v-f-groupby').value;
+
             var items = state.pendingItems.filter(function (it) {
-                if (role && it.role !== role) return false;
-                if (status && it.status !== status) return false;
+                if (!matchesText(it.campaignName, fCamp)) return false;
+                if (!matchesText(it.deliverableName + ' ' + it.canal, fLivrable)) return false;
+                if (fEtape && it.stepId !== fEtape) return false;
+                if (!matchesText(it.team.po.join(', '), fPo)) return false;
+                if (!matchesText(it.team.com.join(', '), fCom)) return false;
+                if (!matchesText(it.team.ebf.join(', '), fEbf)) return false;
+                if (!matchesText(it.team.data.join(', '), fData)) return false;
+                if (!matchesText(it.names.join(', '), fProd)) return false;
+                if (fEnvoi && envoiRiskBucket(it) !== fEnvoi) return false;
+                if (fDepuis) {
+                    var d = it.since;
+                    if (fDepuis === 'unk' && !d.unknown) return false;
+                    if (fDepuis === 'lt3' && (d.unknown || d.days >= 3)) return false;
+                    if (fDepuis === '3-7' && (d.unknown || d.days < 3 || d.days > 7)) return false;
+                    if (fDepuis === 'gt7' && (d.unknown || d.days <= 7)) return false;
+                }
                 return true;
             });
-            $('v-count').textContent = items.length + ' livrable' + (items.length > 1 ? 's' : '') + ' en attente';
+
+            $('v-count').textContent = items.length + ' livrable' + (items.length > 1 ? 's' : '') + ' en cours';
             var table = $('val-table'), empty = $('val-empty'), tbody = $('val-tbody');
             if (!items.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
             empty.style.display = 'none'; table.style.display = 'table';
             items.sort(function (a, b) { return a.campaignName.localeCompare(b.campaignName); });
-            var html = '';
-            items.forEach(function (it) {
+
+            function teamCell(names) {
+                if (!names.length || (names.length === 1 && (names[0] === '—' || names[0] === '(non affecté)'))) {
+                    return '<span class="pil-team-empty">' + esc(names[0] || '—') + '</span>';
+                }
+                return esc(names.join(', '));
+            }
+
+            function renderRow(it) {
                 var statusClass = it.status === 'revision_requested' ? 'pil-status-revision' : 'pil-status-pending';
-                html += '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
+                var sinceClass = it.since.unknown ? 'pil-since-unknown' : (it.since.urgent ? 'pil-since-urgent' : '');
+                var risk = envoiRiskBucket(it);
+                var envoiClass = risk === 'none' ? 'pil-envoi-none' : 'pil-envoi-' + risk;
+                var envoiTag = it.delay ? '<span class="pil-envoi-tag' + (risk === 'ok' ? ' pil-envoi-far' : '') + '">' + esc(it.delay.text) + '</span>' : '';
+                return '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
                     + '<td class="pil-camp">' + esc(it.campaignName) + '</td>'
-                    + '<td>' + esc(it.deliverableName) + '</td>'
-                    + '<td>' + (it.canal ? '<span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '—') + '</td>'
-                    + '<td>' + esc(it.stepLabel) + '</td>'
-                    + '<td><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
+                    + '<td>' + esc(it.deliverableName) + (it.canal ? ' <span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '') + '</td>'
+                    + '<td>' + esc(it.stepLabel) + '<br><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.po) + '</td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.com) + '</td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.ebf) + '</td>'
+                    + '<td class="pil-team-cell">' + teamCell(it.team.data) + '</td>'
                     + '<td>' + esc(it.names.join(', ')) + ' <span class="pil-badge pil-role-' + esc(it.role) + '">' + esc(roleLabel(it.role)) + '</span></td>'
+                    + '<td class="pil-envoi ' + envoiClass + '">' + frDate(it.dateRef) + envoiTag + '</td>'
+                    + '<td class="pil-since ' + sinceClass + '">' + esc(it.since.text) + '</td>'
                     + '</tr>';
-            });
+            }
+
+            var html = '';
+            var groups = fGroupBy ? groupValidationItems(items, fGroupBy) : null;
+            if (groups) {
+                groups.forEach(function (g) {
+                    html += '<tr class="pil-group-row"><td colspan="10">' + esc(g.label) + '<span class="pil-group-count">' + g.items.length + '</span></td></tr>';
+                    g.items.forEach(function (it) { html += renderRow(it); });
+                });
+            } else {
+                items.forEach(function (it) { html += renderRow(it); });
+            }
             tbody.innerHTML = html;
             wireRowNav(tbody);
         }
         function wireValidationFilters() {
-            ['v-role', 'v-status'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
-            $('v-reset').addEventListener('click', function () { $('v-role').value = ''; $('v-status').value = ''; renderValidations(); });
+            ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) {
+                $(id).addEventListener('input', renderValidations);
+            });
+            ['v-f-etape', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
+            $('v-reset').addEventListener('click', function () {
+                ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) { $(id).value = ''; });
+                ['v-f-etape', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).value = ''; });
+                renderValidations();
+            });
         }
 
         // ── Charge de travail ──
@@ -1052,18 +1313,49 @@
                 var itemsHtml = items.slice(0, 3).map(function (co) {
                     return '<div class="pil-cal-item" data-name="' + esc(co.folderName) + '" title="' + esc(co.campagne + ' — ' + co.livrable) + '">' + esc(co.livrable) + '</div>';
                 }).join('');
-                if (items.length > 3) itemsHtml += '<div class="pil-cal-more">+ ' + (items.length - 3) + ' autre' + (items.length - 3 > 1 ? 's' : '') + '</div>';
+                if (items.length > 3) itemsHtml += '<button type="button" class="pil-cal-more" data-iso="' + cellIso + '">+ ' + (items.length - 3) + ' autre' + (items.length - 3 > 1 ? 's' : '') + '</button>';
                 html += '<div class="' + cls + '"><div class="pil-cal-daynum">' + cellDate.getDate() + '</div>' + itemsHtml + '</div>';
             }
             $('cal-grid').innerHTML = html;
             $('cal-grid').querySelectorAll('.pil-cal-item').forEach(function (el) {
                 el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
             });
+            $('cal-grid').querySelectorAll('.pil-cal-more').forEach(function (el) {
+                el.addEventListener('click', function () { openComDayModal(el.getAttribute('data-iso')); });
+            });
 
             var undated = state.coms.filter(function (co) { return !co.date; }).length;
             $('cal-note').textContent = undated
                 ? (undated + ' communication' + (undated > 1 ? 's' : '') + ' sans date exploitable, non affichée' + (undated > 1 ? 's' : '') + ' ici — voir « Coms attendues ».')
                 : '';
+        }
+
+        // Modal listant TOUTES les coms attendues d'un jour (pas seulement celles
+        // masquées par « +N autres ») : ouverte depuis ce bouton, cf. renderCalendar.
+        function openComDayModal(iso) {
+            var items = state.coms.filter(function (co) { return co.date === iso; });
+            var d = new Date(iso + 'T00:00:00');
+            $('cal-day-modal-title').textContent = d.getDate() + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+            $('cal-day-modal-sub').textContent = items.length + ' communication' + (items.length > 1 ? 's' : '') + ' attendue' + (items.length > 1 ? 's' : '') + ' ce jour-là';
+            var body = $('cal-day-modal-body');
+            body.innerHTML = items.map(function (co) {
+                return '<div class="pil-cal-modal-row" data-name="' + esc(co.folderName) + '">'
+                    + '<div class="pil-cal-modal-info">'
+                    + '<div class="pil-cal-modal-livrable">' + esc(co.livrable) + (co.canal ? ' <span class="pil-badge pil-canal">' + esc(co.canal) + '</span>' : '') + '</div>'
+                    + '<div class="pil-cal-modal-camp">' + esc(co.campagne) + (co.po ? ' · PO : ' + esc(co.po) : '') + '</div>'
+                    + (co.cond ? '<div class="pil-cal-modal-cond">' + esc(co.cond) + '</div>' : '')
+                    + '</div></div>';
+            }).join('');
+            body.querySelectorAll('.pil-cal-modal-row').forEach(function (el) {
+                el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
+            });
+            $('cal-day-modal').classList.add('show');
+        }
+        function closeComDayModal() { $('cal-day-modal').classList.remove('show'); }
+        function wireComDayModal() {
+            $('cal-day-modal-close').addEventListener('click', closeComDayModal);
+            $('cal-day-modal').addEventListener('click', function (e) { if (e.target === this) closeComDayModal(); });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeComDayModal(); });
         }
         function wireCalendarNav() {
             $('cal-prev').addEventListener('click', function () { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); });
@@ -1129,6 +1421,10 @@
         function render() {
             var du = $('f-du').value, au = $('f-au').value;
             var canal = $('f-canal').value, type = $('f-type').value;
+            // Thèmes actifs (📦 Produit / 🖥️ Selfcare / 🎁 Promotion) : logique OU — une
+            // communication matche dès qu'elle correspond à au moins un thème coché.
+            var activeThemes = Array.prototype.slice.call(document.querySelectorAll('.pil-chip-toggle.active'))
+                .map(function(b) { return b.getAttribute('data-theme'); });
 
             var list = state.coms.filter(function(co) {
                 if (!co.date) return false;                          // pas de date exploitable
@@ -1136,6 +1432,7 @@
                 if (au && co.date > au) return false;
                 if (canal && co.canal !== canal) return false;
                 if (type && co.comType !== type) return false;
+                if (activeThemes.length && !activeThemes.some(function(t) { return co[t]; })) return false;
                 return true;
             });
 
@@ -1155,8 +1452,16 @@
                 var wk = mondayOf(co.date);
                 if (wk !== lastWeek) {
                     lastWeek = wk;
-                    html += '<tr class="pil-week"><td colspan="6">Semaine du ' + frDate(wk) + '</td></tr>';
+                    html += '<tr class="pil-week"><td colspan="8">Semaine du ' + frDate(wk) + '</td></tr>';
                 }
+                var themeBadges = '';
+                if (co.hasProduct) themeBadges += '<span class="pil-badge pil-theme-produit">📦 Produit</span> ';
+                if (co.selfcare) themeBadges += '<span class="pil-badge pil-theme-selfcare">🖥️ Selfcare</span> ';
+                if (co.promo) themeBadges += '<span class="pil-badge pil-theme-promo">🎁 Promo</span> ';
+                if (!themeBadges) themeBadges = '<span class="pil-team-empty">—</span>';
+                var volsHtml = co.siblings.map(function(s) {
+                    return '<span class="pil-vol-chip">' + esc(s.canal || s.livrable) + (s.volume ? ' · ' + s.volume.toLocaleString('fr-FR') : '') + '</span>';
+                }).join('');
                 html += '<tr class="pil-row" data-name="' + esc(co.folderName) + '">'
                     + '<td class="pil-date">' + frDate(co.date)
                     + (co.cond ? '<span class="pil-cond">⏱ ' + esc(co.cond) + '</span>' : '') + '</td>'
@@ -1164,6 +1469,8 @@
                     + '<td>' + esc(co.livrable) + '</td>'
                     + '<td>' + (co.canal ? '<span class="pil-badge pil-canal">' + esc(co.canal) + '</span>' : '—') + '</td>'
                     + '<td><span class="pil-badge ' + ctBadgeClass(co.comType) + '">' + esc(co.comType || '—') + '</span></td>'
+                    + '<td>' + themeBadges + '</td>'
+                    + '<td>' + volsHtml + '</td>'
                     + '<td>' + esc(co.po || '—') + '</td>'
                     + '</tr>';
             });
@@ -1278,10 +1585,14 @@
             ['f-du', 'f-au', 'f-canal', 'f-type'].forEach(function(id) {
                 $(id).addEventListener('change', render);
             });
+            document.querySelectorAll('.pil-chip-toggle').forEach(function(btn) {
+                btn.addEventListener('click', function() { btn.classList.toggle('active'); render(); });
+            });
             $('f-reset').addEventListener('click', function() {
                 setDefaultPeriod();
                 $('f-canal').value = '';
                 $('f-type').value = '';
+                document.querySelectorAll('.pil-chip-toggle.active').forEach(function(btn) { btn.classList.remove('active'); });
                 render();
             });
         }
@@ -1316,6 +1627,7 @@
                 renderKpi();
                 renderFriction();
                 wireCalendarNav();
+                wireComDayModal();
                 renderCalendar();
 
                 // Page réservée aux responsables d'équipe : retirée du menu pour

@@ -96,7 +96,7 @@
                 <!-- Section de recherche et filtres -->
         <section class="panel search-section">
             <div class="search-bar">
-                <input type="text" id="search-input" placeholder="Rechercher : nom, PO, code projet/action/MK, réf com/paracom, URL, segment…" />
+                <input type="text" id="search-input" placeholder="Rechercher : nom, PO, code projet/action/MK, réf com/paracom, URL, segment, parcours…" />
             </div>
 
             <div class="filters-row">
@@ -115,7 +115,7 @@
                 </div>
 
                 <div class="filter-group">
-                    <label for="filter-type">Type :</label>
+                    <label for="filter-type">Type de Com :</label>
                     <select id="filter-type">
                         <option value="">Tous</option>
                     </select>
@@ -135,8 +135,40 @@
                     </select>
                 </div>
 
+                <button type="button" id="toggle-more-filters" class="btn secondary small">
+                    Plus de filtres<span id="more-filters-badge" class="filters-badge" style="display:none;"></span>
+                    <span class="chev">▾</span>
+                </button>
                 <button id="reset-filters-btn" class="btn secondary small">Réinitialiser</button>
                 <button id="toggle-my-campaigns" class="btn secondary small" title="Afficher uniquement mes campagnes">👤 Mes campagnes</button>
+            </div>
+
+            <!-- Filtres avancés : repliés par défaut, sur les champs renseignés pendant
+                 le process de création (canal + produit) plutôt que sur des champs déjà
+                 couverts ci-dessus. -->
+            <div class="filters-row filters-row-advanced" id="advanced-filters-row">
+                <div class="filter-group">
+                    <label for="filter-comtypology">Typologie de com :</label>
+                    <select id="filter-comtypology" title="Ex : Création Caisse, Reprise Natio">
+                        <option value="">Toutes</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-typology">Typologie :</label>
+                    <select id="filter-typology">
+                        <option value="">Toutes</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-selfcare">Parcours selfcare :</label>
+                    <select id="filter-selfcare">
+                        <option value="">Indifférent</option>
+                        <option value="Oui">Oui</option>
+                        <option value="Non">Non</option>
+                    </select>
+                </div>
             </div>
         </section>
 
@@ -515,18 +547,15 @@
             document.getElementById('search-input').addEventListener('input',
                 performance.debounce(function() { currentPage = 0; filterCampaigns(); }, 300)
             );
-            document.getElementById('filter-ub').addEventListener('change',    function() { currentPage = 0; filterCampaigns(); });
-            document.getElementById('filter-canal').addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
-            document.getElementById('filter-type').addEventListener('change',  function() { currentPage = 0; filterCampaigns(); });
-            var _etatEl = document.getElementById('filter-etat');
-            if (_etatEl) _etatEl.addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
+            var FILTER_IDS = ['filter-ub', 'filter-canal', 'filter-type', 'filter-etat', 'filter-comtypology', 'filter-typology', 'filter-selfcare'];
+            FILTER_IDS.forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
+            });
             document.getElementById('sort-select').addEventListener('change',  function() { currentPage = 0; sortAndDisplayCampaigns(); });
             document.getElementById('reset-filters-btn').addEventListener('click', function() {
                 document.getElementById('search-input').value = '';
-                document.getElementById('filter-ub').value = '';
-                document.getElementById('filter-canal').value = '';
-                document.getElementById('filter-type').value = '';
-                if (document.getElementById('filter-etat')) document.getElementById('filter-etat').value = '';
+                FILTER_IDS.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
                 if (kpiFilter) {
                     kpiFilter = null;
                     try {
@@ -550,6 +579,23 @@
                 });
                 updateToggleBtn();
             }
+
+            // Filtres avancés (Typologie de com, Typologie, Parcours selfcare…) : repliés
+            // par défaut, l'état ouvert/fermé est mémorisé (comme « Mes campagnes »).
+            var moreBtn = document.getElementById('toggle-more-filters');
+            var advRow = document.getElementById('advanced-filters-row');
+            if (moreBtn && advRow) {
+                function setAdvancedOpen(open) {
+                    advRow.classList.toggle('show', open);
+                    moreBtn.classList.toggle('open', open);
+                }
+                setAdvancedOpen(localStorage.getItem('im_vc_more_filters') === '1');
+                moreBtn.addEventListener('click', function() {
+                    var open = !advRow.classList.contains('show');
+                    localStorage.setItem('im_vc_more_filters', open ? '1' : '0');
+                    setAdvancedOpen(open);
+                });
+            }
         }
 
         function populateFilters() {
@@ -566,6 +612,8 @@
             fill('filter-ub', config.UNIVERS_BESOINS);
             fill('filter-canal', config.CANAUX);
             fill('filter-type', config.TYPES_COM);
+            fill('filter-comtypology', config.COM_TYPOLOGIES);
+            fill('filter-typology', config.TYPOLOGIES);
         }
 
         // =====================================================================
@@ -746,6 +794,10 @@
             var canalFilter = document.getElementById('filter-canal').value;
             var typeFilter  = document.getElementById('filter-type').value;
             var etatFilter  = (document.getElementById('filter-etat') || {}).value || '';
+            var comTypologyFilter = (document.getElementById('filter-comtypology') || {}).value || '';
+            var typologyFilter    = (document.getElementById('filter-typology') || {}).value || '';
+            var selfcareFilter    = (document.getElementById('filter-selfcare') || {}).value || '';
+            updateMoreFiltersBadge(comTypologyFilter, typologyFilter, selfcareFilter);
 
             var wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
             var terms = searchTerm.split(/\s+/).filter(Boolean);
@@ -778,17 +830,41 @@
                     matchesType = campaign.data.channels.some(function(ch) { return ch.comType === typeFilter; });
                 }
 
+                // Typologie de com (Création Caisse / Reprise Natio…) : au niveau du
+                // canal, comme Type de Com et Canal ci-dessus.
+                var matchesComTypology = !comTypologyFilter;
+                if (comTypologyFilter && campaign.data.channels) {
+                    matchesComTypology = campaign.data.channels.some(function(ch) { return ch.comTypology === comTypologyFilter; });
+                }
+
+                // Typologie (PR / Campagne…) : champ de campagne, pas de canal.
+                var matchesTypology = !typologyFilter || campaign.data.typology === typologyFilter;
+
+                // Parcours selfcare (Oui/Non) : champ « produit » renseigné à la création.
+                var matchesSelfcare = !selfcareFilter || campaign.data.parcoursSelfcare === selfcareFilter;
+
                 var matchesUser = !myViewMode || matchesCurrentUser(campaign);
 
                 var matchesKpi = matchesKpiCategory(campaign);
 
                 var matchesEtat = !etatFilter || (vcStatus(campaign.data, wfMod).text === etatFilter);
 
-                return matchesSearch && matchesUB && matchesCanal && matchesType && matchesUser && matchesKpi && matchesEtat;
+                return matchesSearch && matchesUB && matchesCanal && matchesType && matchesComTypology
+                    && matchesTypology && matchesSelfcare && matchesUser && matchesKpi && matchesEtat;
             });
 
             currentPage = 0;
             sortAndDisplayCampaigns();
+        }
+
+        // Badge sur « Plus de filtres » : nombre de filtres avancés actuellement actifs,
+        // pour que l'utilisateur les repère même repliés.
+        function updateMoreFiltersBadge(comTypologyFilter, typologyFilter, selfcareFilter) {
+            var badge = document.getElementById('more-filters-badge');
+            if (!badge) return;
+            var n = [comTypologyFilter, typologyFilter, selfcareFilter].filter(Boolean).length;
+            badge.textContent = n || '';
+            badge.style.display = n ? 'inline-flex' : 'none';
         }
 
         function sortAndDisplayCampaigns() {
@@ -1063,6 +1139,21 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(48, 130, 118, 0.1);
         }
+
+        /* Filtres avancés (Typologie de com, Typologie, Parcours selfcare…) : repliés
+           par défaut pour ne pas surcharger la barre principale. */
+        #toggle-more-filters { display: inline-flex; align-items: center; gap: 6px; }
+        #toggle-more-filters .chev { display: inline-block; font-size: 10px; transition: transform .15s ease; }
+        #toggle-more-filters.open .chev { transform: rotate(180deg); }
+        .filters-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px;
+            background: var(--primary); color: #fff; font-size: 10px; font-weight: 800;
+        }
+        .filters-row-advanced {
+            display: none; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line);
+        }
+        .filters-row-advanced.show { display: flex; }
 
         /* Section des résultats */
         .results-section {

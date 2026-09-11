@@ -238,13 +238,56 @@
             position: relative;
           }
 
-          .dynamic-fields .form-group .form-group {
+          .dynamic-fields .form-group .form-group,
+          .dynamic-fields .channel-block .form-group {
             background: transparent;
             border: none;
             border-radius: 0;
             padding: 0;
             margin-bottom: 12px;
           }
+
+          /* Canal repliable (accordéon) — remplace le bloc "form-group" fixe :
+             un canal replié n'affiche qu'un résumé (icône + nom + type), pour
+             ne plus avoir à tout scroller dès qu'il y a plusieurs canaux. */
+          .dynamic-fields > .channel-block {
+            background: #ffffff;
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--primary);
+            border-radius: 3px;
+            margin-bottom: 16px;
+            position: relative;
+            overflow: hidden;
+          }
+          .channel-acc-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--line-2);
+            border-bottom: 1px solid var(--line);
+            cursor: pointer;
+            user-select: none;
+          }
+          .channel-acc-ic {
+            width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+            background: var(--primary); color: #fff;
+            display: flex; align-items: center; justify-content: center; font-size: 12px;
+          }
+          .channel-acc-title {
+            flex: 1; min-width: 0;
+            font-size: 0.875rem; font-weight: 600; color: var(--ink);
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+          }
+          .channel-acc-type {
+            font-size: 11px; font-weight: 700; color: var(--muted, #666);
+            background: #fff; border: 1px solid var(--line); border-radius: 999px;
+            padding: 2px 10px; white-space: nowrap;
+          }
+          .channel-acc-chev { font-size: 11px; color: var(--muted-2, #8b988f); transition: transform .15s; flex-shrink: 0; }
+          .channel-block.open .channel-acc-chev { transform: rotate(180deg); }
+          .channel-acc-body { display: none; padding: 20px; }
+          .channel-block.open .channel-acc-body { display: block; }
 
           /* Champs conditionnels */
           .conditional-field {
@@ -258,19 +301,6 @@
           .conditional-field label {
             color: var(--primary);
             font-weight: 600;
-          }
-
-          /* Sous-titre pour les canaux */
-          .dynamic-fields h4 {
-            margin: -20px -20px 16px -20px;
-            padding: 12px 20px;
-            background: var(--line-2);
-            border-bottom: 1px solid var(--line);
-            color: var(--ink);
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
           }
 
           /* Loader */
@@ -1529,6 +1559,9 @@
                                     }
                                 }
                             }
+                            // Résumé de l'en-tête (accordéon canal) : valeurs restaurées ci-dessus
+                            // (deliverableLabel/channelContent) sans événement input/change.
+                            updateChannelAccHeader(idx);
                             if (channel.sendDate) {
                                 var _sdInp = $(`#sendDate${idx}`);
                                 if (_sdInp) {
@@ -1687,6 +1720,50 @@
                 return channels;
             }
 
+            // Diminuer le nombre de canaux ne doit pas retirer arbitrairement les
+            // derniers de la liste (ex : passer de 3 à 2 supprimait toujours le
+            // canal 3, même si c'était le 1 ou le 2 qu'on voulait enlever) — on
+            // demande explicitement lequel/lesquels retirer, informations des
+            // autres canaux inchangées.
+            function escChRm(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+            function promptRemoveChannels(existing, countToRemove, onConfirm, onCancel) {
+                var overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;';
+                var box = document.createElement('div');
+                box.style.cssText = 'background:#fff;border-radius:10px;padding:22px;width:min(440px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
+                var plural = countToRemove > 1 ? 'aux' : '';
+                var itemsHtml = existing.map(function (ch, i) {
+                    var label = ch.deliverableName || ch.content || ('Canal ' + (i + 1));
+                    return '<label style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:8px;cursor:pointer;font-size:13.5px;">'
+                        + '<input type="checkbox" class="rm-ch-cb" data-idx="' + i + '" style="width:16px;height:16px;flex-shrink:0;">'
+                        + '<span>' + escChRm(label) + (ch.content ? ' <span style="color:var(--muted-2);font-size:11.5px;">(' + escChRm(ch.content) + ')</span>' : '') + '</span>'
+                        + '</label>';
+                }).join('');
+                box.innerHTML =
+                    '<h3 style="margin:0 0 6px;font-size:16px;color:var(--gray-700);">Quel' + plural + ' canal' + plural + ' retirer ?</h3>'
+                    + '<p style="margin:0 0 14px;font-size:13px;color:var(--muted-2);">Choisissez ' + countToRemove + ' canal' + plural + ' à retirer — les informations des autres canaux sont conservées.</p>'
+                    + '<div>' + itemsHtml + '</div>'
+                    + '<p class="rm-ch-err" style="display:none;color:var(--red);font-size:12.5px;margin:0 0 10px;">Sélectionnez exactement ' + countToRemove + ' canal' + plural + '.</p>'
+                    + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+                    + '<button type="button" data-act="cancel" style="background:var(--line-2);color:var(--gray-700);border:1px solid var(--line);border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">Annuler</button>'
+                    + '<button type="button" data-act="ok" style="background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:13px;">Confirmer</button>'
+                    + '</div>';
+                overlay.appendChild(box);
+                document.body.appendChild(overlay);
+                function close() { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+                function cancel() { close(); if (onCancel) onCancel(); }
+                function onEsc(e) { if (e.key === 'Escape') cancel(); }
+                box.querySelector('[data-act="cancel"]').addEventListener('click', cancel);
+                box.querySelector('[data-act="ok"]').addEventListener('click', function () {
+                    var checked = Array.from(box.querySelectorAll('.rm-ch-cb:checked')).map(function (cb) { return +cb.getAttribute('data-idx'); });
+                    if (checked.length !== countToRemove) { box.querySelector('.rm-ch-err').style.display = 'block'; return; }
+                    close();
+                    onConfirm(existing.filter(function (_, i) { return checked.indexOf(i) === -1; }));
+                });
+                overlay.addEventListener('click', function (e) { if (e.target === overlay) cancel(); });
+                document.addEventListener('keydown', onEsc);
+            }
+
             // Peuple la liste de personnes selon l'équipe PO sélectionnée
             function updatePoPersons() {
                 var team = document.getElementById('poTeam').value;
@@ -1747,8 +1824,31 @@
                     // avant de régénérer les champs, puis on le réapplique. Ajouter
                     // un canal n'efface donc plus les canaux existants.
                     const existing = collectChannelsFromForm();
-                    generateChannelFields(newCount);
-                    if (existing.length) restoreChannelFields(existing.slice(0, newCount));
+                    // Idem pour les canaux dépliés à la main (accordéon) : sinon
+                    // ajouter un canal replierait ceux qu'on venait d'ouvrir.
+                    const openCh = Array.from(document.querySelectorAll('#channelsContainer > .channel-block.open')).map(b => b.getAttribute('data-ch'));
+
+                    function applyChannels(remaining) {
+                        generateChannelFields(newCount);
+                        if (remaining.length) restoreChannelFields(remaining.slice(0, newCount));
+                        openCh.forEach(ch => {
+                            const block = document.querySelector('#channelsContainer > .channel-block[data-ch="' + ch + '"]');
+                            if (block) block.classList.add('open');
+                        });
+                    }
+
+                    if (newCount < existing.length) {
+                        // On retire des canaux : demander lesquels plutôt que de
+                        // toujours supprimer les derniers de la liste (ce qui
+                        // effaçait potentiellement un canal qu'on voulait garder).
+                        promptRemoveChannels(existing, existing.length - newCount, applyChannels, function () {
+                            // Annulé : revenir au nombre de canaux réellement affiché.
+                            var prevRadio = document.querySelector('input[name="numChannels"][value="' + existing.length + '"]');
+                            if (prevRadio) prevRadio.checked = true;
+                        });
+                    } else {
+                        applyChannels(existing);
+                    }
                 });
             });
 
@@ -1851,6 +1951,11 @@
             function validateStep(step) {
                 var currentFormStep = document.querySelector('.form-step[data-step="' + step + '"]');
                 if (!currentFormStep) return true;
+
+                // Étape Canaux : un champ obligatoire manquant dans un canal replié
+                // (accordéon) doit rester visible pour être corrigé — on déplie tout
+                // avant de valider, plutôt que de deviner lequel ouvrir.
+                if (step === 4) expandAllChannelAccordions();
 
                 var requiredFields = currentFormStep.querySelectorAll('input[required], select[required], textarea[required]');
                 var allValid = true;
@@ -2209,6 +2314,52 @@
                 }
             };
 
+            // ── Canaux repliables (accordéon) ──────────────────────────────
+            // Résumé affiché dans l'en-tête d'un canal replié : nom saisi (ou
+            // « Canal N » tant qu'il est vide) + type de livrable choisi.
+            // Rebranché à chaque saisie/changement (délégation posée une seule
+            // fois sur le conteneur, cf. plus bas), et appelé explicitement à la
+            // génération et à la restauration d'un canal.
+            function updateChannelAccHeader(i) {
+                var titleEl = document.getElementById('channelAccTitle' + i);
+                if (!titleEl) return;
+                var labelEl = document.getElementById('deliverableLabel' + i);
+                var label = labelEl ? (labelEl.value || '').trim() : '';
+                titleEl.textContent = label || ('Canal ' + i);
+                var typeEl = document.getElementById('channelAccType' + i);
+                var typeSel = document.getElementById('channelContent' + i);
+                var typeVal = typeSel ? typeSel.value : '';
+                if (typeEl) {
+                    if (typeVal) { typeEl.textContent = typeVal; typeEl.style.display = ''; }
+                    else { typeEl.style.display = 'none'; }
+                }
+            }
+            // Rouvre tous les canaux repliés — appelé avant de valider l'étape 4 :
+            // un champ obligatoire manquant dans un canal replié serait sinon
+            // marqué en rouge sans que personne ne le voie (cf. validateStep).
+            function expandAllChannelAccordions() {
+                document.querySelectorAll('#channelsContainer > .channel-block').forEach(function(block) {
+                    block.classList.add('open');
+                });
+            }
+            (function wireChannelAccHeaderDelegation() {
+                var container = document.getElementById('channelsContainer');
+                if (!container || container._accHeaderWired) return;
+                container._accHeaderWired = true;
+                container.addEventListener('input', function(e) {
+                    var t = e.target;
+                    if (t && t.id && t.id.indexOf('deliverableLabel') === 0) {
+                        updateChannelAccHeader(t.id.replace('deliverableLabel', ''));
+                    }
+                });
+                container.addEventListener('change', function(e) {
+                    var t = e.target;
+                    if (t && t.id && t.id.indexOf('channelContent') === 0) {
+                        updateChannelAccHeader(t.id.replace('channelContent', ''));
+                    }
+                });
+            })();
+
             function generateChannelFields(num) {
                 const container = $("#channelsContainer");
                 container.innerHTML = "";
@@ -2235,9 +2386,19 @@
                 const webSlotDayLabel = DAY_LABELS_FR[webSlotStartDay];
                 for (let i = 1; i <= num; i++) {
                     const div = document.createElement("div");
-                    div.className = "form-group";
+                    // Canal repliable (accordéon) : seul le premier est ouvert par défaut,
+                    // les suivants restent résumés (icône + nom + type) tant qu'on ne clique
+                    // pas dessus — évite le très long scroll dès 3 canaux ou plus.
+                    div.className = "channel-block" + (i === 1 ? " open" : "");
+                    div.setAttribute('data-ch', i);
                     div.innerHTML = `
-                        <h4>Canal ${i}</h4>
+                        <div class="channel-acc-head" data-toggle-ch="${i}">
+                            <span class="channel-acc-ic">📡</span>
+                            <span class="channel-acc-title" id="channelAccTitle${i}">Canal ${i}</span>
+                            <span class="channel-acc-type" id="channelAccType${i}" style="display:none;"></span>
+                            <span class="channel-acc-chev">▾</span>
+                        </div>
+                        <div class="channel-acc-body" id="channelAccBody${i}">
                         <div id="cfCanalBaseFields${i}"></div>
                         <div class="form-group">
                             <input type="text" id="deliverableName${i}" readonly style="background:var(--line-2,#f0f4f1);color:var(--muted,#666);cursor:not-allowed;">
@@ -2295,8 +2456,12 @@
                             <button type="button" onclick="addComStoreRow(${i})" style="margin-top:4px;background:var(--blue-50);color:#0369a1;border:1px solid var(--blue);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;">+ Ajouter une URL</button>
                         </div>
                         <div id="cfCanalFields${i}"></div>
+                        </div>
                     `;
                     container.appendChild(div);
+                    div.querySelector('.channel-acc-head').addEventListener('click', function() {
+                        div.classList.toggle('open');
+                    });
 
                     // Champs « socle » du canal (Type de livrable, Nom du livrable, Type de
                     // Com, Critère ciblage, Typologie de com, Lien LCCX) — champs déjà en
@@ -2310,6 +2475,7 @@
                         cfBaseCont.innerHTML = cfModuleCampaign.renderFields('creation.step3.canal.base', {}, { idSuffix: i });
                         cfModuleCampaign.wireFields(cfBaseCont, 'creation.step3.canal.base', {});
                     }
+                    updateChannelAccHeader(i);
 
                     // Show/hide siteWeb fields based on channel content selection
                     // (zones + zones réservées BP reprises de la config Administration).

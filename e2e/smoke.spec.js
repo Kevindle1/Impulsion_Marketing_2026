@@ -40,9 +40,25 @@ function collectPageErrors(page) {
 }
 
 test.describe('login.html', () => {
-  test('charge sans erreur JS et affiche le formulaire de connexion', async ({ page }) => {
+  // Connexion en deux étapes : tant qu'aucun utilisateur n'est en cache (poste
+  // jamais connecté), seule l'étape « connecter le dossier » est affichée — le
+  // bouton qui l'actionne ne doit jamais être confondu avec « Se connecter »
+  // (même bouton, même place que par le passé, corrigé ici).
+  test('premier lancement (aucun utilisateur en cache) : affiche l\'étape de connexion du dossier, pas le formulaire de connexion', async ({ page }) => {
     const errors = collectPageErrors(page);
     await page.goto(url('login.html'));
+    await expect(page.locator('#login-step-folder')).toHaveClass(/active/);
+    await expect(page.locator('#btn-connect-folder')).toBeVisible();
+    await expect(page.locator('#login-team')).toBeHidden();
+    await expect(page.locator('#btn-connect')).toBeHidden();
+    expect(errors).toEqual([]);
+  });
+
+  test('charge sans erreur JS et affiche le formulaire de connexion (dossier déjà connu)', async ({ page }) => {
+    const errors = collectPageErrors(page);
+    await seedLoggedInUser(page);
+    await page.goto(url('login.html'));
+    await expect(page.locator('#login-step-form')).toHaveClass(/active/);
     await expect(page.locator('#login-team')).toBeVisible();
     await expect(page.locator('#login-name')).toBeVisible();
     await expect(page.locator('#btn-connect')).toBeVisible();
@@ -69,12 +85,16 @@ test.describe('login.html', () => {
     await expect(page.locator('#root-path-hint')).toBeHidden();
   });
 
-  test('chemin du dossier à sélectionner : affiché sous le bouton si renseigné en Administration', async ({ page }) => {
-    await page.addInitScript(([user, cfg]) => {
-      window.localStorage.setItem('im_current_user', JSON.stringify(user));
+  test('chemin du dossier à sélectionner : affiché à l\'étape 1 si renseigné en Administration', async ({ page }) => {
+    // Ce repère n'a de sens que tant qu'aucun dossier n'est encore connu (étape 1) —
+    // pas de FAKE_USER ici, sinon l'étape 2 (formulaire de connexion) s'affiche
+    // directement et l'indice, propre à l'étape 1, resterait masqué (comportement
+    // voulu, cf. login.html).
+    await page.addInitScript((cfg) => {
       window.localStorage.setItem('im_config_cache', JSON.stringify(cfg));
-    }, [FAKE_USER, Object.assign({}, FAKE_CONFIG, { settings: { defaultRootPath: 'V://Impulsion_Marketing/Données de production' } })]);
+    }, { users: [], settings: { defaultRootPath: 'V://Impulsion_Marketing/Données de production' } });
     await page.goto(url('login.html'));
+    await expect(page.locator('#login-step-folder')).toHaveClass(/active/);
     await expect(page.locator('#root-path-hint')).toBeVisible();
     await expect(page.locator('#root-path-hint')).toContainText('V://Impulsion_Marketing/Données de production');
   });

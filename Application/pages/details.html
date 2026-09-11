@@ -171,6 +171,23 @@
             min-width: 0;
             background: var(--bg, #f4f7f5);
         }
+        /* ── Bandeau d'action sticky (haut de l'onglet Infos) : résume l'étape la
+           plus ancienne encore bloquée, tous canaux confondus, avec raccourci. ── */
+        .sticky-banner { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: linear-gradient(135deg, var(--amber-50, #fdf3e2), #fff); border: 1px solid var(--amber-50, #fdf3e2); border-bottom: 2px solid var(--amber, #E8A100); border-radius: 10px; padding: 11px 16px; margin-bottom: 16px; box-shadow: 0 6px 14px rgba(232,161,0,.10); }
+        .sticky-banner-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #9a6b00; background: var(--amber-50, #fdf3e2); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+        .sticky-banner-text { font-size: 13px; color: var(--ink, #0c1a14); flex: 1; min-width: 220px; }
+        .sticky-banner-cta { background: var(--primary, #00875A); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; }
+        .sticky-banner-cta:hover { background: var(--primary-hover, #00734C); }
+
+        /* ── Bloc unifié : sous-onglets Infos générales / Documents / Activité ── */
+        .subtab-strip { display: flex; gap: 2px; border-bottom: 1px solid var(--line, #eaefec); margin-bottom: 16px; }
+        .subtab-btn { padding: 9px 15px; font-size: 12.5px; font-weight: 700; color: var(--muted, #56655e); border: none; background: none; border-bottom: 2px solid transparent; cursor: pointer; display: flex; align-items: center; gap: 6px; font-family: inherit; margin-bottom: -1px; }
+        .subtab-btn:hover { color: var(--ink, #0c1a14); }
+        .subtab-btn.active { color: var(--primary, #00875A); border-color: var(--primary, #00875A); }
+        .subtab-count { background: var(--line-2, #f0f4f1); color: var(--muted, #56655e); font-size: 10px; font-weight: 800; border-radius: 999px; padding: 1px 6px; }
+        .subtab-panel { display: none; }
+        .subtab-panel.active { display: block; }
+
         /* ── Mise en page de l'onglet Infos ── */
         .info-layout { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 16px; align-items: start; }
         .info-main, .info-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -216,6 +233,32 @@
         .wf-step--link:hover .wf-node { border-color: var(--primary, #00875A); color: var(--primary, #00875A); box-shadow: 0 0 0 4px var(--green-50, #e8f6ef); }
         .wf-step--link.done:hover .wf-node { color: #fff; }
         .wf-step--link:hover .wf-label { color: var(--primary, #00875A); text-decoration: underline; }
+        .wf-step--link:hover .wf-cal { border-color: var(--primary, #00875A); }
+
+        /* Pastille-date (timeline canal) : date du dépôt/de la validation
+           directement dans la pastille — jour + mois pour une étape terminée,
+           « Depuis Xj » pour une étape en cours ou en révision. Un rond simple
+           (34px) reste utilisé quand aucune date n'est encore connue pour
+           cette étape (donnée antérieure à l'introduction de ce suivi) — les
+           deux formes sont donc alignées à 40px sur une même ligne.
+           Cf. workflow.getChannelStepDate(). */
+        .wf-stepper--cal .wf-node { width: 40px; height: 40px; }
+        .wf-stepper--cal .wf-step::before { top: 20px; }
+        .wf-cal { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 2px solid var(--line, #eaefec); background: #fff; flex-shrink: 0; display: flex; flex-direction: column; z-index: 1; }
+        .wf-cal-tag { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; text-align: center; padding: 2.5px 0; background: var(--muted-2, #8b988f); color: #fff; }
+        .wf-cal-num { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--ink, #0c1a14); font-variant-numeric: tabular-nums; }
+        .wf-step.done .wf-cal { border-color: var(--primary, #00875A); }
+        .wf-step.done .wf-cal-tag { background: var(--primary, #00875A); }
+        .wf-step.done .wf-cal-num { color: var(--primary-hover, #00734C); }
+        .wf-step.current .wf-cal { border-color: var(--amber, #E8A100); box-shadow: 0 0 0 4px var(--amber-50, #fdf3e2); }
+        .wf-step.current .wf-cal-tag { background: var(--amber, #E8A100); }
+        .wf-step.current .wf-cal-num { color: #9a6b00; }
+        .wf-step.submitted .wf-cal { border-color: var(--blue, #2563EB); box-shadow: 0 0 0 4px var(--blue-50, #e8f0fe); }
+        .wf-step.submitted .wf-cal-tag { background: var(--blue, #2563EB); }
+        .wf-step.submitted .wf-cal-num { color: var(--blue, #2563EB); }
+        .wf-step.revision .wf-cal { border-color: var(--red, #E2001A); box-shadow: 0 0 0 4px var(--red-50, #fdeaec); }
+        .wf-step.revision .wf-cal-tag { background: var(--red, #E2001A); }
+        .wf-step.revision .wf-cal-num { color: var(--red, #E2001A); }
         @keyframes wfFlash { 0% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } 25% { box-shadow: 0 0 0 4px rgba(0,135,90,.28); } 100% { box-shadow: 0 0 0 0 rgba(0,135,90,0); } }
         .wf-flash { animation: wfFlash 1.6s ease; }
         .wf-chan-date { font-size: 12px; color: var(--muted, #56655e); margin: -2px 0 12px; }
@@ -298,22 +341,44 @@
         .bilan-cmp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--gray-700, #33403a); }
         .bilan-cmp select { font-size: 12px; padding: 4px 8px; border: 1px solid var(--line, #eaefec); border-radius: 8px; background: #fff; font-family: inherit; }
 
-        /* ── Discussion ── */
-        .discussion-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
-        .discussion-msg { background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 13px 15px; }
-        .discussion-msg-header { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
-        .discussion-msg-avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary, #00875A); color: #fff; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0; }
-        .discussion-msg-author { font-size: 13px; font-weight: 650; color: var(--ink, #0c1a14); }
-        .discussion-msg-date { font-size: 11px; color: var(--muted-2, #8b988f); margin-left: auto; white-space: nowrap; }
-        .discussion-msg-text { font-size: 13.5px; color: var(--gray-700, #33403a); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
-        .discussion-msg-footer { margin-top: 8px; display: flex; align-items: center; gap: 8px; }
-        .discussion-like-btn { background: none; border: 1px solid var(--line, #eaefec); border-radius: 999px; padding: 4px 12px; font-size: 12px; cursor: pointer; color: var(--muted, #56655e); display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; font-family: inherit; }
-        .discussion-like-btn:hover { border-color: var(--primary, #00875A); color: var(--primary, #00875A); background: var(--green-50, #e8f6ef); }
-        .discussion-like-btn.liked { background: var(--green-50, #e8f6ef); border-color: var(--primary, #00875A); color: var(--primary, #00875A); font-weight: 700; }
-        .discussion-form { margin-top: 4px; }
-        .discussion-form textarea { width: 100%; padding: 11px 13px; border: 1px solid var(--line, #eaefec); border-radius: 12px; font-family: inherit; font-size: 13.5px; color: var(--ink, #0c1a14); resize: vertical; min-height: 80px; box-sizing: border-box; transition: border-color 0.15s, box-shadow 0.15s; }
-        .discussion-form textarea:focus { outline: none; border-color: var(--primary, #00875A); box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.14); }
-        .discussion-form-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+        /* ── Discussion (façon Facebook — bulle flottante, cf. #chat-bubble-btn) ── */
+        .discussion-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px; }
+        .discussion-msg { display: flex; gap: 10px; }
+        .discussion-msg-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--primary, #00875A); color: #fff; font-size: 10.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; letter-spacing: 0; }
+        .discussion-msg-body { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; flex: 1; }
+        .discussion-msg-bubble { background: var(--line-2, #f0f4f1); border-radius: 16px; padding: 9px 14px; max-width: 100%; }
+        .discussion-msg-author { font-size: 12.5px; font-weight: 700; color: var(--ink, #0c1a14); }
+        .discussion-msg-text { font-size: 13px; color: var(--ink, #0c1a14); line-height: 1.5; white-space: pre-wrap; word-break: break-word; margin-top: 1px; }
+        .discussion-msg-footer { display: flex; align-items: center; gap: 12px; padding-left: 14px; }
+        .discussion-msg-date { font-size: 11px; color: var(--muted-2, #8b988f); white-space: nowrap; }
+        .discussion-like-btn { background: none; border: none; padding: 0; font-size: 11.5px; font-weight: 700; color: var(--muted-2, #8b988f); cursor: pointer; font-family: inherit; }
+        .discussion-like-btn:hover { color: var(--ink, #0c1a14); text-decoration: underline; }
+        .discussion-like-btn.liked { color: var(--primary, #00875A); }
+        .discussion-form { display: flex; align-items: center; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line-2, #f0f4f1); margin-top: 4px; }
+        .discussion-form textarea { flex: 1; resize: none; border: none; background: var(--line-2, #f0f4f1); border-radius: 999px; padding: 9px 16px; font-family: inherit; font-size: 13px; color: var(--ink, #0c1a14); max-height: 90px; box-sizing: border-box; }
+        .discussion-form textarea:focus { outline: none; box-shadow: 0 0 0 2px var(--green-100, #ccebdd); }
+        .discussion-form-row { display: contents; }
+        #discussion-submit { width: 34px; height: 34px; border-radius: 50%; background: var(--green-50, #e8f6ef); color: var(--primary-hover, #00734C); border: none; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; cursor: pointer; padding: 0; font-family: inherit; }
+        #discussion-submit:hover:not(:disabled) { background: var(--green-100, #ccebdd); }
+        #discussion-submit:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* ── Discussion : bulle flottante (bas droite), on clique pour ouvrir.
+           La bulle d'aide (?) de cette page a été retirée (elle chevauchait ce
+           coin) : plus besoin d'empiler les deux. ── */
+        .chat-bubble-btn { position: fixed; bottom: 24px; right: 24px; width: 54px; height: 54px; border-radius: 50%; background: linear-gradient(135deg, #12C386, #00734C); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 24px rgba(0,115,76,.38), 0 2px 5px rgba(12,30,22,.12); z-index: 50; border: 3px solid #fff; transition: transform .15s, box-shadow .15s; padding: 0; }
+        .chat-bubble-btn:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 14px 28px rgba(0,115,76,.42), 0 2px 5px rgba(12,30,22,.12); }
+        .chat-bubble-btn svg { width: 24px; height: 24px; }
+        .chat-bubble-badge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--red, #E2001A); color: #fff; font-size: 11px; font-weight: 800; display: none; align-items: center; justify-content: center; border: 2.5px solid #fff; }
+        .chat-panel { display: none; position: fixed; bottom: 90px; right: 24px; width: 340px; max-height: 65vh; background: #fff; border-radius: 16px; box-shadow: 0 16px 40px rgba(12,30,22,.22); border: 1px solid var(--line, #eaefec); overflow: hidden; flex-direction: column; z-index: 51; }
+        .chat-panel.open { display: flex; }
+        .chat-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; background: linear-gradient(135deg, #12C386, #00734C); color: #fff; font-size: 13.5px; font-weight: 750; flex-shrink: 0; }
+        .chat-panel-close { cursor: pointer; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; opacity: .9; border: none; background: none; color: #fff; padding: 0; }
+        .chat-panel-close:hover { background: rgba(255,255,255,.18); opacity: 1; }
+        .chat-panel-body { padding: 14px; overflow-y: auto; flex: 1; }
+        @media (max-width: 768px) {
+            .chat-bubble-btn { width: 48px; height: 48px; bottom: 16px; right: 16px; }
+            .chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 74px; }
+        }
         /* ── Éditeur de texte enrichi (demande de modification) ── */
         .rich-editor { border: 1px solid var(--amber, #E8A100); border-radius: 6px; overflow: hidden; background: #fff; }
         .rich-toolbar { display: flex; gap: 3px; padding: 4px 6px; background: var(--line-2, #f0f4f1); border-bottom: 1px solid var(--line, #eaefec); flex-wrap: wrap; }
@@ -412,7 +477,6 @@
     var directoryStorage = window.ImpulsionMarketing.directoryStorage;
     var security         = window.ImpulsionMarketing.security;
     var errors           = window.ImpulsionMarketing.errors;
-    var help             = window.ImpulsionMarketing.help;
     var users            = window.ImpulsionMarketing.users;
     var workflow         = window.ImpulsionMarketing.workflow;
     var customFields     = window.ImpulsionMarketing.customFields;
@@ -505,7 +569,8 @@
     var submittedInSession = { com: new Set(), ebf: new Set(), data: new Set(), dataTest: new Set() };
 
     window.addEventListener('load', function() {
-        help.initHelp('details');
+        // Bulle d'aide (?) retirée de cette page : elle chevauchait la bulle
+        // de discussion, dans le même coin de l'écran (cf. #chat-bubble-btn).
         loadCampaignDetails();
     });
 
@@ -824,7 +889,6 @@
         var channels = data.channels || [];
         var h = '<span class="details-sidenav-label">Navigation</span>';
         h += '<button class="details-nav-item" id="nav-item-info" data-page="info">📋 Infos campagne</button>';
-        h += '<button class="details-nav-item" id="nav-item-bilan" data-page="bilan">📊 Bilan</button>';
         if (channels.length > 0) {
             h += '<div class="details-nav-separator"></div>';
             h += '<span class="details-sidenav-label">Canaux</span>';
@@ -833,6 +897,8 @@
                 h += '<button class="details-nav-item" id="nav-item-' + idx + '" data-page="' + idx + '" title="' + security.escapeHtml(label) + '">📡 ' + security.escapeHtml(label) + '</button>';
             });
         }
+        // Bilan : en dernier, après les onglets canal (cf. maquette validée).
+        h += '<button class="details-nav-item" id="nav-item-bilan" data-page="bilan">📊 Bilan</button>';
         nav.innerHTML = h;
         nav.querySelectorAll('.details-nav-item').forEach(function(btn) {
             btn.addEventListener('click', function() {
@@ -897,6 +963,128 @@
             el.classList.add('wf-flash');
             setTimeout(function() { el.classList.remove('wf-flash'); }, 1600);
         });
+    }
+
+    // Composition de l'équipe (Com/EBF/Data) + Co-PO (suppléance) : un seul
+    // bloc, dans l'onglet Infos générales (déplacé depuis le haut du Workflow,
+    // à la demande). Le Co-PO reste éditable ici pour le PO — mêmes ids
+    // #btn-copo-toggle / #copo-form / #btn-copo-save / .copo-cb, wiring
+    // inchangé dans setupGlobalEvents.
+    function buildTeamInfoBlock(data) {
+        var assignments = (data.workflow && data.workflow.assignments) || {};
+        var currentUser = users && users.getCurrentUser && users.getCurrentUser();
+        var teamParts = [];
+        [['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data']].forEach(function(t) {
+            if (!isTeamRequired(data, t[1])) return;
+            var disp = assigneesDisplay(assignments, t[0]);
+            teamParts.push(t[1] + ' : ' + (disp || '<em style="color:var(--muted-2);font-style:italic;">en attente d\'affectation</em>'));
+        });
+        var showCoPo = currentUser && users.isCurrentUserPO(data);
+
+        // Rôles que l'utilisateur courant peut modifier — un manager (de service,
+        // général ou super-admin) pour n'importe quel rôle requis, ou un membre
+        // déjà affecté pour SON propre rôle uniquement (cf. teamEditMode, sans
+        // idx = portée campagne). Vide → pas de bouton d'ajout.
+        var editableRoles = ['com', 'ebf', 'data'].filter(function(r) {
+            return isTeamRequired(data, ROLE_LABELS_TEAM[r]) && teamEditMode(data, r);
+        });
+        if (!teamParts.length && !showCoPo && !editableRoles.length) return '';
+
+        var html = '<div class="detail-section"><h3>👥 Équipe</h3>';
+        if (teamParts.length) {
+            html += '<div style="font-size:13px;"><strong>Composition :</strong> ' + teamParts.join(' &nbsp;|&nbsp; ') + '</div>';
+        }
+        // Ajout d'un membre à l'équipe (à tout moment, motif obligatoire, tracé
+        // dans l'onglet Activité) — la personne sur la tâche ajoute à son propre
+        // rôle, un manager à n'importe quel rôle qu'il gère.
+        if (editableRoles.length) {
+            html += '<div style="' + (teamParts.length ? 'margin-top:10px;' : '') + '">';
+            html += '<button type="button" id="btn-team-add-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">➕ Ajouter quelqu\'un à l\'équipe</button>';
+            html += '</div>';
+            html += '<div id="team-add-form" style="display:none;margin-top:10px;background:var(--line-2);border-radius:6px;padding:10px 12px;">';
+            html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">La personne ajoutée devient affectée sur toute la campagne. Le motif est obligatoire — l\'ajout est tracé dans l\'onglet Activité.</div>';
+            html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">';
+            if (editableRoles.length > 1) {
+                html += '<select id="team-add-role" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-family:inherit;">';
+                editableRoles.forEach(function(r) { html += '<option value="' + r + '">' + ROLE_LABELS_TEAM[r] + '</option>'; });
+                html += '</select>';
+            } else {
+                html += '<input type="hidden" id="team-add-role" value="' + editableRoles[0] + '">';
+                html += '<span style="font-size:12px;font-weight:700;padding:6px 4px;">' + ROLE_LABELS_TEAM[editableRoles[0]] + '</span>';
+            }
+            html += '<select id="team-add-person" style="flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-family:inherit;"></select>';
+            html += '</div>';
+            html += '<textarea id="team-add-motif" placeholder="Motif (obligatoire) — ex. congés, renfort ponctuel…" rows="2" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;font-size:13px;resize:vertical;margin-bottom:8px;"></textarea>';
+            html += '<button type="button" id="btn-team-add-save" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Ajouter</button>';
+            html += '</div>';
+        }
+        if (showCoPo) {
+            var coPo = Array.isArray(data.coPo) ? data.coPo : [];
+            html += '<div style="' + (teamParts.length ? 'margin-top:12px;padding-top:12px;border-top:1px solid var(--line);' : '') + 'font-size:13px;">';
+            html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
+            html += '<span><strong>Co-PO (suppléance) :</strong> ' + (coPo.length ? coPo.map(security.escapeHtml).join(', ') : '<em style="color:var(--muted-2);">aucun</em>') + '</span>';
+            html += '<button id="btn-copo-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Gérer</button>';
+            html += '</div>';
+            html += '<div id="copo-form" style="display:none;margin-top:8px;">';
+            html += '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Un co-PO a les mêmes droits que vous sur cette campagne (validations, retours, test en prod…). Idéal pour vos congés.</div>';
+            html += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
+            users.USERS.filter(function(u) { return u.name !== data.po && !u.inactive; }).forEach(function(u) {
+                var ck = coPo.indexOf(u.name) !== -1 ? ' checked' : '';
+                html += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" class="copo-cb" value="' + security.escapeHtml(u.name) + '"' + ck + '> ' + security.escapeHtml(u.name) + ' <span style="font-size:11px;color:var(--muted-2);">(' + security.escapeHtml(u.role || '') + ')</span></label>';
+            });
+            html += '</div>';
+            html += '<button id="btn-copo-save" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
+            html += '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+        return html;
+    }
+
+    // Bandeau d'action sticky (haut de l'onglet Infos) : parmi tous les canaux,
+    // l'étape actionnable (pending / revision_requested) qui attend depuis le
+    // plus longtemps, avec un raccourci direct vers son bloc. Repose sur
+    // workflow.getChannelStepDate (même horodatage que Pilotage ▸ Suivi de
+    // campagne) — une étape sans date connue (antérieure à ce suivi) reste
+    // signalée, juste sans « depuis Xj ».
+    function buildStickyBanner(data) {
+        if (!workflow || !data.workflow || workflow.isCompleted(data)) return '';
+        var jur = workflow.juridiqueRequired(data);
+        var channels = data.channels || [];
+        var cs = (data.workflow && data.workflow.channelSteps) || {};
+        var best = null;
+        channels.forEach(function(ch, idx) {
+            var ids = workflow.channelStepIds(data.requiredTeams, ch.content, jur);
+            var steps = cs[idx] || {};
+            for (var k = 0; k < ids.length; k++) {
+                var id = ids[k];
+                var status = steps[id] || 'locked';
+                if (status === 'pending' || status === 'revision_requested') {
+                    var iso = workflow.getChannelStepDate(data, idx, id);
+                    var days = iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)) : -1;
+                    if (!best || days > best.days) {
+                        var role = workflow.stepActor(id, ch.content);
+                        var coPo = Array.isArray(data.coPo) ? data.coPo : [];
+                        var names = (role === 'po') ? [data.po].concat(coPo).filter(Boolean) : workflow.channelAssignees(data, idx, role);
+                        best = {
+                            idx: idx, stepId: id, stepLabel: workflow.stepLabel(id),
+                            canalLabel: ch.deliverableName || ('Canal ' + (idx + 1)),
+                            revision: status === 'revision_requested', days: days,
+                            names: names.length ? names : ['(non affecté)']
+                        };
+                    }
+                    break; // une seule étape « courante » par canal
+                }
+            }
+        });
+        if (!best) return '';
+        var sinceTxt = best.days < 0 ? '' : (' — ' + (best.days === 0 ? "depuis aujourd'hui" : ('depuis ' + best.days + ' j' + (best.days > 1 ? 's' : ''))));
+        var text = (best.revision ? 'Révision demandée' : 'Étape bloquante') + ' : <strong>' + security.escapeHtml(best.stepLabel) + '</strong> (' + security.escapeHtml(best.canalLabel) + ')' + sinceTxt + ', à faire par <strong>' + security.escapeHtml(best.names.join(', ')) + '</strong>';
+        return '<div class="sticky-banner">'
+            + '<span class="sticky-banner-tag">' + (best.revision ? '🔄 Révision' : '📌 En attente') + '</span>'
+            + '<span class="sticky-banner-text">' + text + '</span>'
+            + '<button type="button" class="sticky-banner-cta" onclick="gotoChannelStep(' + best.idx + ', \'' + best.stepId + '\')">Voir l\'action →</button>'
+            + '</div>';
     }
 
     // ─────────────────────────────────────────────
@@ -967,17 +1155,8 @@
             if (data.lotNumber) smallCards += '<div class="detail-item"><span class="detail-label">N° Lot</span><span class="detail-value">' + security.escapeHtml(data.lotNumber) + '</span></div>';
             smallCards += '</div></div>';
         }
-        // Synthèse des canaux (avec le type de com) — visible dès la 1re page pour
-        // que les managers voient l'info sans ouvrir chaque canal.
-        if (data.channels && data.channels.length) {
-            smallCards += '<div class="detail-section"><h3>📡 Canaux (' + data.channels.length + ')</h3><div class="detail-grid">';
-            data.channels.forEach(function(ch, i) {
-                var nom = ch.deliverableName || ch.content || ('Canal ' + (i + 1));
-                var meta = (ch.content ? ch.content : '') + (ch.comType ? ((ch.content ? ' · ' : '') + 'Type de com : ' + ch.comType) : '');
-                smallCards += '<div class="detail-item"><span class="detail-label">' + security.escapeHtml(nom) + '</span><span class="detail-value">' + (meta ? security.escapeHtml(meta) : '-') + '</span></div>';
-            });
-            smallCards += '</div></div>';
-        }
+        // Synthèse des canaux : supprimée (chaque canal a déjà son propre onglet
+        // avec son statut dans la navigation latérale, cette liste faisait doublon).
 
         // Section juridique (colonne latérale) — vue d'ensemble en lecture seule.
         // La validation/refus se fait désormais étape par étape dans le workflow,
@@ -1004,46 +1183,60 @@
             jurHtml += '</div>';
         }
 
-        // Section documentaire (colonne latérale)
-        var docsHtml = '<div class="detail-section" id="documents-section">';
-        docsHtml += '<h3>📁 Documents</h3>';
-        docsHtml += '<div id="documents-loading" style="color:var(--muted-2);font-size:13px;">Chargement...</div>';
-        docsHtml += '<div id="documents-content" style="display:none;"></div>';
-        docsHtml += '</div>';
+        // Bandeau d'action sticky (haut de page, cf. buildStickyBanner ci-dessus).
+        var stickyHtml = buildStickyBanner(data);
 
-        // Section journal d'activité (colonne latérale)
-        var actHtml = '<div class="detail-section" id="activity-section">';
-        actHtml += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">';
-        actHtml += '<h3 style="margin:0;">🕒 Activité</h3>';
-        actHtml += '<select id="activity-filter" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;">'
+        // Bloc unifié : Infos générales / Documents / Activité en sous-onglets
+        // (le Workflow reste seul, au-dessus, inchangé — cf. maquette validée).
+        var docsPanel = '<div id="documents-loading" style="color:var(--muted-2);font-size:13px;">Chargement...</div>'
+            + '<div id="documents-content" style="display:none;"></div>';
+
+        var actPanel = '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:8px;">'
+            + '<select id="activity-filter" style="font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:6px;">'
             + '<option value="">Tout</option><option value="workflow">Workflow</option><option value="document">Documents</option>'
-            + '<option value="statut">Statut</option><option value="campagne">Campagne</option></select>';
-        actHtml += '</div>';
-        actHtml += '<div id="activity-loading" style="color:var(--muted-2);font-size:13px;margin-top:8px;">Chargement...</div>';
-        actHtml += '<div id="activity-content" style="display:none;margin-top:8px;"></div>';
-        actHtml += '</div>';
+            + '<option value="statut">Statut</option><option value="campagne">Campagne</option><option value="affectation">Affectation</option></select></div>'
+            + '<div id="activity-loading" style="color:var(--muted-2);font-size:13px;">Chargement...</div>'
+            + '<div id="activity-content" style="display:none;"></div>';
 
-        // Section discussion (pleine largeur, en bas)
-        var discHtml = '<div class="detail-section">';
-        discHtml += '<h3>💬 Discussion</h3>';
-        discHtml += '<div id="discussion-loading" style="color:var(--muted-2);font-size:13px;padding:8px 0;">Chargement...</div>';
-        discHtml += '<div id="discussion-list" class="discussion-list" style="display:none;"></div>';
-        discHtml += '<div id="discussion-form" class="discussion-form" style="display:none;">';
-        discHtml += '<textarea id="discussion-input" placeholder="Écrire un commentaire..."></textarea>';
-        discHtml += '<div class="discussion-form-row"><button id="discussion-submit" class="btn-actor-submit">Publier</button></div>';
-        discHtml += '</div>';
-        discHtml += '<div id="discussion-no-user" style="display:none;color:var(--muted-2);font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>';
-        discHtml += '</div>';
+        var tabsHtml = '<div class="detail-section" id="info-subtabs-card">'
+            + '<div class="subtab-strip" role="tablist">'
+            + '<button type="button" class="subtab-btn active" data-subtab="info">📋 Infos générales</button>'
+            + '<button type="button" class="subtab-btn" data-subtab="docs">📁 Documents</button>'
+            + '<button type="button" class="subtab-btn" data-subtab="act">🕒 Activité</button>'
+            + '</div>'
+            + '<div class="subtab-panel active" data-subpanel="info">' + infoGen + buildTeamInfoBlock(data) + smallCards + jurHtml + '</div>'
+            + '<div class="subtab-panel" data-subpanel="docs">' + docsPanel + '</div>'
+            + '<div class="subtab-panel" data-subpanel="act">' + actPanel + '</div>'
+            + '</div>';
 
-        // Assemblage : workflow pleine largeur, puis 2 colonnes franches
-        // Gauche : infos générales + segments + UB + produit (empilés)
-        // Droite : documents + discussion (en long)
-        var html = workflowHtml;
-        html += '<div class="info-layout">';
-        html += '<div class="info-main">' + infoGen + smallCards + '</div>';
-        html += '<div class="info-side">' + jurHtml + docsHtml + actHtml + discHtml + '</div>';
-        html += '</div>';
-        return html;
+        // Discussion : bulle flottante (bas droite) → panneau façon Facebook au clic
+        // (au lieu d'une carte toujours visible). Même mécanique de chargement/
+        // publication que par le passé (loadDiscussion / renderDiscussionMessages),
+        // seule la présentation change.
+        var chatUser = users && users.getCurrentUser && users.getCurrentUser();
+        var chatInitials = '';
+        if (chatUser && chatUser.name) {
+            chatInitials = chatUser.name.trim().split(/\s+/).map(function(p) { return p[0]; }).join('').toUpperCase().slice(0, 2);
+        }
+        var chatHtml = '<button type="button" class="chat-bubble-btn" id="chat-bubble-btn" aria-label="Ouvrir la discussion" title="Discussion">'
+            + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>'
+            + '<span class="chat-bubble-badge" id="chat-bubble-badge"></span>'
+            + '</button>'
+            + '<div class="chat-panel" id="chat-panel">'
+            + '<div class="chat-panel-head"><span>💬 Discussion</span><button type="button" class="chat-panel-close" id="chat-panel-close" aria-label="Fermer">✕</button></div>'
+            + '<div class="chat-panel-body">'
+            + '<div id="discussion-loading" style="color:var(--muted-2);font-size:13px;padding:8px 0;">Chargement...</div>'
+            + '<div id="discussion-list" class="discussion-list" style="display:none;"></div>'
+            + '<div id="discussion-form" class="discussion-form" style="display:none;">'
+            + '<div class="discussion-msg-avatar">' + security.escapeHtml(chatInitials) + '</div>'
+            + '<textarea id="discussion-input" placeholder="Écrire un commentaire..." rows="1"></textarea>'
+            + '<div class="discussion-form-row"><button id="discussion-submit" title="Publier">➤</button></div>'
+            + '</div>'
+            + '<div id="discussion-no-user" style="display:none;color:var(--muted-2);font-size:13px;padding:8px 0;">Identifiez-vous pour participer à la discussion.</div>'
+            + '</div>'
+            + '</div>';
+
+        return stickyHtml + workflowHtml + tabsHtml + chatHtml;
     }
 
     // ─────────────────────────────────────────────
@@ -1140,6 +1333,9 @@
     function isTeamRequired(data, team) {
         return workflow.isTeamRequired(data.requiredTeams, team);
     }
+
+    // Libellés des rôles d'équipe (ajout de membre, cf. buildTeamInfoBlock).
+    var ROLE_LABELS_TEAM = { com: 'Com', ebf: 'EBF', data: 'Data' };
 
     // ─────────────────────────────────────────────
     // PAGE : CANAL
@@ -1874,17 +2070,40 @@
             if (s === 'pending') return 'current';
             return 'locked';
         }
+        // Pastille-date : jour + mois pour une étape terminée (dépôt/validation
+        // déjà horodatés), « Depuis Xj » pour une étape en cours ou en révision
+        // (pas de date de fin, on montre l'attente). null si aucune date connue
+        // pour cette étape (retombe sur le rond simple côté appelant).
+        var WF_MONTHS = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+        function wfDateTile(cls, iso) {
+            var d = new Date(iso);
+            if (isNaN(d.getTime())) return null;
+            if (cls === 'current' || cls === 'revision') {
+                var days = Math.max(0, Math.floor((Date.now() - d.getTime()) / 86400000));
+                var num = days === 0 ? 'Auj.' : (days + 'j');
+                return '<div class="wf-cal"><div class="wf-cal-tag">Depuis</div><div class="wf-cal-num">' + num + '</div></div>';
+            }
+            var day = String(d.getDate()).padStart(2, '0');
+            return '<div class="wf-cal"><div class="wf-cal-tag">' + WF_MONTHS[d.getMonth()] + '</div><div class="wf-cal-num">' + day + '</div></div>';
+        }
         function wfStepper(stepDefs, getStatus, chIdx) {
             var linkable = (chIdx !== undefined && chIdx !== null);
-            var h = '<div class="wf-stepper">';
+            var h = '<div class="wf-stepper' + (linkable ? ' wf-stepper--cal' : '') + '">';
             stepDefs.forEach(function(step, i) {
                 var st = getStatus(step, i);
                 var cls = wfStateClass(st);
-                var content = (cls === 'done') ? '✓' : String(i + 1);
                 var classAttr = 'wf-step ' + cls + (linkable ? ' wf-step--link' : '');
                 var dataAttr = linkable ? (' data-ch="' + chIdx + '" data-step="' + security.escapeHtml(step.id) + '"') : '';
                 var titleTxt = security.escapeHtml(step.label) + (linkable ? ' — cliquer pour ouvrir le bloc' : '');
-                h += '<div class="' + classAttr + '"' + dataAttr + '><div class="wf-node" title="' + titleTxt + '">' + content + '</div><div class="wf-label">' + security.escapeHtml(step.label) + '</div></div>';
+                // Date dans la pastille : uniquement pour les étapes canal (pas la
+                // timeline « Préparation », globale) atteintes (pas 'locked') et
+                // pour lesquelles un horodatage existe déjà (cf. workflow.
+                // getChannelStepDate / _stampChannelStepDates — nouveau suivi, ne
+                // couvre pas les étapes déjà en place avant son introduction).
+                var iso = (linkable && cls !== 'locked') ? workflow.getChannelStepDate(data, chIdx, step.id) : null;
+                var tile = iso ? wfDateTile(cls, iso) : null;
+                var nodeHtml = tile || ('<div class="wf-node">' + ((cls === 'done') ? '✓' : String(i + 1)) + '</div>');
+                h += '<div class="' + classAttr + '"' + dataAttr + ' title="' + titleTxt + '">' + nodeHtml + '<div class="wf-label">' + security.escapeHtml(step.label) + '</div></div>';
             });
             h += '</div>';
             return h;
@@ -1956,50 +2175,14 @@
             return html;
         }
 
-        // Composition de l'équipe : affichée dès le départ (même à l'étape
-        // d'affectation, avant que quiconque soit affecté), pour chaque service
-        // REQUIS par la campagne. Un service sans personne affectée affiche
-        // « en attente d'affectation » plutôt que de disparaître.
-        // Le manager qui a fait l'affectation n'est pas affiché comme « affecté »
-        // à la tâche : seules les équipes réellement affectées le sont.
-        var _teamParts = [];
-        [['com', 'Com'], ['ebf', 'EBF'], ['data', 'Data']].forEach(function(t) {
-            if (!isTeamRequired(data, t[1])) return;
-            var disp = assigneesDisplay(assignments, t[0]);
-            _teamParts.push(t[1] + ' : ' + (disp || '<em style="color:var(--muted-2);font-style:italic;">en attente d\'affectation</em>'));
-        });
-        if (_teamParts.length) {
-            html += '<div style="background:var(--line-2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
-            html += '<strong>Composition de l\'équipe :</strong> ';
-            html += _teamParts.join(' &nbsp;|&nbsp; ');
-            html += '</div>';
-        }
-
+        // Composition de l'équipe + Co-PO : déplacés dans l'onglet Infos
+        // générales (cf. buildTeamInfoBlock, appelée depuis renderInfoPage) —
+        // seule la garde ci-dessous (utilisateur non identifié) reste ici, pour
+        // les sections d'action qui suivent (affectation, kick-off...).
         if (!currentUser) {
             html += '<p style="color:#888;font-size:13px;">Sélectionnez un utilisateur pour voir vos actions disponibles.</p>';
             html += '</div>';
             return html;
-        }
-
-        // ── Co-PO (suppléance congés) : le PO — ou un co-PO / super-admin — peut
-        // ajouter un autre PO qui aura les mêmes droits sur cette campagne. ──
-        if (users.isCurrentUserPO(data)) {
-            var _coPo = Array.isArray(data.coPo) ? data.coPo : [];
-            html += '<div style="background:var(--line-2);border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:13px;">';
-            html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
-            html += '<span><strong>Co-PO (suppléance) :</strong> ' + (_coPo.length ? _coPo.map(security.escapeHtml).join(', ') : '<em style="color:var(--muted-2);">aucun</em>') + '</span>';
-            html += '<button id="btn-copo-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Gérer</button>';
-            html += '</div>';
-            html += '<div id="copo-form" style="display:none;margin-top:8px;">';
-            html += '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Un co-PO a les mêmes droits que vous sur cette campagne (validations, retours, test en prod…). Idéal pour vos congés.</div>';
-            html += '<div style="max-height:130px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-bottom:8px;">';
-            users.USERS.filter(function(u) { return u.name !== data.po && !u.inactive; }).forEach(function(u) {
-                var ck = _coPo.indexOf(u.name) !== -1 ? ' checked' : '';
-                html += '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" class="copo-cb" value="' + security.escapeHtml(u.name) + '"' + ck + '> ' + security.escapeHtml(u.name) + ' <span style="font-size:11px;color:var(--muted-2);">(' + security.escapeHtml(u.role || '') + ')</span></label>';
-            });
-            html += '</div>';
-            html += '<button id="btn-copo-save" style="background:var(--primary);color:#fff;border:none;border-radius:4px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:13px;">💾 Enregistrer</button>';
-            html += '</div></div>';
         }
 
         // Manager : affectation
@@ -3850,6 +4033,27 @@
             });
         }
 
+        // ── Sous-onglets Infos générales / Documents / Activité ──
+        var subtabsCard = document.getElementById('info-subtabs-card');
+        if (subtabsCard) {
+            subtabsCard.querySelectorAll('.subtab-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var key = btn.getAttribute('data-subtab');
+                    subtabsCard.querySelectorAll('.subtab-btn').forEach(function(b) { b.classList.toggle('active', b === btn); });
+                    subtabsCard.querySelectorAll('.subtab-panel').forEach(function(p) { p.classList.toggle('active', p.getAttribute('data-subpanel') === key); });
+                });
+            });
+        }
+
+        // ── Discussion : bulle flottante → ouvre/ferme le panneau ──
+        var chatBubbleBtn = document.getElementById('chat-bubble-btn');
+        var chatPanel = document.getElementById('chat-panel');
+        if (chatBubbleBtn && chatPanel) {
+            chatBubbleBtn.addEventListener('click', function() { chatPanel.classList.toggle('open'); });
+            var chatCloseBtn = document.getElementById('chat-panel-close');
+            if (chatCloseBtn) chatCloseBtn.addEventListener('click', function() { chatPanel.classList.remove('open'); });
+        }
+
         // ── Co-PO (suppléance) ──
         var btnCoPoToggle = document.getElementById('btn-copo-toggle');
         if (btnCoPoToggle) {
@@ -3871,6 +4075,55 @@
                     })
                     .catch(function(err) { enableBtn(btnCoPoSave, '💾 Enregistrer'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
             });
+        }
+
+        // ── Équipe (Infos générales) : ajout d'un membre, motif obligatoire,
+        // tracé dans l'onglet Activité (cf. buildTeamInfoBlock). ──
+        var btnTeamAddToggle = document.getElementById('btn-team-add-toggle');
+        if (btnTeamAddToggle) {
+            var teamAddForm   = document.getElementById('team-add-form');
+            var teamAddRoleEl = document.getElementById('team-add-role');
+            var teamAddPersonEl = document.getElementById('team-add-person');
+            function populateTeamAddPerson() {
+                var role = teamAddRoleEl.value;
+                var already = getAssignees(currentCampaignData.workflow.assignments, role);
+                var candidates = users.getUsersByRole(role).filter(function(u) { return already.indexOf(u.name) === -1; });
+                teamAddPersonEl.innerHTML = candidates.length
+                    ? candidates.map(function(u) { return '<option value="' + security.escapeHtml(u.name) + '">' + security.escapeHtml(u.name) + '</option>'; }).join('')
+                    : '<option value="">Toute l\'équipe est déjà affectée</option>';
+            }
+            populateTeamAddPerson();
+            if (teamAddRoleEl.tagName === 'SELECT') teamAddRoleEl.addEventListener('change', populateTeamAddPerson);
+
+            btnTeamAddToggle.addEventListener('click', function() {
+                teamAddForm.style.display = teamAddForm.style.display === 'none' ? 'block' : 'none';
+            });
+
+            var btnTeamAddSave = document.getElementById('btn-team-add-save');
+            if (btnTeamAddSave) {
+                btnTeamAddSave.addEventListener('click', function() {
+                    var role   = teamAddRoleEl.value;
+                    var person = teamAddPersonEl.value;
+                    var motif  = (document.getElementById('team-add-motif').value || '').trim();
+                    if (!person) { notify('Sélectionnez une personne à ajouter.', 'warning'); return; }
+                    if (!motif)  { notify('Le motif est obligatoire.', 'warning'); return; }
+                    disableBtn(btnTeamAddSave, 'Ajout...');
+                    var assignments = currentCampaignData.workflow.assignments;
+                    var cur = getAssignees(assignments, role);
+                    if (cur.indexOf(person) === -1) cur.push(person);
+                    assignments[role] = cur;
+                    workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                        .then(function() {
+                            var roleLabel = ROLE_LABELS_TEAM[role] || role;
+                            logActivity(currentCampaignName, 'affectation', 'Ajout de ' + person + ' à l\'équipe ' + roleLabel + ' — motif : ' + motif);
+                            refreshCurrentPage();
+                        })
+                        .catch(function(err) {
+                            enableBtn(btnTeamAddSave, '💾 Ajouter');
+                            notify('Erreur : ' + errors.getErrorMessage(err), 'error');
+                        });
+                });
+            }
         }
 
         // ── Manager : affectation ──
@@ -4012,7 +4265,7 @@
         ebf_mise_en_prod: 'Mise en prod LP'
     };
     var ACT_STATUS_LABELS = { submitted: 'soumis', validated: 'validé', completed: 'terminé', revision_requested: 'révision demandée' };
-    var ACT_ICONS = { workflow: '🔄', document: '📁', statut: '🔌', campagne: '📝' };
+    var ACT_ICONS = { workflow: '🔄', document: '📁', statut: '🔌', campagne: '📝', affectation: '👥' };
     var _activityCache = [];
 
     function logActivity(campaignName, type, detail) {
@@ -5144,7 +5397,8 @@
 
         if (loading) loading.style.display = 'none';
 
-        // Rendu des messages
+        // Rendu des messages (bulles façon Facebook : avatar + bulle, actions en
+        // dessous à gauche comme un fil de commentaires — cf. maquette validée).
         if (messages.length === 0) {
             list.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun message pour l\'instant. Soyez le premier à commenter !</p>';
         } else {
@@ -5158,19 +5412,28 @@
                 var avatarColors = ['var(--primary)','#3b82f6','#f97316','#8b5cf6','#ec4899','#0891b2'];
                 var colorIdx = (msg.author || '').split('').reduce(function(a, c) { return a + c.charCodeAt(0); }, 0) % avatarColors.length;
                 return '<div class="discussion-msg">'
-                    + '<div class="discussion-msg-header">'
                     + '<div class="discussion-msg-avatar" style="background:' + avatarColors[colorIdx] + '">' + security.escapeHtml(initials) + '</div>'
-                    + '<span class="discussion-msg-author">' + security.escapeHtml(msg.author || 'Anonyme') + '</span>'
+                    + '<div class="discussion-msg-body">'
+                    + '<div class="discussion-msg-bubble">'
+                    + '<div class="discussion-msg-author">' + security.escapeHtml(msg.author || 'Anonyme') + '</div>'
+                    + '<div class="discussion-msg-text">' + security.escapeHtml(msg.text) + '</div>'
+                    + '</div>'
+                    + '<div class="discussion-msg-footer">'
+                    + '<button class="discussion-like-btn' + (hasLiked ? ' liked' : '') + '" data-idx="' + idx + '">👍 J\'aime' + (likes.length ? ' (' + likes.length + ')' : '') + '</button>'
                     + '<span class="discussion-msg-date">' + security.escapeHtml(dateStr) + '</span>'
                     + '</div>'
-                    + '<div class="discussion-msg-text">' + security.escapeHtml(msg.text) + '</div>'
-                    + '<div class="discussion-msg-footer">'
-                    + '<button class="discussion-like-btn' + (hasLiked ? ' liked' : '') + '" data-idx="' + idx + '">👍 ' + likes.length + '</button>'
                     + '</div>'
                     + '</div>';
             }).join('');
         }
         list.style.display = 'flex';
+
+        // Badge (nombre de messages) sur la bulle flottante.
+        var chatBadge = document.getElementById('chat-bubble-badge');
+        if (chatBadge) {
+            if (messages.length) { chatBadge.textContent = messages.length > 99 ? '99+' : String(messages.length); chatBadge.style.display = 'flex'; }
+            else { chatBadge.style.display = 'none'; }
+        }
 
         if (currentUser) {
             if (form)   form.style.display = 'block';

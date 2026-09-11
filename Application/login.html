@@ -113,6 +113,30 @@
         .login-error.show { display: block; }
         #compat-banner { display: none; margin-top: 18px; padding: 14px 16px; border-radius: 12px; background: #fdeaec; border: 1px solid #f5c2c7; color: #842029; font-size: 13px; line-height: 1.5; }
 
+        /* ── Connexion en deux étapes ──
+           Étape 1 (dossier réseau non encore relié sur ce poste) et étape 2
+           (formulaire de connexion) ne sont jamais affichées en même temps :
+           avant, un seul bouton — au même endroit, même style que « Se
+           connecter » — servait selon le cas à connecter le dossier, ce qui
+           n'était pas intuitif pour l'utilisateur qui pense se connecter au
+           logiciel. */
+        .login-step { display: none; }
+        .login-step.active { display: block; }
+        .step-icon {
+            width: 56px; height: 56px; border-radius: 16px; background: var(--green-50, #e8f6ef);
+            color: var(--primary, #00875A); display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .login-step.step-folder { text-align: center; }
+        .login-step.step-folder .sub { max-width: 300px; margin-inline: auto; }
+        .step-dots { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
+        .step-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--line, #eaefec); transition: all .15s; }
+        .step-dots span.on { background: var(--primary, #00875A); width: 16px; border-radius: 4px; }
+        .folder-connected-badge {
+            display: flex; align-items: center; gap: 8px; margin-top: 16px; padding: 9px 12px; border-radius: 10px;
+            background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); font-size: 12.5px; font-weight: 700;
+        }
+
         /* Logo mobile (caché en desktop) */
         .mobile-brand { display: none; }
 
@@ -169,52 +193,74 @@
         <div class="login-box">
             <div class="mobile-brand"><div class="mark">IM</div><div class="nm">Impulsion<span>Marketing</span></div></div>
 
-            <h2>Connexion</h2>
-            <p class="sub">Choisissez votre service et votre nom pour accéder à votre espace.</p>
-
             <div id="compat-banner" role="alert">
                 <strong>⚠️ Navigateur non compatible.</strong>
                 Cette application nécessite <strong>Google Chrome</strong> ou <strong>Microsoft Edge</strong>
                 (version 86+) sur ordinateur. Firefox, Safari et les navigateurs mobiles ne sont pas supportés.
             </div>
 
-            <div id="login-error" class="login-error" role="alert"></div>
+            <!-- Étape 1 : connecter le dossier de travail (uniquement si la config n'est pas
+                 encore chargée sur ce poste — sinon on passe directement à l'étape 2). -->
+            <div id="login-step-folder" class="login-step step-folder">
+                <div class="step-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <h2>Connecter le dossier de travail</h2>
+                <p class="sub">Avant de vous connecter, reliez le dossier partagé — une seule fois par poste.</p>
 
-            <div class="field">
-                <label for="login-team">Service</label>
-                <select id="login-team">
-                    <option value="">Sélectionnez votre service…</option>
-                    <option value="superadmin" id="opt-role-superadmin">Super Admin</option>
-                    <option value="marketing" id="opt-role-marketing">Marketing</option>
-                    <option value="com" id="opt-role-com">Com</option>
-                    <option value="ebf" id="opt-role-ebf">EBF</option>
-                    <option value="data" id="opt-role-data">Data</option>
-                </select>
+                <div id="login-error-folder" class="login-error" role="alert"></div>
+
+                <button id="btn-connect-folder" class="btn-connect">
+                    Connecter le dossier
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                </button>
+
+                <div class="step-dots"><span class="on"></span><span></span></div>
+
+                <p class="login-hint" id="root-path-hint" style="display:none;"></p>
+                <p class="login-hint">Cette étape n'est nécessaire qu'à la première connexion sur ce poste ; le dossier est ensuite rechargé automatiquement.</p>
             </div>
 
-            <div class="field">
-                <label for="login-name">Nom</label>
-                <select id="login-name" disabled>
-                    <option value="">Sélectionnez d'abord un service…</option>
-                </select>
+            <!-- Étape 2 : connexion au logiciel. -->
+            <div id="login-step-form" class="login-step">
+                <h2>Connexion</h2>
+                <p class="sub">Choisissez votre service et votre nom pour accéder à votre espace.</p>
+
+                <div class="folder-connected-badge">✓ Dossier de travail connecté</div>
+
+                <div id="login-error" class="login-error" role="alert"></div>
+
+                <div class="field">
+                    <label for="login-team">Service</label>
+                    <select id="login-team">
+                        <option value="">Sélectionnez votre service…</option>
+                        <option value="superadmin" id="opt-role-superadmin">Super Admin</option>
+                        <option value="marketing" id="opt-role-marketing">Marketing</option>
+                        <option value="com" id="opt-role-com">Com</option>
+                        <option value="ebf" id="opt-role-ebf">EBF</option>
+                        <option value="data" id="opt-role-data">Data</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label for="login-name">Nom</label>
+                    <select id="login-name" disabled>
+                        <option value="">Sélectionnez d'abord un service…</option>
+                    </select>
+                </div>
+
+                <div id="user-preview" class="user-preview">
+                    <div class="av" id="preview-av">?</div>
+                    <div class="nm" id="preview-nm">—<span id="preview-role">—</span></div>
+                </div>
+
+                <button id="btn-connect" class="btn-connect" disabled>
+                    Se connecter
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                </button>
+
+                <div class="step-dots"><span></span><span class="on"></span></div>
             </div>
-
-            <div id="user-preview" class="user-preview">
-                <div class="av" id="preview-av">?</div>
-                <div class="nm" id="preview-nm">—<span id="preview-role">—</span></div>
-            </div>
-
-            <button id="btn-connect" class="btn-connect" disabled>
-                Se connecter
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-            </button>
-
-            <p class="login-hint" id="root-path-hint" style="display:none;"></p>
-
-            <p class="login-hint">
-                Le dossier de travail est rechargé automatiquement.<br>
-                La sélection du dossier n'est demandée qu'à la première connexion.
-            </p>
         </div>
     </main>
 </div>
@@ -231,11 +277,22 @@
             var teamSelect = document.getElementById('login-team');
             var nameSelect = document.getElementById('login-name');
             var btnConnect = document.getElementById('btn-connect');
+            var btnConnectFolder = document.getElementById('btn-connect-folder');
             var errorBox = document.getElementById('login-error');
+            var errorBoxFolder = document.getElementById('login-error-folder');
             var preview = document.getElementById('user-preview');
+            var stepFolder = document.getElementById('login-step-folder');
+            var stepForm = document.getElementById('login-step-form');
 
             function showError(msg) { errorBox.innerHTML = msg; errorBox.classList.add('show'); }
             function clearError() { errorBox.classList.remove('show'); }
+            function showErrorFolder(msg) { errorBoxFolder.innerHTML = msg; errorBoxFolder.classList.add('show'); }
+            function clearErrorFolder() { errorBoxFolder.classList.remove('show'); }
+
+            // Étape 1 (dossier) ↔ étape 2 (connexion) : jamais affichées ensemble,
+            // cf. commentaire CSS .login-step plus haut.
+            function showStepFolder() { stepFolder.classList.add('active'); stepForm.classList.remove('active'); }
+            function showStepForm() { stepForm.classList.add('active'); stepFolder.classList.remove('active'); }
 
             // Nom de la caisse / organisation : entièrement paramétrable depuis
             // Administration → Paramètres généraux (aucun nom codé en dur).
@@ -287,6 +344,7 @@
                 document.getElementById('compat-banner').style.display = 'block';
                 teamSelect.disabled = true;
                 btnConnect.disabled = true;
+                btnConnectFolder.disabled = true;
                 return;
             }
 
@@ -327,12 +385,13 @@
 
             function hasUsers() { return !!(users.USERS && users.USERS.length); }
             function updateButtonState() {
-                // Premier lancement : aucun utilisateur chargé (le _config.json n'a pas encore
-                // été lu). Le bouton sert alors à connecter le dossier pour le charger.
-                if (!hasUsers()) { btnConnect.disabled = false; btnConnect.textContent = 'Connecter le dossier'; return; }
-                btnConnect.textContent = 'Se connecter';
                 btnConnect.disabled = !nameSelect.value;
             }
+
+            // Étape 1 (dossier) ou étape 2 (connexion), selon que la config est déjà
+            // connue sur ce poste (mise en cache dans localStorage lors d'une
+            // connexion précédente) ou non.
+            if (hasUsers()) { showStepForm(); } else { showStepFolder(); }
 
             // Pré-remplir si un utilisateur est déjà connu
             var current = users.getCurrentUser();
@@ -354,6 +413,9 @@
                 _acReady.then(function () {
                     applyOrgName();
                     applyRoleLabels();
+                    // Reconnexion silencieuse (permission déjà accordée) pendant que
+                    // l'étape 1 était affichée : passer directement à l'étape 2.
+                    if (hasUsers() && !stepForm.classList.contains('active')) showStepForm();
                     if (!teamSelect.value) return;
                     var keep = nameSelect.value;
                     populateNames(teamSelect.value);
@@ -366,36 +428,46 @@
                 });
             }
 
-            btnConnect.addEventListener('click', function () {
-                // Premier lancement : aucun utilisateur chargé → on connecte d'abord le dossier
-                // pour lire _config.json, puis on repeuple la liste (sans se connecter tout de suite).
-                if (!hasUsers()) {
-                    clearError();
-                    btnConnect.disabled = true;
-                    btnConnect.textContent = 'Chargement…';
-                    directoryStorage.promptAndSaveDirectory()
-                        .then(function () {
-                            var ac = window.ImpulsionMarketing.adminConfig;
-                            return (ac && ac.reload) ? ac.reload() : null;
-                        })
-                        .then(function () {
+            // Étape 1 : connecter le dossier de travail pour lire _config.json, puis
+            // passer à l'étape 2 (formulaire de connexion) sans se connecter tout de suite.
+            btnConnectFolder.addEventListener('click', function () {
+                clearErrorFolder();
+                btnConnectFolder.disabled = true;
+                btnConnectFolder.textContent = 'Chargement…';
+                directoryStorage.promptAndSaveDirectory()
+                    .then(function () {
+                        var ac = window.ImpulsionMarketing.adminConfig;
+                        return (ac && ac.reload) ? ac.reload() : null;
+                    })
+                    .then(function () {
+                        if (hasUsers()) {
+                            showStepForm();
                             if (teamSelect.value) populateNames(teamSelect.value);
                             updatePreview();
-                            if (!hasUsers()) showError('Aucun utilisateur dans _config.json. Vérifiez le fichier de configuration à la racine du dossier de travail.');
-                        })
-                        .catch(function (e) {
-                            // Annulation du sélecteur de dossier (croix, Échap…) : pas une
-                            // vraie erreur, ne rien afficher. Détecté par e.name (fiable,
-                            // indépendant de la langue du navigateur) plutôt que par un
-                            // texte français cherché dans un message qui est en anglais.
-                            if (e && e.name === 'AbortError') return;
-                            var IMerr = window.ImpulsionMarketing.errors;
-                            var msg = (IMerr && IMerr.getErrorMessage) ? IMerr.getErrorMessage(e) : 'Erreur inconnue.';
-                            showError('Impossible de charger la configuration : ' + msg);
-                        })
-                        .then(function () { updateButtonState(); });
-                    return;
-                }
+                            updateButtonState();
+                        } else {
+                            showErrorFolder('Aucun utilisateur dans _config.json. Vérifiez le fichier de configuration à la racine du dossier de travail.');
+                        }
+                    })
+                    .catch(function (e) {
+                        // Annulation du sélecteur de dossier (croix, Échap…) : pas une
+                        // vraie erreur, ne rien afficher. Détecté par e.name (fiable,
+                        // indépendant de la langue du navigateur) plutôt que par un
+                        // texte français cherché dans un message qui est en anglais.
+                        if (e && e.name === 'AbortError') return;
+                        var IMerr = window.ImpulsionMarketing.errors;
+                        var msg = (IMerr && IMerr.getErrorMessage) ? IMerr.getErrorMessage(e) : 'Erreur inconnue.';
+                        showErrorFolder('Impossible de charger la configuration : ' + msg);
+                    })
+                    .then(function () {
+                        btnConnectFolder.disabled = false;
+                        btnConnectFolder.textContent = 'Connecter le dossier';
+                    });
+            });
+
+            // Étape 2 : connexion au logiciel (le dossier est déjà connu, en cache ou
+            // tout juste relié à l'étape 1).
+            btnConnect.addEventListener('click', function () {
                 var name = nameSelect.value;
                 if (!name) { showError('Veuillez sélectionner votre nom.'); return; }
                 clearError();

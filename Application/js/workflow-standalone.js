@@ -197,7 +197,8 @@ window.ImpulsionMarketing.workflow = (function () {
         steps:                    Object.assign({}, DEFAULT_GLOBAL_STEPS),
         channelSteps:             {},
         revisionComments:         {},
-        channelRevisionComments:  {}
+        channelRevisionComments:  {},
+        channelStepDates:         {}
       };
     } else {
       if (!campaignData.workflow.assignments) {
@@ -211,6 +212,9 @@ window.ImpulsionMarketing.workflow = (function () {
       }
       if (!campaignData.workflow.channelRevisionComments) {
         campaignData.workflow.channelRevisionComments = {};
+      }
+      if (!campaignData.workflow.channelStepDates) {
+        campaignData.workflow.channelStepDates = {};
       }
     }
 
@@ -497,6 +501,41 @@ window.ImpulsionMarketing.workflow = (function () {
   function getChannelRevisionLog(campaignData, channelIdx) {
     var log = campaignData.workflow && campaignData.workflow.channelRevisionLog;
     return (log && log[channelIdx]) ? log[channelIdx] : [];
+  }
+
+  // Date à laquelle l'étape stepId du canal channelIdx est passée à son statut
+  // ACTUEL (cf. _stampChannelStepDates, alimenté à chaque sauvegarde). Absente
+  // pour un statut déjà en place avant l'introduction de ce suivi — auquel cas
+  // l'appelant doit prévoir un repli (ex. « — »).
+  function getChannelStepDate(campaignData, channelIdx, stepId) {
+    var dates = campaignData.workflow && campaignData.workflow.channelStepDates;
+    var forChannel = dates && dates[channelIdx];
+    return (forChannel && forChannel[stepId]) || null;
+  }
+
+  // Horodate, à la sauvegarde, chaque étape canal dont le statut vient de
+  // changer par rapport à la baseline (état du disque au chargement) — permet
+  // d'afficher « depuis combien de temps » une étape est dans son statut
+  // courant (Pilotage ▸ Suivi de campagne). Le moteur reste sans horloge
+  // propre ailleurs (author/when fournis par l'appelant) ; ici l'horodatage
+  // est un simple sous-produit de la sauvegarde, pas une action métier propre,
+  // donc Date.now() y est utilisé directement.
+  function _stampChannelStepDates(campaignData, baseline) {
+    var wf = campaignData.workflow;
+    if (!wf || !wf.channelSteps) return;
+    if (!wf.channelStepDates) wf.channelStepDates = {};
+    var baseCs = (baseline && baseline.workflow && baseline.workflow.channelSteps) || {};
+    var now = new Date().toISOString();
+    Object.keys(wf.channelSteps).forEach(function (idx) {
+      var cur = wf.channelSteps[idx] || {};
+      var base = baseCs[idx] || {};
+      Object.keys(cur).forEach(function (stepId) {
+        if (cur[stepId] !== base[stepId]) {
+          if (!wf.channelStepDates[idx]) wf.channelStepDates[idx] = {};
+          wf.channelStepDates[idx][stepId] = now;
+        }
+      });
+    });
   }
 
   /**
@@ -1099,6 +1138,7 @@ window.ImpulsionMarketing.workflow = (function () {
       })
       .then(function (diskData) {
         var baseline = _baselines ? _baselines.get(campaignData) : null;
+        _stampChannelStepDates(campaignData, baseline);
         if (diskData && baseline) {
           var merged = threeWayMerge(baseline, campaignData, diskData);
           _replaceInPlace(campaignData, merged); // l'objet en mémoire reflète la fusion
@@ -1163,36 +1203,40 @@ window.ImpulsionMarketing.workflow = (function () {
   }
 
   // #27 — Agrège tous les champs cherchables (références canaux + champs
-  // campagne) en une chaîne minuscule, pour la recherche du tableau de bord.
+  // campagne) en une chaîne minuscule, pour la recherche du tableau de bord
+  // et de la page Campagnes.
+  //
+  // Générique plutôt qu'une liste figée : TOUT champ à plat sur l'objet
+  // campagne ou sur un canal (y compris un champ personnalisé ajouté depuis
+  // Administration ▸ Champs personnalisés sur un point d'attache saisi à la
+  // création/l'édition — po_saisie / cible / produit / canal) est
+  // automatiquement couvert, sans maintenance à chaque nouveau champ.
+  // Hors périmètre : les champs saisis plus tard dans le workflow (dépôts
+  // Com/EBF/Data étape par étape) vivent dans des fichiers séparés par canal
+  // (depotcom.json…), jamais chargés sur les pages de liste — les inclure
+  // demanderait de lire un fichier de plus par canal et par campagne.
   function buildSearchBlob(campaignData) {
     var parts = [];
     function add(v) {
-      if (!v) return;
+      if (v == null || v === '' || v === false) return;
       if (Array.isArray(v)) { v.forEach(add); return; }
+      if (typeof v === 'object') return; // structures dédiées (workflow, siteWeb…), traitées à part
       parts.push(String(v));
     }
-    add(campaignData.id);
-    add(campaignData.po);
-    add(campaignData.coPo);
+    Object.keys(campaignData).forEach(function (k) {
+      if (k === 'workflow' || k === 'channels') return; // structures dédiées
+      add(campaignData[k]);
+    });
     // Personnes affectées (manager + Com/EBF/Data) : permet de rechercher par le
     // nom d'une personne et de retrouver TOUTES ses campagnes (pas que le PO).
     var _asn = (campaignData.workflow && campaignData.workflow.assignments) || {};
     add(_asn.manager); add(_asn.com); add(_asn.ebf); add(_asn.data);
-    add(campaignData.description);
-    add(campaignData.market);
-    add(campaignData.typology);
-    add(campaignData.recurrence);
-    add(campaignData.segments);
-    add(campaignData.ubs);
-    add(campaignData.campagneLiee);
-    add(campaignData.targetProducts);
-    add(campaignData.targetProduct);
-    add(campaignData.prospectSource);
     (campaignData.channels || []).forEach(function (c) {
-      add(c.deliverableName); add(c.content); add(c.emailObject);
-      add(c.comType); add(c.comTypology); add(c.targetingCriteria); add(c.ubs);
-      add(c.codeCom); add(c.refParacom); add(c.codeProjet); add(c.codeAction); add(c.codeMK);
-      add(c.urlTicTac); add(c.urlComStore); add(c.urlsComStore); add(c.urlLccx);
+      Object.keys(c).forEach(function (k) {
+        if (k === 'siteWeb') return; // structure dédiée
+        add(c[k]);
+      });
+      if (c.siteWeb) Object.keys(c.siteWeb).forEach(function (k) { add(c.siteWeb[k]); });
     });
     return parts.join(' ').toLowerCase();
   }
@@ -1349,6 +1393,7 @@ window.ImpulsionMarketing.workflow = (function () {
     requestChannelRevision:   requestChannelRevision,
     reopenChannelStep:        reopenChannelStep,
     getChannelRevisionLog:    getChannelRevisionLog,
+    getChannelStepDate:       getChannelStepDate,
     channelAssignees:         channelAssignees,
     applyAutoAssignments:     applyAutoAssignments,
     initChannelValidations:   initChannelValidations,
