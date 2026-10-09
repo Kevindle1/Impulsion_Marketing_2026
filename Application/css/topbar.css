@@ -74,5 +74,36 @@
 @keyframes eggWiggle { 0%, 100% { transform: rotate(0deg); } 10% { transform: rotate(-8deg); } 20% { transform: rotate(7deg); } 30% { transform: rotate(-5deg); } 40% { transform: rotate(4deg); } 50% { transform: rotate(0deg); } }
 
 .egg-snow { position: fixed; inset: 0; pointer-events: none; z-index: 40; overflow: hidden; }
-.egg-snowflake { position: absolute; top: -10px; color: #fff; text-shadow: 0 1px 3px rgba(12, 30, 22, .18); animation-name: eggSnowFall; animation-timing-function: linear; animation-iteration-count: infinite; }
+.egg-snowflake { position: absolute; top: -10px; color: #6fb3dd; text-shadow: 0 0 4px rgba(255, 255, 255, .9), 0 1px 2px rgba(12, 30, 22, .15); animation-name: eggSnowFall; animation-timing-function: linear; animation-iteration-count: infinite; }
 @keyframes eggSnowFall { to { transform: translateY(110vh) translateX(var(--drift, 0)); } }
+
+/* ── Easter egg : jumpscare Halloween (30 octobre / 2 novembre) ── */
+.egg-scare-overlay {
+    position: fixed; inset: 0; z-index: 10060; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center; padding: 24px; box-sizing: border-box;
+    background: #000; opacity: 0; pointer-events: none; transition: opacity 1s ease;
+}
+.egg-scare-overlay.is-visible { opacity: 1; pointer-events: auto; transition: none; }
+.egg-scare-overlay.is-flash { background: radial-gradient(circle at 50% 42%, #3a0010 0%, #000 72%); }
+.egg-scare-face { font-size: min(40vw, 200px); line-height: 1; filter: drop-shadow(0 0 40px rgba(255, 20, 60, .55)); }
+.egg-scare-title {
+    font-weight: 900; font-style: italic; color: #ff2d4d; font-size: min(13vw, 52px); margin: 8px 0 0;
+    letter-spacing: .03em; text-transform: uppercase; text-shadow: 0 0 18px rgba(255, 45, 77, .8);
+}
+.egg-scare-sub { font-weight: 800; color: #ff9d52; font-size: min(5.5vw, 21px); margin-top: 18px; opacity: 0; transition: opacity .6s ease; }
+.egg-scare-overlay.is-calm .egg-scare-sub { opacity: 1; }
+.egg-scare-overlay.is-calm.is-visible { opacity: 1; }
+@keyframes eggScareShake {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-10px, 4px) rotate(-1.2deg); }
+    20% { transform: translate(9px, -6px) rotate(1deg); }
+    30% { transform: translate(-8px, 7px) rotate(-1deg); }
+    40% { transform: translate(10px, -3px) rotate(1.3deg); }
+    50% { transform: translate(-6px, -6px) rotate(-.8deg); }
+    60% { transform: translate(8px, 5px) rotate(.9deg); }
+    70% { transform: translate(-9px, -4px) rotate(-1.1deg); }
+    80% { transform: translate(6px, 6px) rotate(.7deg); }
+    90% { transform: translate(-4px, -3px) rotate(-.5deg); }
+}
+.egg-scare-overlay.is-shaking { animation: eggScareShake .5s linear 2; }
+@media (prefers-reduced-motion: reduce) { .egg-scare-overlay.is-shaking { animation: none; } }
