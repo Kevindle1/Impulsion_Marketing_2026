@@ -195,6 +195,22 @@ test('getCurrentStepLabel — libellés d’état clés', () => {
   assert.equal(workflow.getCurrentStepLabel(done), 'Terminée');
 });
 
+test('getCurrentStepLabel — une campagne stoppée (actif:false) affiche « Stoppée », pas son ancienne étape', () => {
+  const stopped = makeCampaign(['Com', 'EBF', 'Data']);
+  workflow.initWorkflow(stopped);
+  workflow.advanceStep(stopped, 'manager_affectation', 'validated');
+  stopped.actif = false;
+  assert.equal(workflow.getCurrentStepLabel(stopped), 'Stoppée');
+});
+
+test('getCurrentStepLabel — une campagne réellement terminée garde « Terminée » même si actif:false', () => {
+  const done = makeCampaign(['Data']);
+  workflow.initWorkflow(done);
+  done.workflow.channelSteps[0].data_mise_en_prod = 'completed';
+  done.actif = false;
+  assert.equal(workflow.getCurrentStepLabel(done), 'Terminée');
+});
+
 test('getCurrentStepLabel — dépôt « submitted » validé par le PO n’affiche plus « En validation »', () => {
   // Un canal Com+EBF : le BAT est déposé (submitted) mais le PO l’a déjà validé.
   // L’étape de dépôt reste "submitted" (fusion dépôt→validation) : le libellé

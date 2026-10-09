@@ -171,6 +171,17 @@
                             <div class="prio-empty" id="engageesEmpty" style="display:none;">Aucune campagne engagée pour le moment.</div>
                         </div>
                     </div>
+
+                    <div class="prio-card">
+                        <div class="prio-card-head"><span class="bar" style="background:#64748b;"></span><h2>Campagnes stoppées</h2><span class="sub">réactivation possible à tout moment — reprend exactement où elle en était</span></div>
+                        <div class="prio-table-wrap">
+                            <table class="prio-t" id="tableStoppees">
+                                <thead><tr><th>Campagne</th><th>Stoppée le</th><th>Motif</th><th>Par</th><th style="width:160px;">Actions</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="prio-empty" id="stoppeesEmpty" style="display:none;">Aucune campagne stoppée.</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="prioError" class="error-banner" style="display:none;"></div>
@@ -308,12 +319,12 @@
             confirmText: '⛔ Stopper',
             onConfirm: function (motif) {
                 c.actif = false;
+                c.arret = { date: new Date().toISOString(), motif: motif, par: cu ? cu.name : '?' };
                 workflow.saveCampaignWorkflow(state.root, c.folderName, c)
                     .then(function () { return notifyAssignees(c, c.folderName, 'campagne_inactive'); })
                     .then(function () { return logActivity(c.folderName, 'statut', 'Campagne stoppée depuis Priorisation par ' + (cu ? cu.name : '?') + ' — motif : ' + motif); })
                     .then(function () {
-                        notify('Campagne stoppée.');
-                        state.campaigns = state.campaigns.filter(function (x) { return x.folderName !== c.folderName; });
+                        notify('Campagne stoppée. Retrouvez-la dans « Campagnes stoppées » pour la réactiver si besoin.');
                         render();
                     })
                     .catch(function (e) { notify('Échec : ' + ((errors && errors.getErrorMessage) ? errors.getErrorMessage(e) : e.message), 'error'); });
@@ -340,6 +351,29 @@
                     .then(function () { return notifyAssignees(c, c.folderName, 'campagne_decalee'); })
                     .then(function () { return logActivity(c.folderName, 'priorisation', 'Campagne décalée du ' + (previous || '—') + ' au ' + newDate + ' par ' + (cu ? cu.name : '?') + ' — motif : ' + motif); })
                     .then(function () { notify('Campagne décalée.'); render(); })
+                    .catch(function (e) { notify('Échec : ' + ((errors && errors.getErrorMessage) ? errors.getErrorMessage(e) : e.message), 'error'); });
+            }
+        });
+    }
+
+    // Remet la campagne où elle en était : seul le flag actif change, aucune
+    // étape de workflow n'est touchée (elles étaient déjà figées au moment du
+    // Stop) — elle retombe donc automatiquement dans « À prioriser » ou
+    // « Campagnes engagées » selon son avancement réel.
+    function handleReactivate(folderName) {
+        var c = findCampaign(folderName);
+        if (!c) return;
+        var cu = users.getCurrentUser();
+        showActionModal({
+            title: 'Réactiver la campagne',
+            label: 'La campagne « ' + (c.id || c.folderName) + ' » reprend exactement où elle en était avant son arrêt. L\'action et son auteur sont enregistrés dans le journal.',
+            placeholder: 'Motif de la réactivation…',
+            confirmText: '▶️ Réactiver',
+            onConfirm: function (motif) {
+                c.actif = true;
+                workflow.saveCampaignWorkflow(state.root, c.folderName, c)
+                    .then(function () { return logActivity(c.folderName, 'statut', 'Campagne réactivée depuis Priorisation par ' + (cu ? cu.name : '?') + ' — motif : ' + motif); })
+                    .then(function () { notify('Campagne réactivée.'); render(); })
                     .catch(function (e) { notify('Échec : ' + ((errors && errors.getErrorMessage) ? errors.getErrorMessage(e) : e.message), 'error'); });
             }
         });
@@ -378,7 +412,6 @@
                 var txt = await f.text();
                 var data = JSON.parse(txt);
                 data.folderName = entries[i].name;
-                if (data.actif === false) continue;
                 workflow.initWorkflow(data);
                 workflow.captureBaseline(data);
                 out.push(data);
@@ -480,12 +513,33 @@
         document.getElementById('kpiCharge').textContent = fmtMinutes(totalCharge);
     }
 
+    function renderStoppees(list) {
+        var tbody = document.querySelector('#tableStoppees tbody');
+        var empty = document.getElementById('stoppeesEmpty');
+        if (!list.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
+        empty.style.display = 'none';
+        tbody.innerHTML = list.map(function (c) {
+            var arret = c.arret;
+            return '<tr>'
+                + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
+                + '<td>' + (arret ? fmtDate(arret.date) : '—') + '</td>'
+                + '<td>' + (arret ? esc(arret.motif) : '—') + '</td>'
+                + '<td>' + (arret ? esc(arret.par) : '—') + '</td>'
+                + '<td><button type="button" class="prio-btn" data-reactiver="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg> Réactiver</button></td>'
+                + '</tr>';
+        }).join('');
+        tbody.querySelectorAll('[data-reactiver]').forEach(function (b) { b.addEventListener('click', function () { handleReactivate(b.getAttribute('data-reactiver')); }); });
+    }
+
     function render() {
-        var aPrioriser = state.campaigns.filter(function (c) { return !isAffected(c); });
-        var engagees = state.campaigns.filter(function (c) { return isAffected(c) && !workflow.isCompleted(c); });
+        var actifs = state.campaigns.filter(function (c) { return c.actif !== false; });
+        var aPrioriser = actifs.filter(function (c) { return !isAffected(c); });
+        var engagees = actifs.filter(function (c) { return isAffected(c) && !workflow.isCompleted(c); });
+        var stoppees = state.campaigns.filter(function (c) { return c.actif === false; });
         renderKpis(aPrioriser);
         renderAPrioriser(aPrioriser);
         renderEngagees(engagees);
+        renderStoppees(stoppees);
     }
 
     async function init() {

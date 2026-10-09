@@ -582,8 +582,11 @@
         function processAndRender(all, currentUser, workflowModule, silent) {
             // Exclut les campagnes terminées : on s'appuie sur le flag `done` de l'index
             // (calculé avec les channelSteps), avec repli sur isCompleted si données complètes.
+            // Exclut aussi les campagnes stoppées (Priorisation ▸ Stopper) : ce ne sont
+            // plus des campagnes « en cours » — elles restent consultables depuis la liste
+            // Campagnes ou la page Priorisation (section Campagnes stoppées).
             var active = all.filter(function(c) {
-                return !(c.done || workflowModule.isCompleted(c.data));
+                return !(c.done || workflowModule.isCompleted(c.data) || c.data.actif === false);
             });
 
             var myTurn = [];
@@ -939,7 +942,12 @@
         function stepStatus(c) {
             var label = (window.ImpulsionMarketing.workflow.getCurrentStepLabel(c.data) || '').trim();
             var isGlobalPhase = /affect|kick|attente/i.test(label);
-            if (!isGlobalPhase && Array.isArray(c.chprog) && c.chprog.length) {
+            // Une campagne stoppée garde ce statut même en cours de fabrication
+            // (chprog non vide) — sans ce garde-fou, le canal le moins avancé
+            // écraserait « Stoppée » par son propre libellé (ex. « Réalisation BAT »).
+            var isStopped = c.isActif === false || /stopp/i.test(label);
+            if (isStopped) label = 'Stoppée';
+            if (!isGlobalPhase && !isStopped && Array.isArray(c.chprog) && c.chprog.length) {
                 if (c.done === true) {
                     label = 'Terminée';
                 } else {
@@ -953,7 +961,8 @@
             }
             var L = label.toLowerCase();
             var pct = 50, key = 'prod', text = label || 'En cours';
-            if (/termin/.test(L))              { pct = 100; key = 'prod';   text = 'Terminée'; }
+            if (/stopp/.test(L))               { pct = 100; key = 'stopped'; text = 'Stoppée'; }
+            else if (/termin/.test(L))         { pct = 100; key = 'prod';   text = 'Terminée'; }
             else if (/affect/.test(L))         { pct = 10;  key = 'maq';    text = 'Affectation'; }
             else if (/kick/.test(L))           { pct = 18;  key = 'maq';    text = 'Kick-off'; }
             else if (/révision|revision/.test(L)) { pct = 35; key = 'urgent'; text = 'Révision'; }
