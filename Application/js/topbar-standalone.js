@@ -509,6 +509,108 @@
     } catch (e) {}
   }
 
+  // ── Easter egg : logo cliqué 5 fois en moins de 2 s ──
+  var EGG_MESSAGES = [
+    'Merci de faire tourner Impulsion Marketing au quotidien 💚',
+    'Chaque campagne compte — merci pour votre travail !',
+    'Le trèfle porte chance : prochaine campagne sans aller-retour, promis (ou presque).',
+    'Vous avez trouvé le secret. Il n\'y a pas de prix, juste notre reconnaissance 🍀',
+    'Café offert virtuellement ☕ — la vraie tournée reste à la charge de l\'équipe.'
+  ];
+  function showEgg() {
+    if (document.querySelector('.egg-overlay')) return;
+    var msg = EGG_MESSAGES[Math.floor(Math.random() * EGG_MESSAGES.length)];
+    var overlay = document.createElement('div');
+    overlay.className = 'egg-overlay';
+    overlay.innerHTML =
+      '<div class="egg-card">' +
+      '<span class="egg-icon">🍀</span>' +
+      '<div class="egg-title">Easter egg trouvé !</div>' +
+      '<div class="egg-text">' + esc(msg) + '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    function close() { if (overlay.parentNode) overlay.remove(); }
+    overlay.addEventListener('click', close);
+    setTimeout(close, 4000);
+  }
+  // Le logo est un lien (retour au tableau de bord) : un simple clic doit
+  // continuer à naviguer. On intercepte donc TOUJOURS le clic et on retarde
+  // la navigation de 350 ms — assez pour accumuler 5 clics rapprochés avant
+  // de déclencher l'easter egg à la place (sinon on navigue normalement,
+  // délai imperceptible).
+  function wireLogoEasterEgg() {
+    var brand = document.querySelector('.sidebar .brand');
+    if (!brand || brand.getAttribute('data-egg-wired')) return;
+    brand.setAttribute('data-egg-wired', '1');
+    var href = brand.getAttribute('href');
+    var clicks = 0, timer = null;
+    brand.addEventListener('click', function (e) {
+      e.preventDefault();
+      clicks++;
+      if (timer) clearTimeout(timer);
+      if (clicks >= 5) {
+        clicks = 0;
+        showEgg();
+        return;
+      }
+      timer = setTimeout(function () {
+        clicks = 0;
+        if (href) window.location.href = href;
+      }, 350);
+    });
+  }
+
+  // ── Confetti léger (réutilisable) : petits rectangles colorés qui tombent
+  // depuis le haut de l'élément cible, purement décoratif. ──
+  var CONFETTI_COLORS = ['#17D398', '#00875A', '#E8A100', '#2563EB', '#E2001A'];
+  function confettiBurst(targetEl, count) {
+    if (!targetEl) return;
+    targetEl.style.position = targetEl.style.position || 'relative';
+    for (var i = 0; i < (count || 18); i++) {
+      var piece = document.createElement('span');
+      piece.className = 'confetti-piece';
+      piece.style.left = (45 + Math.random() * 10) + '%';
+      piece.style.top = (Math.random() * 10) + '%';
+      piece.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+      piece.style.transform = 'rotate(' + Math.floor(Math.random() * 360) + 'deg)';
+      piece.style.animationDelay = (Math.random() * 0.25) + 's';
+      targetEl.appendChild(piece);
+      (function (p) { setTimeout(function () { if (p.parentNode) p.remove(); }, 1800); })(piece);
+    }
+  }
+
+  // ── Easter egg : dates spéciales ──
+  // 1er avril : le logo se dandine toute la journée. 20→31 décembre : neige
+  // discrète en fond. Purement décoratif, n'affecte aucune donnée.
+  function applySpecialDate() {
+    var now = new Date();
+    var month = now.getMonth(); // 0-indexé
+    var day = now.getDate();
+    if (month === 3 && day === 1) {
+      var icon = document.querySelector('.sidebar .brand-icon');
+      if (icon) icon.classList.add('egg-wiggle');
+    }
+    if (month === 11 && day >= 20 && day <= 31) {
+      if (document.querySelector('.egg-snow')) return;
+      var snow = document.createElement('div');
+      snow.className = 'egg-snow';
+      var flakeCount = 28;
+      for (var i = 0; i < flakeCount; i++) {
+        var flake = document.createElement('span');
+        flake.className = 'egg-snowflake';
+        flake.textContent = '❄';
+        flake.style.left = Math.random() * 100 + '%';
+        flake.style.fontSize = (10 + Math.random() * 10) + 'px';
+        flake.style.opacity = String(0.4 + Math.random() * 0.5);
+        flake.style.setProperty('--drift', (Math.random() * 60 - 30) + 'px');
+        flake.style.animationDuration = (8 + Math.random() * 7) + 's';
+        flake.style.animationDelay = (Math.random() * -15) + 's';
+        snow.appendChild(flake);
+      }
+      document.body.appendChild(snow);
+    }
+  }
+
   // ── Montage ──
   // Pas de barre du haut séparée : la recherche et les actions (Quoi de neuf,
   // notifications, rafraîchir) rejoignent la barre de navigation latérale,
@@ -542,5 +644,19 @@
     mountSidebarUser();
   }
 
-  IM.topbar = { mount: mount, mountSidebarUser: mountSidebarUser };
+  IM.topbar = { mount: mount, mountSidebarUser: mountSidebarUser, confettiBurst: confettiBurst };
+
+  // Les easter eggs ne dépendent que du logo (.sidebar .brand, présent sur
+  // TOUTES les pages — y compris le tableau de bord, qui n'appelle pas
+  // mount() car il construit déjà sa propre recherche/actions). On les
+  // amorce donc indépendamment, dès que le DOM est prêt.
+  function initEasterEggs() {
+    wireLogoEasterEgg();
+    applySpecialDate();
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEasterEggs);
+  } else {
+    initEasterEggs();
+  }
 })();

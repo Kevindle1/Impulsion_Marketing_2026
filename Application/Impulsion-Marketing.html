@@ -473,8 +473,13 @@
                     filtMyTurn.forEach(function(c) { h1 += buildCard(c, true); });
                     h1 += '</div>';
                     myTurnList.innerHTML = h1;
+                } else if (query) {
+                    myTurnList.innerHTML = emptyStateHtml('Aucune campagne ne correspond à « ' + security.escapeHtml(query) + ' »');
                 } else {
-                    myTurnList.innerHTML = emptyStateHtml(query ? 'Aucune campagne ne correspond à « ' + security.escapeHtml(query) + ' »' : 'Rien à produire pour le moment');
+                    myTurnList.innerHTML = celebrationStateHtml();
+                    var celebrateIc = document.getElementById('celebrate-empty-ic');
+                    var topbarMod = window.ImpulsionMarketing.topbar;
+                    if (celebrateIc && topbarMod && topbarMod.confettiBurst) topbarMod.confettiBurst(celebrateIc, 16);
                 }
                 myTurnSection.style.display = 'block';
             } else {
@@ -1014,6 +1019,22 @@
             return '<div class="empty-state-ic">'
                 + '<div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>'
                 + '<p>' + msg + '</p>'
+                + '</div>';
+        }
+
+        // Petit clin d'œil : « À produire » réellement vide (pas juste filtré par
+        // une recherche sans résultat) mérite un message qui félicite plutôt
+        // qu'un simple constat neutre — avec un confetti discret autour de l'icône.
+        var CELEBRATE_MESSAGES = [
+            'Bravo, tout est à jour !',
+            'Rien à produire pour le moment — bien joué !',
+            'Tableau clean. Profitez-en ☀️'
+        ];
+        function celebrationStateHtml() {
+            var msg = CELEBRATE_MESSAGES[Math.floor(Math.random() * CELEBRATE_MESSAGES.length)];
+            return '<div class="empty-state-ic empty-state-ic--celebrate">'
+                + '<div class="ic" id="celebrate-empty-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg></div>'
+                + '<p>' + security.escapeHtml(msg) + '</p>'
                 + '</div>';
         }
 
@@ -2011,6 +2032,8 @@
             color: var(--primary, #00875A); display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
         }
         .empty-state-ic p { margin: 0; font-size: 14px; color: var(--muted, #56655e); font-weight: 600; }
+        .empty-state-ic--celebrate .ic { width: 56px; height: 56px; position: relative; overflow: visible; }
+        .empty-state-ic--celebrate p { color: var(--ink, #0c1a14); font-size: 14.5px; }
 
         /* ── Responsive ── */
         @media (max-width: 1024px) {
