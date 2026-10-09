@@ -480,9 +480,10 @@
                     var idx = people.indexOf(p);
                     html += '<div class="person-row">'
                         + '<span class="av-ini" style="background:' + (ROLE_COLOR[p.role] || '#64748b') + ';">' + esc(initials(p.name)) + '</span>'
-                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + '</span>'
+                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + (p.isReferentFlux ? ' <span class="pill-mgr" style="background:#e8f0fe;color:#2563EB;">Référent Flux</span>' : '') + '</span>'
                         + '<label class="toggle-label"><input type="checkbox" class="cb-mgr" data-i="' + idx + '"' + (p.isManager ? ' checked' : '') + '> Responsable</label>'
                         + '<label class="toggle-label" title="Accès admin complet, sur toutes les équipes, en plus de son rôle ci-dessous."><input type="checkbox" class="cb-superadmin" data-i="' + idx + '"' + (p.isSuperAdmin ? ' checked' : '') + '> Super Admin</label>'
+                        + '<label class="toggle-label" title="Accès à la page Priorisation (Managers) — prépare les arbitrages de valeur/charge, en plus de son rôle."><input type="checkbox" class="cb-refflux" data-i="' + idx + '"' + (p.isReferentFlux ? ' checked' : '') + '> Référent Flux</label>'
                         + '<select class="admin-select sel-team" data-i="' + idx + '">' + teamSelectOptions + '</select>'
                         + '<button class="icon-del" data-inactivate="' + idx + '" title="Rendre inactif — n\'apparaîtra plus dans les listes de sélection ni à la connexion">⏸</button>'
                         + '<button class="icon-del" data-del="' + idx + '" title="Supprimer définitivement">🗑</button>'
@@ -532,6 +533,10 @@
                 var i = +cb.getAttribute('data-i');
                 cb.addEventListener('change', function () { people[i].isSuperAdmin = cb.checked || undefined; renderPeople(); });
             });
+            document.querySelectorAll('.cb-refflux').forEach(function (cb) {
+                var i = +cb.getAttribute('data-i');
+                cb.addEventListener('change', function () { people[i].isReferentFlux = cb.checked || undefined; renderPeople(); });
+            });
             document.querySelectorAll('[data-del]').forEach(function (b) {
                 b.addEventListener('click', function () { people.splice(+b.getAttribute('data-del'), 1); renderPeople(); });
             });
@@ -561,6 +566,7 @@
                 var o = { name: p.name, role: p.role, roleLabel: p.roleLabel || labelFor(p.role, p.isManager) };
                 if (p.isManager) o.isManager = true;
                 if (p.isSuperAdmin) o.isSuperAdmin = true;
+                if (p.isReferentFlux) o.isReferentFlux = true;
                 if (p.inactive) o.inactive = true;
                 return o;
             });

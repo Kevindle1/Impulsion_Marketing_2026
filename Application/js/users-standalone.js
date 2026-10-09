@@ -38,6 +38,17 @@ window.ImpulsionMarketing.users = (function () {
     return !!(u && (u.isManager === true || u.isSuperAdmin === true));
   }
 
+  // Droit d'accès à la page Priorisation (Managers) : le Responsable Marketing
+  // (manager de l'équipe marketing), toute personne marquée Référent Flux
+  // (flag isReferentFlux, Administration ▸ Équipes & personnes — cumulable
+  // avec le rôle actuel), ou le super admin.
+  function canAccessPriorisation() {
+    var u = getCurrentUser();
+    if (!u) return false;
+    if (u.isSuperAdmin === true || u.isReferentFlux === true) return true;
+    return u.isManager === true && u.role === 'marketing';
+  }
+
   /**
    * Retourne l'utilisateur courant depuis localStorage
    * @returns {{ name: string, role: string, roleLabel: string } | null}
@@ -129,6 +140,7 @@ window.ImpulsionMarketing.users = (function () {
     DEFAULT_USERS: DEFAULT_USERS,
     applyUsers: applyUsers,
     canAccessAdmin: canAccessAdmin,
+    canAccessPriorisation: canAccessPriorisation,
     getCurrentUser: getCurrentUser,
     setCurrentUser: setCurrentUser,
     getUsersByRole: getUsersByRole,

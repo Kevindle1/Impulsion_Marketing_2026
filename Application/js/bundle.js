@@ -1885,6 +1885,17 @@ window.ImpulsionMarketing.users = (function () {
     return !!(u && (u.isManager === true || u.isSuperAdmin === true));
   }
 
+  // Droit d'accès à la page Priorisation (Managers) : le Responsable Marketing
+  // (manager de l'équipe marketing), toute personne marquée Référent Flux
+  // (flag isReferentFlux, Administration ▸ Équipes & personnes — cumulable
+  // avec le rôle actuel), ou le super admin.
+  function canAccessPriorisation() {
+    var u = getCurrentUser();
+    if (!u) return false;
+    if (u.isSuperAdmin === true || u.isReferentFlux === true) return true;
+    return u.isManager === true && u.role === 'marketing';
+  }
+
   /**
    * Retourne l'utilisateur courant depuis localStorage
    * @returns {{ name: string, role: string, roleLabel: string } | null}
@@ -1976,6 +1987,7 @@ window.ImpulsionMarketing.users = (function () {
     DEFAULT_USERS: DEFAULT_USERS,
     applyUsers: applyUsers,
     canAccessAdmin: canAccessAdmin,
+    canAccessPriorisation: canAccessPriorisation,
     getCurrentUser: getCurrentUser,
     setCurrentUser: setCurrentUser,
     getUsersByRole: getUsersByRole,
@@ -4843,6 +4855,31 @@ window.ImpulsionMarketing.adminConfig = (function () {
     section.appendChild(a);
   }
 
+  // Lien « Priorisation » : injecté juste après « Pilotage » (même section
+  // « Principal »), visible uniquement pour les personnes autorisées
+  // (Responsable Marketing, Référent Flux, super admin — cf. users.canAccessPriorisation).
+  function injectPriorisationLink() {
+    var nav = document.querySelector('.sidebar-nav');
+    if (!nav || document.getElementById('im-priorisation-link')) return;
+    if (!(IM.users && IM.users.canAccessPriorisation && IM.users.canAccessPriorisation())) return;
+    var href = location.pathname.indexOf('/pages/') !== -1 ? 'priorisation.html' : 'pages/priorisation.html';
+    var pilotageLink = nav.querySelector('a.nav-link[href$="pilotage.html"]');
+    var a = document.createElement('a');
+    a.className = 'nav-link';
+    a.id = 'im-priorisation-link';
+    a.href = href;
+    a.innerHTML =
+      '<svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>' +
+      '<span>Priorisation</span>';
+    if (pilotageLink && pilotageLink.nextSibling) {
+      pilotageLink.parentNode.insertBefore(a, pilotageLink.nextSibling);
+    } else if (pilotageLink) {
+      pilotageLink.parentNode.appendChild(a);
+    } else {
+      (nav.querySelector('.nav-section') || nav).appendChild(a);
+    }
+  }
+
   // Recharge _config.json depuis le dossier et l'applique (utilisable par les pages
   // une fois le dossier de travail réellement disponible). Renvoie une promesse.
   function reload() {
@@ -4868,7 +4905,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
       .catch(function () {})
       .then(function () {
         // Le lien « Administration » n'est ajouté que s'il y a un menu latéral.
-        if (document.querySelector('.sidebar-nav')) injectAdminLink();
+        if (document.querySelector('.sidebar-nav')) { injectAdminLink(); injectPriorisationLink(); }
         applyGalleryLink();
         _readyResolve();
       });
