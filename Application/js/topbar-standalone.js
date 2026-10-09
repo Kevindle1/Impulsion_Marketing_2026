@@ -611,6 +611,101 @@
     }
   }
 
+  // ── Easter egg : jumpscare Halloween (30 octobre et 2 novembre uniquement) ──
+  // Le son exige un geste utilisateur réel : on le joue TOUJOURS de façon
+  // synchrone au tout début du clic sur « Se connecter » (login.html), jamais
+  // après la navigation vers le tableau de bord (trop tard, le son serait
+  // silencieusement bloqué). Le tableau de bord ne fait que prolonger
+  // l'affichage (calme, sans rejouer le son) via sessionStorage.
+  var HALLOWEEN_SESSION_KEY = 'im_halloween_msg';
+  function halloweenMessageForDate(now) {
+    now = now || new Date();
+    var month = now.getMonth(), day = now.getDate(); // octobre = 9, novembre = 10
+    if (month === 9 && day === 30) return 'Bon week-end d\'Halloween 🎃';
+    if (month === 10 && day === 2) return 'Halloween est fini pour cette année 👻 À l\'an prochain !';
+    return null;
+  }
+  function getHalloweenMessage() { return halloweenMessageForDate(); }
+
+  // Grincement dissonant qui monte (~0,75 s) suivi d'un coup sourd — pas de
+  // fichier audio nécessaire. Avorte silencieusement si Web Audio est
+  // indisponible : l'effet reste alors purement visuel.
+  function playJumpscareSound() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new Ctx();
+      var now = ctx.currentTime;
+      [220, 233].forEach(function (f) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f, now);
+        o.frequency.exponentialRampToValueAtTime(f * 5, now + 0.75);
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.11, now + 0.6);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.78);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(now); o.stop(now + 0.8);
+      });
+      var hitTime = now + 0.72;
+      [55, 110, 58].forEach(function (f) {
+        var o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'square'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, hitTime);
+        g.gain.exponentialRampToValueAtTime(0.5, hitTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, hitTime + 0.9);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(hitTime); o.stop(hitTime + 0.95);
+      });
+      setTimeout(function () { try { ctx.close(); } catch (e) {} }, 2200);
+    } catch (e) { /* Web Audio indisponible : reste purement visuel */ }
+  }
+
+  function buildScareOverlay(message, calmFromStart) {
+    var overlay = document.createElement('div');
+    overlay.className = 'egg-scare-overlay' + (calmFromStart ? ' is-calm' : '');
+    overlay.innerHTML =
+      '<div class="egg-scare-face">👻</div>' +
+      (calmFromStart ? '' : '<div class="egg-scare-title">BOUH !</div>') +
+      '<div class="egg-scare-sub">' + esc(message) + '</div>';
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  // Déclenche le jumpscare complet (choc + son + tremblement ~1,3 s, puis
+  // message calme) — à appeler SYNCHRONOUSMENT dans un gestionnaire de clic.
+  // Renvoie une Promise résolue une fois la phase de choc passée : une
+  // navigation peut attendre dessus sans couper le son/tremblement en cours.
+  function runJumpscare(message) {
+    var overlay = buildScareOverlay(message, false);
+    playJumpscareSound();
+    void overlay.offsetWidth; // force le reflow avant d'activer les transitions
+    overlay.classList.add('is-visible', 'is-flash', 'is-shaking');
+    return new Promise(function (resolve) {
+      setTimeout(function () {
+        overlay.classList.remove('is-shaking');
+        overlay.classList.add('is-calm');
+      }, 1200);
+      setTimeout(resolve, 1300);
+      setTimeout(function () { overlay.classList.remove('is-visible'); }, 9000);
+      setTimeout(function () { if (overlay.parentNode) overlay.remove(); }, 10000);
+    });
+  }
+
+  // Prolonge l'effet sur la page suivante (tableau de bord) : affichage calme
+  // uniquement, sans rejouer le son ni le tremblement — consomme le relais
+  // posé par login.html dans sessionStorage.
+  function continueJumpscareIfPending() {
+    var message;
+    try { message = sessionStorage.getItem(HALLOWEEN_SESSION_KEY); } catch (e) { message = null; }
+    if (!message) return;
+    try { sessionStorage.removeItem(HALLOWEEN_SESSION_KEY); } catch (e) {}
+    var overlay = buildScareOverlay(message, true);
+    void overlay.offsetWidth;
+    overlay.classList.add('is-visible');
+    setTimeout(function () { overlay.classList.remove('is-visible'); }, 7800);
+    setTimeout(function () { if (overlay.parentNode) overlay.remove(); }, 8800);
+  }
+
   // ── Montage ──
   // Pas de barre du haut séparée : la recherche et les actions (Quoi de neuf,
   // notifications, rafraîchir) rejoignent la barre de navigation latérale,
@@ -644,7 +739,10 @@
     mountSidebarUser();
   }
 
-  IM.topbar = { mount: mount, mountSidebarUser: mountSidebarUser, confettiBurst: confettiBurst };
+  IM.topbar = {
+    mount: mount, mountSidebarUser: mountSidebarUser, confettiBurst: confettiBurst,
+    getHalloweenMessage: getHalloweenMessage, runJumpscare: runJumpscare
+  };
 
   // Les easter eggs ne dépendent que du logo (.sidebar .brand, présent sur
   // TOUTES les pages — y compris le tableau de bord, qui n'appelle pas
@@ -653,6 +751,7 @@
   function initEasterEggs() {
     wireLogoEasterEgg();
     applySpecialDate();
+    continueJumpscareIfPending();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initEasterEggs);

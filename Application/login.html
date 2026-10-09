@@ -9,6 +9,7 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23006A4E'/%3E%3Ctext x='50' y='70' font-size='50' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'%3EIM%3C/text%3E%3C/svg%3E">
 
     <link rel="stylesheet" href="css/theme.css">
+    <link rel="stylesheet" href="css/topbar.css">
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -473,10 +474,19 @@
                 clearError();
                 users.setCurrentUser(name);
 
+                // Easter egg Halloween (30/10, 02/11 uniquement) : DOIT démarrer ici,
+                // de façon synchrone dans ce clic — le son exige un vrai geste
+                // utilisateur. Après la navigation vers le tableau de bord, ce serait
+                // trop tard : le navigateur bloquerait le son silencieusement.
+                var topbarMod = window.ImpulsionMarketing.topbar;
+                var halloweenMsg = (topbarMod && topbarMod.getHalloweenMessage) ? topbarMod.getHalloweenMessage() : null;
+                var scareDone = Promise.resolve();
+                if (halloweenMsg && topbarMod.runJumpscare) scareDone = topbarMod.runJumpscare(halloweenMsg);
+
                 btnConnect.disabled = true;
                 btnConnect.textContent = 'Connexion…';
 
-                connectFolder()
+                Promise.all([connectFolder(), scareDone])
                     .then(function () {
                         // Journal des connexions (Données/connexions.json) : purement
                         // best-effort, ne doit jamais retarder ni bloquer la connexion —
@@ -484,6 +494,10 @@
                         // refusée sur le dossier, réseau temporairement indisponible).
                         var cl = window.ImpulsionMarketing.connectionLog;
                         if (cl) cl.record(users.getCurrentUser()).catch(function () {});
+                        // Relais pour que le tableau de bord prolonge le message calme
+                        // (posé seulement maintenant — pas avant — pour ne jamais laisser
+                        // un relais périmé si la connexion échoue finalement).
+                        if (halloweenMsg) { try { sessionStorage.setItem('im_halloween_msg', halloweenMsg); } catch (e) {} }
                         window.location.href = 'Impulsion-Marketing.html';
                     })
                     .catch(function (err) {
