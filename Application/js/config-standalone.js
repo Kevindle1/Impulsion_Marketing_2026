@@ -164,6 +164,12 @@ window.ImpulsionMarketing.config = (function() {
   const REPONSE_STATUTS  = Array.isArray(_cfgCache.reponseStatuts) ? _cfgCache.reponseStatuts.slice() : [];
   const WHATSNEW_BADGES  = (_cfgCache.whatsnewBadges && typeof _cfgCache.whatsnewBadges === 'object') ? _cfgCache.whatsnewBadges : {};
   const BILAN            = (_cfgCache.bilan && typeof _cfgCache.bilan === 'object') ? _cfgCache.bilan : {};
+  // Barème de valeur métier, charges de réalisation (EBF/COM/DATA) et niveaux
+  // de priorité marketing (Administration ▸ Priorisation). Les valeurs par
+  // défaut (si _config.json ne porte pas encore cette clé) sont portées par
+  // le moteur (js/workflow-standalone.js) — ce fichier ne fait que relayer la
+  // surcharge admin, comme pour BILAN/WEB_ZONES.
+  const PRIORISATION     = (_cfgCache.priorisation && typeof _cfgCache.priorisation === 'object') ? _cfgCache.priorisation : {};
   const COM_TYPOLOGIES   = _arr('comTypologies');
   const NOTIFICATION_LABELS = (_cfgCache.notificationLabels && typeof _cfgCache.notificationLabels === 'object') ? _cfgCache.notificationLabels : {};
   const AUTO_ASSIGN_RULES = Array.isArray(_cfgCache.autoAssignRules) ? _cfgCache.autoAssignRules.slice() : [];
@@ -355,6 +361,7 @@ window.ImpulsionMarketing.config = (function() {
     REPONSE_STATUTS: REPONSE_STATUTS,
     WHATSNEW_BADGES: WHATSNEW_BADGES,
     BILAN: BILAN,
+    PRIORISATION: PRIORISATION,
     COM_TYPOLOGIES: COM_TYPOLOGIES,
     NOTIFICATION_LABELS: NOTIFICATION_LABELS,
     AUTO_ASSIGN_RULES: AUTO_ASSIGN_RULES,

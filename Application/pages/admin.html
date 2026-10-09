@@ -51,6 +51,15 @@
         .admin-card-title h3 { margin: 0; }
         .count-pill { font-size: 11.5px; font-weight: 800; padding: 2px 9px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
 
+        /* Tableaux de barème / charges (Priorisation) */
+        .prio-grid { border-collapse: collapse; width: 100%; }
+        .prio-grid th, .prio-grid td { padding: 7px 9px; text-align: left; }
+        .prio-grid thead th { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--muted-2); border-bottom: 1px solid var(--line); }
+        .prio-grid tbody tr { border-bottom: 1px solid var(--line-2); }
+        .prio-grid tbody tr:last-child { border-bottom: none; }
+        .prio-grid td.lbl { font-size: 13px; font-weight: 650; white-space: nowrap; }
+        .prio-num { text-align: center; }
+
         .person-row, .canal-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; margin: 0 -8px; border-radius: 10px; border-bottom: 1px solid var(--line-2); transition: background .12s; }
         .person-row:hover, .canal-row:hover { background: var(--line-2); }
         .person-row:last-child, .canal-row:last-child { border-bottom: none; }
@@ -260,6 +269,10 @@
                         <div class="admin-sec-head"><div class="admin-sec-ic">🔀</div><div><h2>Workflow</h2><p>Étapes du circuit de validation et applicabilité de chaque étape par canal.</p></div></div>
                         <div id="workflow-container"></div>
                     </section>
+                    <section class="admin-section" id="tab-priorisation" data-group="Paramétrage">
+                        <div class="admin-sec-head"><div class="admin-sec-ic">📈</div><div><h2>Priorisation</h2><p>Barème de valeur métier, charges de réalisation par canal et niveaux de priorité marketing.</p></div></div>
+                        <div id="priorisation-container"></div>
+                    </section>
                     <section class="admin-section" id="tab-customfields" data-group="Paramétrage">
                         <div class="admin-sec-head"><div class="admin-sec-ic">🧩</div><div><h2>Champs personnalisés</h2><p>Ajoutez, modifiez ou retirez des champs sur le formulaire de création et les étapes de production — y compris les champs déjà en place.</p></div></div>
                         <div id="customfields-container"></div>
@@ -356,6 +369,7 @@
         var reponseStatutsState = [];   // copie éditable des statuts de réponse
         var whatsnewBadgesState = {};   // copie éditable des badges Quoi de neuf
         var bilanCfgState = {};         // copie éditable du mapping bilan
+        var priorisationCfgState = {};  // copie éditable du barème/charges de priorisation
         var autoAssignState = [];       // copie éditable des règles d'affectation auto
         var incidents = [];
 
@@ -466,9 +480,10 @@
                     var idx = people.indexOf(p);
                     html += '<div class="person-row">'
                         + '<span class="av-ini" style="background:' + (ROLE_COLOR[p.role] || '#64748b') + ';">' + esc(initials(p.name)) + '</span>'
-                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + '</span>'
+                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + (p.isReferentFlux ? ' <span class="pill-mgr" style="background:#e8f0fe;color:#2563EB;">Référent Flux</span>' : '') + '</span>'
                         + '<label class="toggle-label"><input type="checkbox" class="cb-mgr" data-i="' + idx + '"' + (p.isManager ? ' checked' : '') + '> Responsable</label>'
                         + '<label class="toggle-label" title="Accès admin complet, sur toutes les équipes, en plus de son rôle ci-dessous."><input type="checkbox" class="cb-superadmin" data-i="' + idx + '"' + (p.isSuperAdmin ? ' checked' : '') + '> Super Admin</label>'
+                        + '<label class="toggle-label" title="Accès à la page Priorisation (Managers) — prépare les arbitrages de valeur/charge, en plus de son rôle."><input type="checkbox" class="cb-refflux" data-i="' + idx + '"' + (p.isReferentFlux ? ' checked' : '') + '> Référent Flux</label>'
                         + '<select class="admin-select sel-team" data-i="' + idx + '">' + teamSelectOptions + '</select>'
                         + '<button class="icon-del" data-inactivate="' + idx + '" title="Rendre inactif — n\'apparaîtra plus dans les listes de sélection ni à la connexion">⏸</button>'
                         + '<button class="icon-del" data-del="' + idx + '" title="Supprimer définitivement">🗑</button>'
@@ -518,6 +533,10 @@
                 var i = +cb.getAttribute('data-i');
                 cb.addEventListener('change', function () { people[i].isSuperAdmin = cb.checked || undefined; renderPeople(); });
             });
+            document.querySelectorAll('.cb-refflux').forEach(function (cb) {
+                var i = +cb.getAttribute('data-i');
+                cb.addEventListener('change', function () { people[i].isReferentFlux = cb.checked || undefined; renderPeople(); });
+            });
             document.querySelectorAll('[data-del]').forEach(function (b) {
                 b.addEventListener('click', function () { people.splice(+b.getAttribute('data-del'), 1); renderPeople(); });
             });
@@ -547,6 +566,7 @@
                 var o = { name: p.name, role: p.role, roleLabel: p.roleLabel || labelFor(p.role, p.isManager) };
                 if (p.isManager) o.isManager = true;
                 if (p.isSuperAdmin) o.isSuperAdmin = true;
+                if (p.isReferentFlux) o.isReferentFlux = true;
                 if (p.inactive) o.inactive = true;
                 return o;
             });
@@ -1262,6 +1282,9 @@
             reponseStatutsState = (config && Array.isArray(config.REPONSE_STATUTS)) ? JSON.parse(JSON.stringify(config.REPONSE_STATUTS)) : [];
             whatsnewBadgesState = (config && config.WHATSNEW_BADGES && typeof config.WHATSNEW_BADGES === 'object') ? JSON.parse(JSON.stringify(config.WHATSNEW_BADGES)) : {};
             bilanCfgState = (config && config.BILAN && typeof config.BILAN === 'object') ? JSON.parse(JSON.stringify(config.BILAN)) : {};
+            // Config effective (defaults moteur + surcharge admin déjà fusionnés) —
+            // évite de dupliquer le barème par défaut ici (source unique : workflow.getPriorisationConfig()).
+            priorisationCfgState = (IM.workflow && IM.workflow.getPriorisationConfig) ? JSON.parse(JSON.stringify(IM.workflow.getPriorisationConfig())) : {};
             autoAssignState = (config && Array.isArray(config.AUTO_ASSIGN_RULES)) ? JSON.parse(JSON.stringify(config.AUTO_ASSIGN_RULES)) : [];
             // Pour un point d'attache pas encore configuré (aucune clé dans
             // config.CUSTOM_FIELDS), on initialise à partir des valeurs par défaut du
@@ -1276,7 +1299,7 @@
                     : ((IM.customFields ? IM.customFields.getFields(p.id) : []).map(function (f) { return JSON.parse(JSON.stringify(f)); }));
             });
         }
-        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderWorkflow(); renderCustomFields(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderAutoAssign(); }
+        function renderAll() { renderPeople(); renderLists(); renderSegments(); renderSettings(); renderWebZones(); renderMarchesSiteWeb(); renderWorkflow(); renderCustomFields(); renderReponseStatuts(); renderBadges(); renderBilanCfg(); renderPriorisationCfg(); renderAutoAssign(); }
 
         // Chips réutilisables (liste éditable de chaînes).
         function chipsHtml(arr, delAttr) {
@@ -1516,6 +1539,114 @@
             });
         }
 
+        // ── PRIORISATION (barème de valeur métier + charges de réalisation) ──
+        function renderPriorisationCfg() {
+            var cont = document.getElementById('priorisation-container');
+            if (!cont) return;
+            var pc = priorisationCfgState;
+            if (!pc.bareme) pc.bareme = {};
+            if (!pc.chargeEbf) pc.chargeEbf = {};
+            if (!pc.chargeCom) pc.chargeCom = {};
+            if (!pc.chargeData) pc.chargeData = {};
+            if (!Array.isArray(pc.prioritesMarketing)) pc.prioritesMarketing = [];
+            var canaux = config.CANAUX || [];
+            var typologies = config.TYPOLOGIES || [];
+            var b = pc.bareme;
+
+            function paliersRow(key, label) {
+                var vals = Array.isArray(b[key]) ? b[key] : [1, 2, 3, 5, 8];
+                var h = '<tr><td class="lbl">' + esc(label) + '</td>';
+                for (var i = 0; i < 5; i++) {
+                    h += '<td><input type="number" class="admin-input prio-num" data-bareme-palier="' + key + ':' + i + '" value="' + (typeof vals[i] === 'number' ? vals[i] : '') + '" style="width:70px;"></td>';
+                }
+                return h + '</tr>';
+            }
+            function chargeTable(stateKey, title, desc) {
+                var state = pc[stateKey];
+                var h = '<div class="admin-card"><div class="admin-card-title"><h3>' + esc(title) + '</h3></div>'
+                    + '<div class="empty-hint" style="padding-top:0;">' + esc(desc) + '</div>';
+                if (!canaux.length) { return h + '<div class="empty-hint">Aucun canal configuré (Administration ▸ Types de livrables / canaux).</div></div>'; }
+                h += '<div style="overflow-x:auto;"><table class="prio-grid"><thead><tr><th>Canal</th><th>Natio</th><th>CR</th></tr></thead><tbody>';
+                canaux.forEach(function (canal) {
+                    var row = state[canal] || {};
+                    h += '<tr><td class="lbl">' + esc(canal) + '</td>'
+                        + '<td><input type="number" class="admin-input prio-num" data-charge="' + stateKey + ':' + esc(canal) + ':Natio" value="' + (typeof row.Natio === 'number' ? row.Natio : 0) + '" style="width:76px;"></td>'
+                        + '<td><input type="number" class="admin-input prio-num" data-charge="' + stateKey + ':' + esc(canal) + ':CR" value="' + (typeof row.CR === 'number' ? row.CR : 0) + '" style="width:76px;"></td></tr>';
+                });
+                return h + '</tbody></table></div></div>';
+            }
+
+            var html = '<div class="admin-card"><div class="admin-card-title"><h3>Barème de valeur métier</h3></div>'
+                + '<div class="empty-hint" style="padding-top:0;">Points attribués selon le palier sélectionné par le demandeur à la création de campagne (étape « Bénéfices attendus »).</div>';
+            html += '<div style="overflow-x:auto;"><table class="prio-grid"><thead><tr><th>Critère</th><th>Palier 1</th><th>Palier 2</th><th>Palier 3</th><th>Palier 4</th><th>Palier 5</th></tr></thead><tbody>';
+            html += paliersRow('potentielBusiness', 'Potentiel business');
+            html += paliersRow('satisfactionClient', 'Satisfaction client');
+            html += paliersRow('volumeClientCible', 'Volume de clients ciblés');
+            html += '</tbody></table></div>';
+            html += '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line-2);">'
+                + '<div><label class="admin-label">Réutilisabilité <small style="font-weight:400;color:var(--muted);">(auto, selon la typologie)</small></label><input type="number" class="admin-input prio-num" data-bareme-fixe="reutilisabilite" value="' + (typeof b.reutilisabilite === 'number' ? b.reutilisabilite : 5) + '" style="width:100%;"></div>'
+                + '<div><label class="admin-label">Impact stratégique</label><input type="number" class="admin-input prio-num" data-bareme-fixe="impactStrategique" value="' + (typeof b.impactStrategique === 'number' ? b.impactStrategique : 21) + '" style="width:100%;"></div>'
+                + '<div><label class="admin-label">Réglementaire</label><input type="number" class="admin-input prio-num" data-bareme-fixe="reglementaire" value="' + (typeof b.reglementaire === 'number' ? b.reglementaire : 34) + '" style="width:100%;"></div>'
+                + '<div><label class="admin-label">Multiplicateur de correction</label><input type="number" class="admin-input prio-num" data-bareme-fixe="multiplicateur" value="' + (typeof b.multiplicateur === 'number' ? b.multiplicateur : 10000) + '" style="width:100%;"></div>'
+                + '</div></div>';
+
+            html += chargeTable('chargeEbf', 'Charge de réalisation — EBF', 'Temps estimé (en minutes) par canal, selon l\'origine du canal (Typologie de communication).');
+            html += chargeTable('chargeCom', 'Charge de réalisation — COM', 'Temps estimé (en minutes) par canal, selon l\'origine du canal (Typologie de communication).');
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Charge de réalisation — DATA</h3></div>'
+                + '<div class="empty-hint" style="padding-top:0;">Appliquée une seule fois par campagne, selon sa typologie et son origine — indépendamment du nombre de canaux.</div>';
+            if (!typologies.length) {
+                html += '<div class="empty-hint">Aucune typologie configurée (Administration ▸ Typologies).</div></div>';
+            } else {
+                html += '<div style="overflow-x:auto;"><table class="prio-grid"><thead><tr><th>Typologie</th><th>Natio</th><th>CR</th></tr></thead><tbody>';
+                typologies.forEach(function (typ) {
+                    var row = pc.chargeData[typ] || {};
+                    html += '<tr><td class="lbl">' + esc(typ) + '</td>'
+                        + '<td><input type="number" class="admin-input prio-num" data-charge="chargeData:' + esc(typ) + ':Natio" value="' + (typeof row.Natio === 'number' ? row.Natio : 0) + '" style="width:76px;"></td>'
+                        + '<td><input type="number" class="admin-input prio-num" data-charge="chargeData:' + esc(typ) + ':CR" value="' + (typeof row.CR === 'number' ? row.CR : 0) + '" style="width:76px;"></td></tr>';
+                });
+                html += '</tbody></table></div></div>';
+            }
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Niveaux de priorité marketing</h3><span class="count-pill">' + pc.prioritesMarketing.length + '</span></div>' + chipsHtml(pc.prioritesMarketing, 'delpriorite')
+                + '<div class="add-row"><input class="admin-input" id="add-priorite" placeholder="Nouveau niveau…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-priorite">+ Ajouter</button></div></div>';
+
+            html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-priorisation">💾 Enregistrer</button></div>';
+            cont.innerHTML = html;
+
+            document.getElementById('addbtn-priorite').addEventListener('click', function () {
+                var el = document.getElementById('add-priorite'); var v = (el.value || '').trim();
+                if (v && pc.prioritesMarketing.indexOf(v) === -1) pc.prioritesMarketing.push(v);
+                renderPriorisationCfg();
+            });
+            cont.querySelectorAll('[data-delpriorite]').forEach(function (btn) {
+                btn.addEventListener('click', function () { pc.prioritesMarketing.splice(+btn.getAttribute('data-delpriorite'), 1); renderPriorisationCfg(); });
+            });
+            document.getElementById('save-priorisation').addEventListener('click', function () {
+                cont.querySelectorAll('[data-bareme-palier]').forEach(function (inp) {
+                    var parts = inp.getAttribute('data-bareme-palier').split(':');
+                    var key = parts[0], idx = +parts[1];
+                    if (!Array.isArray(pc.bareme[key])) pc.bareme[key] = [1, 2, 3, 5, 8];
+                    pc.bareme[key][idx] = parseFloat(inp.value) || 0;
+                });
+                cont.querySelectorAll('[data-bareme-fixe]').forEach(function (inp) {
+                    pc.bareme[inp.getAttribute('data-bareme-fixe')] = parseFloat(inp.value) || 0;
+                });
+                cont.querySelectorAll('[data-charge]').forEach(function (inp) {
+                    var parts = inp.getAttribute('data-charge').split(':');
+                    var stateKey = parts[0], canal = parts[1], origine = parts[2];
+                    if (!pc[stateKey][canal]) pc[stateKey][canal] = {};
+                    pc[stateKey][canal][origine] = parseFloat(inp.value) || 0;
+                });
+                var out = JSON.parse(JSON.stringify(pc));
+                saveConfig({ priorisation: out }, 'Priorisation enregistrée.').then(function () {
+                    if (adminConfig.applyConfig) adminConfig.applyConfig({ priorisation: out });
+                    priorisationCfgState = out;
+                    renderPriorisationCfg();
+                });
+            });
+        }
+
         // ── PARAMÈTRES GÉNÉRAUX ──
         function renderSettings() {
             var cont = document.getElementById('settings-container');
@@ -1692,7 +1823,7 @@
             ebf_mise_en_prod:         'Débloquée après validation du test en prod (flux type LP, porté par l\'EBF plutôt que par la Data).'
         };
         function defaultWorkflowSteps() {
-            var base = (IM.workflow && Array.isArray(IM.workflow.STEPS)) ? IM.workflow.STEPS.slice(3) : [];
+            var base = (IM.workflow && Array.isArray(IM.workflow.STEPS)) ? IM.workflow.STEPS.slice(4) : [];
             return base.map(function (s, i) { return { id: s.id, label: s.label, actor: s.actor, order: i }; });
         }
         // { canal: { stepId: actor } } ↔ [{canal, stepId, actor}] — la liste à plat

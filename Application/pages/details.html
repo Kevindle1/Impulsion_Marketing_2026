@@ -2131,7 +2131,7 @@
 
         // ── Étapes globales (stepper) ──
         html += '<div class="wf-block"><div class="wf-head"><span class="wf-title">🚀 Préparation</span></div>';
-        html += wfStepper(workflow.STEPS.slice(0, 3), function(step) { var s = globalSteps[step.id] || 'locked'; if (isCompleted) s = 'completed'; return s; });
+        html += wfStepper(workflow.STEPS.slice(0, 4), function(step) { var s = globalSteps[step.id] || 'locked'; if (isCompleted) s = 'completed'; return s; });
         html += '</div>';
 
         // ── Étapes par canal (v2) ──
@@ -4265,7 +4265,7 @@
         ebf_mise_en_prod: 'Mise en prod LP'
     };
     var ACT_STATUS_LABELS = { submitted: 'soumis', validated: 'validé', completed: 'terminé', revision_requested: 'révision demandée' };
-    var ACT_ICONS = { workflow: '🔄', document: '📁', statut: '🔌', campagne: '📝', affectation: '👥' };
+    var ACT_ICONS = { workflow: '🔄', document: '📁', statut: '🔌', campagne: '📝', affectation: '👥', priorisation: '📈' };
     var _activityCache = [];
 
     function logActivity(campaignName, type, detail) {

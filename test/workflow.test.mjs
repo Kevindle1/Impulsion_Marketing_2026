@@ -48,6 +48,7 @@ test('initWorkflow — crée les étapes globales et canal par défaut', () => {
   const data = makeCampaign(['Com', 'EBF', 'Data']);
   workflow.initWorkflow(data);
   assert.equal(data.workflow.steps.po_saisie, 'validated');
+  assert.equal(data.workflow.steps.priorisation, 'validated');
   assert.equal(data.workflow.steps.manager_affectation, 'pending');
   assert.equal(data.workflow.steps.po_kickoff, 'locked');
   assert.ok(data.workflow.channelSteps[0], 'le canal 0 doit être initialisé');
@@ -773,4 +774,108 @@ test('getAvailableActions — acteur surchargé par canal : la Com voit l\'actio
     const actions = workflow.getAvailableActions(alice, data);
     assert.ok(actions.some(function (a) { return a.step.id === 'ebf_bat'; }), 'Alice (Com) doit voir l\'action ebf_bat sur le canal Courrier');
   });
+});
+
+// ─────────────────────────────────────────────────────────
+// PRIORISATION — barème de valeur métier & charges de réalisation
+// ─────────────────────────────────────────────────────────
+
+test('getPriorisationConfig — repli complet sur les valeurs par défaut sans config', () => {
+  const cfg = workflow.getPriorisationConfig();
+  assert.deepEqual(cfg.bareme.potentielBusiness, [1, 2, 3, 5, 8]);
+  assert.equal(cfg.bareme.impactStrategique, 21);
+  assert.equal(cfg.bareme.reglementaire, 34);
+  assert.equal(cfg.bareme.multiplicateur, 10000);
+  assert.ok(cfg.prioritesMarketing.includes('Incontournable'));
+});
+
+test('reutilisabiliteApplicable — détecte une typologie de réutilisation/amélioration', () => {
+  assert.equal(workflow.reutilisabiliteApplicable({ typology: 'Amélioration d\'un existant' }), true);
+  assert.equal(workflow.reutilisabiliteApplicable({ typology: 'Réutilisation' }), true);
+  assert.equal(workflow.reutilisabiliteApplicable({ typology: 'PR' }), false);
+  assert.equal(workflow.reutilisabiliteApplicable({}), false);
+});
+
+test('computeValeurMetier — somme le barème (paliers + réutilisabilité auto + cases cochées)', () => {
+  const data = {
+    typology: 'Campagne',
+    priorisation: { potentielBusiness: 8, satisfactionClient: 3, volumeClientCible: 2, impactStrategique: true, reglementaire: false }
+  };
+  // 8 + 3 + 2 + impactStrategique(21), pas de réutilisabilité (typologie "Campagne"), pas de réglementaire
+  assert.equal(workflow.computeValeurMetier(data), 8 + 3 + 2 + 21);
+});
+
+test('computeValeurMetier — réutilisabilité auto ajoutée quand la typologie l\'indique', () => {
+  const data = {
+    typology: 'Amélioration d\'un existant',
+    priorisation: { potentielBusiness: 1, satisfactionClient: 1, volumeClientCible: 1 }
+  };
+  assert.equal(workflow.computeValeurMetier(data), 1 + 1 + 1 + 5);
+});
+
+test('computeValeurMetierCorrigee — multiplie par le multiplicateur du barème', () => {
+  const data = { typology: 'PR', priorisation: { potentielBusiness: 1, satisfactionClient: 1, volumeClientCible: 1 } };
+  assert.equal(workflow.computeValeurMetierCorrigee(data), 3 * 10000);
+});
+
+test('computeChargeRealisation — somme EBF+COM par canal (chacun sa propre origine) + DATA une seule fois', () => {
+  withConfig({
+    PRIORISATION: {
+      chargeEbf: { Email: { Natio: 45, CR: 60 }, SMS: { Natio: 45, CR: 60 } },
+      chargeCom: { Email: { Natio: 0, CR: 20 }, SMS: { Natio: 0, CR: 20 } },
+      chargeData: { Campagne: { Natio: 300, CR: 420 } }
+    }
+  }, () => {
+    const data = {
+      typology: 'Campagne',
+      channels: [
+        { content: 'Email', comTypology: 'Reprise Natio' },
+        { content: 'SMS', comTypology: 'Création Caisse' }
+      ]
+    };
+    // EBF : 45 (Natio) + 60 (CR) = 105 ; COM : 0 (Natio) + 20 (CR) = 20
+    // DATA : au moins un canal CR → origine CR → 420
+    assert.equal(workflow.computeChargeRealisation(data), 105 + 20 + 420);
+  });
+});
+
+test('computeChargeRealisation — tous les canaux Natio → charge DATA en Natio', () => {
+  withConfig({
+    PRIORISATION: {
+      chargeEbf: { Email: { Natio: 45, CR: 60 } },
+      chargeCom: { Email: { Natio: 0, CR: 20 } },
+      chargeData: { Campagne: { Natio: 300, CR: 420 } }
+    }
+  }, () => {
+    const data = { typology: 'Campagne', channels: [{ content: 'Email', comTypology: 'Reprise Natio' }] };
+    assert.equal(workflow.computeChargeRealisation(data), 45 + 0 + 300);
+  });
+});
+
+test('computeChargeRealisation — canal sans entrée dans la table : compte pour 0 (pas d\'erreur)', () => {
+  const data = { typology: 'Inconnue', channels: [{ content: 'Canal jamais configuré', comTypology: 'Reprise Natio' }] };
+  assert.equal(workflow.computeChargeRealisation(data), 0);
+});
+
+test('computeValeurCampagne — Valeur métier corrigée / Charge de réalisation', () => {
+  withConfig({
+    PRIORISATION: {
+      chargeEbf: { Email: { Natio: 10, CR: 10 } },
+      chargeCom: {},
+      chargeData: {}
+    }
+  }, () => {
+    const data = {
+      typology: 'PR',
+      priorisation: { potentielBusiness: 1, satisfactionClient: 1, volumeClientCible: 1 },
+      channels: [{ content: 'Email', comTypology: 'Reprise Natio' }]
+    };
+    // Valeur métier corrigée = 3 * 10000 = 30000 ; Charge = 10 (EBF Natio)
+    assert.equal(workflow.computeValeurCampagne(data), 30000 / 10);
+  });
+});
+
+test('computeValeurCampagne — null tant qu\'aucune charge n\'est calculable (ex. pas de canal, typologie sans charge DATA)', () => {
+  const data = { typology: 'Inconnue', priorisation: { potentielBusiness: 1, satisfactionClient: 1, volumeClientCible: 1 }, channels: [] };
+  assert.equal(workflow.computeValeurCampagne(data), null);
 });

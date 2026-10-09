@@ -15,6 +15,7 @@ window.ImpulsionMarketing.workflow = (function () {
   // Définition complète des étapes (pour affichage / STEPS.forEach)
   var STEPS = [
     { id: 'po_saisie',              label: 'Saisie projet',       actor: 'po',      icon: '📝', description: 'Le PO a créé la campagne' },
+    { id: 'priorisation',           label: 'Priorisation',        actor: 'po',      icon: '📈', description: 'Le PO a renseigné les bénéfices attendus (valeur métier)' },
     { id: 'manager_affectation',    label: 'Affectation',         actor: 'manager', icon: '👥', description: 'Le manager affecte les équipes' },
     { id: 'po_kickoff',             label: 'Kick-off',            actor: 'po',      icon: '🚀', description: 'Le PO organise le kick-off avec les équipes affectées' },
     { id: 'com_maquette',           label: 'Maquette Com',        actor: 'com',     icon: '🎨', description: 'La Com réalise la maquette' },
@@ -32,7 +33,7 @@ window.ImpulsionMarketing.workflow = (function () {
   ];
 
   // IDs des étapes globales (partagées par tous les canaux)
-  var GLOBAL_STEP_IDS = ['po_saisie', 'manager_affectation', 'po_kickoff'];
+  var GLOBAL_STEP_IDS = ['po_saisie', 'priorisation', 'manager_affectation', 'po_kickoff'];
 
   // IDs des étapes par canal (chaque canal a sa propre progression)
   var CHANNEL_STEP_IDS = [
@@ -46,8 +47,14 @@ window.ImpulsionMarketing.workflow = (function () {
   ];
 
   // Valeurs par défaut pour les étapes globales
+  // priorisation : renseignée au sein même de l'assistant de création (étape
+  // « Bénéfices attendus »), donc déjà faite dès que la campagne existe — au
+  // même titre que po_saisie. L'étape reste dans la chaîne globale pour la
+  // cohérence d'affichage (frise, « étape courante ») et une éventuelle
+  // réouverture future, mais ne bloque rien en usage normal.
   var DEFAULT_GLOBAL_STEPS = {
     po_saisie:           'validated',
+    priorisation:        'validated',
     manager_affectation: 'pending',
     po_kickoff:          'locked'
   };
@@ -129,6 +136,125 @@ window.ImpulsionMarketing.workflow = (function () {
     if (!cs || !channelContent || !Object.prototype.hasOwnProperty.call(cs, channelContent)) return true;
     var list = cs[channelContent];
     return Array.isArray(list) ? (list.indexOf(stepId) !== -1) : true;
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // PRIORISATION — barème de valeur métier & charges de réalisation
+  // (Administration ▸ Priorisation, clé _config.json "priorisation")
+  // ─────────────────────────────────────────────────────────
+  // Valeurs par défaut si _config.json ne porte pas (encore) cette clé —
+  // mêmes chiffres que la demande d'origine. chargeEbf/chargeCom : { "<canal>":
+  // { Natio: <min>, CR: <min> } } (vide par défaut — un canal non configuré
+  // compte pour 0, cf. computeChargeRealisation). chargeData : { "<typologie>":
+  // { Natio: <min>, CR: <min> } }, appliquée une seule fois par campagne.
+  var DEFAULT_PRIORISATION = {
+    bareme: {
+      potentielBusiness:  [1, 2, 3, 5, 8],
+      satisfactionClient: [1, 2, 3, 5, 8],
+      volumeClientCible:  [1, 2, 3, 5, 8],
+      reutilisabilite:    5,
+      impactStrategique:  21,
+      reglementaire:      34,
+      multiplicateur:     10000
+    },
+    chargeEbf: {},
+    chargeCom: {},
+    chargeData: {
+      PR:       { Natio: 240, CR: 360 },
+      Campagne: { Natio: 300, CR: 420 },
+      Étude:    { Natio: 360, CR: 480 }
+    },
+    prioritesMarketing: ['Incontournable', 'Elevé', 'Standard', 'Faible', 'Ne pas lancer']
+  };
+  // Config effective (fusion defaults + surcharge admin — comme _stepDef pour
+  // le workflow). Le barème fusionne clé par clé (une admin qui n'a modifié
+  // que 2 des 3 critères garde les valeurs par défaut des autres) ; les
+  // tableaux de charge et la liste de priorités sont remplacés en bloc dès
+  // qu'ils sont présents dans la config (mêmes règles que WORKFLOW_STEPS).
+  function _priorisationCfg() {
+    var c = _cfg();
+    var p = (c && c.PRIORISATION && typeof c.PRIORISATION === 'object') ? c.PRIORISATION : {};
+    return {
+      bareme: Object.assign({}, DEFAULT_PRIORISATION.bareme, p.bareme || {}),
+      chargeEbf: (p.chargeEbf && typeof p.chargeEbf === 'object') ? p.chargeEbf : DEFAULT_PRIORISATION.chargeEbf,
+      chargeCom: (p.chargeCom && typeof p.chargeCom === 'object') ? p.chargeCom : DEFAULT_PRIORISATION.chargeCom,
+      chargeData: (p.chargeData && typeof p.chargeData === 'object') ? p.chargeData : DEFAULT_PRIORISATION.chargeData,
+      prioritesMarketing: (Array.isArray(p.prioritesMarketing) && p.prioritesMarketing.length) ? p.prioritesMarketing : DEFAULT_PRIORISATION.prioritesMarketing
+    };
+  }
+  function getPriorisationConfig() { return _priorisationCfg(); }
+
+  // Réutilisabilité / amélioration d'un existant : auto-dérivée de la
+  // Typologie de la campagne (pas de saisie PO) — toute typologie dont le
+  // libellé évoque une réutilisation/amélioration (ex. « Amélioration d'un
+  // existant ») déclenche les points de réutilisabilité du barème.
+  function reutilisabiliteApplicable(campaignData) {
+    var t = (campaignData && campaignData.typology) || '';
+    return /r[ée]utilis|am[ée]lior/i.test(t);
+  }
+
+  // Valeur métier = somme du barème : les 3 critères à paliers saisis par le
+  // PO (campaignData.priorisation.{potentielBusiness,satisfactionClient,
+  // volumeClientCible} — valeurs de points, pas des index) + réutilisabilité
+  // auto + impact stratégique/réglementaire si cochés.
+  function computeValeurMetier(campaignData) {
+    var cfg = _priorisationCfg();
+    var p = (campaignData && campaignData.priorisation) || {};
+    var total = (p.potentielBusiness || 0) + (p.satisfactionClient || 0) + (p.volumeClientCible || 0);
+    if (reutilisabiliteApplicable(campaignData)) total += (cfg.bareme.reutilisabilite || 0);
+    if (p.impactStrategique) total += (cfg.bareme.impactStrategique || 0);
+    if (p.reglementaire) total += (cfg.bareme.reglementaire || 0);
+    return total;
+  }
+  // Valeur métier corrigée = Valeur métier × multiplicateur (aligne l'échelle
+  // de points sur la charge exprimée en minutes avant division).
+  function computeValeurMetierCorrigee(campaignData) {
+    var cfg = _priorisationCfg();
+    return computeValeurMetier(campaignData) * (cfg.bareme.multiplicateur || 1);
+  }
+
+  // Origine CR/Natio d'UN canal, dérivée de sa Typologie de communication
+  // (channel.comTypology — ex. « Création Caisse » / « Reprise Natio »,
+  // libellés configurables dans Administration ▸ Typologies de
+  // communication). Seul « Natio » distingue l'origine Natio ; toute autre
+  // valeur (y compris non renseignée) est traitée comme CR par défaut.
+  function _channelOrigine(channel) {
+    var t = (channel && channel.comTypology) || '';
+    return /natio/i.test(t) ? 'Natio' : 'CR';
+  }
+
+  // Charge de réalisation = Σ charge EBF(canal, son origine) + Σ charge
+  // COM(canal, son origine) — une ligne par canal de la campagne, chacun
+  // avec sa propre origine — + charge DATA(typologie de la campagne,
+  // origine) une seule fois (pas par canal, cf. Administration ▸
+  // Priorisation). L'origine DATA retenue est CR dès qu'au moins un canal
+  // est en CR (le travail de coordination Data est traité au plus lourd des
+  // deux dès qu'une partie de la campagne sort du cadre national).
+  function computeChargeRealisation(campaignData) {
+    var cfg = _priorisationCfg();
+    var channels = (campaignData && campaignData.channels) || [];
+    var chargeEbf = 0, chargeCom = 0, anyCr = false;
+    channels.forEach(function (ch) {
+      var canal = ch && ch.content;
+      if (!canal) return;
+      var origine = _channelOrigine(ch);
+      if (origine === 'CR') anyCr = true;
+      chargeEbf += ((cfg.chargeEbf[canal] || {})[origine]) || 0;
+      chargeCom += ((cfg.chargeCom[canal] || {})[origine]) || 0;
+    });
+    var dataOrigine = anyCr ? 'CR' : 'Natio';
+    var type = (campaignData && campaignData.typology) || '';
+    var chargeData = ((cfg.chargeData[type] || {})[dataOrigine]) || 0;
+    return chargeEbf + chargeCom + chargeData;
+  }
+
+  // Valeur campagne = Valeur métier corrigée / Charge de réalisation. null
+  // tant que la charge est nulle (ex. canaux pas encore choisis) — jamais de
+  // division par 0.
+  function computeValeurCampagne(campaignData) {
+    var charge = computeChargeRealisation(campaignData);
+    if (!charge) return null;
+    return computeValeurMetierCorrigee(campaignData) / charge;
   }
 
   // ─────────────────────────────────────────────────────────
@@ -297,7 +423,10 @@ window.ImpulsionMarketing.workflow = (function () {
    */
   function recalcGlobalUnlocks(steps) {
     var s = steps;
-    if (s.po_saisie === 'validated' && s.manager_affectation === 'locked') {
+    if (s.po_saisie === 'validated' && s.priorisation === 'locked') {
+      s.priorisation = 'pending';
+    }
+    if (s.priorisation === 'validated' && s.manager_affectation === 'locked') {
       s.manager_affectation = 'pending';
     }
     if (s.manager_affectation === 'validated' && s.po_kickoff === 'locked') {
@@ -725,6 +854,7 @@ window.ImpulsionMarketing.workflow = (function () {
     if (!globalSteps) return 'En attente d\'affectation';
 
     // Étapes globales en priorité
+    if (globalSteps.priorisation === 'pending')        return 'Bénéfices attendus';
     if (globalSteps.manager_affectation === 'pending') return 'Affectation';
     if (globalSteps.po_kickoff === 'pending')          return 'Kick-off';
     if (globalSteps.po_kickoff !== 'validated')        return 'En attente d\'affectation';
@@ -733,7 +863,7 @@ window.ImpulsionMarketing.workflow = (function () {
     var cs = campaignData.workflow.channelSteps || {};
     var numChannels = Math.max((campaignData.channels || []).length, 1);
 
-    for (var si = 3; si < STEPS.length; si++) { // index 0,1,2 = étapes globales
+    for (var si = 4; si < STEPS.length; si++) { // index 0,1,2,3 = étapes globales
       var stepId = STEPS[si].id;
       var vId = _DEPOT_VALIDATION[stepId];
       for (var ci = 0; ci < numChannels; ci++) {
@@ -985,7 +1115,7 @@ window.ImpulsionMarketing.workflow = (function () {
     var globalSteps = campaignData.workflow.steps;
 
     // Étapes globales
-    STEPS.slice(0, 3).forEach(function (step) {
+    STEPS.slice(0, 4).forEach(function (step) {
       var status = globalSteps[step.id] || 'locked';
       if (status !== 'pending' && status !== 'revision_requested') return;
       var actorMatch = false;
@@ -1007,7 +1137,7 @@ window.ImpulsionMarketing.workflow = (function () {
     var numChannels = Math.max((campaignData.channels || []).length, 1);
     var seenSteps = {};
 
-    STEPS.slice(3).forEach(function (step) {
+    STEPS.slice(4).forEach(function (step) {
       if (seenSteps[step.id]) return;
       for (var ci = 0; ci < numChannels; ci++) {
         if (!cs[ci]) continue;
@@ -1412,6 +1542,12 @@ window.ImpulsionMarketing.workflow = (function () {
     managerAffectationDone:   managerAffectationDone,
     updateCampaignIndex:      updateCampaignIndex,
     updateCampaignIndexFromDir: updateCampaignIndexFromDir,
-    buildFullIndex:           buildFullIndex
+    buildFullIndex:           buildFullIndex,
+    getPriorisationConfig:        getPriorisationConfig,
+    reutilisabiliteApplicable:    reutilisabiliteApplicable,
+    computeValeurMetier:          computeValeurMetier,
+    computeValeurMetierCorrigee:  computeValeurMetierCorrigee,
+    computeChargeRealisation:     computeChargeRealisation,
+    computeValeurCampagne:        computeValeurCampagne
   };
 })();

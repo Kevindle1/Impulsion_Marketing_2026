@@ -42,7 +42,8 @@
     mention: { bg: '#ede9fe', fg: '#6d28d9' },
     signalement_reponse: { bg: '#dcfce7', fg: '#15803d' },
     publication_fin: { bg: '#f1f5f9', fg: '#475569' },
-    campagne_inactive: { bg: '#f1f5f9', fg: '#64748b' }
+    campagne_inactive: { bg: '#f1f5f9', fg: '#64748b' },
+    campagne_decalee: { bg: '#e8f0fe', fg: '#1d4ed8' }
   };
   var DEFAULT_NOTIF_COLOR = { bg: '#f1f5f9', fg: '#475569' };
   function notifColor(type) { return NOTIF_COLORS[type] || DEFAULT_NOTIF_COLOR; }

@@ -148,6 +148,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
     assignInPlace(IM.config.WEB_ZONES, cfg.webZones);
     assignInPlace(IM.config.WHATSNEW_BADGES, cfg.whatsnewBadges);
     assignInPlace(IM.config.BILAN, cfg.bilan);
+    assignInPlace(IM.config.PRIORISATION, cfg.priorisation);
     assignInPlace(IM.config.NOTIFICATION_LABELS, cfg.notificationLabels);
     if (Array.isArray(cfg.reponseStatuts) && cfg.reponseStatuts.length && Array.isArray(IM.config.REPONSE_STATUTS)) {
       spliceInPlace(IM.config.REPONSE_STATUTS, cfg.reponseStatuts);
@@ -168,6 +169,31 @@ window.ImpulsionMarketing.adminConfig = (function () {
       '<svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
       '<span>Administration</span>';
     section.appendChild(a);
+  }
+
+  // Lien « Priorisation » : injecté juste après « Pilotage » (même section
+  // « Principal »), visible uniquement pour les personnes autorisées
+  // (Responsable Marketing, Référent Flux, super admin — cf. users.canAccessPriorisation).
+  function injectPriorisationLink() {
+    var nav = document.querySelector('.sidebar-nav');
+    if (!nav || document.getElementById('im-priorisation-link')) return;
+    if (!(IM.users && IM.users.canAccessPriorisation && IM.users.canAccessPriorisation())) return;
+    var href = location.pathname.indexOf('/pages/') !== -1 ? 'priorisation.html' : 'pages/priorisation.html';
+    var pilotageLink = nav.querySelector('a.nav-link[href$="pilotage.html"]');
+    var a = document.createElement('a');
+    a.className = 'nav-link';
+    a.id = 'im-priorisation-link';
+    a.href = href;
+    a.innerHTML =
+      '<svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>' +
+      '<span>Priorisation</span>';
+    if (pilotageLink && pilotageLink.nextSibling) {
+      pilotageLink.parentNode.insertBefore(a, pilotageLink.nextSibling);
+    } else if (pilotageLink) {
+      pilotageLink.parentNode.appendChild(a);
+    } else {
+      (nav.querySelector('.nav-section') || nav).appendChild(a);
+    }
   }
 
   // Recharge _config.json depuis le dossier et l'applique (utilisable par les pages
@@ -195,7 +221,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
       .catch(function () {})
       .then(function () {
         // Le lien « Administration » n'est ajouté que s'il y a un menu latéral.
-        if (document.querySelector('.sidebar-nav')) injectAdminLink();
+        if (document.querySelector('.sidebar-nav')) { injectAdminLink(); injectPriorisationLink(); }
         applyGalleryLink();
         _readyResolve();
       });
