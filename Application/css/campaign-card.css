@@ -149,12 +149,14 @@
 .cc-chstat.k-maq   { color: #1d4ed8; }
 .cc-chstat.k-urgent { color: #b91c1c; }
 .cc-chstat.k-done  { color: #00734C; }
+.cc-chstat.k-stopped { color: #64748b; }
 .cc-chbar { height: 8px; border-radius: 99px; background: rgba(0, 0, 0, .08); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .07); }
 .cc-chbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #12C386, #00875A); }
 .cc-chbar i.k-valid { background: linear-gradient(90deg, #fbbf24, #E8A100); }
 .cc-chbar i.k-maq   { background: linear-gradient(90deg, #60a5fa, #2563EB); }
 .cc-chbar i.k-urgent { background: linear-gradient(90deg, #f87171, #E2001A); }
 .cc-chbar i.k-done  { background: linear-gradient(90deg, #34d399, #00875A); }
+.cc-chbar i.k-stopped { background: linear-gradient(90deg, #94a3b8, #64748b); }
 
 .cc-timeline {
     flex-shrink: 0;

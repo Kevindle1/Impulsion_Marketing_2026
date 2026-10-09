@@ -452,6 +452,15 @@
             <button id="deleteCampaignButton" class="btn secondary back-button" style="display:none;color:var(--red);" onclick="deleteCampaign()">🗑️ Supprimer</button>
         </div>
 
+        <div id="arretBanner" style="display:none;margin:14px 28px 0;padding:13px 16px;border-radius:12px;background:#f1f5f9;border:1px solid #cbd5e1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span style="font-size:20px;line-height:1;">⏸️</span>
+            <div style="flex:1;min-width:220px;">
+                <div style="font-size:13.5px;font-weight:700;color:#334155;" id="arretBannerTitle">Campagne stoppée</div>
+                <div style="font-size:12.5px;color:#64748b;" id="arretBannerDetail"></div>
+            </div>
+            <button type="button" class="btn secondary" id="arretBannerRestoreBtn" style="display:none;" onclick="toggleCampaignActif()">▶️ Réactiver</button>
+        </div>
+
         <div class="details-shell">
             <nav class="details-sidenav" id="details-sidenav"></nav>
             <main class="details-panel" id="details-panel">
@@ -642,12 +651,40 @@
             .catch(function(e) { console.warn('Notif débrancher failed:', e); });
     }
 
+    // Bandeau visible quand la campagne est inactive (stoppée depuis
+    // Priorisation, ou débranchée via ce bouton) — explique pourquoi et
+    // propose la réactivation sans avoir à deviner où chercher l'action.
+    function renderArretBanner(data) {
+        var banner = document.getElementById('arretBanner');
+        if (!banner) return;
+        if (data.actif === false) {
+            var arret = data.arret;
+            var titleEl = document.getElementById('arretBannerTitle');
+            var detailEl = document.getElementById('arretBannerDetail');
+            var restoreBtn = document.getElementById('arretBannerRestoreBtn');
+            if (titleEl) titleEl.textContent = 'Campagne stoppée — ne tourne plus';
+            if (detailEl) {
+                detailEl.textContent = arret
+                    ? ('Le ' + new Date(arret.date).toLocaleDateString('fr-FR') + ' par ' + (arret.par || '?') + ' — motif : ' + arret.motif)
+                    : 'Motif non renseigné (désactivée avant le suivi détaillé).';
+            }
+            var _cu = users && users.getCurrentUser();
+            var canRestore = _cu && (_cu.role === 'data' || _cu.isSuperAdmin || (users.canAccessPriorisation && users.canAccessPriorisation()));
+            if (restoreBtn) restoreBtn.style.display = canRestore ? 'inline-flex' : 'none';
+            banner.style.display = 'flex';
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
     function toggleCampaignActif() {
         if (!currentCampaignName || !currentCampaignData) return;
-        // #13 : réservé à l'équipe Data (+ super-admin), avec motif obligatoire.
+        // #13 : réservé à l'équipe Data/super-admin, ou à quiconque a accès à la
+        // page Priorisation (Responsable Marketing, Référent Flux) — même droit
+        // que pour stopper une campagne depuis cette page.
         var cu = users && users.getCurrentUser();
-        if (!cu || !(cu.role === 'data' || cu.isSuperAdmin)) {
-            notify('Seule l\'équipe Data peut activer ou désactiver une campagne.', 'warning');
+        if (!cu || !(cu.role === 'data' || cu.isSuperAdmin || (users.canAccessPriorisation && users.canAccessPriorisation()))) {
+            notify('Seule l\'équipe Data, un Responsable Marketing/Référent Flux ou un super admin peut activer ou désactiver une campagne.', 'warning');
             return;
         }
         var isActif = currentCampaignData.actif !== false;
@@ -655,13 +692,16 @@
         showPromptModal({
             title: nouvelEtat ? 'Réactiver la campagne' : 'Rendre la campagne inactive',
             label: nouvelEtat
-                ? 'Indiquez le motif de réactivation. L\'action et son auteur sont enregistrés dans le journal.'
+                ? 'Indiquez le motif de réactivation. L\'action et son auteur sont enregistrés dans le journal. La campagne reprend exactement où elle en était (aucune étape de workflow n\'est modifiée).'
                 : 'Indiquez le motif (la campagne ne tournera plus). L\'action et son auteur sont enregistrés dans le journal.',
             placeholder: 'Motif…',
             confirmText: nouvelEtat ? '▶️ Réactiver' : '⏸️ Rendre inactif',
             onConfirm: function(motif) {
                 currentCampaignData.actif = nouvelEtat;
-                if (!nouvelEtat) pushNotifDebrancher(currentCampaignName, currentCampaignData);
+                if (!nouvelEtat) {
+                    currentCampaignData.arret = { date: new Date().toISOString(), motif: motif, par: cu.name };
+                    pushNotifDebrancher(currentCampaignName, currentCampaignData);
+                }
                 workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
                     .then(function() {
                         var toggleActifBtn = document.getElementById('toggleActifButton');
@@ -669,6 +709,7 @@
                             toggleActifBtn.textContent = nouvelEtat ? '⏸️ Rendre inactif' : '▶️ Réactiver';
                             toggleActifBtn.style.color = nouvelEtat ? 'var(--red)' : 'var(--primary)';
                         }
+                        renderArretBanner(currentCampaignData);
                         errors.showNotification(nouvelEtat ? 'Campagne réactivée.' : 'Campagne rendue inactive.', 'success', 2000);
                         logActivity(currentCampaignName, 'statut',
                             (nouvelEtat ? 'Campagne réactivée' : 'Campagne rendue inactive')
@@ -860,9 +901,11 @@
         if (dupBtn)  dupBtn.style.display  = 'inline-flex';
         if (toggleActifBtn) {
             // #13 : l'activation/désactivation d'une campagne est réservée à l'équipe Data
-            // (tout utilisateur de rôle Data) et au super-admin.
+            // (tout utilisateur de rôle Data), au super-admin, ou — depuis l'ajout du
+            // Décalage/Stop en Priorisation — à quiconque a accès à cette page (Responsable
+            // Marketing, Référent Flux) : qui peut stopper doit pouvoir rouvrir.
             var _cu = users && users.getCurrentUser();
-            var canToggleActif = _cu && (_cu.role === 'data' || _cu.isSuperAdmin);
+            var canToggleActif = _cu && (_cu.role === 'data' || _cu.isSuperAdmin || (users.canAccessPriorisation && users.canAccessPriorisation()));
             if (canToggleActif) {
                 toggleActifBtn.style.display = 'inline-flex';
                 var isActif = data.actif !== false;
@@ -872,6 +915,7 @@
                 toggleActifBtn.style.display = 'none';
             }
         }
+        renderArretBanner(data);
         var deleteBtn = document.getElementById('deleteCampaignButton');
         // La suppression d'une campagne est réservée au PO (et au super-admin), comme la modification.
         var canDelete = (users && users.isCurrentUserPO && users.isCurrentUserPO(data))

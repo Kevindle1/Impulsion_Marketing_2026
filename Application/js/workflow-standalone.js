@@ -849,6 +849,12 @@ window.ImpulsionMarketing.workflow = (function () {
   function getCurrentStepLabel(campaignData) {
     if (!campaignData.workflow) return 'En attente d\'affectation';
     if (isCompleted(campaignData)) return 'Terminée';
+    // Statut distinct d'une campagne arrêtée (Priorisation ▸ Stopper, ou
+    // l'ancien débranchement Data) : traitement visuel fermé partout où ce
+    // libellé s'affiche, mais jamais confondu avec une campagne réellement
+    // terminée — ses étapes de workflow restent ce qu'elles étaient, pour
+    // une éventuelle réactivation (cf. campaignData.arret).
+    if (campaignData.actif === false) return 'Stoppée';
 
     var globalSteps = campaignData.workflow.steps;
     if (!globalSteps) return 'En attente d\'affectation';

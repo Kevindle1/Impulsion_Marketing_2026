@@ -901,7 +901,8 @@
             return { cls: VC_CT_PALETTE[idx % VC_CT_PALETTE.length], label: String(bestCt).trim(), title: bestCt }; }
         function vcStatus(data,wf){ var label=(wf&&data.workflow)?((wf.getCurrentStepLabel(data)||'').trim()):''; if(wf&&data.workflow&&wf.isCompleted(data))return{label:'Terminée',text:'Terminée',key:'done',pct:100};
             var L=label.toLowerCase(); var pct=50,key='prod',text=label||'En cours';
-            if(/affect/.test(L)){pct=10;key='maq';text='Affectation';} else if(/kick/.test(L)){pct=18;key='maq';text='Kick-off';}
+            if(/stopp/.test(L)){pct=100;key='stopped';text='Stoppée';}
+            else if(/affect/.test(L)){pct=10;key='maq';text='Affectation';} else if(/kick/.test(L)){pct=18;key='maq';text='Kick-off';}
             else if(/révision|revision/.test(L)){pct=35;key='urgent';text='Révision';} else if(/validation|valider/.test(L)){pct=55;key='valid';text='À valider';}
             else if(/maquette/.test(L)){pct=28;key='maq';text='Maquette';} else if(/ciblage|bat|test|mise en prod|mep/.test(L)){pct=70;key='prod';text='En Fabrication';}
             return{label:label,text:text,key:key,pct:pct}; }

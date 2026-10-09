@@ -953,7 +953,8 @@
             }
             var L = label.toLowerCase();
             var pct = 50, key = 'prod', text = label || 'En cours';
-            if (/termin/.test(L))              { pct = 100; key = 'prod';   text = 'Terminée'; }
+            if (/stopp/.test(L))               { pct = 100; key = 'stopped'; text = 'Stoppée'; }
+            else if (/termin/.test(L))         { pct = 100; key = 'prod';   text = 'Terminée'; }
             else if (/affect/.test(L))         { pct = 10;  key = 'maq';    text = 'Affectation'; }
             else if (/kick/.test(L))           { pct = 18;  key = 'maq';    text = 'Kick-off'; }
             else if (/révision|revision/.test(L)) { pct = 35; key = 'urgent'; text = 'Révision'; }
