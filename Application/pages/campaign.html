@@ -960,6 +960,10 @@
                         </div>
                         <div class="step" data-step="5">
                             <div class="step-circle">5</div>
+                            <div class="step-label">Bénéfices attendus</div>
+                        </div>
+                        <div class="step" data-step="6">
+                            <div class="step-circle">6</div>
                             <div class="step-label">Récapitulatif</div>
                         </div>
                     </div>
@@ -967,11 +971,11 @@
                     <!-- Barre de progression -->
                     <div class="progress-container">
                         <div class="progress-bar-wrapper">
-                            <div class="progress-bar-fill" id="progress-fill" style="width: 20%"></div>
+                            <div class="progress-bar-fill" id="progress-fill" style="width: 17%"></div>
                         </div>
                         <div class="progress-info">
-                            <span id="progress-text">Étape 1 sur 5</span>
-                            <span id="progress-percentage">20%</span>
+                            <span id="progress-text">Étape 1 sur 6</span>
+                            <span id="progress-percentage">17%</span>
                         </div>
                     </div>
 
@@ -1184,8 +1188,84 @@
                         </div>
                     </div>
 
-                    <!-- Étape 5 : Récapitulatif -->
+                    <!-- Étape 5 : Bénéfices attendus et enjeux de la demande (Priorisation) -->
                     <div class="form-step" data-step="5">
+                        <h3 class="step-title">📈 Bénéfices attendus et enjeux de la demande</h3>
+                        <p class="step-description">Ces informations calculent la valeur métier de la campagne, utilisée pour l'arbitrage en comité de priorisation.</p>
+
+                        <div class="form-group fg-full">
+                            <label for="potentielBusiness">Potentiel business <small style="font-weight:400;color:var(--muted);">— nombre de leads générés</small></label>
+                            <select id="potentielBusiness" required>
+                                <option value="">Choisir...</option>
+                                <option value="1">Très faible — &lt; X k€ ou 5 leads</option>
+                                <option value="2">Faible — X à X k€ ou 5 à 20 leads</option>
+                                <option value="3">Modéré — X à X k€ ou 20 à 50 leads</option>
+                                <option value="5">Fort — X à X k€ ou 50 à 100 leads</option>
+                                <option value="8">Majeur — &gt; X k€ ou &gt; 100 leads</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group fg-full">
+                            <label for="satisfactionClient">Satisfaction client</label>
+                            <select id="satisfactionClient" required>
+                                <option value="">Choisir...</option>
+                                <option value="1">Impact quasi invisible pour le client, amélioration essentiellement interne</option>
+                                <option value="2">Amélioration perceptible pour une faible population ou une situation peu fréquente</option>
+                                <option value="3">Amélioration visible pour une population importante ou un parcours fréquent</option>
+                                <option value="5">Réduction forte d'un irritant ou amélioration d'une étape clé du parcours client</option>
+                                <option value="8">Impact direct sur la satisfaction, la recommandation ou la fidélisation d'un grand nombre de clients</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group fg-full">
+                            <label for="volumeClientCible">Volume de clients ciblés</label>
+                            <select id="volumeClientCible" required>
+                                <option value="">Choisir...</option>
+                                <option value="1">&lt; 500 clients</option>
+                                <option value="2">500 à 5 000 clients</option>
+                                <option value="3">5 000 à 20 000 clients</option>
+                                <option value="5">20 000 à 100 000 clients</option>
+                                <option value="8">&gt; 100 000 clients</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group fg-full" id="prioReutilBox" style="display:flex;align-items:center;gap:12px;background:var(--line-2,#f0f4f1);border-radius:10px;padding:12px 14px;">
+                            <div style="flex:1;">
+                                <strong style="font-size:13.5px;">Réutilisabilité / amélioration d'un existant</strong>
+                                <div style="font-size:12.5px;color:var(--muted);margin-top:2px;">Déduit automatiquement de la typologie choisie à l'étape « Informations générales » — aucune saisie requise ici.</div>
+                            </div>
+                            <span id="prioReutilBadge" style="font-size:12px;font-weight:700;white-space:nowrap;"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="impactStrategique" style="width:auto;flex:none;margin-top:3px;">
+                                <span>Impact stratégique <small style="font-weight:400;color:var(--muted);display:block;">La campagne sert un objectif stratégique identifié de l'entreprise.</small></span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="prioReglementaire" style="width:auto;flex:none;margin-top:3px;">
+                                <span>Réglementaire <small style="font-weight:400;color:var(--muted);display:block;">La campagne répond à une obligation légale ou réglementaire.</small></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group fg-full" style="background:linear-gradient(135deg,#0c3a28,#00734C);border-radius:12px;padding:16px 20px;color:#fff;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                            <div>
+                                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.8;">Valeur métier calculée</div>
+                                <div style="font-size:26px;font-weight:800;" id="prioValeurMetier">0</div>
+                            </div>
+                            <div style="font-size:12px;opacity:.85;">points — croisée avec la charge de réalisation sur l'écran de priorisation</div>
+                        </div>
+
+                        <div class="step-navigation">
+                            <button type="button" class="btn btn-prev" onclick="prevStep()">← Précédent</button>
+                            <button type="button" class="btn btn-next" onclick="nextStep()">Suivant →</button>
+                        </div>
+                    </div>
+
+                    <!-- Étape 6 : Récapitulatif -->
+                    <div class="form-step" data-step="6">
                         <h3 class="step-title">✅ Récapitulatif</h3>
                         <p class="step-description">Vérifiez les informations avant de créer la campagne</p>
 
@@ -1881,7 +1961,7 @@
 
             // Variables globales pour le stepper
             var currentStep = 1;
-            var totalSteps = 5;
+            var totalSteps = 6;
 
             // Fonction pour naviguer vers l'étape suivante
             window.nextStep = function() {
@@ -1889,7 +1969,8 @@
                     if (currentStep < totalSteps) {
                         currentStep++;
                         updateStepper();
-                        if (currentStep === 5) {
+                        if (currentStep === 5) updatePrioValeurMetierPreview();
+                        if (currentStep === totalSteps) {
                             generateSummary();
                         }
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1946,6 +2027,39 @@
                     progressPercentage.textContent = Math.round(percentage) + '%';
                 }
             }
+
+            // Aperçu en direct de la Valeur métier (étape « Bénéfices attendus ») —
+            // réutilise le moteur (workflow.computeValeurMetier) plutôt que de
+            // dupliquer le calcul du barème ici.
+            function updatePrioValeurMetierPreview() {
+                var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+                var badge = document.getElementById('prioReutilBadge');
+                var out = document.getElementById('prioValeurMetier');
+                if (!wf || !out) return;
+                var typologyEl = document.getElementById('typology');
+                var fakeData = {
+                    typology: typologyEl ? typologyEl.value : '',
+                    priorisation: {
+                        potentielBusiness: parseInt(($('#potentielBusiness') || {}).value, 10) || 0,
+                        satisfactionClient: parseInt(($('#satisfactionClient') || {}).value, 10) || 0,
+                        volumeClientCible: parseInt(($('#volumeClientCible') || {}).value, 10) || 0,
+                        impactStrategique: !!(document.getElementById('impactStrategique') && document.getElementById('impactStrategique').checked),
+                        reglementaire: !!(document.getElementById('prioReglementaire') && document.getElementById('prioReglementaire').checked)
+                    }
+                };
+                out.textContent = wf.computeValeurMetier(fakeData);
+                if (badge) {
+                    var applicable = wf.reutilisabiliteApplicable(fakeData);
+                    badge.textContent = applicable ? 'Oui — points ajoutés' : 'Non applicable';
+                    badge.style.color = applicable ? 'var(--primary,#00875A)' : 'var(--muted,#8b988f)';
+                }
+            }
+            ['potentielBusiness', 'satisfactionClient', 'volumeClientCible', 'impactStrategique', 'prioReglementaire'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.addEventListener('change', updatePrioValeurMetierPreview);
+            });
+            var _typologyElForPrio = document.getElementById('typology');
+            if (_typologyElForPrio) _typologyElForPrio.addEventListener('change', updatePrioValeurMetierPreview);
 
             // Fonction pour valider une étape avant de passer à la suivante
             function validateStep(step) {
@@ -2194,6 +2308,29 @@
                     }
                     html += '</div>';
                 }
+
+                // Section 5 : Bénéfices attendus et enjeux de la demande (Priorisation)
+                html += '<div class="summary-section">';
+                html += '  <h4>📈 Bénéfices attendus et enjeux de la demande</h4>';
+                var _wfSummary = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+                var _prioFake = {
+                    typology: ($("#typology") || {}).value || '',
+                    priorisation: {
+                        potentielBusiness: parseInt(($("#potentielBusiness") || {}).value, 10) || 0,
+                        satisfactionClient: parseInt(($("#satisfactionClient") || {}).value, 10) || 0,
+                        volumeClientCible: parseInt(($("#volumeClientCible") || {}).value, 10) || 0,
+                        impactStrategique: !!(document.getElementById('impactStrategique') && document.getElementById('impactStrategique').checked),
+                        reglementaire: !!(document.getElementById('prioReglementaire') && document.getElementById('prioReglementaire').checked)
+                    }
+                };
+                html += '  <div class="summary-item"><span class="summary-label">Potentiel business :</span><span class="summary-value">' + (($("#potentielBusiness") || {}).selectedOptions?.[0]?.text || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Satisfaction client :</span><span class="summary-value">' + (($("#satisfactionClient") || {}).selectedOptions?.[0]?.text || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Volume de clients ciblés :</span><span class="summary-value">' + (($("#volumeClientCible") || {}).selectedOptions?.[0]?.text || '-') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Réutilisabilité (auto) :</span><span class="summary-value">' + ((_wfSummary && _wfSummary.reutilisabiliteApplicable(_prioFake)) ? 'Oui' : 'Non') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Impact stratégique :</span><span class="summary-value">' + (_prioFake.priorisation.impactStrategique ? 'Oui' : 'Non') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Réglementaire :</span><span class="summary-value">' + (_prioFake.priorisation.reglementaire ? 'Oui' : 'Non') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Valeur métier :</span><span class="summary-value">' + (_wfSummary ? _wfSummary.computeValeurMetier(_prioFake) : '-') + ' points</span></div>';
+                html += '</div>';
 
                 summaryContainer.innerHTML = html;
             }
@@ -3046,6 +3183,13 @@
                             'creation.step3': stripMigratedIds(cf.collectValues(document.getElementById('cfStep3Fields'), 'creation.step3'), STEP3_MIGRATED_IDS)
                         };
                     })(),
+                    priorisation: {
+                        potentielBusiness: parseInt(($("#potentielBusiness") || {}).value, 10) || 0,
+                        satisfactionClient: parseInt(($("#satisfactionClient") || {}).value, 10) || 0,
+                        volumeClientCible: parseInt(($("#volumeClientCible") || {}).value, 10) || 0,
+                        impactStrategique: !!(document.getElementById('impactStrategique') && document.getElementById('impactStrategique').checked),
+                        reglementaire: !!(document.getElementById('prioReglementaire') && document.getElementById('prioReglementaire').checked)
+                    },
                     channels: [],
                     actif: true
                 };
