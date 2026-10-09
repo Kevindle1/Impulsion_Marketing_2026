@@ -594,14 +594,14 @@
       if (document.querySelector('.egg-snow')) return;
       var snow = document.createElement('div');
       snow.className = 'egg-snow';
-      var flakeCount = 28;
+      var flakeCount = 40;
       for (var i = 0; i < flakeCount; i++) {
         var flake = document.createElement('span');
         flake.className = 'egg-snowflake';
         flake.textContent = '❄';
         flake.style.left = Math.random() * 100 + '%';
-        flake.style.fontSize = (10 + Math.random() * 10) + 'px';
-        flake.style.opacity = String(0.4 + Math.random() * 0.5);
+        flake.style.fontSize = (14 + Math.random() * 14) + 'px';
+        flake.style.opacity = String(0.65 + Math.random() * 0.35);
         flake.style.setProperty('--drift', (Math.random() * 60 - 30) + 'px');
         flake.style.animationDuration = (8 + Math.random() * 7) + 's';
         flake.style.animationDelay = (Math.random() * -15) + 's';
