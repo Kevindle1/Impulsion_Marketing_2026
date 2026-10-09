@@ -739,10 +739,17 @@
         }
 
         function autoRefreshTick() {
-            if (document.hidden || !_currentRootHandle || _autoRefreshing) return;
+            if (!_currentRootHandle || _autoRefreshing) return;
             var workflowModule = window.ImpulsionMarketing.workflow;
             var currentUser    = window.ImpulsionMarketing.users.getCurrentUser();
             _autoRefreshing = true;
+            // Les notifications doivent continuer d'être vérifiées (et déclencher
+            // leur pop-up système) même fenêtre réduite / onglet en arrière-plan —
+            // c'est tout l'intérêt d'une notification. Seul le rafraîchissement de
+            // l'affichage des campagnes (coûteux, invisible tant que la page n'est
+            // pas regardée) reste sauté dans ce cas.
+            loadNotifications(_currentRootHandle, currentUser);
+            if (document.hidden) { _autoRefreshing = false; return; }
             fetchIndexFromNetwork(_currentRootHandle, workflowModule)
                 .then(function(idx) {
                     var sig = computeIndexSig(idx);
@@ -750,7 +757,6 @@
                         _lastIndexSig = sig;
                         processAndRender(indexToEntries(idx), currentUser, workflowModule, true); // silencieux
                     }
-                    loadNotifications(_currentRootHandle, currentUser);
                 })
                 .catch(function(err) { console.debug('Auto-rafraîchissement échoué :', err && err.message); })
                 .then(function() { _autoRefreshing = false; });
@@ -1156,6 +1162,12 @@
                     var mine = notifs.filter(function(n) {
                         return n.destinataire === userName && !n.lu;
                     });
+                    // Son + pop-up système (visible même fenêtre réduite) à l'arrivée
+                    // d'une notification réellement nouvelle — même mécanisme partagé
+                    // que les autres pages (topbar-standalone.js), cette page ayant sa
+                    // propre cloche (IDs différents) plutôt que topbar.mount().
+                    var topbarMod = window.ImpulsionMarketing.topbar;
+                    if (topbarMod && topbarMod.alertOnNewNotifications) topbarMod.alertOnNewNotifications(mine);
                     renderNotifications(mine, notifs, rootHandle);
                 })
                 .catch(function() {
@@ -1173,6 +1185,10 @@
                     var opening = panel.style.display === 'none';
                     if (opening) positionNotifPanel(bell, panel);
                     panel.style.display = opening ? 'block' : 'none';
+                    // Un clic est un vrai geste utilisateur : meilleur moment pour
+                    // demander l'autorisation d'afficher des notifications système.
+                    var topbarMod = window.ImpulsionMarketing.topbar;
+                    if (topbarMod && topbarMod.ensureNotifPermission) topbarMod.ensureNotifPermission();
                 });
                 document.addEventListener('click', function() {
                     var panel = document.getElementById('notif-panel');

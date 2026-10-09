@@ -5693,7 +5693,12 @@ window.ImpulsionMarketing.adminConfig = (function () {
 
   IM.topbar = {
     mount: mount, mountSidebarUser: mountSidebarUser, confettiBurst: confettiBurst,
-    getHalloweenMessage: getHalloweenMessage, runJumpscare: runJumpscare
+    getHalloweenMessage: getHalloweenMessage, runJumpscare: runJumpscare,
+    // Le tableau de bord a sa propre cloche (notif-badge/notif-list, IDs
+    // différents de topbar-notif-bell) et ne passe donc pas par mount() /
+    // wireNotifications() — mais il doit déclencher la même alerte système
+    // (son + pop-up OS) que les autres pages. Exposés pour ça.
+    alertOnNewNotifications: _alertOnNewNotifications, ensureNotifPermission: _ensureNotifPermission
   };
 
   // Les easter eggs ne dépendent que du logo (.sidebar .brand, présent sur
