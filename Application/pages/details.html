@@ -2131,7 +2131,7 @@
 
         // ── Étapes globales (stepper) ──
         html += '<div class="wf-block"><div class="wf-head"><span class="wf-title">🚀 Préparation</span></div>';
-        html += wfStepper(workflow.STEPS.slice(0, 3), function(step) { var s = globalSteps[step.id] || 'locked'; if (isCompleted) s = 'completed'; return s; });
+        html += wfStepper(workflow.STEPS.slice(0, 4), function(step) { var s = globalSteps[step.id] || 'locked'; if (isCompleted) s = 'completed'; return s; });
         html += '</div>';
 
         // ── Étapes par canal (v2) ──
