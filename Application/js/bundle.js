@@ -5427,14 +5427,15 @@ window.ImpulsionMarketing.adminConfig = (function () {
   }
   // Notification système : rendue par l'OS (bas-droite sous Windows, coin
   // d'écran sous macOS), visible même fenêtre réduite/en arrière-plan — tant
-  // que le navigateur reste ouvert. Renvoie false si indisponible/refusée
-  // (repli sur le toast in-page dans ce cas).
+  // que le navigateur reste ouvert. requireInteraction la maintient affichée
+  // jusqu'au clic ou à la fermeture manuelle (respecté par Chrome/Edge sous
+  // Windows/Linux ; ignoré sous macOS/mobile, où l'OS la referme de lui-même).
+  // Renvoie false si indisponible/refusée (repli sur le toast in-page).
   function _showNativeNotification(title, body) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return false;
     try {
-      var n = new Notification(title, { body: body, tag: 'impulsion-' + Date.now(), silent: false });
+      var n = new Notification(title, { body: body, tag: 'impulsion-' + Date.now(), silent: false, requireInteraction: true });
       n.onclick = function () { try { window.focus(); } catch (e) {} n.close(); };
-      setTimeout(function () { try { n.close(); } catch (e) {} }, 12000);
       return true;
     } catch (e) { return false; }
   }
