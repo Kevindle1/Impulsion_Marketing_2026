@@ -202,14 +202,36 @@ window.ImpulsionMarketing.adminConfig = (function () {
     return ensureSeed().then(function (cfg) { applyConfig(cfg); return cfg; }).catch(function () { return {}; });
   }
 
-  // Applique l'URL de la Galerie (settings.galleryUrl) aux liens du menu — évite de
-  // coder l'URL en dur dans chaque page.
-  function applyGalleryLink() {
-    var url = IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.galleryUrl;
-    var links = document.querySelectorAll('a.nav-link[data-gallery]');
-    Array.prototype.forEach.call(links, function (a) {
-      if (url) { a.href = url; a.style.display = ''; }
-      else { a.href = '#'; a.style.display = 'none'; }
+  // Liens externes du menu (section « Externe » de la sidebar), entièrement
+  // pilotés par _config.json (settings.externalLinks : [{label, url}, ...]) —
+  // éditables depuis Administration ▸ Paramètres généraux, aucun lien codé en
+  // dur dans les pages. La section elle-même (titre inclus) est masquée s'il
+  // n'y a aucun lien configuré.
+  var EXT_LINK_ICON = '<svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+  function injectExternalLinks() {
+    var section = document.getElementById('nav-section-externe');
+    if (!section) return;
+    var links = (IM.config && IM.config.APP_SETTINGS && Array.isArray(IM.config.APP_SETTINGS.externalLinks)) ? IM.config.APP_SETTINGS.externalLinks : [];
+    // Retire les liens injectés lors d'un appel précédent (ex. après enregistrement
+    // des paramètres) — ne touche jamais au <span class="nav-section-title">.
+    Array.prototype.slice.call(section.querySelectorAll('a[data-ext-link]')).forEach(function (a) { a.remove(); });
+    if (!links.length) { section.style.display = 'none'; return; }
+    section.style.display = '';
+    links.forEach(function (l) {
+      if (!l || !l.url) return;
+      var a = document.createElement('a');
+      a.className = 'nav-link';
+      a.href = l.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.setAttribute('data-ext-link', '');
+      a.innerHTML = EXT_LINK_ICON + '<span>' + esc(l.label || l.url) + '</span>';
+      section.appendChild(a);
+    });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
 
@@ -221,8 +243,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
       .catch(function () {})
       .then(function () {
         // Le lien « Administration » n'est ajouté que s'il y a un menu latéral.
-        if (document.querySelector('.sidebar-nav')) { injectAdminLink(); injectPriorisationLink(); }
-        applyGalleryLink();
+        if (document.querySelector('.sidebar-nav')) { injectAdminLink(); injectPriorisationLink(); injectExternalLinks(); }
         _readyResolve();
       });
   }
@@ -235,6 +256,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
 
   return {
     load: load, save: save, applyConfig: applyConfig, ensureSeed: ensureSeed, reload: reload,
-    ready: ready, LIST_MAP: LIST_MAP, flattenSegments: flattenSegments
+    ready: ready, LIST_MAP: LIST_MAP, flattenSegments: flattenSegments,
+    injectExternalLinks: injectExternalLinks
   };
 })();
