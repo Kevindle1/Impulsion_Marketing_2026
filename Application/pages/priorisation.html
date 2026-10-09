@@ -224,6 +224,127 @@
             .catch(function (e) { console.warn('logActivity:', e && e.message); });
     }
 
+    // Petite modale de saisie — motif obligatoire, + date optionnelle pour un
+    // décalage. Même esprit que showPromptModal (details.html), généralisée
+    // pour porter un second champ de date.
+    function showActionModal(opts) {
+        opts = opts || {};
+        var overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
+        var box = document.createElement('div');
+        box.style.cssText = 'background:#fff;border-radius:12px;padding:22px;width:min(440px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
+        box.innerHTML =
+            '<h3 style="margin:0 0 6px;font-size:16px;color:var(--ink);">' + esc(opts.title || 'Saisie') + '</h3>'
+            + (opts.label ? '<p style="margin:0 0 14px;font-size:13px;color:var(--muted);">' + esc(opts.label) + '</p>' : '')
+            + (opts.withDate ? '<label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;">Nouvelle date de lancement</label>'
+                + '<input type="date" class="am-date" value="' + esc(opts.dateValue || '') + '" style="width:100%;box-sizing:border-box;margin-bottom:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;">' : '')
+            + '<label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;">Motif</label>'
+            + '<textarea class="am-motif" rows="3" placeholder="' + esc(opts.placeholder || 'Motif…') + '" style="width:100%;box-sizing:border-box;margin-bottom:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;resize:vertical;"></textarea>'
+            + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+            + '<button data-act="cancel" class="prio-btn">Annuler</button>'
+            + '<button data-act="ok" class="prio-btn" style="background:var(--primary);color:#fff;border-color:transparent;">' + esc(opts.confirmText || 'Valider') + '</button>'
+            + '</div>';
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+        var motifEl = box.querySelector('.am-motif');
+        var dateEl = box.querySelector('.am-date');
+        motifEl.focus();
+        function close() { overlay.remove(); }
+        function submit() {
+            var motif = motifEl.value.trim();
+            if (!motif) { motifEl.style.borderColor = 'var(--red)'; motifEl.focus(); return; }
+            if (opts.withDate && (!dateEl || !dateEl.value)) { if (dateEl) dateEl.style.borderColor = 'var(--red)'; return; }
+            close();
+            if (opts.onConfirm) opts.onConfirm(motif, dateEl ? dateEl.value : null);
+        }
+        box.querySelector('[data-act="cancel"]').addEventListener('click', close);
+        box.querySelector('[data-act="ok"]').addEventListener('click', submit);
+        overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+        overlay.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+    }
+
+    // Notifie les équipes affectées (même mécanisme que pushNotifDebrancher,
+    // details.html) — écrit dans _notifications.json à la racine.
+    function notifyAssignees(campaignData, campaignName, type) {
+        var assignments = (campaignData.workflow && campaignData.workflow.assignments) || {};
+        function resolveAssignees(role) {
+            var list = assignments[role] || [];
+            if (typeof list === 'string') list = list ? [list] : [];
+            if (!list.length) list = (users.USERS || []).filter(function (u) { return u.role === role && u.isManager && !u.inactive; }).map(function (u) { return u.name; });
+            return list;
+        }
+        var destinataires = resolveAssignees('data').concat(resolveAssignees('ebf')).concat(resolveAssignees('com'));
+        var seen = {};
+        destinataires = destinataires.filter(function (d) { return seen[d] ? false : (seen[d] = true); });
+        if (!destinataires.length || !state.root) return Promise.resolve();
+        return state.root.getFileHandle('_notifications.json', { create: true })
+            .then(function (fh) {
+                return fh.getFile().then(function (f) { return f.text(); })
+                    .then(function (txt) { return { fh: fh, notifs: JSON.parse(txt) }; })
+                    .catch(function () { return { fh: fh, notifs: [] }; });
+            })
+            .then(function (res) {
+                var now = new Date().toISOString();
+                destinataires.forEach(function (dest) {
+                    res.notifs.push({ id: 'notif-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5), type: type, destinataire: dest, campagneId: campaignName, campagneTitre: campaignName, dateCreation: now, lu: false });
+                });
+                return res.fh.createWritable().then(function (w) { return w.write(JSON.stringify(res.notifs, null, 2)).then(function () { return w.close(); }); });
+            })
+            .catch(function (e) { console.warn('notifyAssignees failed:', e); });
+    }
+
+    function findCampaign(folderName) {
+        return state.campaigns.filter(function (c) { return c.folderName === folderName; })[0] || null;
+    }
+
+    function handleStop(folderName) {
+        var c = findCampaign(folderName);
+        if (!c) return;
+        var cu = users.getCurrentUser();
+        showActionModal({
+            title: 'Stopper la campagne',
+            label: 'La campagne « ' + (c.id || c.folderName) + ' » ne tournera plus. L\'action et son auteur sont enregistrés dans le journal.',
+            placeholder: 'Motif de l\'arrêt…',
+            confirmText: '⛔ Stopper',
+            onConfirm: function (motif) {
+                c.actif = false;
+                workflow.saveCampaignWorkflow(state.root, c.folderName, c)
+                    .then(function () { return notifyAssignees(c, c.folderName, 'campagne_inactive'); })
+                    .then(function () { return logActivity(c.folderName, 'statut', 'Campagne stoppée depuis Priorisation par ' + (cu ? cu.name : '?') + ' — motif : ' + motif); })
+                    .then(function () {
+                        notify('Campagne stoppée.');
+                        state.campaigns = state.campaigns.filter(function (x) { return x.folderName !== c.folderName; });
+                        render();
+                    })
+                    .catch(function (e) { notify('Échec : ' + ((errors && errors.getErrorMessage) ? errors.getErrorMessage(e) : e.message), 'error'); });
+            }
+        });
+    }
+
+    function handleDecaler(folderName) {
+        var c = findCampaign(folderName);
+        if (!c) return;
+        var cu = users.getCurrentUser();
+        showActionModal({
+            title: 'Décaler la campagne',
+            label: 'La campagne « ' + (c.id || c.folderName) + ' » reste engagée, avec une nouvelle date de lancement. L\'action et son auteur sont enregistrés dans le journal.',
+            placeholder: 'Motif du décalage…',
+            confirmText: '🕓 Décaler',
+            withDate: true,
+            dateValue: c.launchDate || '',
+            onConfirm: function (motif, newDate) {
+                var previous = c.launchDate || '';
+                c.launchDate = newDate;
+                c.lastDecalage = { date: new Date().toISOString(), motif: motif, previousLaunchDate: previous, newLaunchDate: newDate, par: cu ? cu.name : '?' };
+                workflow.saveCampaignWorkflow(state.root, c.folderName, c)
+                    .then(function () { return notifyAssignees(c, c.folderName, 'campagne_decalee'); })
+                    .then(function () { return logActivity(c.folderName, 'priorisation', 'Campagne décalée du ' + (previous || '—') + ' au ' + newDate + ' par ' + (cu ? cu.name : '?') + ' — motif : ' + motif); })
+                    .then(function () { notify('Campagne décalée.'); render(); })
+                    .catch(function (e) { notify('Échec : ' + ((errors && errors.getErrorMessage) ? errors.getErrorMessage(e) : e.message), 'error'); });
+            }
+        });
+    }
+
     function fmtNum(n) {
         if (n === null || n === undefined || isNaN(n)) return '—';
         return Math.round(n).toLocaleString('fr-FR');
@@ -331,17 +452,20 @@
         empty.style.display = 'none';
         tbody.innerHTML = list.map(function (c) {
             var valeur = workflow.computeValeurCampagne(c);
+            var decaleeTag = c.lastDecalage ? ' <span class="prio-badge" style="color:#2563EB;background:#e8f0fe;" title="Décalée du ' + esc(fmtDate(c.lastDecalage.previousLaunchDate)) + ' — motif : ' + esc(c.lastDecalage.motif) + '">Décalée</span>' : '';
             return '<tr>'
                 + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
                 + '<td class="prio-valeur">' + fmtNum(valeur) + '</td>'
-                + '<td><span class="prio-badge prio-badge-on">' + esc(statutLabel(c)) + '</span></td>'
+                + '<td><span class="prio-badge prio-badge-on">' + esc(statutLabel(c)) + '</span>' + decaleeTag + '</td>'
                 + '<td>' + fmtDate(c.launchDate) + '</td>'
                 + '<td><div class="prio-actions">'
-                + '<button type="button" class="prio-btn" data-decaler="' + esc(c.folderName) + '" title="Bientôt disponible"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Décaler</button>'
-                + '<button type="button" class="prio-btn prio-btn-danger" data-stopper="' + esc(c.folderName) + '" title="Bientôt disponible"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Stopper</button>'
+                + '<button type="button" class="prio-btn" data-decaler="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Décaler</button>'
+                + '<button type="button" class="prio-btn prio-btn-danger" data-stopper="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Stopper</button>'
                 + '</div></td>'
                 + '</tr>';
         }).join('');
+        tbody.querySelectorAll('[data-decaler]').forEach(function (b) { b.addEventListener('click', function () { handleDecaler(b.getAttribute('data-decaler')); }); });
+        tbody.querySelectorAll('[data-stopper]').forEach(function (b) { b.addEventListener('click', function () { handleStop(b.getAttribute('data-stopper')); }); });
     }
 
     function renderKpis(aPrioriser) {
