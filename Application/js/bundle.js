@@ -4894,13 +4894,21 @@ window.ImpulsionMarketing.adminConfig = (function () {
 
   // Applique l'URL de la Galerie (settings.galleryUrl) aux liens du menu — évite de
   // coder l'URL en dur dans chaque page.
-  function applyGalleryLink() {
-    var url = IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.galleryUrl;
-    var links = document.querySelectorAll('a.nav-link[data-gallery]');
+  // Applique une URL (Administration ▸ Paramètres généraux) aux liens du menu
+  // portant l'attribut donné — évite de coder l'URL en dur dans chaque page.
+  // Lien masqué tant qu'aucune URL n'est configurée.
+  function applyExternalLink(dataAttr, url) {
+    var links = document.querySelectorAll('a.nav-link[' + dataAttr + ']');
     Array.prototype.forEach.call(links, function (a) {
       if (url) { a.href = url; a.style.display = ''; }
       else { a.href = '#'; a.style.display = 'none'; }
     });
+  }
+  function applyGalleryLink() {
+    applyExternalLink('data-gallery', IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.galleryUrl);
+  }
+  function applyCartoNpcLink() {
+    applyExternalLink('data-carto-npc', IM.config && IM.config.APP_SETTINGS && IM.config.APP_SETTINGS.cartoNpcUrl);
   }
 
   function init() {
@@ -4913,6 +4921,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
         // Le lien « Administration » n'est ajouté que s'il y a un menu latéral.
         if (document.querySelector('.sidebar-nav')) { injectAdminLink(); injectPriorisationLink(); }
         applyGalleryLink();
+        applyCartoNpcLink();
         _readyResolve();
       });
   }
