@@ -1028,10 +1028,24 @@
                                     <input type="checkbox" id="teamData" value="Data" checked style="margin-right: 8px; cursor: pointer;">
                                     <span>Data</span>
                                 </label>
+                                <label id="labelTeamVieMut" style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="checkbox" id="teamVieMut" value="Vie Mut" style="margin-right: 8px; cursor: pointer;">
+                                    <span>Vie Mut</span>
+                                </label>
                             </div>
                             <small id="teamRestrictionNote" style="color: var(--muted); display: block; margin-top: 8px;">
                                 Sélectionnez les équipes qui devront intervenir sur cette campagne (votre équipe incluse si vous êtes PO).
                             </small>
+                        </div>
+
+                        <div class="form-group fg-full">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="serviceExterneActif" style="width:auto;flex:none;">
+                                <span>Service externe impliqué</span>
+                            </label>
+                            <select id="serviceExterneNom" style="display:none;margin-top:8px;">
+                                <option value="">— Sélectionner un prestataire —</option>
+                            </select>
                         </div>
 
                         <div class="step-navigation">
@@ -1238,7 +1252,8 @@
                         <div class="form-group">
                             <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
                                 <input type="checkbox" id="prioReglementaire" style="width:auto;flex:none;margin-top:3px;">
-                                <span>Réglementaire <small style="font-weight:400;color:var(--muted);display:block;">La campagne répond à une obligation légale ou réglementaire.</small></span>
+                                <span>Réglementaire <small style="font-weight:400;color:var(--muted);display:block;">La campagne répond à une obligation légale ou réglementaire.</small>
+                                <small id="prioReglementaireAutoNote" style="display:none;font-weight:600;color:var(--primary,#00875A);">🔒 Verrouillé : au moins un livrable a pour « Type de Com » Réglementaire.</small></span>
                             </label>
                         </div>
 
@@ -1551,6 +1566,25 @@
                     $("#teamCom").checked  = data.requiredTeams.includes("Com");
                     $("#teamEBF").checked  = data.requiredTeams.includes("EBF");
                     $("#teamData").checked = data.requiredTeams.includes("Data");
+                    $("#teamVieMut").checked = data.requiredTeams.includes("Vie Mut");
+                }
+                // Service externe
+                if (data.serviceExterne && data.serviceExterne.actif) {
+                    $("#serviceExterneActif").checked = true;
+                    var _seSel = $("#serviceExterneNom");
+                    if (_seSel) {
+                        _seSel.style.display = '';
+                        if (data.serviceExterne.nom) {
+                            _seSel.value = data.serviceExterne.nom;
+                            if (_seSel.value !== data.serviceExterne.nom) {
+                                var _seOpt = document.createElement('option');
+                                _seOpt.value = data.serviceExterne.nom;
+                                _seOpt.textContent = data.serviceExterne.nom;
+                                _seSel.appendChild(_seOpt);
+                                _seSel.value = data.serviceExterne.nom;
+                            }
+                        }
+                    }
                 }
                 // Mettre à jour les restrictions basées sur le PO
                 updateTeamRestrictions();
@@ -1748,6 +1782,7 @@
                                 }, 200);
                             }
                         });
+                        updateReglementaireAuto();
                     }, 100);
             }
 
@@ -1887,6 +1922,22 @@
             document.getElementById('poTeam').addEventListener('change', updatePoPersons);
             // Écouter la sélection de la personne PO (pour mettre à jour les restrictions d'équipes)
             document.getElementById('po').addEventListener('change', updateTeamRestrictions);
+
+            // Service externe : la liste déroulante des prestataires (Administration ▸
+            // Services externes) n'apparaît que si la case est cochée.
+            (function wireServiceExterne() {
+                var cb = document.getElementById('serviceExterneActif');
+                var sel = document.getElementById('serviceExterneNom');
+                if (!cb || !sel) return;
+                var cfgSE = window.ImpulsionMarketing && window.ImpulsionMarketing.config;
+                var prestataires = (cfgSE && Array.isArray(cfgSE.SERVICES_EXTERNES)) ? cfgSE.SERVICES_EXTERNES : [];
+                prestataires.forEach(function (p) {
+                    var opt = document.createElement('option');
+                    opt.value = p; opt.textContent = p;
+                    sel.appendChild(opt);
+                });
+                cb.addEventListener('change', function () { sel.style.display = cb.checked ? '' : 'none'; });
+            })();
 
             // Gestion des champs dynamiques
             document.querySelectorAll('input[name="numChannels"]').forEach(radio => {
@@ -2050,6 +2101,24 @@
                 var el = document.getElementById(id);
                 if (el) el.addEventListener('change', updatePrioValeurMetierPreview);
             });
+
+            // Réglementaire auto : verrouillé coché dès qu'un livrable a pour
+            // « Type de Com » (comType{idx}) la valeur « Réglementaire » — cohérent
+            // avec la liste déjà existante (_config.json → typesCom). Reste librement
+            // modifiable tant qu'aucun livrable de ce type n'est présent.
+            function updateReglementaireAuto() {
+                var cb = document.getElementById('prioReglementaire');
+                if (!cb) return;
+                var locked = false;
+                document.querySelectorAll('#channelsContainer select[id^="comType"]').forEach(function (sel) {
+                    if (sel.value === 'Réglementaire') locked = true;
+                });
+                cb.disabled = locked;
+                if (locked) cb.checked = true;
+                var note = document.getElementById('prioReglementaireAutoNote');
+                if (note) note.style.display = locked ? '' : 'none';
+                updatePrioValeurMetierPreview();
+            }
             var _typologyElForPrio = document.getElementById('typology');
             if (_typologyElForPrio) _typologyElForPrio.addEventListener('change', updatePrioValeurMetierPreview);
 
@@ -2238,7 +2307,11 @@
                 if ($("#teamCom").checked) reqTeams.push("Com");
                 if ($("#teamEBF").checked) reqTeams.push("EBF");
                 if ($("#teamData").checked) reqTeams.push("Data");
+                if ($("#teamVieMut").checked) reqTeams.push("Vie Mut");
                 html += '  <div class="summary-item"><span class="summary-label">Équipes requises :</span><span class="summary-value">' + (reqTeams.join(', ') || '-') + '</span></div>';
+                if ($("#serviceExterneActif").checked) {
+                    html += '  <div class="summary-item"><span class="summary-label">Service externe :</span><span class="summary-value">' + ($("#serviceExterneNom").value || 'Oui') + '</span></div>';
+                }
                 html += '</div>';
 
                 // Section 2 : Segmentation
@@ -2485,6 +2558,9 @@
                     var t = e.target;
                     if (t && t.id && t.id.indexOf('channelContent') === 0) {
                         updateChannelAccHeader(t.id.replace('channelContent', ''));
+                    }
+                    if (t && t.tagName === 'SELECT' && t.id && t.id.indexOf('comType') === 0) {
+                        updateReglementaireAuto();
                     }
                 });
             })();
@@ -2762,6 +2838,7 @@
                         });
                     });
                 }
+                updateReglementaireAuto();
             }
 
             // ── Brouillon auto-sauvegardé du formulaire de création ──────────────────
@@ -3196,6 +3273,11 @@
                 if ($("#teamCom").checked) data.requiredTeams.push("Com");
                 if ($("#teamEBF").checked) data.requiredTeams.push("EBF");
                 if ($("#teamData").checked) data.requiredTeams.push("Data");
+                if ($("#teamVieMut").checked) data.requiredTeams.push("Vie Mut");
+                data.serviceExterne = {
+                    actif: !!$("#serviceExterneActif").checked,
+                    nom: $("#serviceExterneActif").checked ? ($("#serviceExterneNom").value || '') : ''
+                };
 
                 // Channels
                 const numChannels = parseInt(data.numChannels) || 0;

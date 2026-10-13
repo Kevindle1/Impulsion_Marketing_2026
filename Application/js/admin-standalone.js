@@ -23,7 +23,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     recurrences: 'RECURRENCES',
     lots: 'LOTS',
     produits: 'PRODUITS',
-    comTypologies: 'COM_TYPOLOGIES'
+    comTypologies: 'COM_TYPOLOGIES',
+    servicesExternes: 'SERVICES_EXTERNES'
   };
 
   // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).

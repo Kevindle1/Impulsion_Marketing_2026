@@ -86,6 +86,12 @@ window.ImpulsionMarketing.config = (function() {
   const TYPES_COM = _arr('typesCom');
 
   // ========================================
+  // Services externes (prestataires)
+  // ========================================
+
+  const SERVICES_EXTERNES = _arr('servicesExternes');
+
+  // ========================================
   // Typologies de Campagne
   // ========================================
 
@@ -343,6 +349,7 @@ window.ImpulsionMarketing.config = (function() {
     UNIVERS_BESOINS: UNIVERS_BESOINS,
     CANAUX: CANAUX,
     TYPES_COM: TYPES_COM,
+    SERVICES_EXTERNES: SERVICES_EXTERNES,
     TYPOLOGIES: TYPOLOGIES,
     PRODUITS: PRODUITS,
     MARCHES: MARCHES,
