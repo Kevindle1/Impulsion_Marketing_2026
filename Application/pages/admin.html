@@ -337,8 +337,8 @@
         // COM → BAT/test EBF → ciblage Data) et restent fixes. Seuls les LIBELLÉS affichés
         // sont éditables via Administration ▸ Paramètres généraux ▸ Rôles (IM.config.ROLE_LABELS) —
         // avec repli sur les libellés historiques si non encore configurés.
-        var ROLE_KEYS = ['marketing', 'com', 'ebf', 'data', 'superadmin'];
-        var DEFAULT_ROLE_LABELS = { marketing: 'Marketing', com: 'Com', ebf: 'EBF', data: 'Data', superadmin: 'Super Admin' };
+        var ROLE_KEYS = ['marketing', 'vieMut', 'com', 'ebf', 'data', 'superadmin'];
+        var DEFAULT_ROLE_LABELS = { marketing: 'Marketing', vieMut: 'Vie Mut', com: 'Com', ebf: 'EBF', data: 'Data', superadmin: 'Super Admin' };
         function roleLabel(role) {
             var rl = config.ROLE_LABELS || {};
             return rl[role] || DEFAULT_ROLE_LABELS[role] || role;

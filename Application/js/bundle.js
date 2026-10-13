@@ -1893,14 +1893,14 @@ window.ImpulsionMarketing.users = (function () {
   }
 
   // Droit d'accès à la page Priorisation (Managers) : le Responsable Marketing
-  // (manager de l'équipe marketing), toute personne marquée Référent Flux
-  // (flag isReferentFlux, Administration ▸ Équipes & personnes — cumulable
-  // avec le rôle actuel), ou le super admin.
+  // ou Vie Mut (même rôle que Marketing, cf. Administration ▸ Équipes &
+  // personnes), toute personne marquée Référent Flux (flag isReferentFlux,
+  // cumulable avec le rôle actuel), ou le super admin.
   function canAccessPriorisation() {
     var u = getCurrentUser();
     if (!u) return false;
     if (u.isSuperAdmin === true || u.isReferentFlux === true) return true;
-    return u.isManager === true && u.role === 'marketing';
+    return u.isManager === true && (u.role === 'marketing' || u.role === 'vieMut');
   }
 
   /**

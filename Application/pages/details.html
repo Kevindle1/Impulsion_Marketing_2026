@@ -1293,8 +1293,9 @@
         return arr.length ? arr.map(function(n){ return security.escapeHtml(n); }).join(', ') : '';
     }
     // Détermine qui peut modifier l'équipe affectée à un rôle, et dans quelle mesure :
-    //  'full' : un manager de ce service, le manager général (marketing) ou un
-    //           super-admin → ajout / retrait libre de toute l'équipe.
+    //  'full' : un manager de ce service, le manager général (marketing ou Vie
+    //           Mut, même rôle) ou un super-admin → ajout / retrait libre de
+    //           toute l'équipe.
     //  'add'  : un membre lui-même affecté à ce rôle → peut ajouter un renfort de
     //           son équipe (congés / remplacement) et se retirer, sans toucher aux
     //           autres personnes déjà affectées.
@@ -1303,7 +1304,7 @@
         var u = users && users.getCurrentUser();
         if (!u) return null;
         if (u.isSuperAdmin) return 'full';
-        if (u.isManager && (u.role === 'marketing' || u.role === role)) return 'full';
+        if (u.isManager && (u.role === 'marketing' || u.role === 'vieMut' || u.role === role)) return 'full';
         // Membre affecté (équipe campagne OU renfort de ce canal) → mode renfort.
         var eff = (idx !== undefined && workflow.channelAssignees)
             ? workflow.channelAssignees(data, idx, role)
@@ -1349,7 +1350,7 @@
         if (['submitted', 'validated', 'completed'].indexOf(cs[stepId]) === -1) return false;
         if (u.isSuperAdmin) return true;
         if (users.isCurrentUserPO && users.isCurrentUserPO(data)) return true;
-        if (u.role === 'marketing' && u.isManager) return true;
+        if ((u.role === 'marketing' || u.role === 'vieMut') && u.isManager) return true;
         var role = _stepRole(stepId);
         if (role && u.role === role && getAssignees(data.workflow.assignments, role).indexOf(u.name) !== -1) return true;
         return false;
