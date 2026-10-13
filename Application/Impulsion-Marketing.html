@@ -1153,6 +1153,12 @@
         // ── Notifications (Item 27) ──────────────────────────────────────────
         function loadNotifications(rootHandle, currentUser) {
             if (!rootHandle || !currentUser) return;
+            // Demande l'autorisation système dès l'arrivée sur le tableau de bord
+            // (comme sur les autres pages) plutôt que d'attendre un clic sur la
+            // cloche — sinon la popup ne peut jamais s'afficher tant que l'icône
+            // n'a pas été cliquée au moins une fois. Sans effet si déjà accordée/refusée.
+            var topbarModPerm = window.ImpulsionMarketing.topbar;
+            if (topbarModPerm && topbarModPerm.ensureNotifPermission) topbarModPerm.ensureNotifPermission();
             rootHandle.getFileHandle('_notifications.json', { create: false })
                 .then(function(fh) { return fh.getFile(); })
                 .then(function(f) { return f.text(); })

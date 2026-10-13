@@ -39,6 +39,12 @@
         .prio-badge { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 3px 8px; margin-right: 4px; }
         .prio-badge-on { color: var(--green-600,#00734C); background: var(--green-50,#e8f6ef); }
         .prio-badge-off { color: var(--muted-2); background: var(--line-2); }
+        .prio-badge-warn { color: #b45309; background: #fef3c7; }
+        .prio-valeur-cell { cursor: help; border-bottom: 1px dashed var(--muted-2,#8b988f); }
+        th.prio-th-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+        th.prio-th-sortable:hover { color: var(--primary,#00875A); }
+        .prio-btn-go { color: var(--green-600,#00734C); border-color: var(--green-600,#00734C); }
+        .prio-btn-go.is-active { background: var(--green-50,#e8f6ef); }
         select.prio-select { font: inherit; font-weight: 700; font-size: 12.5px; border-radius: 999px; border: 1px solid transparent; padding: 6px 28px 6px 12px; appearance: none; -webkit-appearance: none; cursor: pointer; background-repeat: no-repeat; background-position: right 10px center; background-size: 9px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%2356655e' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
         .prio-actions { display: flex; gap: 8px; }
         .prio-btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12.5px; font-weight: 700; border-radius: 10px; padding: 7px 12px; cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--gray-700,#33403a); }
@@ -146,7 +152,7 @@
                         <div class="prio-card-head"><span class="bar"></span><h2>À prioriser</h2><span class="sub" id="aPrioriserSub"></span></div>
                         <div class="prio-table-wrap">
                             <table class="prio-t" id="tableAPrioriser">
-                                <thead><tr><th>Campagne</th><th>Valeur campagne</th><th>Charge</th><th>Priorité marketing</th><th>Demandeur</th><th>Date d'envoi</th><th>Services affectés</th></tr></thead>
+                                <thead><tr><th>Campagne</th><th class="prio-th-sortable" id="thValeurAPrioriser" title="Trier par valeur campagne">Valeur campagne <span id="thValeurSortIc">⇅</span></th><th>Priorité marketing</th><th>Demandeur</th><th>Date d'envoi</th><th>Services affectés</th><th style="width:280px;">Actions</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                             <div class="prio-empty" id="aPrioriserEmpty" style="display:none;">Aucune campagne en attente de priorisation.</div>
@@ -198,6 +204,9 @@
     var IM = window.ImpulsionMarketing;
     var workflow = IM.workflow, users = IM.users, security = IM.security, errors = IM.errors;
     var esc = (security && security.escapeHtml) ? security.escapeHtml : function (s) { return String(s == null ? '' : s); };
+    // esc() échappe pour un contexte TEXTE mais pas les guillemets doubles —
+    // insuffisant pour une valeur placée dans un attribut HTML="...".
+    function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
 
     var state = { root: null, campaignsFolder: null, campaigns: [] };
 
@@ -348,6 +357,19 @@
         });
     }
 
+    // Marque « Go » : purement visuel/informatif, réversible (toggle), sans
+    // aucun effet sur le workflow ni sur les autres statuts (actif/affectation).
+    function handleGo(folderName) {
+        var c = findCampaign(folderName);
+        if (!c) return;
+        var cu = users.getCurrentUser();
+        c.go = !c.go;
+        workflow.saveCampaignWorkflow(state.root, c.folderName, c)
+            .then(function () { return logActivity(c.folderName, 'priorisation', (c.go ? 'Marquée « Go »' : 'Marque « Go » retirée') + ' par ' + (cu ? cu.name : '?') + ' (visuel uniquement)'); })
+            .then(function () { notify(c.go ? 'Campagne marquée « Go ».' : 'Marque « Go » retirée.'); render(); })
+            .catch(function (e) { notify('Échec : ' + ((errors && errors.getErrorMessage) ? errors.getErrorMessage(e) : e.message), 'error'); });
+    }
+
     // Remet la campagne où elle en était : seul le flag actif change, aucune
     // étape de workflow n'est touchée (elles étaient déjà figées au moment du
     // Stop) — elle retombe donc automatiquement dans « À prioriser » ou
@@ -412,12 +434,27 @@
         state.campaigns = out;
     }
 
+    // Orange = équipe requise mais personne affecté·e, vert = affecté·e, gris =
+    // équipe non concernée par cette campagne. « Vie Mut » n'a pas de slot
+    // d'affectation dans le moteur (étiquette informative, cf. Marketing) :
+    // affiché uniquement quand requis, sans distinction affecté/non affecté.
     function servicesBadges(c) {
         var req = c.requiredTeams || ['Marketing', 'Com', 'EBF', 'Data'];
-        return ['Com', 'EBF', 'Data'].map(function (t) {
-            var on = req.indexOf(t) !== -1;
-            return '<span class="prio-badge ' + (on ? 'prio-badge-on' : 'prio-badge-off') + '">' + t.toUpperCase() + '</span>';
-        }).join('');
+        var asn = (c.workflow && c.workflow.assignments) || {};
+        var roleKey = { Com: 'com', EBF: 'ebf', Data: 'data' };
+        var out = ['Com', 'EBF', 'Data'].map(function (t) {
+            if (req.indexOf(t) === -1) {
+                return '<span class="prio-badge prio-badge-off" title="Équipe non concernée">' + t.toUpperCase() + '</span>';
+            }
+            var who = asn[roleKey[t]];
+            var cls = who ? 'prio-badge-on' : 'prio-badge-warn';
+            var title = who ? 'Affectée : ' + esc(who) : 'Requise, personne affecté·e pour l\'instant';
+            return '<span class="prio-badge ' + cls + '" title="' + title + '">' + t.toUpperCase() + '</span>';
+        });
+        if (req.indexOf('Vie Mut') !== -1) {
+            out.push('<span class="prio-badge prio-badge-on" title="Équipe requise">VIE MUT</span>');
+        }
+        return out.join('');
     }
 
     function prioriteOptions(selected) {
@@ -430,23 +467,73 @@
         return opts;
     }
 
+    // Pastille « Réglementaire » (mise en avant des campagnes concernées).
+    function reglementaireTag(c) {
+        return (c.priorisation && c.priorisation.reglementaire)
+            ? ' <span class="prio-badge" style="color:#b91c1c;background:#fee2e2;" title="Répond à une obligation légale ou réglementaire">Réglementaire</span>' : '';
+    }
+
+    // Détail chiffré du calcul de la valeur campagne (survol de la colonne) —
+    // les chiffres bruts uniquement, pas d'explication de la formule.
+    function valeurTooltip(c) {
+        var p = c.priorisation || {};
+        var cfg = workflow.getPriorisationConfig();
+        var bareme = cfg.bareme || {};
+        var reutil = workflow.reutilisabiliteApplicable(c);
+        return [
+            'Potentiel business : ' + (p.potentielBusiness || 0),
+            'Satisfaction client : ' + (p.satisfactionClient || 0),
+            'Volume client cible : ' + (p.volumeClientCible || 0),
+            'Réutilisabilité : ' + (reutil ? (bareme.reutilisabilite || 0) : 0),
+            'Impact stratégique : ' + (p.impactStrategique ? (bareme.impactStrategique || 0) : 0),
+            'Réglementaire : ' + (p.reglementaire ? (bareme.reglementaire || 0) : 0),
+            'Valeur métier : ' + workflow.computeValeurMetier(c),
+            'Valeur métier corrigée : ' + workflow.computeValeurMetierCorrigee(c),
+            'Charge de réalisation : ' + workflow.computeChargeRealisation(c) + ' min',
+            'Valeur campagne : ' + fmtNum(workflow.computeValeurCampagne(c))
+        ].join('\n');
+    }
+
+    // Tri de la liste « À prioriser » par Valeur campagne (clic sur l'en-tête).
+    var _aPrioriserSort = { dir: null }; // null | 'asc' | 'desc'
+    function sortAPrioriser(list) {
+        if (!_aPrioriserSort.dir) return list;
+        var factor = _aPrioriserSort.dir === 'asc' ? 1 : -1;
+        return list.slice().sort(function (a, b) {
+            var va = workflow.computeValeurCampagne(a);
+            var vb = workflow.computeValeurCampagne(b);
+            if (va === null && vb === null) return 0;
+            if (va === null) return 1;
+            if (vb === null) return -1;
+            return (va - vb) * factor;
+        });
+    }
+
     function renderAPrioriser(list) {
         var tbody = document.querySelector('#tableAPrioriser tbody');
         var empty = document.getElementById('aPrioriserEmpty');
         document.getElementById('aPrioriserSub').textContent = list.length + ' campagne' + (list.length > 1 ? 's' : '') + ' en attente d\'affectation';
+        var sortIc = document.getElementById('thValeurSortIc');
+        if (sortIc) sortIc.textContent = _aPrioriserSort.dir === 'asc' ? '↑' : (_aPrioriserSort.dir === 'desc' ? '↓' : '⇅');
         if (!list.length) { tbody.innerHTML = ''; empty.style.display = ''; return; }
         empty.style.display = 'none';
+        list = sortAPrioriser(list);
         tbody.innerHTML = list.map(function (c, i) {
             var valeur = workflow.computeValeurCampagne(c);
-            var charge = workflow.computeChargeRealisation(c);
+            var reglTag = reglementaireTag(c);
+            var goTag = c.go ? ' <span class="prio-badge prio-badge-on" title="Marquée Go — visuel uniquement, sans effet sur le workflow">✓ Go</span>' : '';
             return '<tr>'
-                + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
-                + '<td class="prio-valeur">' + fmtNum(valeur) + '</td>'
-                + '<td>' + fmtMinutes(charge) + '</td>'
+                + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + reglTag + goTag + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
+                + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><select class="prio-select" data-prio-idx="' + i + '" style="background:var(--line-2);color:var(--gray-700,#33403a);">' + prioriteOptions(c.prioriteMarketing) + '</select></td>'
                 + '<td>' + esc(c.po || '—') + '</td>'
                 + '<td>' + fmtDate(c.instantiation) + '</td>'
                 + '<td>' + servicesBadges(c) + '</td>'
+                + '<td><div class="prio-actions">'
+                + '<button type="button" class="prio-btn prio-btn-go' + (c.go ? ' is-active' : '') + '" data-go="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> Go</button>'
+                + '<button type="button" class="prio-btn" data-decaler="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Décaler</button>'
+                + '<button type="button" class="prio-btn prio-btn-danger" data-stopper="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Stopper</button>'
+                + '</div></td>'
                 + '</tr>';
         }).join('');
         tbody.querySelectorAll('[data-prio-idx]').forEach(function (sel) {
@@ -463,6 +550,9 @@
                 });
             });
         });
+        tbody.querySelectorAll('[data-go]').forEach(function (b) { b.addEventListener('click', function () { handleGo(b.getAttribute('data-go')); }); });
+        tbody.querySelectorAll('[data-decaler]').forEach(function (b) { b.addEventListener('click', function () { handleDecaler(b.getAttribute('data-decaler')); }); });
+        tbody.querySelectorAll('[data-stopper]').forEach(function (b) { b.addEventListener('click', function () { handleStop(b.getAttribute('data-stopper')); }); });
     }
 
     function statutLabel(c) {
@@ -479,8 +569,8 @@
             var valeur = workflow.computeValeurCampagne(c);
             var decaleeTag = c.lastDecalage ? ' <span class="prio-badge" style="color:#2563EB;background:#e8f0fe;" title="Décalée du ' + esc(fmtDate(c.lastDecalage.previousLaunchDate)) + ' — motif : ' + esc(c.lastDecalage.motif) + '">Décalée</span>' : '';
             return '<tr>'
-                + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
-                + '<td class="prio-valeur">' + fmtNum(valeur) + '</td>'
+                + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + reglementaireTag(c) + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
+                + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><span class="prio-badge prio-badge-on">' + esc(statutLabel(c)) + '</span>' + decaleeTag + '</td>'
                 + '<td>' + fmtDate(c.launchDate) + '</td>'
                 + '<td><div class="prio-actions">'
@@ -557,6 +647,17 @@
             eb2.style.display = '';
         }
     }
+
+    // Tri par clic sur l'en-tête « Valeur campagne » (À prioriser) : aucun tri
+    // → croissant → décroissant → aucun tri, en boucle.
+    (function wireValeurSort() {
+        var th = document.getElementById('thValeurAPrioriser');
+        if (!th) return;
+        th.addEventListener('click', function () {
+            _aPrioriserSort.dir = _aPrioriserSort.dir === null ? 'asc' : (_aPrioriserSort.dir === 'asc' ? 'desc' : null);
+            render();
+        });
+    })();
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
