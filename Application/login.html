@@ -237,6 +237,7 @@
                         <option value="">Sélectionnez votre service…</option>
                         <option value="superadmin" id="opt-role-superadmin">Super Admin</option>
                         <option value="marketing" id="opt-role-marketing">Marketing</option>
+                        <option value="vieMut" id="opt-role-vieMut">Vie Mut</option>
                         <option value="com" id="opt-role-com">Com</option>
                         <option value="ebf" id="opt-role-ebf">EBF</option>
                         <option value="data" id="opt-role-data">Data</option>
@@ -310,7 +311,7 @@
 
             // Libellés des équipes (Service) : clés fixes, libellés éditables depuis
             // Administration ▸ Paramètres généraux ▸ Rôles (aucun nom codé en dur).
-            var DEFAULT_ROLE_LABELS = { superadmin: 'Super Admin', marketing: 'Marketing', com: 'Com', ebf: 'EBF', data: 'Data' };
+            var DEFAULT_ROLE_LABELS = { superadmin: 'Super Admin', marketing: 'Marketing', vieMut: 'Vie Mut', com: 'Com', ebf: 'EBF', data: 'Data' };
             function applyRoleLabels() {
                 var rl = (IM.config && IM.config.ROLE_LABELS) || {};
                 Object.keys(DEFAULT_ROLE_LABELS).forEach(function (k) {

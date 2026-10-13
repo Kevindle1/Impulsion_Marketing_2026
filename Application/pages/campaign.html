@@ -1250,10 +1250,10 @@
                             </label>
                         </div>
                         <div class="form-group">
-                            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
-                                <input type="checkbox" id="prioReglementaire" style="width:auto;flex:none;margin-top:3px;">
-                                <span>Réglementaire <small style="font-weight:400;color:var(--muted);display:block;">La campagne répond à une obligation légale ou réglementaire.</small>
-                                <small id="prioReglementaireAutoNote" style="display:none;font-weight:600;color:var(--primary,#00875A);">🔒 Verrouillé : au moins un livrable a pour « Type de Com » Réglementaire.</small></span>
+                            <label style="display:flex;align-items:flex-start;gap:8px;cursor:default;">
+                                <input type="checkbox" id="prioReglementaire" disabled style="width:auto;flex:none;margin-top:3px;">
+                                <span>Réglementaire <small style="font-weight:400;color:var(--muted);display:block;">Déduit automatiquement : coché dès qu'un livrable a pour « Type de Com » Réglementaire — aucune saisie requise ici.</small>
+                                <small id="prioReglementaireAutoNote" style="display:none;font-weight:600;color:var(--primary,#00875A);">🔒 Au moins un livrable a pour « Type de Com » Réglementaire.</small></span>
                             </label>
                         </div>
 
@@ -2102,10 +2102,10 @@
                 if (el) el.addEventListener('change', updatePrioValeurMetierPreview);
             });
 
-            // Réglementaire auto : verrouillé coché dès qu'un livrable a pour
-            // « Type de Com » (comType{idx}) la valeur « Réglementaire » — cohérent
-            // avec la liste déjà existante (_config.json → typesCom). Reste librement
-            // modifiable tant qu'aucun livrable de ce type n'est présent.
+            // Réglementaire : champ 100% automatique, jamais activable à la main
+            // (toujours disabled, cf. HTML) — reflète uniquement la présence d'un
+            // livrable dont le « Type de Com » (comType{idx}) vaut « Réglementaire »
+            // (cohérent avec la liste existante _config.json → typesCom).
             function updateReglementaireAuto() {
                 var cb = document.getElementById('prioReglementaire');
                 if (!cb) return;
@@ -2113,8 +2113,7 @@
                 document.querySelectorAll('#channelsContainer select[id^="comType"]').forEach(function (sel) {
                     if (sel.value === 'Réglementaire') locked = true;
                 });
-                cb.disabled = locked;
-                if (locked) cb.checked = true;
+                cb.checked = locked;
                 var note = document.getElementById('prioReglementaireAutoNote');
                 if (note) note.style.display = locked ? '' : 'none';
                 updatePrioValeurMetierPreview();
