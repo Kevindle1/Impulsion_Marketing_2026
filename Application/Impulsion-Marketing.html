@@ -1169,6 +1169,8 @@
             var dateText = delay ? delay.text : (c.data.launchDate ? new Date(c.data.launchDate).toLocaleDateString('fr-FR') : '—');
             var rowClass = 'campaign-card' + (!isActif ? ' campaign-card--inactive' : '') + (isUrgent ? ' campaign-card--urgent' : '');
             var iconClass = 'campaign-card-icon' + (isUrgent ? ' campaign-card-icon--urgent' : '');
+            var launchTxt = c.data.launchDate ? new Date(c.data.launchDate).toLocaleDateString('fr-FR') : '—';
+            var modTxt = c.lastModified ? new Date(c.lastModified).toLocaleDateString('fr-FR') : '—';
 
             var h = '';
             h += '<a href="' + detailsUrl + '" class="' + rowClass + '">';
@@ -1177,6 +1179,10 @@
             h += '    <h4>' + security.escapeHtml(c.name) + '</h4>';
             h += '    <p>' + security.escapeHtml(chan.label) + ' · ' + security.escapeHtml(st.text) + (c.data.volumeAlert ? ' <span class="badge-volume-alert" title="Volume important">⚠️</span>' : '') + '</p>';
             h += '    <div class="campaign-delay' + (delayClass ? ' ' + delayClass : '') + '">' + security.escapeHtml(dateText) + '</div>';
+            h += '  </div>';
+            h += '  <div class="list-row-timeline">';
+            h += '    <div><span class="cc-tl-label">MAJ</span>' + modTxt + '</div>';
+            h += '    <div><span class="cc-tl-label">Envoi</span>' + launchTxt + '</div>';
             h += '  </div>';
             h += '  <div class="cc-avs">' + avatarsHtml(c) + '</div>';
             if (isUrgent) h += '  <span class="badge-my-turn">À produire</span>';
@@ -1800,6 +1806,9 @@
         .dash-view-btn:hover { color: var(--ink, #0c1a14); }
         .dash-view-btn.active { background: var(--bg-card, #fff); color: var(--ink, #0c1a14); box-shadow: var(--shadow-xs); }
         .campaigns-list { display: flex; flex-direction: column; gap: 10px; }
+        .list-row-timeline { display: flex; gap: 18px; flex-shrink: 0; font-size: 10px; color: var(--muted, #56655e); line-height: 1.35; }
+        .list-row-timeline .cc-tl-label { margin-bottom: 1px; }
+        @media (max-width: 900px) { .list-row-timeline { display: none; } }
         .dash-tab-btn {
             display: flex; align-items: center; gap: 9px;
             padding: 10px 18px; border-radius: 11px; border: none;
