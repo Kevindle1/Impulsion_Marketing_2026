@@ -16,6 +16,11 @@
         .prio-header h1 { margin: 0 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -.3px; color: var(--ink); }
         .prio-header p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: 640px; }
 
+        .prio-date-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+        .prio-date-filter label { font-size: 12px; font-weight: 700; color: var(--muted-2); display: flex; align-items: center; gap: 6px; }
+        .prio-date-filter input[type="date"] { font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; color: var(--ink); }
+        .prio-date-filter input[type="date"]:focus { outline: none; border-color: var(--primary); }
+
         .prio-kpis { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
         .prio-kpi { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; gap: 14px; }
         .prio-kpi-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
@@ -128,6 +133,13 @@
                 <div class="prio-header">
                     <h1>Priorisation</h1>
                     <p>Arbitrez les campagnes en attente d'affectation selon leur valeur et la charge estimée, et pilotez les décalages ou arrêts sur les campagnes déjà engagées.</p>
+                    <div class="prio-date-filter">
+                        <label for="f-envoi-du">Date d'envoi souhaitée — du</label>
+                        <input type="date" id="f-envoi-du">
+                        <label for="f-envoi-au">au</label>
+                        <input type="date" id="f-envoi-au">
+                        <button type="button" class="prio-btn" id="f-envoi-reset">Réinitialiser</button>
+                    </div>
                 </div>
 
                 <div id="prioLoading" class="prio-loading">Chargement des campagnes…</div>
@@ -620,10 +632,22 @@
         tbody.querySelectorAll('[data-reactiver]').forEach(function (b) { b.addEventListener('click', function () { handleReactivate(b.getAttribute('data-reactiver')); }); });
     }
 
+    // Filtre « du … au … » sur la date d'envoi souhaitée (launchDate) —
+    // s'applique à « À prioriser » et « Campagnes engagées » (pas aux
+    // campagnes stoppées, dont la date d'envoi n'est plus le sujet).
+    function inEnvoiRange(c) {
+        var du = document.getElementById('f-envoi-du').value, au = document.getElementById('f-envoi-au').value;
+        if (!du && !au) return true;
+        if (!c.launchDate) return false;
+        if (du && c.launchDate < du) return false;
+        if (au && c.launchDate > au) return false;
+        return true;
+    }
+
     function render() {
         var actifs = state.campaigns.filter(function (c) { return c.actif !== false; });
-        var aPrioriser = actifs.filter(function (c) { return !isAffected(c); });
-        var engagees = actifs.filter(function (c) { return isAffected(c) && !workflow.isCompleted(c); });
+        var aPrioriser = actifs.filter(function (c) { return !isAffected(c); }).filter(inEnvoiRange);
+        var engagees = actifs.filter(function (c) { return isAffected(c) && !workflow.isCompleted(c); }).filter(inEnvoiRange);
         var stoppees = state.campaigns.filter(function (c) { return c.actif === false; });
         renderKpis(aPrioriser);
         renderAPrioriser(aPrioriser);
@@ -662,6 +686,14 @@
         if (!th) return;
         th.addEventListener('click', function () {
             _aPrioriserSort.dir = _aPrioriserSort.dir === null ? 'asc' : (_aPrioriserSort.dir === 'asc' ? 'desc' : null);
+            render();
+        });
+    })();
+
+    (function wireEnvoiRangeFilter() {
+        ['f-envoi-du', 'f-envoi-au'].forEach(function (id) { document.getElementById(id).addEventListener('change', render); });
+        document.getElementById('f-envoi-reset').addEventListener('click', function () {
+            document.getElementById('f-envoi-du').value = ''; document.getElementById('f-envoi-au').value = '';
             render();
         });
     })();
