@@ -163,7 +163,7 @@
                         <div class="prio-card-head"><span class="bar"></span><h2>Campagnes engagées</h2><span class="sub">arbitrage possible en instance de priorisation</span></div>
                         <div class="prio-table-wrap">
                             <table class="prio-t" id="tableEngagees">
-                                <thead><tr><th>Campagne</th><th>Valeur campagne</th><th>Statut</th><th>Lancée le</th><th style="width:230px;">Actions</th></tr></thead>
+                                <thead><tr><th>Campagne</th><th>Valeur campagne</th><th>Statut</th><th>Priorité marketing</th><th>Date d'envoi souhaitée</th><th style="width:230px;">Actions</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                             <div class="prio-empty" id="engageesEmpty" style="display:none;">Aucune campagne engagée pour le moment.</div>
@@ -251,7 +251,12 @@
             + (opts.withDate ? '<label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;">Nouvelle date de lancement</label>'
                 + '<input type="date" class="am-date" value="' + esc(opts.dateValue || '') + '" style="width:100%;box-sizing:border-box;margin-bottom:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;">' : '')
             + '<label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;">Motif</label>'
-            + '<textarea class="am-motif" rows="3" placeholder="' + esc(opts.placeholder || 'Motif…') + '" style="width:100%;box-sizing:border-box;margin-bottom:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;resize:vertical;"></textarea>'
+            + ((opts.motifOptions && opts.motifOptions.length)
+                ? '<select class="am-motif" style="width:100%;box-sizing:border-box;margin-bottom:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;">'
+                    + '<option value="">— Sélectionner un motif —</option>'
+                    + opts.motifOptions.map(function (m) { return '<option value="' + escAttr(m) + '">' + esc(m) + '</option>'; }).join('')
+                    + '</select>'
+                : '<textarea class="am-motif" rows="3" placeholder="' + esc(opts.placeholder || 'Motif…') + '" style="width:100%;box-sizing:border-box;margin-bottom:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;resize:vertical;"></textarea>')
             + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
             + '<button data-act="cancel" class="prio-btn">Annuler</button>'
             + '<button data-act="ok" class="prio-btn" style="background:var(--primary);color:#fff;border-color:transparent;">' + esc(opts.confirmText || 'Valider') + '</button>'
@@ -317,6 +322,7 @@
             title: 'Stopper la campagne',
             label: 'La campagne « ' + (c.id || c.folderName) + ' » ne tournera plus. L\'action et son auteur sont enregistrés dans le journal.',
             placeholder: 'Motif de l\'arrêt…',
+            motifOptions: (IM.config && Array.isArray(IM.config.MOTIFS_ARRET)) ? IM.config.MOTIFS_ARRET : [],
             confirmText: '⛔ Stopper',
             onConfirm: function (motif) {
                 c.actif = false;
@@ -460,7 +466,7 @@
     function prioriteOptions(selected) {
         var cfg = workflow.getPriorisationConfig();
         var levels = cfg.prioritesMarketing || [];
-        var opts = '<option value=""' + (!selected ? ' selected' : '') + '>Non défini</option>';
+        var opts = '<option value=""' + (!selected ? ' selected' : '') + '>À prioriser</option>';
         opts += levels.map(function (lvl) {
             return '<option value="' + esc(lvl) + '"' + (lvl === selected ? ' selected' : '') + '>' + esc(lvl) + '</option>';
         }).join('');
@@ -539,10 +545,10 @@
         tbody.querySelectorAll('[data-prio-idx]').forEach(function (sel) {
             sel.addEventListener('change', function () {
                 var c = list[+sel.getAttribute('data-prio-idx')];
-                var prev = c.prioriteMarketing || 'Non défini';
+                var prev = c.prioriteMarketing || 'À prioriser';
                 c.prioriteMarketing = sel.value || undefined;
                 workflow.saveCampaignWorkflow(state.root, c.folderName, c).then(function () {
-                    return logActivity(c.folderName, 'priorisation', 'Priorité marketing : ' + prev + ' → ' + (sel.value || 'Non défini'));
+                    return logActivity(c.folderName, 'priorisation', 'Priorité marketing : ' + prev + ' → ' + (sel.value || 'À prioriser'));
                 }).then(function () {
                     notify('Priorité marketing mise à jour.');
                 }).catch(function (e) {
@@ -572,6 +578,7 @@
                 + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + reglementaireTag(c) + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
                 + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><span class="prio-badge prio-badge-on">' + esc(statutLabel(c)) + '</span>' + decaleeTag + '</td>'
+                + '<td>' + esc(c.prioriteMarketing || 'À prioriser') + '</td>'
                 + '<td>' + fmtDate(c.launchDate) + '</td>'
                 + '<td><div class="prio-actions">'
                 + '<button type="button" class="prio-btn" data-decaler="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Décaler</button>'

@@ -92,6 +92,12 @@ window.ImpulsionMarketing.config = (function() {
   const SERVICES_EXTERNES = _arr('servicesExternes');
 
   // ========================================
+  // Motifs d'arrêt de campagne (page Priorisation)
+  // ========================================
+
+  const MOTIFS_ARRET = _arr('motifsArret');
+
+  // ========================================
   // Typologies de Campagne
   // ========================================
 
@@ -350,6 +356,7 @@ window.ImpulsionMarketing.config = (function() {
     CANAUX: CANAUX,
     TYPES_COM: TYPES_COM,
     SERVICES_EXTERNES: SERVICES_EXTERNES,
+    MOTIFS_ARRET: MOTIFS_ARRET,
     TYPOLOGIES: TYPOLOGIES,
     PRODUITS: PRODUITS,
     MARCHES: MARCHES,

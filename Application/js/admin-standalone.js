@@ -24,7 +24,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     lots: 'LOTS',
     produits: 'PRODUITS',
     comTypologies: 'COM_TYPOLOGIES',
-    servicesExternes: 'SERVICES_EXTERNES'
+    servicesExternes: 'SERVICES_EXTERNES',
+    motifsArret: 'MOTIFS_ARRET'
   };
 
   // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).
