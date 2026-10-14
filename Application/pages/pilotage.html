@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('im_theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pilotage - Interface Impulsion Marketing</title>
     <link rel="stylesheet" href="../css/theme.css">
@@ -25,7 +26,7 @@
         .admin-bento-group + .admin-bento-group { margin-top: 26px; }
         .admin-bento-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); margin-bottom: 12px; }
         .admin-bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; box-shadow: 0 4px 12px rgba(12,30,22,.08); }
+        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; box-shadow: 0 4px 12px rgba(12,30,22,.08); }
         .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.14); transform: translateY(-2px); }
         .admin-bento-card .admin-bento-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--green-50); }
         .admin-bento-card .admin-bento-label { font-size: 14.5px; font-weight: 700; color: var(--ink); }
@@ -33,7 +34,7 @@
         .pil-fav-star { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border: none; background: transparent; font-size: 16px; line-height: 26px; text-align: center; cursor: pointer; color: var(--muted-2); padding: 0; border-radius: 50%; transition: color .15s, background .15s; }
         .pil-fav-star:hover { background: var(--line-2); color: #d9a300; }
         .pil-fav-star.active { color: #e2a200; }
-        .pil-fav-group .admin-bento-card { border-color: #f3dfa3; background: #fffdf6; }
+        .pil-fav-group .admin-bento-card { border-color: var(--amber-100, #f3dfa3); background: var(--amber-50, #fffdf6); }
         .admin-back-btn { display: inline-flex; align-items: center; gap: 7px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-weight: 650; cursor: pointer; padding: 6px 2px; margin-bottom: 12px; }
         .admin-back-btn:hover { color: var(--primary); }
         .admin-section { display: none; }
@@ -49,11 +50,11 @@
         .pil-filter { display: flex; flex-direction: column; gap: 4px; }
         .pil-filter label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted); }
         .pil-filter input[type="date"], .pil-filter select {
-            padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff;
+            padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-card, #fff);
             font-family: inherit; font-size: 13px; color: var(--ink); min-width: 140px;
         }
         .pil-filter input:focus, .pil-filter select:focus { outline: none; border-color: var(--primary); }
-        .pil-reset { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
+        .pil-reset { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-card, #fff); font-size: 12.5px; font-weight: 600; color: var(--muted); cursor: pointer; }
         .pil-reset:hover { border-color: var(--primary); color: var(--primary); }
         .pil-count { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--primary); align-self: center; white-space: nowrap; }
 
@@ -72,7 +73,7 @@
         .pil-table th.pil-col-filter-th { padding: 6px 8px 10px; border-bottom: 2px solid var(--line); }
         .pil-col-filter-th input, .pil-col-filter-th select {
             width: 100%; box-sizing: border-box; padding: 5px 7px; border: 1px solid var(--line); border-radius: 6px;
-            background: #fff; font-family: inherit; font-size: 12px; color: var(--ink); font-weight: 400;
+            background: var(--bg-card, #fff); font-family: inherit; font-size: 12px; color: var(--ink); font-weight: 400;
         }
         .pil-col-filter-th input:focus, .pil-col-filter-th select:focus { outline: none; border-color: var(--primary); }
         .pil-table th.pil-th-sortable { cursor: pointer; user-select: none; }
@@ -91,7 +92,7 @@
         .pil-envoi.pil-envoi-none { color: var(--muted-2); font-weight: 400; }
         .pil-envoi-tag { display: block; font-weight: 700; font-size: 11px; }
         .pil-envoi.pil-envoi-overdue .pil-envoi-tag { color: var(--red, #E2001A); }
-        .pil-envoi.pil-envoi-urgent .pil-envoi-tag { color: #9a6b00; }
+        .pil-envoi.pil-envoi-urgent .pil-envoi-tag { color: var(--status-valid, #9a6b00); }
         .pil-envoi-tag.pil-envoi-far { color: var(--muted-2); font-weight: 400; }
 
         /* Lignes de regroupement (Étape / Statut / Acteur) : même style que le
@@ -102,13 +103,13 @@
         .pil-badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
         .pil-canal { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
         .pil-ct-com { background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); }
-        .pil-ct-ges { background: #e8f0fe; color: #2563EB; }
-        .pil-ct-reg { background: #fdf3e2; color: #9a6b00; }
+        .pil-ct-ges { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
+        .pil-ct-reg { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #9a6b00); }
         .pil-ct-none { background: var(--line-2); color: var(--muted-2); }
         /* Palette générique (au-delà de 3 « Types de communication » configurés en Administration) */
-        .pil-ct-pal3 { background: #f3e8ff; color: #7C3AED; }
-        .pil-ct-pal4 { background: #fce7f3; color: #9d174d; }
-        .pil-ct-pal5 { background: #cffafe; color: #0e7490; }
+        .pil-ct-pal3 { background: var(--violet-50, #f3e8ff); color: var(--violet, #7C3AED); }
+        .pil-ct-pal4 { background: var(--pink-50, #fce7f3); color: var(--pink, #9d174d); }
+        .pil-ct-pal5 { background: var(--cyan-50, #cffafe); color: var(--cyan, #0e7490); }
         .pil-empty { text-align: center; padding: 42px 20px; color: var(--muted); font-size: 14px; }
         .pil-empty .big { font-size: 40px; margin-bottom: 10px; }
 
@@ -117,7 +118,7 @@
 
         /* Échéance (Retards & alertes) */
         .pil-badge-overdue { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
-        .pil-badge-soon { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+        .pil-badge-soon { background: var(--amber-50, #fff8e6); color: var(--status-valid, #9a6b00); }
 
         /* Statut d'une étape (Validations en attente) */
         .pil-status-pending { background: var(--line-2); color: var(--muted); }
@@ -125,26 +126,26 @@
 
         /* Thèmes mis en avant (Coms attendues) : Produit / Selfcare / Promotion —
            champs renseignés à la création (bloc « Produit ») sur la campagne. */
-        .pil-chip-toggle { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+        .pil-chip-toggle { padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-card, #fff); font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
         .pil-chip-toggle:hover { border-color: var(--primary); color: var(--primary); }
         .pil-chip-toggle.active { background: var(--green-50, #e8f6ef); border-color: var(--primary); color: var(--green-600, #00734C); }
         .pil-theme-produit { background: var(--blue-50, #e8f0fe); color: var(--blue, #2563EB); }
-        .pil-theme-selfcare { background: #f3e8ff; color: #7C3AED; }
-        .pil-theme-promo { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+        .pil-theme-selfcare { background: var(--violet-50, #f3e8ff); color: var(--violet, #7C3AED); }
+        .pil-theme-promo { background: var(--amber-50, #fff8e6); color: var(--status-valid, #9a6b00); }
         /* Canaux & volumes associés (vue d'ensemble de TOUS les canaux d'une même
            campagne, pas seulement celui de la ligne) */
         .pil-vol-chip { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 6px; background: var(--line-2); color: var(--ink); white-space: nowrap; margin: 1px 3px 1px 0; }
 
         /* Équipe / rôle porteur (Validations, Charge de travail, Retards) */
-        .pil-role-po { background: #eef0f2; color: #475569; }
+        .pil-role-po { background: var(--gray-100, #eef0f2); color: var(--gray-600, #475569); }
         .pil-role-com { background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); }
-        .pil-role-ebf { background: #fdf3e2; color: #9a6b00; }
-        .pil-role-data { background: #f3e8ff; color: #7C3AED; }
+        .pil-role-ebf { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #9a6b00); }
+        .pil-role-data { background: var(--violet-50, #f3e8ff); color: var(--violet, #7C3AED); }
         .pil-role-manager { background: var(--line-2); color: var(--muted); }
 
         /* Indicateurs clés — tuiles chiffrées + tableaux de répartition */
         .pil-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 26px; }
-        .pil-kpi-tile { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow-xs); }
+        .pil-kpi-tile { background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow-xs); }
         .pil-kpi-num { font-size: 28px; font-weight: 800; color: var(--ink); line-height: 1.1; }
         .pil-kpi-tile.warn .pil-kpi-num { color: var(--red, #E2001A); }
         .pil-kpi-label { font-size: 12px; color: var(--muted); margin-top: 5px; }
@@ -152,11 +153,11 @@
         .pil-subhead:first-of-type { margin-top: 0; }
 
         /* Affectation — cartes d'affectation par campagne (managers) */
-        .pil-affect-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: var(--shadow-xs); }
+        .pil-affect-card { background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; margin-bottom: 14px; box-shadow: var(--shadow-xs); }
         .pil-affect-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
         .pil-affect-head strong { font-size: 15px; color: var(--ink); }
         .pil-affect-meta { font-size: 12.5px; color: var(--muted); margin-left: 10px; }
-        .pil-affect-state { background: var(--amber-50, #fff8e6); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: #7a5b00; line-height: 1.6; }
+        .pil-affect-state { background: var(--amber-50, #fff8e6); border-radius: 8px; padding: 8px 12px; margin-bottom: 12px; font-size: 12px; color: var(--status-valid, #7a5b00); line-height: 1.6; }
         .pil-affect-teams { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
         .pil-affect-team { flex: 1; min-width: 160px; }
         .pil-affect-team-label { font-size: 12px; font-weight: 700; margin-bottom: 5px; color: var(--ink); }
@@ -168,7 +169,7 @@
 
         /* Points de friction — allers-retours par canal, tous types confondus */
         .pil-friction-count { font-size: 12px; font-weight: 800; padding: 3px 11px; border-radius: 999px; background: var(--line-2); color: var(--muted); }
-        .pil-friction-count.warn { background: var(--amber-50, #fff8e6); color: #9a6b00; }
+        .pil-friction-count.warn { background: var(--amber-50, #fff8e6); color: var(--status-valid, #9a6b00); }
         .pil-friction-count.hot  { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
         .pil-friction-chips { display: flex; flex-wrap: wrap; gap: 5px; }
         .pil-friction-chip { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--line-2); color: var(--muted); white-space: nowrap; }
@@ -176,14 +177,14 @@
 
         /* Vue calendrier */
         .pil-cal-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-        .pil-cal-nav { border: 1px solid var(--line); background: #fff; border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: var(--muted); }
+        .pil-cal-nav { border: 1px solid var(--line); background: var(--bg-card, #fff); border-radius: 8px; width: 32px; height: 32px; font-size: 15px; cursor: pointer; color: var(--muted); }
         .pil-cal-nav:hover { border-color: var(--primary); color: var(--primary); }
         .pil-cal-title { font-size: 16px; font-weight: 800; color: var(--ink); text-transform: capitalize; min-width: 160px; }
-        .pil-cal-today { margin-left: auto; border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
+        .pil-cal-today { margin-left: auto; border: 1px solid var(--line); background: var(--bg-card, #fff); border-radius: 8px; padding: 6px 14px; font-size: 12.5px; font-weight: 650; color: var(--muted); cursor: pointer; }
         .pil-cal-today:hover { border-color: var(--primary); color: var(--primary); }
         .pil-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
         .pil-cal-dow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--muted-2); text-align: center; padding-bottom: 4px; }
-        .pil-cal-day { background: #fff; border: 1px solid var(--line); border-radius: 10px; min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 3px; }
+        .pil-cal-day { background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 10px; min-height: 92px; padding: 6px; display: flex; flex-direction: column; gap: 3px; }
         .pil-cal-day.pil-cal-out { background: var(--line-2); border-color: transparent; }
         .pil-cal-day.pil-cal-today-cell { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
         .pil-cal-daynum { font-size: 12px; font-weight: 700; color: var(--ink); }
@@ -200,7 +201,7 @@
             background: rgba(12, 26, 20, 0.45); align-items: center; justify-content: center; padding: 20px;
         }
         .pil-cal-modal-overlay.show { display: flex; }
-        .pil-cal-modal { background: #fff; border-radius: 16px; width: 100%; max-width: 480px; max-height: 82vh;
+        .pil-cal-modal { background: var(--bg-card, #fff); border-radius: 16px; width: 100%; max-width: 480px; max-height: 82vh;
             display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(12,30,22,.25); }
         .pil-cal-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--line); }
         .pil-cal-modal-head h3 { margin: 0; font-size: 15.5px; font-weight: 800; color: var(--ink); text-transform: capitalize; }

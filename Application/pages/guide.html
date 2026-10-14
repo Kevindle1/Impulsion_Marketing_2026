@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('im_theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guide utilisateur — Impulsion Marketing</title>
     <link rel="stylesheet" href="../css/theme.css">
@@ -130,10 +131,10 @@
         }
         #guide-error {
             background: var(--red-50);
-            border: 1px solid #fecaca;
+            border: 1px solid var(--red, #fecaca);
             border-radius: 8px;
             padding: 20px;
-            color: #991b1b;
+            color: var(--red, #991b1b);
             text-align: center;
             margin: 32px auto;
             max-width: 500px;

@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('im_theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toutes les Campagnes — Interface Impulsion Marketing</title>
     <link rel="stylesheet" href="../css/theme.css">
@@ -1031,7 +1032,7 @@
         /* Section de recherche */
         .search-section {
             margin-top: 24px;
-            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            background: linear-gradient(135deg, var(--bg-card, #fff) 0%, var(--line-2) 100%);
             border: 1px solid var(--line);
             padding: 24px;
             border-radius: 12px;
@@ -1048,7 +1049,7 @@
             font-size: 16px;
             border: 1px solid var(--line);
             border-radius: 8px;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
         }
@@ -1115,7 +1116,7 @@
             padding: 10px 14px;
             border: 1px solid var(--line);
             border-radius: 8px;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             color: var(--ink);
             font-weight: 500;
             cursor: pointer;
@@ -1151,7 +1152,7 @@
         /* Section des résultats */
         .results-section {
             margin-top: 24px;
-            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            background: linear-gradient(135deg, var(--bg-card, #fff) 0%, var(--line-2) 100%);
             border: 1px solid var(--line);
             padding: 24px;
             border-radius: 12px;
@@ -1192,7 +1193,7 @@
             padding: 8px 12px;
             border: 1px solid var(--line);
             border-radius: 8px;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             font-weight: 500;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1217,7 +1218,7 @@
         }
 
         .campaign-card {
-            background: linear-gradient(135deg, #ffffff 0%, var(--line-2) 100%);
+            background: linear-gradient(135deg, var(--bg-card, #fff) 0%, var(--line-2) 100%);
             border: 1px solid var(--line);
             border-radius: 12px;
             padding: 24px;
@@ -1331,7 +1332,7 @@
         }
 
         .type-tag {
-            background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+            background: linear-gradient(135deg, var(--violet-50, #f3e8ff) 0%, var(--violet-50, #e9d5ff) 100%);
             color: var(--violet);
             border: 1px solid var(--violet);
         }
@@ -1468,7 +1469,7 @@
             padding: 7px 13px;
             border: 1px solid var(--line);
             border-radius: 8px;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             color: var(--ink);
             font-size: 13px;
             font-weight: 600;

@@ -3,6 +3,7 @@
 <html lang="fr">
     <head>
         <meta charset="utf-8" />
+        <script>(function(){try{var t=localStorage.getItem('im_theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Interface de saisie — Historique des Campagnes</title>
 
@@ -126,7 +127,7 @@
 
           /* Panel */
           .panel {
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             border: 1px solid var(--line);
             border-radius: 3px;
             padding: 24px;
@@ -157,7 +158,7 @@
             transition: border-color 0.15s;
             box-sizing: border-box;
             font-family: inherit;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             color: var(--ink);
           }
 
@@ -229,7 +230,7 @@
           }
 
           .dynamic-fields > .form-group {
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             border: 1px solid var(--line);
             border-left: 3px solid var(--primary);
             border-radius: 3px;
@@ -251,7 +252,7 @@
              un canal replié n'affiche qu'un résumé (icône + nom + type), pour
              ne plus avoir à tout scroller dès qu'il y a plusieurs canaux. */
           .dynamic-fields > .channel-block {
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             border: 1px solid var(--line);
             border-left: 3px solid var(--primary);
             border-radius: 3px;
@@ -281,7 +282,7 @@
           }
           .channel-acc-type {
             font-size: 11px; font-weight: 700; color: var(--muted, #666);
-            background: #fff; border: 1px solid var(--line); border-radius: 999px;
+            background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 999px;
             padding: 2px 10px; white-space: nowrap;
           }
           .channel-acc-chev { font-size: 11px; color: var(--muted-2, #8b988f); transition: transform .15s; flex-shrink: 0; }
@@ -308,7 +309,7 @@
             display: none;
             text-align: center;
             padding: 32px 20px;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             border-radius: 3px;
             border: 1px solid var(--line);
             margin: 20px auto;
@@ -400,7 +401,7 @@
             width: 40px;
             height: 40px;
             border-radius: 50%;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             border: 2px solid var(--line);
             display: flex;
             align-items: center;
@@ -526,7 +527,7 @@
           }
 
           .btn-prev {
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             color: var(--muted);
             border: 1px solid var(--line);
           }
@@ -1000,11 +1001,11 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="instantiation">Date de saisie : <span style="font-weight:400;color:#888;">(automatique)</span></label>
+                            <label for="instantiation">Date de saisie : <span style="font-weight:400;color:var(--muted-2,#888);">(automatique)</span></label>
                             <input type="date" id="instantiation" readonly style="background:var(--line-2);cursor:not-allowed;">
                         </div>
                         <div class="form-group">
-                            <label for="campagneLiee">Campagne liée <span style="font-weight:400;color:#888;">(optionnel)</span></label>
+                            <label for="campagneLiee">Campagne liée <span style="font-weight:400;color:var(--muted-2,#888);">(optionnel)</span></label>
                             <input type="text" id="campagneLiee" list="campagnesListData" placeholder="Choisir ou saisir une campagne...">
                             <datalist id="campagnesListData"></datalist>
                         </div>
@@ -1837,7 +1838,7 @@
                 var overlay = document.createElement('div');
                 overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px;';
                 var box = document.createElement('div');
-                box.style.cssText = 'background:#fff;border-radius:10px;padding:22px;width:min(440px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
+                box.style.cssText = 'background:var(--bg-card,#fff);border-radius:10px;padding:22px;width:min(440px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
                 var plural = countToRemove > 1 ? 'aux' : '';
                 var itemsHtml = existing.map(function (ch, i) {
                     var label = ch.deliverableName || ch.content || ('Canal ' + (i + 1));
@@ -2623,23 +2624,23 @@
                         <div class="channel-acc-body" id="channelAccBody${i}">
                         <div id="cfCanalBaseFields${i}"></div>
                         <div class="form-group">
-                            <input type="text" id="deliverableName${i}" readonly style="background:var(--line-2,#f0f4f1);color:var(--muted,#666);cursor:not-allowed;">
+                            <input type="text" id="deliverableName${i}" readonly style="background:var(--line-2,#f0f4f1);color:var(--ink);cursor:not-allowed;">
                         </div>
                         <div class="form-group">
                             <label for="sendDate${i}">Date de réception client :</label>
                             <input type="date" id="sendDate${i}">
-                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:#666;margin-top:4px;cursor:pointer;"><input type="checkbox" class="sendDateFree-cb" data-i="${i}"> Délai / condition à la place d'une date (ex : « J+3 après ouverture de compte »)</label>
+                            <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:var(--muted,#666);margin-top:4px;cursor:pointer;"><input type="checkbox" class="sendDateFree-cb" data-i="${i}"> Délai / condition à la place d'une date (ex : « J+3 après ouverture de compte »)</label>
                         </div>
                         <div class="form-group">
-                            <label>Univers de besoin de ce livrable <small style="font-weight:400;color:#888;">(facultatif — si vide, celui de la campagne s'applique)</small></label>
+                            <label>Univers de besoin de ce livrable <small style="font-weight:400;color:var(--muted-2,#888);">(facultatif — si vide, celui de la campagne s'applique)</small></label>
                             <div style="display:flex;flex-wrap:wrap;gap:8px;">
                                 ${universBesoins.map(function(u){ var v = String(u).replace(/"/g,'&quot;'); return '<label style="font-weight:400;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;"><input type="checkbox" class="ch-ub-cb-' + i + '" value="' + v + '"> ' + v + '</label>'; }).join('')}
                             </div>
                         </div>
                         <div class="conditional-field" id="siteWebFields${i}" style="display:none;background:var(--green-50);border:1px solid var(--green-100);border-radius:6px;padding:10px 12px;margin-top:4px;">
-                            <div style="font-weight:600;font-size:12px;color:#15803d;margin-bottom:4px;">🌐 Paramètres zone site web</div>
-                            <div style="font-size:11px;color:#166534;margin-bottom:8px;">⚠️ Les créneaux site web sont du <strong>${webSlotDayLabel} au ${webSlotDayLabel}</strong> — les dates seront automatiquement ajustées.</div>
-                            <div style="font-size:11px;color:#166534;margin-bottom:8px;">📋 Vérifiez avant la saisie le <strong>plan de communication national</strong> pour vous assurer d'un alignement avec la stratégie CASA.</div>
+                            <div style="font-weight:600;font-size:12px;color:var(--green-700,#15803d);margin-bottom:4px;">🌐 Paramètres zone site web</div>
+                            <div style="font-size:11px;color:var(--green-700,#166534);margin-bottom:8px;">⚠️ Les créneaux site web sont du <strong>${webSlotDayLabel} au ${webSlotDayLabel}</strong> — les dates seront automatiquement ajustées.</div>
+                            <div style="font-size:11px;color:var(--green-700,#166534);margin-bottom:8px;">📋 Vérifiez avant la saisie le <strong>plan de communication national</strong> pour vous assurer d'un alignement avec la stratégie CASA.</div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                                 <div>
                                     <label style="font-size:12px;">Marché(s) :</label>
@@ -2675,7 +2676,7 @@
                                     <button type="button" class="btn-remove-comstore" onclick="removeComStoreRow(this)" style="background:var(--red);color:#fff;border:none;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:14px;" title="Supprimer">−</button>
                                 </div>
                             </div>
-                            <button type="button" onclick="addComStoreRow(${i})" style="margin-top:4px;background:var(--blue-50);color:#0369a1;border:1px solid var(--blue);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;">+ Ajouter une URL</button>
+                            <button type="button" onclick="addComStoreRow(${i})" style="margin-top:4px;background:var(--blue-50);color:var(--blue,#0369a1);border:1px solid var(--blue);border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;">+ Ajouter une URL</button>
                         </div>
                         <div id="cfCanalFields${i}"></div>
                         </div>
@@ -2944,10 +2945,10 @@
                 var when = d.ts ? new Date(d.ts).toLocaleString('fr-FR') : '';
                 var bar = document.createElement('div');
                 bar.id = 'draft-bar';
-                bar.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;';
+                bar.style.cssText = 'background:var(--blue-50,#eff6ff);border:1px solid var(--blue,#bfdbfe);color:var(--blue,#1e40af);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;';
                 bar.innerHTML = '<span>📝 Un brouillon non terminé a été retrouvé' + (when ? ' (' + when + ')' : '') + '.</span>'
                     + '<span style="display:flex;gap:8px;"><button type="button" id="draft-restore" class="btn btn-primary" style="padding:6px 14px;">Restaurer</button>'
-                    + '<button type="button" id="draft-discard" style="padding:6px 14px;border:1px solid var(--line,#ddd);background:#fff;border-radius:6px;cursor:pointer;">Supprimer</button></span>';
+                    + '<button type="button" id="draft-discard" style="padding:6px 14px;border:1px solid var(--line,#ddd);background:var(--bg-card,#fff);color:var(--ink);border-radius:6px;cursor:pointer;">Supprimer</button></span>';
                 form.parentNode.insertBefore(bar, form);
                 document.getElementById('draft-restore').addEventListener('click', function () { applyDraft(d); bar.remove(); notify('Brouillon restauré.', 'success'); });
                 document.getElementById('draft-discard').addEventListener('click', function () { clearDraft(); bar.remove(); });
@@ -3433,7 +3434,7 @@
                     chips.innerHTML = _selectedProducts.map(function (lib) {
                         return '<span style="display:inline-flex;align-items:center;gap:7px;background:var(--green-50,#e8f6ef);border:1px solid var(--green-100,#cdeede);border-radius:999px;padding:4px 6px 4px 12px;font-size:13px;color:var(--ink,#0c1a14);">'
                              + escProd(lib)
-                             + '<span data-remove-prod="' + escProd(lib) + '" title="Retirer" style="cursor:pointer;font-weight:700;color:#0f766e;line-height:1;padding:0 4px;">✕</span></span>';
+                             + '<span data-remove-prod="' + escProd(lib) + '" title="Retirer" style="cursor:pointer;font-weight:700;color:var(--green-700,#0f766e);line-height:1;padding:0 4px;">✕</span></span>';
                     }).join('');
                     chips.querySelectorAll('[data-remove-prod]').forEach(function (x) {
                         x.addEventListener('click', function () { _removeProduct(x.getAttribute('data-remove-prod')); });

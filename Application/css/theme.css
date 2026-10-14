@@ -30,6 +30,29 @@
   --blue: #2563EB;              /* Canal mail / info */
   --blue-50: #e8f0fe;
   --violet: #7C3AED;            /* Canal push */
+  --violet-50: #f3e8ff;
+  --pink: #9d174d;
+  --pink-50: #fce7f3;
+  --cyan: #0e7490;
+  --cyan-50: #cffafe;
+
+  /* ── Pastels catégoriels (cartes campagne — fond + bordure par type de com) ── */
+  --amber-100: #f6e0ae;
+  --cat-ges-50: #eaf1fe;
+  --cat-ges-100: #cddcfb;
+  --cat-pal3-50: #f1eafd;
+  --cat-pal3-100: #ddc9fa;
+  --cat-pal4-50: #fde8f2;
+  --cat-pal4-100: #f7c2dd;
+  --cat-pal5-50: #e6f6fa;
+  --cat-pal5-100: #b7e6f0;
+
+  /* ── Statuts de progression (cartes campagne) ── */
+  --status-valid: #9a6b00;
+  --status-maq: #1d4ed8;
+  --status-urgent: #b91c1c;
+  --status-done: #00734C;
+  --status-stopped: #64748b;
 
   /* ── Fonds ── */
   --bg: #f4f7f5;                 /* Fond applicatif */
@@ -96,6 +119,105 @@
   --shadow-image:        0 4px 12px rgba(12, 30, 22, 0.08);
   --shadow-image-hover:  0 12px 28px rgba(12, 30, 22, 0.14);
 }
+
+/**
+ * Mode sombre — activé par data-theme="dark" sur <html> (posé le plus tôt
+ * possible par js/theme-standalone.js, avant le premier paint, pour éviter
+ * un flash clair). Même jeu de variables que :root, pas de nouvelles clés :
+ * tout composant qui utilise déjà var(--xxx) s'adapte automatiquement.
+ */
+:root[data-theme="dark"] {
+  --ink: #e9efec;
+  --muted: #a7b6ad;
+  --muted-2: #7c8c82;
+  --line: #2b362f;
+  --line-2: #202a23;
+
+  --primary: #1fb37a;
+  --primary-hover: #28c989;
+  --primary-light: #123025;
+  --primary-rgb: 31, 179, 122;
+  --green-50: #102921;
+  --green-100: #184231;
+  --green-600: #2fd08a;
+  --green-700: #52dca2;
+
+  --red: #ff5a6b;
+  --red-50: #3a141a;
+  --amber: #f2b33d;
+  --amber-50: #3a2b0d;
+  --blue: #5b8def;
+  --blue-50: #11233f;
+  --violet: #a47bf5;
+  --violet-50: #241a3d;
+  --pink: #f472b6;
+  --pink-50: #3d1a2c;
+  --cyan: #22d3ee;
+  --cyan-50: #0d2e36;
+
+  --amber-100: #4a3712;
+  --cat-ges-50: #112a4a;
+  --cat-ges-100: #163a63;
+  --cat-pal3-50: #241a3d;
+  --cat-pal3-100: #332454;
+  --cat-pal4-50: #3d1a2c;
+  --cat-pal4-100: #54243b;
+  --cat-pal5-50: #0d2e36;
+  --cat-pal5-100: #12404b;
+
+  --status-valid: #f2b33d;
+  --status-maq: #5b8def;
+  --status-urgent: #ff5a6b;
+  --status-done: #2fd08a;
+  --status-stopped: #94a3b8;
+
+  --bg: #0e1512;
+  --bg-card: #161f1a;
+  --bg-header: #161f1a;
+  --accent: #13251d;
+
+  --sidebar-bg: #121a16;
+  --sidebar-line: #26312a;
+  --sidebar-text: #9fb0a6;
+  --sidebar-text-hover: #eef3ef;
+  --sidebar-active-bg: #15372a;
+  --sidebar-active-text: #35d693;
+
+  --gray-50:  #1a241e;
+  --gray-100: #212c25;
+  --gray-200: #2b362f;
+  --gray-300: #3a453d;
+  --gray-400: #5c6b61;
+  --gray-500: #a7b6ad;
+  --gray-600: #c3d0c8;
+  --gray-700: #dce5e0;
+  --gray-800: #e9efec;
+  --gray-900: #f5f8f6;
+  --gray-light: #1a241e;
+  --gray-medium: #2b362f;
+  --gray-medium-light: #2b362f;
+  --gray-medium-light-rgb: 43, 54, 47;
+  --gray-dark: #dce5e0;
+  --gray-darker: #f5f8f6;
+  --gray-text: #a7b6ad;
+  --gray-text-light: #7c8c82;
+  --gray-muted: #a7b6ad;
+  --gray-muted-light: #c3d0c8;
+
+  --shadow-xs:    0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow:       0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md:    0 2px 4px rgba(0, 0, 0, 0.25), 0 8px 20px rgba(0, 0, 0, 0.3);
+  --shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.25), 0 12px 28px rgba(0, 0, 0, 0.35);
+  --shadow-lg:    0 18px 40px rgba(0, 0, 0, 0.45);
+  --shadow-modal:        0 25px 50px -12px rgba(0, 0, 0, 0.55);
+  --shadow-detail:       0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-detail-hover: 0 12px 28px rgba(0, 0, 0, 0.35);
+  --shadow-channel:      0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-channel-hover:0 12px 28px rgba(0, 0, 0, 0.4);
+  --shadow-image:        0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-image-hover:  0 12px 28px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="dark"] { color-scheme: dark; }
 
 /**
  * Fond applicatif

@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('im_theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Détails de la campagne</title>
     <link rel="stylesheet" href="../css/theme.css">
@@ -104,7 +105,7 @@
         .btn-actor-submit:hover { background: var(--primary-hover, #00734C); box-shadow: 0 6px 16px rgba(0,135,90,0.3); }
         .btn-actor-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
         .btn-actor-submit--mep { background: var(--violet, #7C3AED); box-shadow: 0 2px 6px rgba(124,58,237,0.22); }
-        .btn-actor-submit--mep:hover { background: #6d28d9; box-shadow: 0 6px 16px rgba(124,58,237,0.3); }
+        .btn-actor-submit--mep:hover { background: var(--violet, #6d28d9); box-shadow: 0 6px 16px rgba(124,58,237,0.3); }
         .actor-submit-row { margin-top: 10px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .actor-submit-note { font-size: 12px; color: var(--muted-2, #8b988f); }
 
@@ -132,7 +133,7 @@
             flex-direction: row;
             align-items: stretch;
             gap: 0;
-            background: #ffffff;
+            background: var(--bg-card, #fff);
             border-bottom: 1px solid var(--line, #eaefec);
             padding: 0 28px;
             overflow-x: auto;
@@ -252,7 +253,7 @@
         .wf-step.done .wf-cal-num { color: var(--primary-hover, #00734C); }
         .wf-step.current .wf-cal { border-color: var(--amber, #E8A100); box-shadow: 0 0 0 4px var(--amber-50, #fdf3e2); }
         .wf-step.current .wf-cal-tag { background: var(--amber, #E8A100); }
-        .wf-step.current .wf-cal-num { color: #9a6b00; }
+        .wf-step.current .wf-cal-num { color: var(--status-valid, #9a6b00); }
         .wf-step.submitted .wf-cal { border-color: var(--blue, #2563EB); box-shadow: 0 0 0 4px var(--blue-50, #e8f0fe); }
         .wf-step.submitted .wf-cal-tag { background: var(--blue, #2563EB); }
         .wf-step.submitted .wf-cal-num { color: var(--blue, #2563EB); }
@@ -318,7 +319,7 @@
         .bilan-card-title { font-weight: 700; font-size: 0.9rem; color: var(--ink, #0c1a14); letter-spacing: -0.2px; }
         .bilan-badge { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
         .bilan-badge.live { color: var(--green-600, #00734C); background: var(--green-50, #e8f6ef); border: 1px solid var(--green-100, #ccebdd); }
-        .bilan-badge.arch { color: #92600a; background: #fdf3e2; border: 1px solid #f0d98a; }
+        .bilan-badge.arch { color: var(--status-valid, #92600a); background: var(--amber-50, #fdf3e2); border: 1px solid var(--amber-100, #f0d98a); }
         .bilan-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
         .bilan-tile { background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 10px; padding: 8px 10px; }
         .bilan-tile .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
@@ -382,7 +383,7 @@
         /* ── Éditeur de texte enrichi (demande de modification) ── */
         .rich-editor { border: 1px solid var(--amber, #E8A100); border-radius: 6px; overflow: hidden; background: #fff; }
         .rich-toolbar { display: flex; gap: 3px; padding: 4px 6px; background: var(--line-2, #f0f4f1); border-bottom: 1px solid var(--line, #eaefec); flex-wrap: wrap; }
-        .rich-tb-btn { background: none; border: 1px solid transparent; border-radius: 4px; min-width: 27px; height: 24px; font-size: 13px; cursor: pointer; color: #444; line-height: 1; padding: 0 6px; }
+        .rich-tb-btn { background: none; border: 1px solid transparent; border-radius: 4px; min-width: 27px; height: 24px; font-size: 13px; cursor: pointer; color: var(--muted, #444); line-height: 1; padding: 0 6px; }
         .rich-tb-btn:hover { background: #fff; border-color: var(--line, #eaefec); }
         .rich-input { min-height: 70px; padding: 8px 10px; font-size: 13px; font-family: inherit; color: var(--ink, #0c1a14); outline: none; line-height: 1.5; }
         .rich-input:empty:before { content: attr(data-placeholder); color: var(--muted-2, #8b988f); }
@@ -448,11 +449,11 @@
             <button id="deleteCampaignButton" class="btn secondary back-button" style="display:none;color:var(--red);" onclick="deleteCampaign()">🗑️ Supprimer</button>
         </div>
 
-        <div id="arretBanner" style="display:none;margin:14px 28px 0;padding:13px 16px;border-radius:12px;background:#f1f5f9;border:1px solid #cbd5e1;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div id="arretBanner" style="display:none;margin:14px 28px 0;padding:13px 16px;border-radius:12px;background:var(--gray-100,#f1f5f9);border:1px solid var(--gray-300,#cbd5e1);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <span style="font-size:20px;line-height:1;">⏸️</span>
             <div style="flex:1;min-width:220px;">
-                <div style="font-size:13.5px;font-weight:700;color:#334155;" id="arretBannerTitle">Campagne stoppée</div>
-                <div style="font-size:12.5px;color:#64748b;" id="arretBannerDetail"></div>
+                <div style="font-size:13.5px;font-weight:700;color:var(--ink,#334155);" id="arretBannerTitle">Campagne stoppée</div>
+                <div style="font-size:12.5px;color:var(--muted,#64748b);" id="arretBannerDetail"></div>
             </div>
             <button type="button" class="btn secondary" id="arretBannerRestoreBtn" style="display:none;" onclick="toggleCampaignActif()">▶️ Réactiver</button>
         </div>
@@ -535,7 +536,7 @@
         var overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
         var box = document.createElement('div');
-        box.style.cssText = 'background:#fff;border-radius:10px;padding:22px;width:min(420px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
+        box.style.cssText = 'background:var(--bg-card,#fff);border-radius:10px;padding:22px;width:min(420px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
         box.innerHTML =
             '<h3 style="margin:0 0 6px;font-size:16px;color:var(--gray-700);">' + security.escapeHtml(opts.title || 'Saisie') + '</h3>'
             + (opts.label ? '<p style="margin:0 0 12px;font-size:13px;color:var(--muted-2);">' + security.escapeHtml(opts.label) + '</p>' : '')
@@ -1363,7 +1364,7 @@
         var h = '<div style="margin:-4px 0 14px;">';
         h += '<button type="button" class="btn-reopen-step" data-step="' + stepId + '" data-ch="' + idx + '" style="background:none;border:1px solid var(--amber);color:#9a6b00;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">↩️ Revenir à l\'étape « ' + security.escapeHtml(lbl) + ' »</button>';
         h += '<div id="reopen-form-' + uid + '" style="display:none;margin-top:8px;background:var(--amber-50,#fdf3e2);border:1px solid var(--amber);border-radius:8px;padding:10px 12px;">';
-        h += '<div style="font-size:12px;color:#7a5a00;margin-bottom:6px;line-height:1.5;">⚠️ Cette étape et les étapes suivantes qui en dépendent seront à refaire. Motif <strong>obligatoire</strong> :</div>';
+        h += '<div style="font-size:12px;color:var(--status-valid,#7a5a00);margin-bottom:6px;line-height:1.5;">⚠️ Cette étape et les étapes suivantes qui en dépendent seront à refaire. Motif <strong>obligatoire</strong> :</div>';
         h += buildRichEditor('reopen-motif-' + uid, 'Décrivez pourquoi vous revenez à cette étape…');
         h += '<button type="button" class="btn-reopen-confirm" data-step="' + stepId + '" data-ch="' + idx + '" style="margin-top:8px;background:var(--amber);color:#fff;border:none;border-radius:6px;padding:6px 14px;font-weight:600;cursor:pointer;font-size:13px;">↩️ Renvoyer à cette étape</button>';
         h += '</div></div>';
@@ -2087,11 +2088,11 @@
         var isCompleted = workflow.isCompleted(data);
 
         var statusColors = {
-            locked:             { bg: '#e0e0e0', color: '#9e9e9e', icon: '🔒' },
+            locked:             { bg: 'var(--gray-100, #e0e0e0)', color: 'var(--muted-2, #9e9e9e)', icon: '🔒' },
             pending:            { bg: 'var(--amber-50)', color: 'var(--amber)', icon: '⏳' },
             submitted:          { bg: 'var(--blue-50)', color: 'var(--blue)', icon: '📤' },
             validated:          { bg: 'var(--green-50)', color: 'var(--green-600)', icon: '✅' },
-            completed:          { bg: '#c8e6c9', color: 'var(--green-700)', icon: '🏁' },
+            completed:          { bg: 'var(--green-50, #c8e6c9)', color: 'var(--green-700)', icon: '🏁' },
             revision_requested: { bg: 'var(--amber-50)', color: 'var(--amber)', icon: '🔄' }
         };
 
@@ -2221,7 +2222,7 @@
         // seule la garde ci-dessous (utilisateur non identifié) reste ici, pour
         // les sections d'action qui suivent (affectation, kick-off...).
         if (!currentUser) {
-            html += '<p style="color:#888;font-size:13px;">Sélectionnez un utilisateur pour voir vos actions disponibles.</p>';
+            html += '<p style="color:var(--muted-2,#888);font-size:13px;">Sélectionnez un utilisateur pour voir vos actions disponibles.</p>';
             html += '</div>';
             return html;
         }
@@ -2247,7 +2248,7 @@
                 var _comArr = getAssignees(assignments, 'com');
                 var _ebfArr = getAssignees(assignments, 'ebf');
                 var _datArr = getAssignees(assignments, 'data');
-                html += '<div style="background:#fffde7;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;">';
+                html += '<div style="background:var(--amber-50,#fffde7);border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;line-height:1.6;">';
                 html += '<strong>État des affectations :</strong><br>';
                 if (_needsCom)  html += (_comArr.length ? '✅' : '⏳') + ' Com : '  + (_comArr.length ? _comArr.map(security.escapeHtml).join(', ') : 'non assigné') + ' &nbsp;|&nbsp; ';
                 if (_needsEbf)  html += (_ebfArr.length ? '✅' : '⏳') + ' EBF : '  + (_ebfArr.length ? _ebfArr.map(security.escapeHtml).join(', ') : 'non assigné') + ' &nbsp;|&nbsp; ';
@@ -2258,7 +2259,7 @@
             function buildTeamCheckboxes(role, label, teamUsers, currentAssignments) {
                 var cur = getAssignees(currentAssignments, role);
                 var h = '<div><label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">' + label + '</label>';
-                h += '<div style="max-height:130px;overflow-y:auto;border:1px solid #ccc;border-radius:6px;padding:6px;background:#fff;">';
+                h += '<div style="max-height:130px;overflow-y:auto;border:1px solid var(--line,#ccc);border-radius:6px;padding:6px;background:var(--bg-card,#fff);">';
                 teamUsers.forEach(function(u) {
                     var checked = cur.indexOf(u.name) !== -1 ? ' checked' : '';
                     h += '<label style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;cursor:pointer;">';
@@ -2281,7 +2282,7 @@
             var btnLabel = isGeneralManager ? '✅ Valider l\'affectation' : '💾 Enregistrer mon affectation';
             html += '<button id="btn-validate-assignment" data-general="' + isGeneralManager + '" data-role="' + security.escapeHtml(currentUser.role) + '" data-required-teams="' + _reqTeamsAttr + '" style="margin-top:12px;background:var(--primary);color:#fff;border:none;border-radius:6px;padding:8px 20px;font-weight:600;cursor:pointer;">' + btnLabel + '</button>';
             if (!isGeneralManager) {
-                html += '<span style="margin-left:10px;font-size:12px;color:#888;">L\'étape sera validée quand tous les services requis seront renseignés.</span>';
+                html += '<span style="margin-left:10px;font-size:12px;color:var(--muted-2,#888);">L\'étape sera validée quand tous les services requis seront renseignés.</span>';
             }
             html += '</div>';
         }
@@ -2299,7 +2300,7 @@
                 html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">';
                 kfNoteKeys.forEach(function(person) {
                     if (kfNotes[person]) {
-                        html += '<div style="background:#fff;border:1px solid #a5d6a7;border-radius:6px;padding:8px 10px;">';
+                        html += '<div style="background:var(--bg-card,#fff);border:1px solid var(--green-100,#a5d6a7);border-radius:6px;padding:8px 10px;">';
                         html += '<div style="font-size:11px;font-weight:700;color:var(--green-600);margin-bottom:4px;">' + security.escapeHtml(person) + '</div>';
                         html += '<div style="font-size:12px;color:var(--gray-700);white-space:pre-wrap;">' + security.escapeHtml(kfNotes[person]) + '</div>';
                         html += '</div>';
@@ -2318,7 +2319,7 @@
                 html += '<div style="background:var(--blue-50);border:1px solid var(--blue);border-radius:8px;padding:14px;margin-bottom:12px;" id="kickoff-personal-container">';
                 html += '<h4 style="margin:0 0 10px;color:var(--blue);">🚀 Kick-off — ma note</h4>';
                 html += '<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Saisissez vos notes pour le kick-off. Le PO organisera la réunion.</div>';
-                html += '<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:8px 10px;">';
+                html += '<div style="background:var(--bg-card,#fff);border:1px solid var(--blue-50,#90caf9);border-radius:6px;padding:8px 10px;">';
                 html += '<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px;">' + security.escapeHtml(currentUser.name) + '</div>';
                 html += '<textarea id="kickoff-my-note" class="form-control" rows="3" style="resize:vertical;font-size:13px;" placeholder="Vos notes, idées, questions pour le kick-off...">' + security.escapeHtml(_kfMyNote) + '</textarea>';
                 html += '</div>';
@@ -2351,7 +2352,7 @@
                 html += '<label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:8px;">Notes par personne <small style="font-weight:normal;text-transform:none;">(optionnel)</small></label>';
                 html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;">';
                 kfParticipants.forEach(function(p) {
-                    html += '<div style="background:#fff;border:1px solid #90caf9;border-radius:6px;padding:8px 10px;">';
+                    html += '<div style="background:var(--bg-card,#fff);border:1px solid var(--blue-50,#90caf9);border-radius:6px;padding:8px 10px;">';
                     html += '<div style="font-size:11px;font-weight:700;color:var(--blue);margin-bottom:4px;">' + security.escapeHtml(p.role) + ' \u2014 ' + security.escapeHtml(p.name) + '</div>';
                     html += '<textarea class="kickoff-person-note form-control" data-person="' + security.escapeHtml(p.name) + '" rows="2" style="resize:vertical;font-size:12px;" placeholder="Notes pour ' + security.escapeHtml(p.name) + '...">' + security.escapeHtml(kfExistingNotes[p.name] || '') + '</textarea>';
                     html += '</div>';
@@ -4811,8 +4812,8 @@
         var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;font-family:inherit;">';
         [0, 0.5, 1].forEach(function (t) {
             var y = padT + plotH - t * plotH;
-            svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="#eaefec"/>';
-            svg += '<text x="' + (padL - 4) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="#8b988f">' + (Math.round(maxV * t * 10) / 10) + '</text>';
+            svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="var(--line,#eaefec)"/>';
+            svg += '<text x="' + (padL - 4) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--muted-2,#8b988f)">' + (Math.round(maxV * t * 10) / 10) + '</text>';
         });
         groups.forEach(function (gl, gi) {
             var gx = padL + gi * groupW;
@@ -4824,14 +4825,14 @@
                 if (v != null) {
                     var hh = (v / maxV) * plotH, y = padT + plotH - hh;
                     svg += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(0, hh).toFixed(1) + '" rx="2" fill="' + s.color + '"><title>' + esc(s.name + ' — ' + gl + ' : ' + (Math.round(v * 10) / 10) + unit) + '</title></rect>';
-                    if (barW >= 16) svg += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" text-anchor="middle" font-size="9" fill="#33403a">' + (Math.round(v * 10) / 10) + '</text>';
+                    if (barW >= 16) svg += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" text-anchor="middle" font-size="9" fill="var(--gray-700,#33403a)">' + (Math.round(v * 10) / 10) + '</text>';
                 }
             });
-            svg += '<text x="' + (gx + groupW / 2).toFixed(1) + '" y="' + (padT + plotH + 14) + '" text-anchor="middle" font-size="10" fill="#33403a">' + esc(gl) + '</text>';
+            svg += '<text x="' + (gx + groupW / 2).toFixed(1) + '" y="' + (padT + plotH + 14) + '" text-anchor="middle" font-size="10" fill="var(--gray-700,#33403a)">' + esc(gl) + '</text>';
         });
         svg += '</svg>';
         var legend = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 2px;">';
-        series.forEach(function (s) { legend += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#33403a;"><span style="width:10px;height:10px;border-radius:2px;background:' + s.color + ';display:inline-block;"></span>' + esc(s.name) + '</span>'; });
+        series.forEach(function (s) { legend += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--gray-700,#33403a);"><span style="width:10px;height:10px;border-radius:2px;background:' + s.color + ';display:inline-block;"></span>' + esc(s.name) + '</span>'; });
         legend += '</div>';
         return legend + svg;
     }
@@ -5096,7 +5097,7 @@
                 html += '<div style="font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:6px;">📂 ' + security.escapeHtml(folder.name) + ' <span style="font-weight:400;color:var(--muted-2);font-size:12px;">(' + folder.files.length + ' fichier' + (folder.files.length !== 1 ? 's' : '') + ')</span></div>';
                 folder.files.forEach(function(f) { html += fileLine(f, folder.name, true); });
                 // Bouton upload dans ce dossier
-                html += '<label style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">📎 Ajouter un fichier<input type="file" style="display:none;" data-folder="' + security.escapeHtml(folder.name) + '" class="doc-file-input" multiple></label>';
+                html += '<label style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;background:var(--blue-50,#e0f2fe);color:var(--blue,#0369a1);border:1px solid var(--blue-50,#7dd3fc);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:12px;">📎 Ajouter un fichier<input type="file" style="display:none;" data-folder="' + security.escapeHtml(folder.name) + '" class="doc-file-input" multiple></label>';
                 html += '</div>';
             });
         }
@@ -5188,7 +5189,7 @@
         if (contentEl) {
             banner = document.createElement('div');
             banner.textContent = '⏳ Envoi de ' + label + dest + ' en cours…';
-            banner.style.cssText = 'background:#e0f2fe;color:#0369a1;border:1px solid #7dd3fc;border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:10px;';
+            banner.style.cssText = 'background:var(--blue-50,#e0f2fe);color:var(--blue,#0369a1);border:1px solid var(--blue-50,#7dd3fc);border-radius:6px;padding:8px 12px;font-size:13px;margin-bottom:10px;';
             contentEl.insertBefore(banner, contentEl.firstChild);
         }
 
@@ -5415,7 +5416,7 @@
             }).join('');
             dd.querySelectorAll('.mention-opt').forEach(function(opt) {
                 opt.addEventListener('mousedown', function(e) { e.preventDefault(); pick(opt.getAttribute('data-name')); });
-                opt.addEventListener('mouseover', function() { opt.style.background = '#f1f5f9'; });
+                opt.addEventListener('mouseover', function() { opt.style.background = 'var(--line-2, #f1f5f9)'; });
                 opt.addEventListener('mouseout', function() { opt.style.background = ''; });
             });
             dd.style.left = '0px';
