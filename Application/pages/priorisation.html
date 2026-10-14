@@ -421,6 +421,34 @@
         if (isNaN(d.getTime())) return iso;
         return d.toLocaleDateString('fr-FR');
     }
+    // Date d'envoi retenue pour une campagne (une ligne par campagne, mais
+    // chaque livrable a sa propre date d'envoi, cf. channel.sendDate) : la
+    // plus proche parmi tous ses livrables (celle qui part en premier) —
+    // repli sur la date d'envoi générale de la campagne si un livrable n'a
+    // pas de date propre, ou si la campagne n'a pas encore de canal.
+    var ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+    function campaignEnvoiDate(c) {
+        var channels = c.channels || [];
+        var dates = channels.map(function (ch) {
+            var sd = ((ch && ch.sendDate) || '').trim();
+            return ISO_DATE.test(sd) ? sd : (c.launchDate || null);
+        }).filter(Boolean);
+        if (!dates.length) return c.launchDate || null;
+        dates.sort();
+        return dates[0];
+    }
+    // Détail par livrable, pour le survol — seulement utile si la campagne a
+    // plusieurs canaux (sinon la date retenue est déjà la seule qui existe).
+    function envoiTooltip(c) {
+        var channels = c.channels || [];
+        if (channels.length < 2) return '';
+        return channels.map(function (ch) {
+            var label = (ch && (ch.deliverableName || ch.content)) || 'Canal';
+            var sd = ((ch && ch.sendDate) || '').trim();
+            var d = ISO_DATE.test(sd) ? sd : (c.launchDate || null);
+            return label + ' : ' + fmtDate(d);
+        }).join('\n');
+    }
     function fmtMinutes(min) {
         if (!min) return '0 min';
         var h = Math.floor(min / 60), m = min % 60;
@@ -545,7 +573,7 @@
                 + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><select class="prio-select" data-prio-idx="' + i + '" style="background:var(--line-2);color:var(--gray-700,#33403a);">' + prioriteOptions(c.prioriteMarketing) + '</select></td>'
                 + '<td>' + esc(c.po || '—') + '</td>'
-                + '<td>' + fmtDate(c.launchDate) + '</td>'
+                + '<td' + (envoiTooltip(c) ? ' title="' + escAttr(envoiTooltip(c)) + '" style="cursor:help;border-bottom:1px dashed var(--muted-2,#8b988f);"' : '') + '>' + fmtDate(campaignEnvoiDate(c)) + '</td>'
                 + '<td>' + servicesBadges(c) + '</td>'
                 + '<td><div class="prio-actions">'
                 + '<button type="button" class="prio-btn prio-btn-go' + (c.go ? ' is-active' : '') + '" data-go="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> Go</button>'
@@ -591,7 +619,7 @@
                 + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><span class="prio-badge prio-badge-on">' + esc(statutLabel(c)) + '</span>' + decaleeTag + '</td>'
                 + '<td>' + esc(c.prioriteMarketing || 'À prioriser') + '</td>'
-                + '<td>' + fmtDate(c.launchDate) + '</td>'
+                + '<td' + (envoiTooltip(c) ? ' title="' + escAttr(envoiTooltip(c)) + '" style="cursor:help;border-bottom:1px dashed var(--muted-2,#8b988f);"' : '') + '>' + fmtDate(campaignEnvoiDate(c)) + '</td>'
                 + '<td><div class="prio-actions">'
                 + '<button type="button" class="prio-btn" data-decaler="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Décaler</button>'
                 + '<button type="button" class="prio-btn prio-btn-danger" data-stopper="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Stopper</button>'
@@ -638,9 +666,10 @@
     function inEnvoiRange(c) {
         var du = document.getElementById('f-envoi-du').value, au = document.getElementById('f-envoi-au').value;
         if (!du && !au) return true;
-        if (!c.launchDate) return false;
-        if (du && c.launchDate < du) return false;
-        if (au && c.launchDate > au) return false;
+        var envoi = campaignEnvoiDate(c);
+        if (!envoi) return false;
+        if (du && envoi < du) return false;
+        if (au && envoi > au) return false;
         return true;
     }
 
