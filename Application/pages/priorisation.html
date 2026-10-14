@@ -541,7 +541,8 @@
     }
 
     // Tri de la liste « À prioriser » par Valeur campagne (clic sur l'en-tête).
-    var _aPrioriserSort = { dir: null }; // null | 'asc' | 'desc'
+    // Tri par défaut dès le chargement : valeur campagne la plus haute en premier.
+    var _aPrioriserSort = { dir: 'desc' }; // null | 'asc' | 'desc'
     function sortAPrioriser(list) {
         if (!_aPrioriserSort.dir) return list;
         var factor = _aPrioriserSort.dir === 'asc' ? 1 : -1;
