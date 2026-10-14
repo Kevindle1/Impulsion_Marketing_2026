@@ -319,6 +319,9 @@
         var IM = window.ImpulsionMarketing;
         var users = IM.users, config = IM.config, adminConfig = IM.adminConfig, errors = IM.errors;
         var esc = (IM.security && IM.security.escapeHtml) ? IM.security.escapeHtml : function (s) { return String(s == null ? '' : s); };
+        // esc() échappe pour un contexte TEXTE mais pas les guillemets doubles —
+        // insuffisant pour une valeur placée dans un attribut HTML="...".
+        function escAttr(s) { return esc(s).replace(/"/g, '&quot;'); }
 
         // Câblage commun au motif « liste → sous-page » (Signalements ▸ Lots à dev,
         // Workflow ▸ Étapes actives par canal) : une ligne cliquable ouvre la sous-page
@@ -384,9 +387,10 @@
             { key: 'recurrences',    label: 'Récurrences',                 icon: '🔁', desc: 'Rythmes de récurrence.', ph: 'Ex : Mensuel, One shot…' },
             { key: 'lots',           label: 'Numéros de lot',              icon: '🔢', desc: 'Numéros de lot disponibles.', ph: 'Ex : 1, 2, Création' },
             { key: 'comTypologies',  label: 'Typologies de communication', icon: '🗂️', desc: 'Ex : Création Caisse, Reprise Natio. La ou les valeurs qui déclenchent les champs site web se choisissent dans « Paramètres généraux ».', ph: 'Ex : Création Caisse' },
-            { key: 'servicesExternes', label: 'Services externes',       icon: '🏢', desc: 'Prestataires externes pouvant intervenir sur une campagne.', ph: 'Ex : Agence X, Agence Y…' }
+            { key: 'servicesExternes', label: 'Services externes',       icon: '🏢', desc: 'Prestataires externes pouvant intervenir sur une campagne.', ph: 'Ex : Agence X, Agence Y…' },
+            { key: 'motifsArret',      label: 'Motifs d\'arrêt de campagne', icon: '⛔', desc: 'Motifs proposés lors de l\'arrêt d\'une campagne (page Priorisation).', ph: 'Ex : Budget insuffisant, Priorité changée…' }
         ];
-        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS', comTypologies: 'COM_TYPOLOGIES', servicesExternes: 'SERVICES_EXTERNES' };
+        var CFG_KEY = { canaux: 'CANAUX', universBesoins: 'UNIVERS_BESOINS', typesCom: 'TYPES_COM', typologies: 'TYPOLOGIES', marches: 'MARCHES', recurrences: 'RECURRENCES', lots: 'LOTS', comTypologies: 'COM_TYPOLOGIES', servicesExternes: 'SERVICES_EXTERNES', motifsArret: 'MOTIFS_ARRET' };
 
         // ── Génère une page (section) par liste de choix ──
         // Chaque liste devient une page autonome, au même niveau que Segments / Équipes.
@@ -1558,6 +1562,7 @@
             if (!cont) return;
             var pc = priorisationCfgState;
             if (!pc.bareme) pc.bareme = {};
+            if (!pc.libelles) pc.libelles = {};
             if (!pc.chargeEbf) pc.chargeEbf = {};
             if (!pc.chargeCom) pc.chargeCom = {};
             if (!pc.chargeData) pc.chargeData = {};
@@ -1573,6 +1578,14 @@
                     h += '<td><input type="number" class="admin-input prio-num" data-bareme-palier="' + key + ':' + i + '" value="' + (typeof vals[i] === 'number' ? vals[i] : '') + '" style="width:70px;"></td>';
                 }
                 return h + '</tr>';
+            }
+            function libelleField(key, label) {
+                var vals = Array.isArray(pc.libelles[key]) ? pc.libelles[key] : ['', '', '', '', ''];
+                var h = '<div style="margin-bottom:14px;"><div class="admin-label" style="margin-bottom:6px;">' + esc(label) + '</div>';
+                for (var i = 0; i < 5; i++) {
+                    h += '<input type="text" class="admin-input" data-libelle-palier="' + key + ':' + i + '" value="' + escAttr(vals[i] || '') + '" placeholder="Libellé palier ' + (i + 1) + '" style="width:100%;margin-bottom:6px;">';
+                }
+                return h + '</div>';
             }
             function chargeTable(stateKey, title, desc) {
                 var state = pc[stateKey];
@@ -1602,6 +1615,13 @@
                 + '<div><label class="admin-label">Réglementaire</label><input type="number" class="admin-input prio-num" data-bareme-fixe="reglementaire" value="' + (typeof b.reglementaire === 'number' ? b.reglementaire : 34) + '" style="width:100%;"></div>'
                 + '<div><label class="admin-label">Multiplicateur de correction</label><input type="number" class="admin-input prio-num" data-bareme-fixe="multiplicateur" value="' + (typeof b.multiplicateur === 'number' ? b.multiplicateur : 10000) + '" style="width:100%;"></div>'
                 + '</div></div>';
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Libellés affichés (listes déroulantes de création de campagne)</h3></div>'
+                + '<div class="empty-hint" style="padding-top:0;">Texte vu par le demandeur à l\'étape « Bénéfices attendus », pour chaque palier — indépendant des points attribués ci-dessus (même ordre : palier 1 → 5).</div>'
+                + libelleField('potentielBusiness', 'Potentiel business')
+                + libelleField('satisfactionClient', 'Satisfaction client')
+                + libelleField('volumeClientCible', 'Volume de clients ciblés')
+                + '</div>';
 
             html += chargeTable('chargeEbf', 'Charge de réalisation — EBF', 'Temps estimé (en minutes) par canal, selon l\'origine du canal (Typologie de communication).');
             html += chargeTable('chargeCom', 'Charge de réalisation — COM', 'Temps estimé (en minutes) par canal, selon l\'origine du canal (Typologie de communication).');
@@ -1644,6 +1664,12 @@
                 });
                 cont.querySelectorAll('[data-bareme-fixe]').forEach(function (inp) {
                     pc.bareme[inp.getAttribute('data-bareme-fixe')] = parseFloat(inp.value) || 0;
+                });
+                cont.querySelectorAll('[data-libelle-palier]').forEach(function (inp) {
+                    var parts = inp.getAttribute('data-libelle-palier').split(':');
+                    var key = parts[0], idx = +parts[1];
+                    if (!Array.isArray(pc.libelles[key])) pc.libelles[key] = ['', '', '', '', ''];
+                    pc.libelles[key][idx] = inp.value;
                 });
                 cont.querySelectorAll('[data-charge]').forEach(function (inp) {
                     var parts = inp.getAttribute('data-charge').split(':');

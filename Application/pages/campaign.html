@@ -1235,7 +1235,7 @@
                             </select>
                         </div>
 
-                        <div class="form-group fg-full" id="prioReutilBox" style="display:flex;align-items:center;gap:12px;background:var(--line-2,#f0f4f1);border-radius:10px;padding:12px 14px;">
+                        <div class="form-group fg-full" id="prioReutilBox" style="display:none;align-items:center;gap:12px;background:var(--line-2,#f0f4f1);border-radius:10px;padding:12px 14px;">
                             <div style="flex:1;">
                                 <strong style="font-size:13.5px;">Réutilisabilité / amélioration d'un existant</strong>
                                 <div style="font-size:12.5px;color:var(--muted);margin-top:2px;">Déduit automatiquement de la typologie choisie à l'étape « Informations générales » — aucune saisie requise ici.</div>
@@ -1249,7 +1249,7 @@
                                 <span>Impact stratégique <small style="font-weight:400;color:var(--muted);display:block;">La campagne sert un objectif stratégique identifié de l'entreprise.</small></span>
                             </label>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="display:none;">
                             <label style="display:flex;align-items:flex-start;gap:8px;cursor:default;">
                                 <input type="checkbox" id="prioReglementaire" disabled style="width:auto;flex:none;margin-top:3px;">
                                 <span>Réglementaire <small style="font-weight:400;color:var(--muted);display:block;">Déduit automatiquement : coché dès qu'un livrable a pour « Type de Com » Réglementaire — aucune saisie requise ici.</small>
@@ -1257,7 +1257,7 @@
                             </label>
                         </div>
 
-                        <div class="form-group fg-full" style="background:linear-gradient(135deg,#0c3a28,#00734C);border-radius:12px;padding:16px 20px;color:#fff;display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+                        <div class="form-group fg-full" style="display:none;background:linear-gradient(135deg,#0c3a28,#00734C);border-radius:12px;padding:16px 20px;color:#fff;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:10px;">
                             <div>
                                 <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.8;">Valeur métier calculée</div>
                                 <div style="font-size:26px;font-weight:800;" id="prioValeurMetier">0</div>
@@ -1937,6 +1937,24 @@
                     sel.appendChild(opt);
                 });
                 cb.addEventListener('change', function () { sel.style.display = cb.checked ? '' : 'none'; });
+            })();
+
+            // Libellés des paliers (Potentiel business / Satisfaction client / Volume
+            // clients ciblés) : éditables en Administration ▸ Priorisation — on ne
+            // touche jamais aux value= (1/2/3/5/8), qui restent la clé stable du
+            // barème de points ; seul le texte affiché change.
+            (function populatePalierLabels() {
+                var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+                if (!wf || !wf.getPriorisationConfig) return;
+                var libelles = wf.getPriorisationConfig().libelles || {};
+                ['potentielBusiness', 'satisfactionClient', 'volumeClientCible'].forEach(function (key) {
+                    var sel = document.getElementById(key);
+                    var labels = libelles[key];
+                    if (!sel || !Array.isArray(labels)) return;
+                    Array.prototype.slice.call(sel.querySelectorAll('option[value]:not([value=""])')).forEach(function (opt, i) {
+                        if (labels[i]) opt.textContent = labels[i];
+                    });
+                });
             })();
 
             // Gestion des champs dynamiques

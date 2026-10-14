@@ -96,6 +96,12 @@ window.ImpulsionMarketing.config = (function() {
   const SERVICES_EXTERNES = _arr('servicesExternes');
 
   // ========================================
+  // Motifs d'arrêt de campagne (page Priorisation)
+  // ========================================
+
+  const MOTIFS_ARRET = _arr('motifsArret');
+
+  // ========================================
   // Typologies de Campagne
   // ========================================
 
@@ -354,6 +360,7 @@ window.ImpulsionMarketing.config = (function() {
     CANAUX: CANAUX,
     TYPES_COM: TYPES_COM,
     SERVICES_EXTERNES: SERVICES_EXTERNES,
+    MOTIFS_ARRET: MOTIFS_ARRET,
     TYPOLOGIES: TYPOLOGIES,
     PRODUITS: PRODUITS,
     MARCHES: MARCHES,
@@ -2163,6 +2170,33 @@ window.ImpulsionMarketing.workflow = (function () {
       reglementaire:      34,
       multiplicateur:     10000
     },
+    // Libellés affichés dans les listes déroulantes de création de campagne
+    // (étape « Bénéfices attendus ») pour chaque palier des 3 critères du
+    // barème — éditables en Administration ▸ Priorisation, indépendamment
+    // des points attribués (bareme ci-dessus).
+    libelles: {
+      potentielBusiness: [
+        'Très faible — < X k€ ou 5 leads',
+        'Faible — X à X k€ ou 5 à 20 leads',
+        'Modéré — X à X k€ ou 20 à 50 leads',
+        'Fort — X à X k€ ou 50 à 100 leads',
+        'Majeur — > X k€ ou > 100 leads'
+      ],
+      satisfactionClient: [
+        'Impact quasi invisible pour le client, amélioration essentiellement interne',
+        'Amélioration perceptible pour une faible population ou une situation peu fréquente',
+        'Amélioration visible pour une population importante ou un parcours fréquent',
+        "Réduction forte d'un irritant ou amélioration d'une étape clé du parcours client",
+        "Impact direct sur la satisfaction, la recommandation ou la fidélisation d'un grand nombre de clients"
+      ],
+      volumeClientCible: [
+        '< 500 clients',
+        '500 à 5 000 clients',
+        '5 000 à 20 000 clients',
+        '20 000 à 100 000 clients',
+        '> 100 000 clients'
+      ]
+    },
     chargeEbf: {},
     chargeCom: {},
     chargeData: {
@@ -2173,15 +2207,17 @@ window.ImpulsionMarketing.workflow = (function () {
     prioritesMarketing: ['Incontournable', 'Elevé', 'Standard', 'Faible', 'Ne pas lancer']
   };
   // Config effective (fusion defaults + surcharge admin — comme _stepDef pour
-  // le workflow). Le barème fusionne clé par clé (une admin qui n'a modifié
-  // que 2 des 3 critères garde les valeurs par défaut des autres) ; les
-  // tableaux de charge et la liste de priorités sont remplacés en bloc dès
-  // qu'ils sont présents dans la config (mêmes règles que WORKFLOW_STEPS).
+  // le workflow). Le barème et les libellés fusionnent clé par clé (une admin
+  // qui n'a modifié que 2 des 3 critères garde les valeurs par défaut des
+  // autres) ; les tableaux de charge et la liste de priorités sont remplacés
+  // en bloc dès qu'ils sont présents dans la config (mêmes règles que
+  // WORKFLOW_STEPS).
   function _priorisationCfg() {
     var c = _cfg();
     var p = (c && c.PRIORISATION && typeof c.PRIORISATION === 'object') ? c.PRIORISATION : {};
     return {
       bareme: Object.assign({}, DEFAULT_PRIORISATION.bareme, p.bareme || {}),
+      libelles: Object.assign({}, DEFAULT_PRIORISATION.libelles, p.libelles || {}),
       chargeEbf: (p.chargeEbf && typeof p.chargeEbf === 'object') ? p.chargeEbf : DEFAULT_PRIORISATION.chargeEbf,
       chargeCom: (p.chargeCom && typeof p.chargeCom === 'object') ? p.chargeCom : DEFAULT_PRIORISATION.chargeCom,
       chargeData: (p.chargeData && typeof p.chargeData === 'object') ? p.chargeData : DEFAULT_PRIORISATION.chargeData,
@@ -4721,7 +4757,8 @@ window.ImpulsionMarketing.adminConfig = (function () {
     lots: 'LOTS',
     produits: 'PRODUITS',
     comTypologies: 'COM_TYPOLOGIES',
-    servicesExternes: 'SERVICES_EXTERNES'
+    servicesExternes: 'SERVICES_EXTERNES',
+    motifsArret: 'MOTIFS_ARRET'
   };
 
   // Remplace le contenu d'un tableau EN PLACE (conserve la référence partagée).
