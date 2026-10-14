@@ -131,10 +131,20 @@
                 </div>
 
                 <!-- Bascule entre les 2 vues (une seule affichée à la fois, pour limiter le
-                     défilement) -->
-                <div class="dash-tabs" id="dash-tabs" style="display:none;">
-                    <button type="button" class="dash-tab-btn" data-dash-tab="myturn">À produire <span class="dash-tab-count" id="dash-tab-count-myturn">0</span></button>
-                    <button type="button" class="dash-tab-btn" data-dash-tab="allmine">Mes campagnes en cours <span class="dash-tab-count" id="dash-tab-count-allmine">0</span></button>
+                     défilement) + bascule cartes/liste (affichage des campagnes) -->
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:2px 0 24px;">
+                    <div class="dash-tabs" id="dash-tabs" style="display:none;">
+                        <button type="button" class="dash-tab-btn" data-dash-tab="myturn">À produire <span class="dash-tab-count" id="dash-tab-count-myturn">0</span></button>
+                        <button type="button" class="dash-tab-btn" data-dash-tab="allmine">Mes campagnes en cours <span class="dash-tab-count" id="dash-tab-count-allmine">0</span></button>
+                    </div>
+                    <div class="dash-view-toggle" id="dash-view-toggle" style="display:none;">
+                        <button type="button" class="dash-view-btn" data-dash-view="card" title="Vue cartes">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                        </button>
+                        <button type="button" class="dash-view-btn" data-dash-view="list" title="Vue liste">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Campagnes à produire -->
@@ -186,6 +196,9 @@
         var _myTurn          = [];   // liste complète "à produire"
         var _displayedCount  = 20;   // nb de cartes affichées dans allMine
         var _dashTab         = null; // 'myturn' | 'allmine' — une seule section visible à la fois ; choisie automatiquement au 1er rendu, puis mémorisée
+        // 'card' (défaut) | 'list' — mémorisé pour toute la session du navigateur (localStorage),
+        // indépendant de l'utilisateur connecté (préférence d'affichage, pas une donnée métier).
+        var _dashView = (function () { try { return localStorage.getItem('im_dash_view') || 'card'; } catch (e) { return 'card'; } })();
         var _currentRootHandle = null;
         var _searchTimer     = null;
         var ALLMINE_PAGE_SIZE = 20;
@@ -363,6 +376,7 @@
             document.getElementById('allmine-section').style.display = 'none';
             document.getElementById('dashboard-toolbar').style.display = 'none';
             document.getElementById('dash-tabs').style.display = 'none';
+            document.getElementById('dash-view-toggle').style.display = 'none';
             document.getElementById('load-more-bar').style.display = 'none';
             var kpi = document.getElementById('kpi-row'); if (kpi) kpi.style.display = 'none';
         }
@@ -395,10 +409,25 @@
             renderFiltered();
         }
 
+        // ── Bascule cartes / liste (affichage des campagnes) — préférence mémorisée,
+        // indépendante de l'onglet À produire / Mes campagnes en cours. ──
+        function setDashView(view) {
+            _dashView = view;
+            try { localStorage.setItem('im_dash_view', view); } catch (e) {}
+            document.querySelectorAll('.dash-view-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-dash-view') === view);
+            });
+            renderFiltered();
+        }
+
         // ── Initialisation barre d'outils (appelée une seule fois au load) ──
         function initDashboardToolbar() {
             document.querySelectorAll('.dash-tab-btn').forEach(function(btn) {
                 btn.addEventListener('click', function() { setDashTab(btn.getAttribute('data-dash-tab')); });
+            });
+            document.querySelectorAll('.dash-view-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-dash-view') === _dashView);
+                btn.addEventListener('click', function() { setDashView(btn.getAttribute('data-dash-view')); });
             });
 
             var searchInput = document.getElementById('campaign-search');
@@ -470,8 +499,10 @@
             var myTurnList    = document.getElementById('myturn-list');
             if (_dashTab === 'myturn') {
                 if (filtMyTurn.length > 0) {
-                    var h1 = '<div class="campaigns-grid">';
-                    filtMyTurn.forEach(function(c) { h1 += buildCard(c, true); });
+                    var isListView1 = _dashView === 'list';
+                    var buildFn1 = isListView1 ? buildListRow : buildCard;
+                    var h1 = '<div class="' + (isListView1 ? 'campaigns-list' : 'campaigns-grid') + '">';
+                    filtMyTurn.forEach(function(c) { h1 += buildFn1(c, true); });
                     h1 += '</div>';
                     myTurnList.innerHTML = h1;
                 } else if (query) {
@@ -493,8 +524,10 @@
 
             if (_dashTab === 'allmine') {
                 if (filtAll.length > 0) {
-                    var h2 = '<div class="campaigns-grid">';
-                    slice.forEach(function(c) { h2 += buildCard(c, !!c.isMyTurn); });
+                    var isListView2 = _dashView === 'list';
+                    var buildFn2 = isListView2 ? buildListRow : buildCard;
+                    var h2 = '<div class="' + (isListView2 ? 'campaigns-list' : 'campaigns-grid') + '">';
+                    slice.forEach(function(c) { h2 += buildFn2(c, !!c.isMyTurn); });
                     h2 += '</div>';
                     allMineList.innerHTML = h2;
 
@@ -862,6 +895,7 @@
                 document.getElementById('myturn-section').style.display = 'none';
                 document.getElementById('dashboard-toolbar').style.display = 'none';
                 document.getElementById('dash-tabs').style.display = 'none';
+                document.getElementById('dash-view-toggle').style.display = 'none';
                 return;
             }
 
@@ -885,6 +919,7 @@
             // le changer tout seul aux rafraîchissements suivants).
             document.getElementById('dashboard-toolbar').style.display = 'flex';
             document.getElementById('dash-tabs').style.display = 'flex';
+            document.getElementById('dash-view-toggle').style.display = 'flex';
             if (_dashTab === null) _dashTab = myTurn.length > 0 ? 'myturn' : 'allmine';
             document.querySelectorAll('.dash-tab-btn').forEach(function(btn) {
                 btn.classList.toggle('active', btn.getAttribute('data-dash-tab') === _dashTab);
@@ -1116,6 +1151,37 @@
             h += '    </div>';
 
             h += '  </div>';
+            h += '</a>';
+            return h;
+        }
+
+        // ── Vue liste (alternative compacte à buildCard, même données) — reprend
+        // les classes .campaign-card/.campaign-card-icon/.badge-my-turn/etc. déjà
+        // présentes dans ce fichier mais jusqu'ici inutilisées (l'ancien gabarit
+        // « ligne » d'avant le passage aux cartes recto/verso cc-flip). ──
+        function buildListRow(c, isUrgent) {
+            var isActif = c.isActif !== false;
+            var detailsUrl = 'pages/details.html?name=' + encodeURIComponent(c.name);
+            var st = stepStatus(c);
+            var delay = computeDelay(c.data.launchDate);
+            var chan = channelInfo(c);
+            var delayClass = (isActif && delay) ? (delay.diff === 0 ? 'delay--today' : (delay.diff < 0 ? 'delay--late' : (delay.urgent ? 'delay--soon' : ''))) : '';
+            var dateText = delay ? delay.text : (c.data.launchDate ? new Date(c.data.launchDate).toLocaleDateString('fr-FR') : '—');
+            var rowClass = 'campaign-card' + (!isActif ? ' campaign-card--inactive' : '') + (isUrgent ? ' campaign-card--urgent' : '');
+            var iconClass = 'campaign-card-icon' + (isUrgent ? ' campaign-card-icon--urgent' : '');
+
+            var h = '';
+            h += '<a href="' + detailsUrl + '" class="' + rowClass + '">';
+            h += '  <div class="' + iconClass + '" title="' + security.escapeHtml(chan.title || '') + '"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4Z"/></svg></div>';
+            h += '  <div class="campaign-card-content">';
+            h += '    <h4>' + security.escapeHtml(c.name) + '</h4>';
+            h += '    <p>' + security.escapeHtml(chan.label) + ' · ' + security.escapeHtml(st.text) + (c.data.volumeAlert ? ' <span class="badge-volume-alert" title="Volume important">⚠️</span>' : '') + '</p>';
+            h += '    <div class="campaign-delay' + (delayClass ? ' ' + delayClass : '') + '">' + security.escapeHtml(dateText) + '</div>';
+            h += '  </div>';
+            h += '  <div class="cc-avs">' + avatarsHtml(c) + '</div>';
+            if (isUrgent) h += '  <span class="badge-my-turn">À produire</span>';
+            if (!isActif) h += '  <span class="badge-inactive">Stoppée</span>';
+            h += '  <span class="campaign-card-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></span>';
             h += '</a>';
             return h;
         }
@@ -1728,7 +1794,12 @@
         /* ── Bascule À produire / Mes campagnes en cours : contrôle segmenté (un
            seul bloc, l'onglet actif ressort en pastille blanche) plutôt que deux
            boutons flottants séparés. ── */
-        .dash-tabs { display: inline-flex; gap: 3px; padding: 4px; background: var(--line-2, #f0f4f1); border-radius: 14px; margin: 2px 0 24px; }
+        .dash-tabs { display: inline-flex; gap: 3px; padding: 4px; background: var(--line-2, #f0f4f1); border-radius: 14px; }
+        .dash-view-toggle { display: inline-flex; gap: 3px; padding: 4px; background: var(--line-2, #f0f4f1); border-radius: 14px; flex-shrink: 0; }
+        .dash-view-btn { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 11px; border: none; background: transparent; color: var(--muted, #56655e); cursor: pointer; transition: background .12s, color .12s; }
+        .dash-view-btn:hover { color: var(--ink, #0c1a14); }
+        .dash-view-btn.active { background: var(--bg-card, #fff); color: var(--ink, #0c1a14); box-shadow: var(--shadow-xs); }
+        .campaigns-list { display: flex; flex-direction: column; gap: 10px; }
         .dash-tab-btn {
             display: flex; align-items: center; gap: 9px;
             padding: 10px 18px; border-radius: 11px; border: none;
