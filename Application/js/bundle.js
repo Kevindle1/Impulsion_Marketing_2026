@@ -2265,14 +2265,14 @@ window.ImpulsionMarketing.workflow = (function () {
     return /natio/i.test(t) ? 'Natio' : 'CR';
   }
 
-  // Charge de réalisation = Σ charge EBF(canal, son origine) + Σ charge
-  // COM(canal, son origine) — une ligne par canal de la campagne, chacun
-  // avec sa propre origine — + charge DATA(typologie de la campagne,
-  // origine) une seule fois (pas par canal, cf. Administration ▸
+  // Détail de la charge de réalisation par équipe : Σ charge EBF(canal, son
+  // origine) + Σ charge COM(canal, son origine) — une ligne par canal de la
+  // campagne, chacun avec sa propre origine — + charge DATA(typologie de la
+  // campagne, origine) une seule fois (pas par canal, cf. Administration ▸
   // Priorisation). L'origine DATA retenue est CR dès qu'au moins un canal
   // est en CR (le travail de coordination Data est traité au plus lourd des
   // deux dès qu'une partie de la campagne sort du cadre national).
-  function computeChargeRealisation(campaignData) {
+  function computeChargeBreakdown(campaignData) {
     var cfg = _priorisationCfg();
     var channels = (campaignData && campaignData.channels) || [];
     var chargeEbf = 0, chargeCom = 0, anyCr = false;
@@ -2287,7 +2287,12 @@ window.ImpulsionMarketing.workflow = (function () {
     var dataOrigine = anyCr ? 'CR' : 'Natio';
     var type = (campaignData && campaignData.typology) || '';
     var chargeData = ((cfg.chargeData[type] || {})[dataOrigine]) || 0;
-    return chargeEbf + chargeCom + chargeData;
+    return { com: chargeCom, ebf: chargeEbf, data: chargeData };
+  }
+  // Charge de réalisation = somme du détail par équipe (cf. computeChargeBreakdown).
+  function computeChargeRealisation(campaignData) {
+    var b = computeChargeBreakdown(campaignData);
+    return b.com + b.ebf + b.data;
   }
 
   // Valeur campagne = Valeur métier corrigée / Charge de réalisation. null
@@ -3596,6 +3601,7 @@ window.ImpulsionMarketing.workflow = (function () {
     computeValeurMetier:          computeValeurMetier,
     computeValeurMetierCorrigee:  computeValeurMetierCorrigee,
     computeChargeRealisation:     computeChargeRealisation,
+    computeChargeBreakdown:       computeChargeBreakdown,
     computeValeurCampagne:        computeValeurCampagne
   };
 })();
