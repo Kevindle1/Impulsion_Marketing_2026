@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('im_theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administration — Impulsion Marketing</title>
     <link rel="stylesheet" href="../css/theme.css">
@@ -20,7 +21,7 @@
         .admin-bento-group + .admin-bento-group { margin-top: 26px; }
         .admin-bento-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .7px; color: var(--muted-2); margin-bottom: 12px; }
         .admin-bento-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; box-shadow: 0 4px 12px rgba(12,30,22,.08); }
+        .admin-bento-card { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; text-align: left; background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 16px; padding: 18px; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; position: relative; box-shadow: 0 4px 12px rgba(12,30,22,.08); }
         .admin-bento-card:hover { border-color: var(--primary); box-shadow: 0 10px 22px rgba(0,135,90,.14); transform: translateY(-2px); }
         .admin-bento-card .admin-bento-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 21px; background: var(--green-50); }
         .admin-bento-card .admin-bento-label { font-size: 14.5px; font-weight: 700; color: var(--ink); }
@@ -41,7 +42,7 @@
         .admin-sec-head p { margin: 3px 0 0; font-size: 13.5px; color: var(--muted); }
 
         /* Note d'information */
-        .admin-note { display: flex; gap: 11px; background: var(--amber-50,#fff8e6); border: 1px solid #f0d98a; border-radius: 14px; padding: 13px 16px; margin-bottom: 16px; font-size: 13px; color: #7a5b00; line-height: 1.55; }
+        .admin-note { display: flex; gap: 11px; background: var(--amber-50,#fff8e6); border: 1px solid var(--amber-100,#f0d98a); border-radius: 14px; padding: 13px 16px; margin-bottom: 16px; font-size: 13px; color: var(--status-valid,#7a5b00); line-height: 1.55; }
         .admin-note .admin-note-ic { font-size: 17px; line-height: 1.4; flex-shrink: 0; }
 
         /* Cartes */
@@ -72,7 +73,7 @@
 
         /* Chips (listes de choix) */
         .chips-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
-        .chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 6px 6px 13px; background: #fff; border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+        .chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 6px 6px 13px; background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
         .chip button { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: none; border-radius: 50%; background: var(--line-2); color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; transition: background .12s, color .12s; }
         .chip button:hover { background: var(--red-50); color: var(--red); }
 
@@ -86,13 +87,13 @@
         /* Barre d'enregistrement collante en bas du panneau */
         .save-bar.sticky { position: sticky; bottom: 0; background: linear-gradient(180deg, transparent, var(--bg, #f6f8f7) 40%); padding: 12px 0 4px; margin-top: 4px; z-index: 5; }
         .inc-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; transition: border-color .15s; }
-        .inc-item.done { background: #fbfdfc; border-color: var(--green-100, #cceBdd); }
+        .inc-item.done { background: var(--green-50, #fbfdfc); border-color: var(--green-100, #cceBdd); }
         .inc-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
         .inc-status { margin-left: auto; font-size: 11px; font-weight: 800; padding: 3px 11px; border-radius: 999px; white-space: nowrap; }
-        .inc-status.open { background: var(--amber-50); color: #9a6b00; }
+        .inc-status.open { background: var(--amber-50); color: var(--status-valid, #9a6b00); }
         .inc-status.done { background: var(--green-50); color: var(--green-600); }
         /* Sous-onglets (À traiter / Traités) */
-        .sub-tabs { display: inline-flex; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 5px; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
+        .sub-tabs { display: inline-flex; gap: 4px; background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 12px; padding: 5px; margin-bottom: 16px; box-shadow: var(--shadow-xs); }
         .sub-tab { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; border: none; background: transparent; border-radius: 8px; font-size: 13.5px; font-weight: 700; color: var(--muted); cursor: pointer; transition: background .15s, color .15s; }
         .sub-tab:hover { background: var(--line-2); color: var(--ink); }
         .sub-tab.active { background: var(--primary); color: #fff; }
@@ -100,9 +101,9 @@
         .sub-tab.active .sub-tab-count { background: rgba(255,255,255,.25); color: #fff; }
         .inc-type { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; }
         .inc-type.incident { background: var(--red-50); color: var(--red); }
-        .inc-type.amelioration { background: var(--amber-50); color: #9a6b00; }
+        .inc-type.amelioration { background: var(--amber-50); color: var(--status-valid, #9a6b00); }
         .inc-prio-badge { font-size: 10.5px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
-        .inc-prio-01 { background: #fdecea; color: #c0392b; } .inc-prio-02 { background: #fef5e7; color: #b9770e; } .inc-prio-03 { background: #eafaf1; color: #1e7e34; } .inc-prio-04 { background: #eef0f2; color: #7a7a7a; }
+        .inc-prio-01 { background: var(--red-50, #fdecea); color: var(--red, #c0392b); } .inc-prio-02 { background: var(--amber-50, #fef5e7); color: var(--status-valid, #b9770e); } .inc-prio-03 { background: var(--green-50, #eafaf1); color: var(--green-700, #1e7e34); } .inc-prio-04 { background: var(--gray-100, #eef0f2); color: var(--gray-600, #7a7a7a); }
         .inc-manage { background: var(--line-2); border-radius: 8px; padding: 8px 12px; margin: 8px 0; }
         .inc-meta { font-size: 12px; color: var(--muted-2); }
         .inc-desc { font-size: 13.5px; color: var(--gray-700); line-height: 1.5; white-space: pre-wrap; }
@@ -119,14 +120,14 @@
 
         /* Workflow — onglets internes (Étapes du circuit / Personnalisation par canal) */
         .wf-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
-        .wf-tab-btn { padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line,#eaefec); background: #fff; color: var(--muted,#56655e); font-size: 13.5px; font-weight: 650; cursor: pointer; font-family: inherit; }
+        .wf-tab-btn { padding: 9px 16px; border-radius: 10px; border: 1px solid var(--line,#eaefec); background: var(--bg-card, #fff); color: var(--muted,#56655e); font-size: 13.5px; font-weight: 650; cursor: pointer; font-family: inherit; }
         .wf-tab-btn:hover { background: var(--line-2,#f0f4f1); }
         .wf-tab-btn.active { background: var(--sidebar-active-bg,#e8f6ef); color: var(--sidebar-active-text,#00734C); border-color: transparent; }
 
         /* Étapes — cartes réordonnables par glisser-déposer (poignée ⠿ uniquement,
            pas la carte entière : les champs libellé/acteur restent cliquables/sélectionnables
            normalement). */
-        .wf-step-card { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; border: 1px solid var(--line-2); border-radius: 12px; margin-bottom: 8px; background: #fff; transition: opacity .12s, border-color .12s; }
+        .wf-step-card { display: flex; align-items: flex-start; gap: 10px; padding: 11px 12px; border: 1px solid var(--line-2); border-radius: 12px; margin-bottom: 8px; background: var(--bg-card, #fff); transition: opacity .12s, border-color .12s; }
         .wf-step-card.dragging { opacity: .35; }
         .wf-step-card.drag-over-top { border-top: 2px solid var(--primary,#00875A); }
         .wf-step-card.drag-over-bottom { border-bottom: 2px solid var(--primary,#00875A); }
@@ -140,13 +141,13 @@
         .wf-canal-badge { font-size: 9.5px; font-weight: 800; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
         .wf-canal-badge.default { background: var(--line-2); color: var(--muted-2); }
         .wf-canal-badge.custom { background: var(--blue-50,#e8f0fe); color: var(--blue,#2563EB); }
-        .wf-row-warning { font-size: 11px; color: #c0392b; font-weight: 600; line-height: 1.4; }
+        .wf-row-warning { font-size: 11px; color: var(--red, #c0392b); font-weight: 600; line-height: 1.4; }
         /* Liste des canaux (onglet « Personnalisation par canal ») */
         .wf-canal-list-row { display: flex; align-items: center; gap: 12px; padding: 13px 10px; border-bottom: 1px solid var(--line-2); cursor: pointer; transition: background .12s; }
         .wf-canal-list-row:last-child { border-bottom: none; }
         .wf-canal-list-row:hover { background: var(--line-2); }
         .wf-canal-list-row.warn { background: var(--red-50,#fdeaec); }
-        .wf-canal-list-row.warn:hover { background: #fbdadd; }
+        .wf-canal-list-row.warn:hover { background: var(--red-50, #fbdadd); }
         .wf-canal-list-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
         .wf-canal-list-name { font-weight: 650; color: var(--ink); font-size: 14px; }
         .wf-canal-list-meta { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
@@ -178,11 +179,11 @@
 
         /* Signalements — sous-pages (Triage / Lots à dev / Archive / Recherche) */
         .lot-status-badge, .dev-status-badge { font-size: 10.5px; font-weight: 800; padding: 3px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
-        .lot-status-a_venir, .dev-status-a_venir { background: #eef0f2; color: #64748b; }
-        .lot-status-dev_en_cours, .dev-status-dev_en_cours { background: #e8f0fe; color: #1a56db; }
-        .lot-status-recettage, .dev-status-recettage { background: var(--amber-50); color: #9a6b00; }
+        .lot-status-a_venir, .dev-status-a_venir { background: var(--gray-100, #eef0f2); color: var(--gray-600, #64748b); }
+        .lot-status-dev_en_cours, .dev-status-dev_en_cours { background: var(--blue-50, #e8f0fe); color: var(--blue, #1a56db); }
+        .lot-status-recettage, .dev-status-recettage { background: var(--amber-50); color: var(--status-valid, #9a6b00); }
         .lot-status-livre { background: var(--green-50); color: var(--green-600); }
-        .lot-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s; background: #fff; }
+        .lot-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, box-shadow .15s; background: var(--bg-card, #fff); }
         .lot-card:hover { border-color: var(--primary); box-shadow: var(--shadow-xs); }
         .lot-card .lot-name { font-size: 15px; font-weight: 750; color: var(--ink); flex: 1; min-width: 0; }
         .lot-card .lot-progress { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
@@ -485,7 +486,7 @@
                     var idx = people.indexOf(p);
                     html += '<div class="person-row">'
                         + '<span class="av-ini" style="background:' + (ROLE_COLOR[p.role] || '#64748b') + ';">' + esc(initials(p.name)) + '</span>'
-                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + (p.isReferentFlux ? ' <span class="pill-mgr" style="background:#e8f0fe;color:#2563EB;">Référent Flux</span>' : '') + '</span>'
+                        + '<span class="person-name">' + esc(p.name) + (p.isSuperAdmin ? ' <span class="pill-mgr pill-super">Super Admin</span>' : (p.isManager ? ' <span class="pill-mgr">Responsable</span>' : '')) + (p.isReferentFlux ? ' <span class="pill-mgr" style="background:var(--blue-50,#e8f0fe);color:var(--blue,#2563EB);">Référent Flux</span>' : '') + '</span>'
                         + '<label class="toggle-label"><input type="checkbox" class="cb-mgr" data-i="' + idx + '"' + (p.isManager ? ' checked' : '') + '> Responsable</label>'
                         + '<label class="toggle-label" title="Accès admin complet, sur toutes les équipes, en plus de son rôle ci-dessous."><input type="checkbox" class="cb-superadmin" data-i="' + idx + '"' + (p.isSuperAdmin ? ' checked' : '') + '> Super Admin</label>'
                         + '<label class="toggle-label" title="Accès à la page Priorisation (Managers) — prépare les arbitrages de valeur/charge, en plus de son rôle."><input type="checkbox" class="cb-refflux" data-i="' + idx + '"' + (p.isReferentFlux ? ' checked' : '') + '> Référent Flux</label>'
@@ -629,8 +630,8 @@
 
         // ── SEGMENTS GROUPÉS ──
         function renderSegments() {
-            var html = '<div class="admin-card" style="background:var(--amber-50,#fff8e6);border-color:#f0d98a;">'
-                + '<div style="font-size:13px;color:#7a5b00;line-height:1.55;">'
+            var html = '<div class="admin-card" style="background:var(--amber-50,#fff8e6);border-color:var(--amber-100,#f0d98a);">'
+                + '<div style="font-size:13px;color:var(--status-valid,#7a5b00);line-height:1.55;">'
                 + 'Les segments sont organisés par groupe (Particuliers / Pro / Agri). La <strong>valeur</strong> est enregistrée dans les campagnes ; '
                 + 'le <strong>libellé</strong> est ce qui s\'affiche dans le formulaire. Même précaution : ne renommez pas une valeur déjà utilisée.'
                 + '</div></div>';
@@ -2012,7 +2013,7 @@
                 + (active ? '<button type="button" class="btn btn-secondary" id="wf-canal-reset" style="margin-left:auto;">↺ Revenir au flux complet</button>' : '')
                 + '</div>';
             if (warnings.length) {
-                html += '<div class="admin-note" style="background:var(--red-50,#fdeaec);border-color:#f5c2c7;"><span class="admin-note-ic">⚠️</span><div>' + esc(warnings.join(' ')) + '</div></div>';
+                html += '<div class="admin-note" style="background:var(--red-50,#fdeaec);border-color:var(--red,#f5c2c7);"><span class="admin-note-ic">⚠️</span><div>' + esc(warnings.join(' ')) + '</div></div>';
             }
             steps.forEach(function (s) {
                 var checked = !active || active.indexOf(s.id) !== -1;

@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <script>(function(){try{var t=localStorage.getItem('im_theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Priorisation - Interface Impulsion Marketing</title>
     <link rel="stylesheet" href="../css/theme.css">
@@ -16,13 +17,18 @@
         .prio-header h1 { margin: 0 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -.3px; color: var(--ink); }
         .prio-header p { margin: 0; font-size: 13.5px; color: var(--muted); max-width: 640px; }
 
+        .prio-date-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 14px; background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+        .prio-date-filter label { font-size: 12px; font-weight: 700; color: var(--muted-2); display: flex; align-items: center; gap: 6px; }
+        .prio-date-filter input[type="date"] { font: inherit; font-size: 13px; border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; color: var(--ink); }
+        .prio-date-filter input[type="date"]:focus { outline: none; border-color: var(--primary); }
+
         .prio-kpis { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
-        .prio-kpi { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; gap: 14px; }
+        .prio-kpi { background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; display: flex; align-items: center; gap: 14px; }
         .prio-kpi-ic { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; }
         .prio-kpi-num { font-size: 24px; font-weight: 800; color: var(--ink); }
         .prio-kpi-cap { font-size: 12.5px; color: var(--muted); font-weight: 600; }
 
-        .prio-card { background: #fff; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+        .prio-card { background: var(--bg-card, #fff); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
         .prio-card-head { padding: 18px 22px 4px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
         .prio-card-head .bar { width: 5px; height: 18px; border-radius: 3px; background: var(--primary); display: inline-block; }
         .prio-card-head h2 { margin: 0; font-size: 15.5px; font-weight: 700; color: var(--ink); }
@@ -39,7 +45,7 @@
         .prio-badge { display: inline-block; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 3px 8px; margin-right: 4px; }
         .prio-badge-on { color: var(--green-600,#00734C); background: var(--green-50,#e8f6ef); }
         .prio-badge-off { color: var(--muted-2); background: var(--line-2); }
-        .prio-badge-warn { color: #b45309; background: #fef3c7; }
+        .prio-badge-warn { color: var(--status-valid, #b45309); background: var(--amber-50, #fef3c7); }
         .prio-valeur-cell { cursor: help; border-bottom: 1px dashed var(--muted-2,#8b988f); }
         th.prio-th-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
         th.prio-th-sortable:hover { color: var(--primary,#00875A); }
@@ -47,7 +53,7 @@
         .prio-btn-go.is-active { background: var(--green-50,#e8f6ef); }
         select.prio-select { font: inherit; font-weight: 700; font-size: 12.5px; border-radius: 999px; border: 1px solid transparent; padding: 6px 28px 6px 12px; appearance: none; -webkit-appearance: none; cursor: pointer; background-repeat: no-repeat; background-position: right 10px center; background-size: 9px; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%2356655e' stroke-width='1.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
         .prio-actions { display: flex; gap: 8px; }
-        .prio-btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12.5px; font-weight: 700; border-radius: 10px; padding: 7px 12px; cursor: pointer; border: 1px solid var(--line); background: #fff; color: var(--gray-700,#33403a); }
+        .prio-btn { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 12.5px; font-weight: 700; border-radius: 10px; padding: 7px 12px; cursor: pointer; border: 1px solid var(--line); background: var(--bg-card, #fff); color: var(--gray-700,#33403a); }
         .prio-btn:hover { background: var(--line-2); }
         .prio-btn-danger { color: var(--red,#E2001A); background: var(--red-50,#fdeaec); border-color: transparent; }
         .prio-btn-danger:hover { background: #fbd9dd; }
@@ -128,6 +134,13 @@
                 <div class="prio-header">
                     <h1>Priorisation</h1>
                     <p>Arbitrez les campagnes en attente d'affectation selon leur valeur et la charge estimée, et pilotez les décalages ou arrêts sur les campagnes déjà engagées.</p>
+                    <div class="prio-date-filter">
+                        <label for="f-envoi-du">Date d'envoi souhaitée — du</label>
+                        <input type="date" id="f-envoi-du">
+                        <label for="f-envoi-au">au</label>
+                        <input type="date" id="f-envoi-au">
+                        <button type="button" class="prio-btn" id="f-envoi-reset">Réinitialiser</button>
+                    </div>
                 </div>
 
                 <div id="prioLoading" class="prio-loading">Chargement des campagnes…</div>
@@ -135,7 +148,7 @@
                 <div id="prioContent" style="display:none;">
                     <div class="prio-kpis" style="margin-bottom:22px;">
                         <div class="prio-kpi">
-                            <div class="prio-kpi-ic" style="background:linear-gradient(135deg,#17D398,#00734C);"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+                            <div class="prio-kpi-ic" style="background:var(--gradient, linear-gradient(135deg,#17D398,#00734C));"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
                             <div><div class="prio-kpi-num" id="kpiCount">0</div><div class="prio-kpi-cap">Campagnes à prioriser</div></div>
                         </div>
                         <div class="prio-kpi">
@@ -244,7 +257,7 @@
         var overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
         var box = document.createElement('div');
-        box.style.cssText = 'background:#fff;border-radius:12px;padding:22px;width:min(440px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
+        box.style.cssText = 'background:var(--bg-card,#fff);border-radius:12px;padding:22px;width:min(440px,90vw);box-shadow:0 10px 40px rgba(0,0,0,.25);';
         box.innerHTML =
             '<h3 style="margin:0 0 6px;font-size:16px;color:var(--ink);">' + esc(opts.title || 'Saisie') + '</h3>'
             + (opts.label ? '<p style="margin:0 0 14px;font-size:13px;color:var(--muted);">' + esc(opts.label) + '</p>' : '')
@@ -252,7 +265,7 @@
                 + '<input type="date" class="am-date" value="' + esc(opts.dateValue || '') + '" style="width:100%;box-sizing:border-box;margin-bottom:14px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;">' : '')
             + '<label style="display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:5px;">Motif</label>'
             + ((opts.motifOptions && opts.motifOptions.length)
-                ? '<select class="am-motif" style="width:100%;box-sizing:border-box;margin-bottom:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:#fff;">'
+                ? '<select class="am-motif" style="width:100%;box-sizing:border-box;margin-bottom:16px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--bg-card,#fff);color:var(--ink);">'
                     + '<option value="">— Sélectionner un motif —</option>'
                     + opts.motifOptions.map(function (m) { return '<option value="' + escAttr(m) + '">' + esc(m) + '</option>'; }).join('')
                     + '</select>'
@@ -409,6 +422,34 @@
         if (isNaN(d.getTime())) return iso;
         return d.toLocaleDateString('fr-FR');
     }
+    // Date d'envoi retenue pour une campagne (une ligne par campagne, mais
+    // chaque livrable a sa propre date d'envoi, cf. channel.sendDate) : la
+    // plus proche parmi tous ses livrables (celle qui part en premier) —
+    // repli sur la date d'envoi générale de la campagne si un livrable n'a
+    // pas de date propre, ou si la campagne n'a pas encore de canal.
+    var ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+    function campaignEnvoiDate(c) {
+        var channels = c.channels || [];
+        var dates = channels.map(function (ch) {
+            var sd = ((ch && ch.sendDate) || '').trim();
+            return ISO_DATE.test(sd) ? sd : (c.launchDate || null);
+        }).filter(Boolean);
+        if (!dates.length) return c.launchDate || null;
+        dates.sort();
+        return dates[0];
+    }
+    // Détail par livrable, pour le survol — seulement utile si la campagne a
+    // plusieurs canaux (sinon la date retenue est déjà la seule qui existe).
+    function envoiTooltip(c) {
+        var channels = c.channels || [];
+        if (channels.length < 2) return '';
+        return channels.map(function (ch) {
+            var label = (ch && (ch.deliverableName || ch.content)) || 'Canal';
+            var sd = ((ch && ch.sendDate) || '').trim();
+            var d = ISO_DATE.test(sd) ? sd : (c.launchDate || null);
+            return label + ' : ' + fmtDate(d);
+        }).join('\n');
+    }
     function fmtMinutes(min) {
         if (!min) return '0 min';
         var h = Math.floor(min / 60), m = min % 60;
@@ -476,7 +517,7 @@
     // Pastille « Réglementaire » (mise en avant des campagnes concernées).
     function reglementaireTag(c) {
         return (c.priorisation && c.priorisation.reglementaire)
-            ? ' <span class="prio-badge" style="color:#b91c1c;background:#fee2e2;" title="Répond à une obligation légale ou réglementaire">Réglementaire</span>' : '';
+            ? ' <span class="prio-badge" style="color:var(--red,#b91c1c);background:var(--red-50,#fee2e2);" title="Répond à une obligation légale ou réglementaire">Réglementaire</span>' : '';
     }
 
     // Détail chiffré du calcul de la valeur campagne (survol de la colonne) —
@@ -501,7 +542,8 @@
     }
 
     // Tri de la liste « À prioriser » par Valeur campagne (clic sur l'en-tête).
-    var _aPrioriserSort = { dir: null }; // null | 'asc' | 'desc'
+    // Tri par défaut dès le chargement : valeur campagne la plus haute en premier.
+    var _aPrioriserSort = { dir: 'desc' }; // null | 'asc' | 'desc'
     function sortAPrioriser(list) {
         if (!_aPrioriserSort.dir) return list;
         var factor = _aPrioriserSort.dir === 'asc' ? 1 : -1;
@@ -533,7 +575,7 @@
                 + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><select class="prio-select" data-prio-idx="' + i + '" style="background:var(--line-2);color:var(--gray-700,#33403a);">' + prioriteOptions(c.prioriteMarketing) + '</select></td>'
                 + '<td>' + esc(c.po || '—') + '</td>'
-                + '<td>' + fmtDate(c.instantiation) + '</td>'
+                + '<td' + (envoiTooltip(c) ? ' title="' + escAttr(envoiTooltip(c)) + '" style="cursor:help;border-bottom:1px dashed var(--muted-2,#8b988f);"' : '') + '>' + fmtDate(campaignEnvoiDate(c)) + '</td>'
                 + '<td>' + servicesBadges(c) + '</td>'
                 + '<td><div class="prio-actions">'
                 + '<button type="button" class="prio-btn prio-btn-go' + (c.go ? ' is-active' : '') + '" data-go="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> Go</button>'
@@ -573,13 +615,13 @@
         empty.style.display = 'none';
         tbody.innerHTML = list.map(function (c) {
             var valeur = workflow.computeValeurCampagne(c);
-            var decaleeTag = c.lastDecalage ? ' <span class="prio-badge" style="color:#2563EB;background:#e8f0fe;" title="Décalée du ' + esc(fmtDate(c.lastDecalage.previousLaunchDate)) + ' — motif : ' + esc(c.lastDecalage.motif) + '">Décalée</span>' : '';
+            var decaleeTag = c.lastDecalage ? ' <span class="prio-badge" style="color:var(--blue,#2563EB);background:var(--blue-50,#e8f0fe);" title="Décalée du ' + esc(fmtDate(c.lastDecalage.previousLaunchDate)) + ' — motif : ' + esc(c.lastDecalage.motif) + '">Décalée</span>' : '';
             return '<tr>'
                 + '<td><div class="prio-campagne-name">' + esc(c.id || c.folderName) + reglementaireTag(c) + '</div><div class="prio-campagne-id">' + esc(c.folderName) + '</div></td>'
                 + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><span class="prio-badge prio-badge-on">' + esc(statutLabel(c)) + '</span>' + decaleeTag + '</td>'
                 + '<td>' + esc(c.prioriteMarketing || 'À prioriser') + '</td>'
-                + '<td>' + fmtDate(c.launchDate) + '</td>'
+                + '<td' + (envoiTooltip(c) ? ' title="' + escAttr(envoiTooltip(c)) + '" style="cursor:help;border-bottom:1px dashed var(--muted-2,#8b988f);"' : '') + '>' + fmtDate(campaignEnvoiDate(c)) + '</td>'
                 + '<td><div class="prio-actions">'
                 + '<button type="button" class="prio-btn" data-decaler="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Décaler</button>'
                 + '<button type="button" class="prio-btn prio-btn-danger" data-stopper="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Stopper</button>'
@@ -620,10 +662,23 @@
         tbody.querySelectorAll('[data-reactiver]').forEach(function (b) { b.addEventListener('click', function () { handleReactivate(b.getAttribute('data-reactiver')); }); });
     }
 
+    // Filtre « du … au … » sur la date d'envoi souhaitée (launchDate) —
+    // s'applique à « À prioriser » et « Campagnes engagées » (pas aux
+    // campagnes stoppées, dont la date d'envoi n'est plus le sujet).
+    function inEnvoiRange(c) {
+        var du = document.getElementById('f-envoi-du').value, au = document.getElementById('f-envoi-au').value;
+        if (!du && !au) return true;
+        var envoi = campaignEnvoiDate(c);
+        if (!envoi) return false;
+        if (du && envoi < du) return false;
+        if (au && envoi > au) return false;
+        return true;
+    }
+
     function render() {
         var actifs = state.campaigns.filter(function (c) { return c.actif !== false; });
-        var aPrioriser = actifs.filter(function (c) { return !isAffected(c); });
-        var engagees = actifs.filter(function (c) { return isAffected(c) && !workflow.isCompleted(c); });
+        var aPrioriser = actifs.filter(function (c) { return !isAffected(c); }).filter(inEnvoiRange);
+        var engagees = actifs.filter(function (c) { return isAffected(c) && !workflow.isCompleted(c); }).filter(inEnvoiRange);
         var stoppees = state.campaigns.filter(function (c) { return c.actif === false; });
         renderKpis(aPrioriser);
         renderAPrioriser(aPrioriser);
@@ -662,6 +717,14 @@
         if (!th) return;
         th.addEventListener('click', function () {
             _aPrioriserSort.dir = _aPrioriserSort.dir === null ? 'asc' : (_aPrioriserSort.dir === 'asc' ? 'desc' : null);
+            render();
+        });
+    })();
+
+    (function wireEnvoiRangeFilter() {
+        ['f-envoi-du', 'f-envoi-au'].forEach(function (id) { document.getElementById(id).addEventListener('change', render); });
+        document.getElementById('f-envoi-reset').addEventListener('click', function () {
+            document.getElementById('f-envoi-du').value = ''; document.getElementById('f-envoi-au').value = '';
             render();
         });
     })();

@@ -67,7 +67,9 @@
     refresh: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
     gift: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 12v9H4v-9"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>',
     bell: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
-    logout: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>'
+    logout: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+    sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>',
+    moon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
   };
 
   // ── Markup — recherche (sous le logo) et actions (au-dessus du bloc
@@ -83,7 +85,7 @@
     // position:fixed (coordonnées calculées à l'ouverture, cf. wireNotifications) —
     // pas position:absolute : la sidebar a overflow-x:hidden, qui rognait le
     // panneau au lieu de le laisser déborder à droite de la barre de nav.
-    var panelStyle = 'display:none;position:fixed;width:368px;background:#fff;border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
+    var panelStyle = 'display:none;position:fixed;width:368px;background:var(--bg-card,#fff);border:1px solid var(--line,#eaefec);border-radius:14px;box-shadow:var(--shadow-md);z-index:500;max-height:420px;overflow-y:auto;';
     return '<div class="sidebar-actions">'
       + '<button id="topbar-whatsnew" class="icon-btn" title="Quoi de neuf ?" aria-label="Quoi de neuf ?" style="position:relative;">'
       + SVG.gift + '<span id="topbar-whatsnew-dot" style="' + dotStyle + '"></span></button>'
@@ -99,6 +101,22 @@
       + '<button id="topbar-refresh" class="icon-btn icon-btn--text" title="Rafraîchir : reconstruire l’index des campagnes">'
       + SVG.refresh + '<span class="icon-btn-label">Rafraîchir</span></button>'
       + '</div>';
+  }
+
+  // ── Thème clair / sombre (cf. js/theme-standalone.js) ── posé dans
+  // mountSidebarUser() plutôt que mount()/actionsHtml() : certaines pages
+  // (le tableau de bord) appellent la première mais pas la seconde (cf.
+  // initEasterEggs ci-dessous, même raison), le bouton doit donc rester
+  // joignable partout indépendamment de mount().
+  function wireThemeToggle(btn) {
+    if (!btn || !IM.theme) return;
+    function paint() {
+      var dark = IM.theme.get() === 'dark';
+      btn.innerHTML = dark ? SVG.sun : SVG.moon;
+      btn.title = dark ? 'Passer au thème clair' : 'Passer au thème sombre';
+    }
+    paint();
+    btn.addEventListener('click', function () { IM.theme.toggle(); paint(); });
   }
 
   // ── Bloc utilisateur en bas de la barre de navigation (avatar + nom + équipe + déconnexion) ──
@@ -122,10 +140,12 @@
       '<div class="sidebar-user-av" style="background:' + (ROLE_COLORS[u && u.role] || '#64748b') + ';">' + esc(initials) + '</div>'
       + '<div class="sidebar-user-info"><div class="sidebar-user-name">' + esc(name) + '</div>'
       + '<div class="sidebar-user-team">' + esc(team) + '</div></div>'
-      + '<button class="sidebar-user-logout" title="Se déconnecter" aria-label="Se déconnecter">' + SVG.logout + '</button>';
+      + '<button class="sidebar-user-logout" id="topbar-theme-toggle" title="Changer de thème" aria-label="Changer de thème" style="margin-right:2px;"></button>'
+      + '<button class="sidebar-user-logout" id="topbar-logout-btn" title="Se déconnecter" aria-label="Se déconnecter">' + SVG.logout + '</button>';
     side.appendChild(block);
-    var lo = block.querySelector('.sidebar-user-logout');
+    var lo = block.querySelector('#topbar-logout-btn');
     if (lo) lo.addEventListener('click', logout);
+    wireThemeToggle(block.querySelector('#topbar-theme-toggle'));
   }
 
   // ── Recherche globale → page Campagnes filtrée (?q=) ──
@@ -225,7 +245,7 @@
     var overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:center;justify-content:center;';
     var box = document.createElement('div');
-    box.style.cssText = 'background:#fff;border-radius:14px;padding:24px;width:min(520px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);';
+    box.style.cssText = 'background:var(--bg-card,#fff);border-radius:14px;padding:24px;width:min(520px,92vw);max-height:80vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.25);';
     box.innerHTML = '<h2 style="margin:0 0 4px;font-size:18px;color:var(--ink,#0c1a14);">🎉 Quoi de neuf</h2>'
       + '<p style="margin:0 0 16px;font-size:13px;color:var(--muted-2,#8b988f);">Les dernières nouveautés et corrections.</p>'
       + body
@@ -275,7 +295,7 @@
     var sigDate = n.signalementDate ? esc(n.signalementDate.slice(0, 10)) : '';
     var repDate = n.dateCreation ? esc(n.dateCreation.slice(0, 10)) : '';
     m.innerHTML =
-      '<div style="background:#fff;border-radius:18px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.28);overflow:hidden;">' +
+      '<div style="background:var(--bg-card,#fff);border-radius:18px;max-width:520px;width:100%;box-shadow:0 24px 60px rgba(0,0,0,0.28);overflow:hidden;">' +
         '<div style="background:var(--gradient,linear-gradient(135deg,#12C386,#00734C));color:#fff;padding:16px 20px;font-weight:750;font-size:15px;display:flex;justify-content:space-between;align-items:center;">' +
           '<span>🔔 Réponse à votre signalement</span>' +
           '<span id="topbar-sig-modal-close" style="cursor:pointer;font-size:22px;line-height:1;opacity:.9;">&times;</span>' +

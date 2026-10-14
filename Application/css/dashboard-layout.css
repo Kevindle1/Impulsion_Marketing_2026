@@ -105,7 +105,7 @@ body {
 }
 .sidebar-user-logout {
     width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
-    border: 1px solid var(--line, #eaefec); background: #fff; color: var(--muted, #56655e);
+    border: 1px solid var(--line, #eaefec); background: var(--bg-card, #fff); color: var(--muted, #56655e);
     display: flex; align-items: center; justify-content: center; cursor: pointer;
     transition: background .12s, color .12s, border-color .12s;
 }
@@ -206,7 +206,7 @@ body {
 
 .btn-secondary,
 .btn.secondary {
-    background: #ffffff;
+    background: var(--bg-card, #fff);
     color: var(--gray-700, #33403a);
     border: 1px solid var(--line, #eaefec);
     box-shadow: var(--shadow-xs);

@@ -18,6 +18,7 @@ const OUTPUT = join(JS_DIR, 'bundle.js');
 // Ordre de concaténation — NE PAS modifier sans raison (dépendances entre modules).
 const MODULES = [
   'config-standalone.js',
+  'theme-standalone.js',
   'security-standalone.js',
   'errors-standalone.js',
   'performance-standalone.js',

@@ -54,11 +54,11 @@
 /* ── Teinte pastel par type de com (verso uniquement — le recto utilise un
    dégradé saturé, voir plus bas) ── */
 .cc-flip.ct-com .cc-face--back { background: var(--green-50, #e8f6ef); border-color: var(--green-100, #cdeede); }
-.cc-flip.ct-ges .cc-face--back { background: #eaf1fe; border-color: #cddcfb; }
-.cc-flip.ct-reg .cc-face--back { background: #fdf3e2; border-color: #f6e0ae; }
-.cc-flip.ct-pal3 .cc-face--back { background: #f1eafd; border-color: #ddc9fa; }
-.cc-flip.ct-pal4 .cc-face--back { background: #fde8f2; border-color: #f7c2dd; }
-.cc-flip.ct-pal5 .cc-face--back { background: #e6f6fa; border-color: #b7e6f0; }
+.cc-flip.ct-ges .cc-face--back { background: var(--cat-ges-50, #eaf1fe); border-color: var(--cat-ges-100, #cddcfb); }
+.cc-flip.ct-reg .cc-face--back { background: var(--amber-50, #fdf3e2); border-color: var(--amber-100, #f6e0ae); }
+.cc-flip.ct-pal3 .cc-face--back { background: var(--cat-pal3-50, #f1eafd); border-color: var(--cat-pal3-100, #ddc9fa); }
+.cc-flip.ct-pal4 .cc-face--back { background: var(--cat-pal4-50, #fde8f2); border-color: var(--cat-pal4-100, #f7c2dd); }
+.cc-flip.ct-pal5 .cc-face--back { background: var(--cat-pal5-50, #e6f6fa); border-color: var(--cat-pal5-100, #b7e6f0); }
 .cc-flip.ct-none .cc-face--back { background: var(--bg-card, #fff); }
 
 /* ── Recto : fond en dégradé saturé par type de com (+ voile sombre en bas
@@ -92,7 +92,11 @@
 }
 
 .cc-badge--type { left: 14px; color: #fff; background: rgba(0, 0, 0, .22); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); box-shadow: none; }
-.cc-badge--step { right: 14px; background: rgba(255, 255, 255, .95); color: var(--muted, #56655e); }
+/* Pastille toujours posée sur un fond quasi-blanc (indépendant du thème de la
+   page, qui est sur la face colorée de la carte) : couleur de texte fixe —
+   ne PAS utiliser var(--muted), qui passerait au clair en mode sombre et
+   deviendrait illisible sur ce fond resté blanc. */
+.cc-badge--step { right: 14px; background: rgba(255, 255, 255, .95); color: #56655e; }
 
 /* ── Recto : titre + date centrés au milieu de la carte ── */
 .cc-front-body { flex: 1; min-width: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
@@ -145,11 +149,11 @@
     background: rgba(255, 255, 255, .7); border-radius: 999px; padding: 1px 8px;
     color: var(--primary, #00875A);
 }
-.cc-chstat.k-valid { color: #9a6b00; }
-.cc-chstat.k-maq   { color: #1d4ed8; }
-.cc-chstat.k-urgent { color: #b91c1c; }
-.cc-chstat.k-done  { color: #00734C; }
-.cc-chstat.k-stopped { color: #64748b; }
+.cc-chstat.k-valid { color: var(--status-valid, #9a6b00); }
+.cc-chstat.k-maq   { color: var(--status-maq, #1d4ed8); }
+.cc-chstat.k-urgent { color: var(--status-urgent, #b91c1c); }
+.cc-chstat.k-done  { color: var(--status-done, #00734C); }
+.cc-chstat.k-stopped { color: var(--status-stopped, #64748b); }
 .cc-chbar { height: 8px; border-radius: 99px; background: rgba(0, 0, 0, .08); overflow: hidden; box-shadow: inset 0 1px 2px rgba(0, 0, 0, .07); }
 .cc-chbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #12C386, #00875A); }
 .cc-chbar i.k-valid { background: linear-gradient(90deg, #fbbf24, #E8A100); }
@@ -193,7 +197,7 @@
 .cc-skel {
     height: 220px;
     border-radius: var(--radius, 16px);
-    background: linear-gradient(135deg, #e7ebe8, #dbe1dd);
+    background: linear-gradient(135deg, var(--line-2, #e7ebe8), var(--line, #dbe1dd));
     border: 1px solid var(--line, #eaefec);
     padding: 24px 18px 14px;
     position: relative;
