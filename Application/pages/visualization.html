@@ -650,7 +650,7 @@
                             return {
                                 name: name,
                                 data: cached[name],
-                                lastModified: Date.parse(cached[name].dateInstantiation) || Date.now(),
+                                lastModified: Date.parse(cached[name].instantiation) || Date.now(),
                                 completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
                             };
                         }
@@ -663,7 +663,7 @@
                             return {
                                 name: name,
                                 data: data,
-                                lastModified: Date.parse(data.dateInstantiation) || Date.now(),
+                                lastModified: Date.parse(data.instantiation) || Date.now(),
                                 completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
                             };
                         } catch(e) {
