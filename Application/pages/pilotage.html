@@ -75,6 +75,9 @@
             background: #fff; font-family: inherit; font-size: 12px; color: var(--ink); font-weight: 400;
         }
         .pil-col-filter-th input:focus, .pil-col-filter-th select:focus { outline: none; border-color: var(--primary); }
+        .pil-table th.pil-th-sortable { cursor: pointer; user-select: none; }
+        .pil-table th.pil-th-sortable:hover { color: var(--primary); }
+        .pil-sort-ic { margin-left: 2px; opacity: .7; }
         .pil-team-cell { font-size: 12.5px; color: var(--ink); }
         .pil-team-empty { color: var(--muted-2); }
         .pil-since { font-weight: 650; color: var(--ink); white-space: nowrap; }
@@ -391,7 +394,7 @@
                                         <div class="admin-sec-ic">🧭</div>
                                         <div>
                                             <h2>Suivi de campagne</h2>
-                                            <p>Chaque livrable en cours, son étape actuelle, l'équipe engagée et depuis quand ça n'a pas bougé — un filtre par colonne.</p>
+                                            <p>Chaque livrable en cours, son étape actuelle, l'équipe engagée et depuis quand ça n'a pas bougé — un filtre par colonne, triable en cliquant sur un en-tête.</p>
                                         </div>
                                     </div>
                                     <div class="pil-filters">
@@ -411,14 +414,27 @@
                                         <table class="pil-table" id="val-table" style="display:none;">
                                             <thead>
                                                 <tr>
-                                                    <th>Nom de la tâche</th><th>Livrable</th><th>Étape actuelle</th>
-                                                    <th>PO</th><th>Com</th><th>EBF</th><th>Data</th>
-                                                    <th>Doit produire</th><th>Date d'envoi</th><th>Depuis</th>
+                                                    <th class="pil-th-sortable" data-sort="camp">Nom de la tâche <span class="pil-sort-ic" data-sort-ic="camp">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="livrable">Livrable <span class="pil-sort-ic" data-sort-ic="livrable">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="etape">Étape actuelle <span class="pil-sort-ic" data-sort-ic="etape">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="crea">Créa <span class="pil-sort-ic" data-sort-ic="crea">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="po">PO <span class="pil-sort-ic" data-sort-ic="po">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="com">Com <span class="pil-sort-ic" data-sort-ic="com">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="ebf">EBF <span class="pil-sort-ic" data-sort-ic="ebf">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="data">Data <span class="pil-sort-ic" data-sort-ic="data">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="producteur">Doit produire <span class="pil-sort-ic" data-sort-ic="producteur">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="envoi">Date d'envoi <span class="pil-sort-ic" data-sort-ic="envoi">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="depuis">Depuis <span class="pil-sort-ic" data-sort-ic="depuis">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="valeur">Valeur métier <span class="pil-sort-ic" data-sort-ic="valeur">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="chargeCom">Charge Com <span class="pil-sort-ic" data-sort-ic="chargeCom">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="chargeEbf">Charge EBF <span class="pil-sort-ic" data-sort-ic="chargeEbf">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="chargeData">Charge Data <span class="pil-sort-ic" data-sort-ic="chargeData">⇅</span></th>
                                                 </tr>
                                                 <tr>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-camp" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-livrable" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><select id="v-f-etape"><option value="">Toutes</option></select></th>
+                                                    <th class="pil-col-filter-th"><select id="v-f-crea"><option value="">Toutes</option></select></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-po" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-com" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-ebf" placeholder="Filtrer…"></th>
@@ -442,6 +458,10 @@
                                                             <option value="unk">Inconnu</option>
                                                         </select>
                                                     </th>
+                                                    <th class="pil-col-filter-th"></th>
+                                                    <th class="pil-col-filter-th"></th>
+                                                    <th class="pil-col-filter-th"></th>
+                                                    <th class="pil-col-filter-th"></th>
                                                 </tr>
                                             </thead>
                                             <tbody id="val-tbody"></tbody>
@@ -771,15 +791,41 @@
             return { days: days, urgent: days >= near, text: text, unknown: false };
         }
 
+        // Équipe générale pouvant valider l'Affectation (étape globale,
+        // manager_affectation) — super-admins + managers Marketing/Vie Mut
+        // (même pool que la page Affectation, cf. computeAssignmentTargets),
+        // calculée une seule fois (indépendante de la campagne).
+        function generalManagerNames() {
+            return (IM.users.USERS || [])
+                .filter(function (u) { return !u.inactive && (u.isSuperAdmin === true || (u.isManager === true && (u.role === 'marketing' || u.role === 'vieMut'))); })
+                .map(function (u) { return u.name; });
+        }
+
         function buildAnalytics() {
             var wf = IM.workflow;
             var pending = [], channelStats = [], hotspots = [];
+            var generalManagers = generalManagerNames();
             state.allCampaigns.forEach(function (c) {
+                if (wf.isCompleted(c)) return; // campagne terminée : rien à suivre
                 wf.initWorkflow(c);
                 var jur = wf.juridiqueRequired(c);
                 var channels = c.channels || [];
                 var cs = (c.workflow && c.workflow.channelSteps) || {};
                 var progress = wf.getChannelProgress(c);
+                var poNames = [c.po].concat(asArr(c.coPo)).filter(Boolean);
+                var valeurMetier = wf.computeValeurMetier(c);
+                var charge = wf.computeChargeBreakdown(c);
+                // Étape globale bloquante (avant déverrouillage des canaux) : tant
+                // que l'Affectation ou le Kick-off n'est pas fait, aucun canal n'a
+                // encore d'étape 'pending' — sans ce repli, ces campagnes seraient
+                // invisibles ici alors qu'elles sont bien « en cours ».
+                var globalSteps = (c.workflow && c.workflow.steps) || {};
+                var globalBlock = null;
+                if (globalSteps.manager_affectation === 'pending') {
+                    globalBlock = { stepId: 'manager_affectation', role: 'manager', names: generalManagers.length ? generalManagers : ['(non affecté)'] };
+                } else if (globalSteps.po_kickoff === 'pending') {
+                    globalBlock = { stepId: 'po_kickoff', role: 'po', names: poNames.length ? poNames : ['(non affecté)'] };
+                }
                 channels.forEach(function (ch, idx) {
                     var content = ch && ch.content;
                     var ids = wf.channelStepIds(c.requiredTeams, content, jur);
@@ -813,44 +859,52 @@
                         });
                     }
 
+                    function pushItem(stepId, stepLabel, status, role, names, sinceIso) {
+                        var dateRef = resolveChannelDate(c, ch);
+                        pending.push({
+                            campaignName: c.id || c.folderName, folderName: c.folderName,
+                            deliverableName: (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (idx + 1)),
+                            canal: content || '', comTypology: (ch && ch.comTypology) || '',
+                            stepId: stepId, stepLabel: stepLabel, status: status,
+                            role: role, names: names,
+                            // Composition de l'équipe sur CE canal, une entrée par service +
+                            // le PO — indépendant de qui a la main à l'instant T (role/names
+                            // ci-dessus), pour donner une vue d'ensemble de l'équipe engagée.
+                            team: {
+                                po:   poNames.length ? poNames : ['(non affecté)'],
+                                com:  (function () { var a = wf.channelAssignees(c, idx, 'com');  return a.length ? a : ['—']; })(),
+                                ebf:  (function () { var a = wf.channelAssignees(c, idx, 'ebf');  return a.length ? a : ['—']; })(),
+                                data: (function () { var a = wf.channelAssignees(c, idx, 'data'); return a.length ? a : ['—']; })()
+                            },
+                            dateRef: dateRef, delay: computeDelay(dateRef),
+                            sinceIso: sinceIso, since: elapsedSince(sinceIso),
+                            valeurMetier: valeurMetier, chargeCom: charge.com, chargeEbf: charge.ebf, chargeData: charge.data
+                        });
+                    }
+
                     // Une seule étape par canal est réellement « actionnable » à la fois —
                     // pending ou revision_requested, même définition que getAvailableActions().
                     // Un dépôt marqué « submitted » n'est plus actionnable par son propre acteur :
                     // la main est passée à l'étape de validation suivante (déjà 'pending'), qu'on
                     // trouvera en continuant la boucle. On affiche donc toujours l'étape
                     // réellement bloquante, jamais un dépôt déjà effectué.
+                    var found = false;
                     for (var k = 0; k < ids.length; k++) {
                         var id = ids[k];
                         var status = steps[id] || 'locked';
                         if (status === 'pending' || status === 'revision_requested') {
                             var role = wf.stepActor(id, content);
-                            var names = (role === 'po')
-                                ? [c.po].concat(asArr(c.coPo)).filter(Boolean)
-                                : wf.channelAssignees(c, idx, role);
+                            var names = (role === 'po') ? poNames : wf.channelAssignees(c, idx, role);
                             if (!names.length) names = ['(non affecté)'];
-                            var dateRef = resolveChannelDate(c, ch);
-                            var poNames = [c.po].concat(asArr(c.coPo)).filter(Boolean);
-                            var sinceIso = wf.getChannelStepDate(c, idx, id);
-                            pending.push({
-                                campaignName: c.id || c.folderName, folderName: c.folderName,
-                                deliverableName: (ch && (ch.deliverableName || ch.content)) || ('Canal ' + (idx + 1)),
-                                canal: content || '',
-                                stepId: id, stepLabel: wf.stepLabel(id), status: status,
-                                role: role, names: names,
-                                // Composition de l'équipe sur CE canal, une entrée par service +
-                                // le PO — indépendant de qui a la main à l'instant T (role/names
-                                // ci-dessus), pour donner une vue d'ensemble de l'équipe engagée.
-                                team: {
-                                    po:   poNames.length ? poNames : ['(non affecté)'],
-                                    com:  (function () { var a = wf.channelAssignees(c, idx, 'com');  return a.length ? a : ['—']; })(),
-                                    ebf:  (function () { var a = wf.channelAssignees(c, idx, 'ebf');  return a.length ? a : ['—']; })(),
-                                    data: (function () { var a = wf.channelAssignees(c, idx, 'data'); return a.length ? a : ['—']; })()
-                                },
-                                dateRef: dateRef, delay: computeDelay(dateRef),
-                                sinceIso: sinceIso, since: elapsedSince(sinceIso)
-                            });
+                            pushItem(id, wf.stepLabel(id), status, role, names, wf.getChannelStepDate(c, idx, id));
+                            found = true;
                             break; // une seule étape « courante » par canal
                         }
+                    }
+                    // Canal pas encore déverrouillé (Affectation/Kick-off en cours) :
+                    // toujours affiché, avec l'étape globale bloquante.
+                    if (!found && globalBlock) {
+                        pushItem(globalBlock.stepId, wf.stepLabel(globalBlock.stepId), 'pending', globalBlock.role, globalBlock.names, null);
                     }
                 });
             });
@@ -1063,6 +1117,16 @@
                 return '<option value="' + esc(id) + '">' + esc(byId[id]) + '</option>';
             }).join('');
             if (ids.indexOf(current) !== -1) sel.value = current;
+
+            var selCrea = $('v-f-crea');
+            var currentCrea = selCrea.value;
+            var creas = {};
+            state.pendingItems.forEach(function (it) { if (it.comTypology) creas[it.comTypology] = true; });
+            var creaList = Object.keys(creas).sort();
+            selCrea.innerHTML = '<option value="">Toutes</option>' + creaList.map(function (v) {
+                return '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+            }).join('');
+            if (creaList.indexOf(currentCrea) !== -1) selCrea.value = currentCrea;
         }
         // Regroupements disponibles pour le tableau (Étape / Statut / Acteur) : une
         // clé de groupe stable + un libellé affiché, dérivés du même item que les
@@ -1101,10 +1165,67 @@
             return 'ok';
         }
 
+        // Tri par clic sur l'en-tête — un seul tri actif à la fois, 3 états en
+        // boucle (aucun → croissant → décroissant → aucun). Sans tri actif, repli
+        // sur le tri historique (nom de campagne).
+        var validationSort = { col: null, dir: null };
+        var SORT_ACCESSORS = {
+            camp:        function (it) { return it.campaignName || ''; },
+            livrable:    function (it) { return it.deliverableName || ''; },
+            etape:       function (it) { return it.stepLabel || ''; },
+            crea:        function (it) { return it.comTypology || ''; },
+            po:          function (it) { return it.team.po.join(', '); },
+            com:         function (it) { return it.team.com.join(', '); },
+            ebf:         function (it) { return it.team.ebf.join(', '); },
+            data:        function (it) { return it.team.data.join(', '); },
+            producteur:  function (it) { return it.names.join(', '); },
+            envoi:       function (it) { return it.dateRef || null; },
+            depuis:      function (it) { return it.since.unknown ? null : it.since.days; },
+            valeur:      function (it) { return it.valeurMetier; },
+            chargeCom:   function (it) { return it.chargeCom; },
+            chargeEbf:   function (it) { return it.chargeEbf; },
+            chargeData:  function (it) { return it.chargeData; }
+        };
+        function applyValidationSort(items) {
+            if (!validationSort.col) { items.sort(function (a, b) { return a.campaignName.localeCompare(b.campaignName); }); return items; }
+            var acc = SORT_ACCESSORS[validationSort.col];
+            var dir = validationSort.dir === 'desc' ? -1 : 1;
+            items.sort(function (a, b) {
+                var va = acc(a), vb = acc(b);
+                var aNull = (va === null || va === undefined || va === '');
+                var bNull = (vb === null || vb === undefined || vb === '');
+                if (aNull && bNull) return 0;
+                if (aNull) return 1;   // valeurs manquantes toujours en fin, quel que soit le sens
+                if (bNull) return -1;
+                if (typeof va === 'string') return va.localeCompare(vb) * dir;
+                return (va - vb) * dir;
+            });
+            return items;
+        }
+        function updateValidationSortIndicators() {
+            document.querySelectorAll('#val-table .pil-sort-ic').forEach(function (ic) {
+                var col = ic.getAttribute('data-sort-ic');
+                ic.textContent = (validationSort.col === col) ? (validationSort.dir === 'desc' ? '↓' : '↑') : '⇅';
+            });
+        }
+        function wireValidationSort() {
+            document.querySelectorAll('#val-table thead tr:first-child th[data-sort]').forEach(function (th) {
+                th.addEventListener('click', function () {
+                    var col = th.getAttribute('data-sort');
+                    if (validationSort.col === col) {
+                        validationSort.dir = validationSort.dir === 'asc' ? 'desc' : (validationSort.dir === 'desc' ? null : 'asc');
+                        if (!validationSort.dir) validationSort.col = null;
+                    } else { validationSort.col = col; validationSort.dir = 'asc'; }
+                    renderValidations();
+                });
+            });
+        }
+
         function renderValidations() {
             var fCamp = $('v-f-camp').value.trim();
             var fLivrable = $('v-f-livrable').value.trim();
             var fEtape = $('v-f-etape').value;
+            var fCrea = $('v-f-crea').value;
             var fPo = $('v-f-po').value.trim();
             var fCom = $('v-f-com').value.trim();
             var fEbf = $('v-f-ebf').value.trim();
@@ -1118,6 +1239,7 @@
                 if (!matchesText(it.campaignName, fCamp)) return false;
                 if (!matchesText(it.deliverableName + ' ' + it.canal, fLivrable)) return false;
                 if (fEtape && it.stepId !== fEtape) return false;
+                if (fCrea && it.comTypology !== fCrea) return false;
                 if (!matchesText(it.team.po.join(', '), fPo)) return false;
                 if (!matchesText(it.team.com.join(', '), fCom)) return false;
                 if (!matchesText(it.team.ebf.join(', '), fEbf)) return false;
@@ -1136,15 +1258,21 @@
 
             $('v-count').textContent = items.length + ' livrable' + (items.length > 1 ? 's' : '') + ' en cours';
             var table = $('val-table'), empty = $('val-empty'), tbody = $('val-tbody');
+            updateValidationSortIndicators();
             if (!items.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
             empty.style.display = 'none'; table.style.display = 'table';
-            items.sort(function (a, b) { return a.campaignName.localeCompare(b.campaignName); });
+            applyValidationSort(items);
 
             function teamCell(names) {
                 if (!names.length || (names.length === 1 && (names[0] === '—' || names[0] === '(non affecté)'))) {
                     return '<span class="pil-team-empty">' + esc(names[0] || '—') + '</span>';
                 }
                 return esc(names.join(', '));
+            }
+
+            function fmtNumPil(n) {
+                if (n === null || n === undefined || isNaN(n) || n === 0) return '—';
+                return Math.round(n).toLocaleString('fr-FR');
             }
 
             function renderRow(it) {
@@ -1157,6 +1285,7 @@
                     + '<td class="pil-camp">' + esc(it.campaignName) + '</td>'
                     + '<td>' + esc(it.deliverableName) + (it.canal ? ' <span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '') + '</td>'
                     + '<td>' + esc(it.stepLabel) + '<br><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
+                    + '<td>' + esc(it.comTypology || '—') + '</td>'
                     + '<td class="pil-team-cell">' + teamCell(it.team.po) + '</td>'
                     + '<td class="pil-team-cell">' + teamCell(it.team.com) + '</td>'
                     + '<td class="pil-team-cell">' + teamCell(it.team.ebf) + '</td>'
@@ -1164,6 +1293,10 @@
                     + '<td>' + esc(it.names.join(', ')) + ' <span class="pil-badge pil-role-' + esc(it.role) + '">' + esc(roleLabel(it.role)) + '</span></td>'
                     + '<td class="pil-envoi ' + envoiClass + '">' + frDate(it.dateRef) + envoiTag + '</td>'
                     + '<td class="pil-since ' + sinceClass + '">' + esc(it.since.text) + '</td>'
+                    + '<td>' + fmtNumPil(it.valeurMetier) + '</td>'
+                    + '<td>' + fmtNumPil(it.chargeCom) + '</td>'
+                    + '<td>' + fmtNumPil(it.chargeEbf) + '</td>'
+                    + '<td>' + fmtNumPil(it.chargeData) + '</td>'
                     + '</tr>';
             }
 
@@ -1171,7 +1304,7 @@
             var groups = fGroupBy ? groupValidationItems(items, fGroupBy) : null;
             if (groups) {
                 groups.forEach(function (g) {
-                    html += '<tr class="pil-group-row"><td colspan="10">' + esc(g.label) + '<span class="pil-group-count">' + g.items.length + '</span></td></tr>';
+                    html += '<tr class="pil-group-row"><td colspan="15">' + esc(g.label) + '<span class="pil-group-count">' + g.items.length + '</span></td></tr>';
                     g.items.forEach(function (it) { html += renderRow(it); });
                 });
             } else {
@@ -1184,12 +1317,14 @@
             ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) {
                 $(id).addEventListener('input', renderValidations);
             });
-            ['v-f-etape', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
+            ['v-f-etape', 'v-f-crea', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).addEventListener('change', renderValidations); });
             $('v-reset').addEventListener('click', function () {
                 ['v-f-camp', 'v-f-livrable', 'v-f-po', 'v-f-com', 'v-f-ebf', 'v-f-data', 'v-f-producteur'].forEach(function (id) { $(id).value = ''; });
-                ['v-f-etape', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).value = ''; });
+                ['v-f-etape', 'v-f-crea', 'v-f-envoi', 'v-f-depuis', 'v-f-groupby'].forEach(function (id) { $(id).value = ''; });
+                validationSort.col = null; validationSort.dir = null;
                 renderValidations();
             });
+            wireValidationSort();
         }
 
         // ── Charge de travail ──
