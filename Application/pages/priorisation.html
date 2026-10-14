@@ -545,7 +545,7 @@
                 + '<td class="prio-valeur prio-valeur-cell" title="' + escAttr(valeurTooltip(c)) + '">' + fmtNum(valeur) + '</td>'
                 + '<td><select class="prio-select" data-prio-idx="' + i + '" style="background:var(--line-2);color:var(--gray-700,#33403a);">' + prioriteOptions(c.prioriteMarketing) + '</select></td>'
                 + '<td>' + esc(c.po || '—') + '</td>'
-                + '<td>' + fmtDate(c.instantiation) + '</td>'
+                + '<td>' + fmtDate(c.launchDate) + '</td>'
                 + '<td>' + servicesBadges(c) + '</td>'
                 + '<td><div class="prio-actions">'
                 + '<button type="button" class="prio-btn prio-btn-go' + (c.go ? ' is-active' : '') + '" data-go="' + esc(c.folderName) + '"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12l5 5L20 7"/></svg> Go</button>'
