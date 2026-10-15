@@ -116,7 +116,22 @@
       btn.title = dark ? 'Passer au thème clair' : 'Passer au thème sombre';
     }
     paint();
-    btn.addEventListener('click', function () { IM.theme.toggle(); paint(); });
+    // 5 clics rapprochés (< 2 s) sur ce bouton déclenchent le mode Spritz en
+    // plus du basculement normal clair/sombre, qui continue de s'appliquer
+    // à chaque clic (pas de délai, contrairement à l'egg du logo).
+    var eggClicks = 0, eggTimer = null;
+    btn.addEventListener('click', function () {
+      IM.theme.toggle();
+      paint();
+      eggClicks++;
+      if (eggTimer) clearTimeout(eggTimer);
+      eggTimer = setTimeout(function () { eggClicks = 0; }, 2000);
+      if (eggClicks >= 5) {
+        eggClicks = 0;
+        clearTimeout(eggTimer);
+        activateSpritzEgg();
+      }
+    });
   }
 
   // ── Bloc utilisateur en bas de la barre de navigation (avatar + nom + équipe + déconnexion) ──
@@ -629,6 +644,135 @@
         snow.appendChild(flake);
       }
       document.body.appendChild(snow);
+    }
+  }
+
+  // ── Easter egg : Mode Spritz (5 clics rapides sur le bouton thème) ──
+  // Habillage temporaire orange Aperol par-dessus le thème courant : variables
+  // CSS redéfinies sur <body> (cf. .egg-spritz-active dans theme.css) + un
+  // décor injecté (verres, rondelle d'agrume, badge, signature). Se retire
+  // tout seul après SPRITZ_DURATION, ou immédiatement si redéclenché / si
+  // l'utilisateur reclique 5 fois pendant qu'il est actif.
+  var SPRITZ_DURATION = 22000;
+  var _spritzTimer = null;
+  function buildSpritzOverlayHtml() {
+    var svgNS = 'http://www.w3.org/2000/svg';
+    function glass(idPrefix) {
+      return (
+        '<defs>' +
+        '<linearGradient id="' + idPrefix + '-liquid" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="#FFB46B"/><stop offset="100%" stop-color="#E8590C"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="' + idPrefix + '-glass" x1="0" y1="0" x2="1" y2="0">' +
+        '<stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.55"/>' +
+        '<stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.12"/>' +
+        '<stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.4"/>' +
+        '</linearGradient>' +
+        '</defs>' +
+        '<path d="M40 40 C40 110 55 170 110 190 C165 170 180 110 180 40 Z" fill="none" stroke="#D84315" stroke-width="4"/>' +
+        '<clipPath id="' + idPrefix + '-clip"><path d="M40 40 C40 110 55 170 110 190 C165 170 180 110 180 40 Z"/></clipPath>' +
+        '<g clip-path="url(#' + idPrefix + '-clip)">' +
+        '<rect x="30" y="92" width="160" height="110" fill="url(#' + idPrefix + '-liquid)"/>' +
+        '<path d="M30 92 Q55 84 80 92 T130 92 T190 92 V96 H30 Z" fill="#FFC98A"/>' +
+        '<circle cx="90" cy="150" r="3.2" fill="#FFE9CF"/><circle cx="112" cy="130" r="2.4" fill="#FFE9CF"/>' +
+        '<circle cx="135" cy="160" r="2.8" fill="#FFE9CF"/><circle cx="78" cy="175" r="2.2" fill="#FFE9CF"/>' +
+        '<circle cx="150" cy="140" r="2" fill="#FFE9CF"/>' +
+        '<rect x="72" y="118" width="22" height="22" rx="3" fill="#FFF6EA" opacity="0.85" transform="rotate(-8 83 129)"/>' +
+        '<rect x="118" y="108" width="20" height="20" rx="3" fill="#FFF6EA" opacity="0.8" transform="rotate(12 128 118)"/>' +
+        '</g>' +
+        '<path d="M40 40 C40 110 55 170 110 190 C165 170 180 110 180 40 Z" fill="url(#' + idPrefix + '-glass)"/>' +
+        '<line x1="110" y1="190" x2="110" y2="226" stroke="#D84315" stroke-width="4"/>' +
+        '<ellipse cx="110" cy="232" rx="30" ry="7" fill="none" stroke="#D84315" stroke-width="4"/>' +
+        '<g transform="translate(150,34) rotate(18)">' +
+        '<circle r="17" fill="#FF6B35" stroke="#D84315" stroke-width="2.5"/>' +
+        '<line x1="0" y1="0" x2="15" y2="0" stroke="#FFE3C2" stroke-width="1.6"/>' +
+        '<line x1="0" y1="0" x2="7.5" y2="13" stroke="#FFE3C2" stroke-width="1.6"/>' +
+        '<line x1="0" y1="0" x2="-7.5" y2="13" stroke="#FFE3C2" stroke-width="1.6"/>' +
+        '<line x1="0" y1="0" x2="-15" y2="0" stroke="#FFE3C2" stroke-width="1.6"/>' +
+        '<line x1="0" y1="0" x2="-7.5" y2="-13" stroke="#FFE3C2" stroke-width="1.6"/>' +
+        '<line x1="0" y1="0" x2="7.5" y2="-13" stroke="#FFE3C2" stroke-width="1.6"/>' +
+        '<circle r="4" fill="#FFE3C2"/>' +
+        '</g>' +
+        '<line x1="70" y1="10" x2="96" y2="100" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>' +
+        '<line x1="70" y1="10" x2="96" y2="100" stroke="#FF6B35" stroke-width="7" stroke-linecap="round" stroke-dasharray="7 7"/>'
+      );
+    }
+    var citrusWedge =
+      '<circle cx="100" cy="100" r="92" fill="none" stroke="#D84315" stroke-width="10"/>' +
+      '<circle cx="100" cy="100" r="78" fill="#FF6B35"/>' +
+      (function () {
+        var out = '';
+        for (var i = 0; i < 8; i++) {
+          var a1 = (i / 8) * Math.PI * 2, a2 = ((i + 1) / 8) * Math.PI * 2;
+          var x1 = (100 + 74 * Math.cos(a1)).toFixed(1), y1 = (100 + 74 * Math.sin(a1)).toFixed(1);
+          var x2 = (100 + 74 * Math.cos(a2)).toFixed(1), y2 = (100 + 74 * Math.sin(a2)).toFixed(1);
+          out += '<path d="M100,100 L' + x1 + ',' + y1 + ' A74,74 0 0,1 ' + x2 + ',' + y2 + ' Z" fill="none" stroke="#FFE3C2" stroke-width="3"/>';
+        }
+        return out;
+      })() +
+      '<circle cx="100" cy="100" r="14" fill="#FFE3C2"/>';
+
+    // Logotype « SPRITZ » façon étiquette d'apéritif, sur le modèle envoyé par
+    // l'utilisateur (lettres bombées, groupées en grappe ronde sur 2 lignes,
+    // dégradé orange, rondelle d'agrume qui déborde en haut à droite).
+    function spritzLine(letters, rotations, lifts) {
+      return letters.map(function (ch, i) {
+        return '<span class="egg-spritz-letter" style="transform:translateY(' + lifts[i] + 'px) rotate(' + rotations[i] + 'deg);">' + ch + '</span>';
+      }).join('');
+    }
+    var wordmark =
+      '<div class="egg-spritz-row egg-spritz-row--1">' +
+      spritzLine(['A', 'P', 'É', 'R', 'O'], [-6, 5, -4, 6, -5], [6, -8, 7, -9, 6]) +
+      '</div>' +
+      '<div class="egg-spritz-row egg-spritz-row--2">' +
+      spritzLine(['S', 'P', 'R', 'I', 'T', 'Z'], [5, -6, 4, -7, 5, -4], [-7, 8, -6, 9, -8, 7]) +
+      '</div>';
+
+    return (
+      '<div class="egg-spritz-logo">' +
+      '<div class="egg-spritz-wordmark">' + wordmark +
+      '<span class="egg-spritz-wordmark-wedge"><svg viewBox="0 0 200 200" xmlns="' + svgNS + '">' + citrusWedge + '</svg></span>' +
+      '</div>' +
+      '</div>' +
+      '<div class="egg-spritz-glasses">' +
+      '<svg viewBox="0 0 220 240" xmlns="' + svgNS + '">' + glass('es1') + '</svg>' +
+      '<svg viewBox="0 0 220 240" xmlns="' + svgNS + '" style="transform:scaleX(-1)">' + glass('es2') + '</svg>' +
+      '</div>' +
+      '<div class="egg-spritz-citrus"><svg viewBox="0 0 200 200" xmlns="' + svgNS + '">' + citrusWedge + '</svg></div>' +
+      '<div class="egg-spritz-badge"><svg viewBox="0 0 200 200" xmlns="' + svgNS + '">' +
+      '<defs><path id="egg-spritz-ring" d="M100,18 a82,82 0 1,1 -0.1,0 Z"/></defs>' +
+      '<circle cx="100" cy="100" r="92" fill="#FFF7E9" stroke="#D84315" stroke-width="3"/>' +
+      '<circle cx="100" cy="100" r="74" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-dasharray="2 4"/>' +
+      '<text font-family="Georgia, \'Times New Roman\', serif" font-size="12.5" letter-spacing="2.4" fill="#D84315">' +
+      '<textPath href="#egg-spritz-ring" startOffset="2%">IMPULSION MARKETING • ÉDITION SPRITZ •</textPath>' +
+      '</text>' +
+      '<g transform="translate(100,104)">' +
+      '<g transform="translate(-16,0) rotate(-14)"><path d="M-11,-26 C-11,-6 -5,10 0,16 C5,10 11,-6 11,-26 Z" fill="#FF6B35" stroke="#D84315" stroke-width="2.4"/><line x1="0" y1="16" x2="0" y2="27" stroke="#D84315" stroke-width="2.4"/></g>' +
+      '<g transform="translate(16,0) rotate(14)"><path d="M-11,-26 C-11,-6 -5,10 0,16 C5,10 11,-6 11,-26 Z" fill="#FFB46B" stroke="#D84315" stroke-width="2.4"/><line x1="0" y1="16" x2="0" y2="27" stroke="#D84315" stroke-width="2.4"/></g>' +
+      '</g>' +
+      '</svg></div>' +
+      '<div class="egg-spritz-label">Impulsion Marketing <span>— Édition Spritz</span></div>'
+    );
+  }
+  function activateSpritzEgg() {
+    if (_spritzTimer) clearTimeout(_spritzTimer);
+    if (!document.querySelector('.egg-spritz-overlay')) {
+      var overlay = document.createElement('div');
+      overlay.className = 'egg-spritz-overlay';
+      overlay.innerHTML = buildSpritzOverlayHtml();
+      document.body.appendChild(overlay);
+      document.body.classList.add('egg-spritz-active');
+      notify('🍹 Édition Spritz activée !', 'success');
+    }
+    _spritzTimer = setTimeout(deactivateSpritzEgg, SPRITZ_DURATION);
+  }
+  function deactivateSpritzEgg() {
+    if (_spritzTimer) { clearTimeout(_spritzTimer); _spritzTimer = null; }
+    document.body.classList.remove('egg-spritz-active');
+    var overlay = document.querySelector('.egg-spritz-overlay');
+    if (overlay) {
+      overlay.classList.add('egg-spritz-leaving');
+      setTimeout(function () { if (overlay.parentNode) overlay.remove(); }, 500);
     }
   }
 

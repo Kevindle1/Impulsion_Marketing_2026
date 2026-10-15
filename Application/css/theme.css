@@ -235,3 +235,60 @@ input, textarea, select, .badge, .status-badge {
   transition: background-color 0.15s ease, border-color 0.15s ease,
               color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
+
+/**
+ * Easter egg : Mode Spritz (js/topbar-standalone.js — activateSpritzEgg)
+ * Redéfinit les variables de la palette par-dessus le thème courant (clair
+ * ou sombre), le temps de l'easter egg uniquement — aucune persistance.
+ */
+body.egg-spritz-active {
+  --bg: #FBEAC9;
+  --bg-card: #FFF7E9;
+  --bg-header: #FFF3DE;
+  --ink: #4A2511;
+  --muted: #8C5B33;
+  --muted-2: #B08356;
+  --line: #F0CE9B;
+  --line-2: #F6E2BE;
+  --primary: #FF6B35;
+  --primary-hover: #D84315;
+  --primary-light: #FFE3C2;
+  --primary-rgb: 255, 107, 53;
+  --accent: #FFE3C2;
+  --gold: #FF6B35;
+  --gradient: linear-gradient(135deg, #FF9A56 0%, #D84315 100%);
+  --gradient-hero: linear-gradient(120deg, #D84315 0%, #FF6B35 55%, #FFA552 100%);
+  --sidebar-bg: #FFF3DE;
+  --sidebar-line: #F0CE9B;
+  --sidebar-text: #8C5B33;
+  --sidebar-text-hover: #4A2511;
+  --sidebar-active-bg: #FFE3C2;
+  --sidebar-active-text: #D84315;
+  color-scheme: light;
+  transition: background-color .5s ease;
+}
+/* Mousse pétillante épinglée en haut d'écran, façon bord de verre */
+body.egg-spritz-active::before {
+  content: "";
+  position: fixed; top: 0; left: 0; right: 0; height: 10px; z-index: 29; pointer-events: none;
+  background:
+    radial-gradient(circle at 6% 40%, rgba(255, 255, 255, .95) 0 2px, transparent 2px),
+    radial-gradient(circle at 18% 70%, rgba(255, 255, 255, .9) 0 1.6px, transparent 1.6px),
+    radial-gradient(circle at 31% 30%, rgba(255, 255, 255, .95) 0 2.2px, transparent 2.2px),
+    radial-gradient(circle at 46% 65%, rgba(255, 255, 255, .9) 0 1.5px, transparent 1.5px),
+    radial-gradient(circle at 60% 35%, rgba(255, 255, 255, .95) 0 2px, transparent 2px),
+    radial-gradient(circle at 74% 70%, rgba(255, 255, 255, .9) 0 1.8px, transparent 1.8px),
+    radial-gradient(circle at 88% 40%, rgba(255, 255, 255, .95) 0 2.1px, transparent 2.1px),
+    linear-gradient(180deg, #FFF6E6 0%, rgba(255, 246, 230, 0) 100%);
+}
+/* Fine texture de bulles sur le fond applicatif, jamais au-dessus des cartes */
+body.egg-spritz-active::after {
+  content: "";
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, .55) 0 1.4px, transparent 1.6px),
+    radial-gradient(circle, rgba(255, 255, 255, .4) 0 1px, transparent 1.2px);
+  background-size: 64px 64px, 38px 38px;
+  background-position: 0 0, 20px 30px;
+  opacity: .5;
+}
