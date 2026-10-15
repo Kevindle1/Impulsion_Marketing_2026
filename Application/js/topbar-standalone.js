@@ -712,14 +712,21 @@
       })() +
       '<circle cx="100" cy="100" r="14" fill="#FFE3C2"/>';
 
-    // Logotype « SPRITZ » façon étiquette d'apéritif : lettres bombées sur une
-    // ligne de base ondulée, dégradé orange, rondelle d'agrume en accent.
-    var SPRITZ_LETTERS = ['S', 'P', 'R', 'I', 'T', 'Z'];
-    var SPRITZ_ROTATE = [-7, 5, -4, 7, -5, 4];
-    var SPRITZ_LIFT = [6, -8, 10, -6, 8, -10];
-    var wordmark = SPRITZ_LETTERS.map(function (ch, i) {
-      return '<span class="egg-spritz-letter" style="transform:translateY(' + SPRITZ_LIFT[i] + 'px) rotate(' + SPRITZ_ROTATE[i] + 'deg);">' + ch + '</span>';
-    }).join('');
+    // Logotype « SPRITZ » façon étiquette d'apéritif, sur le modèle envoyé par
+    // l'utilisateur (lettres bombées, groupées en grappe ronde sur 2 lignes,
+    // dégradé orange, rondelle d'agrume qui déborde en haut à droite).
+    function spritzLine(letters, rotations, lifts) {
+      return letters.map(function (ch, i) {
+        return '<span class="egg-spritz-letter" style="transform:translateY(' + lifts[i] + 'px) rotate(' + rotations[i] + 'deg);">' + ch + '</span>';
+      }).join('');
+    }
+    var wordmark =
+      '<div class="egg-spritz-row egg-spritz-row--1">' +
+      spritzLine(['S', 'P', 'R'], [-8, 6, -5], [8, -10, 9]) +
+      '</div>' +
+      '<div class="egg-spritz-row egg-spritz-row--2">' +
+      spritzLine(['I', 'T', 'Z'], [7, -6, 8], [-9, 10, -7]) +
+      '</div>';
 
     return (
       '<div class="egg-spritz-logo">' +

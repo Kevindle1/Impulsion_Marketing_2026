@@ -83,18 +83,24 @@
 @keyframes eggSpritzFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .egg-spritz-logo { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); opacity: .09; }
-.egg-spritz-wordmark { position: relative; display: flex; align-items: center; }
+.egg-spritz-wordmark { position: relative; display: flex; flex-direction: column; align-items: center; }
+.egg-spritz-row { display: flex; align-items: center; justify-content: center; }
+.egg-spritz-row--1 { margin-bottom: -22px; }
+.egg-spritz-row--2 { margin-top: -22px; }
 .egg-spritz-letter {
     display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: 900; font-size: 148px; line-height: 1; letter-spacing: -6px;
+    font-weight: 900; font-size: 150px; line-height: 1; letter-spacing: -22px; transform-origin: center;
     background: linear-gradient(160deg, #FFB46B 0%, #D84315 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    -webkit-text-stroke: 2px #D84315; paint-order: stroke fill;
+    -webkit-text-stroke: 2.5px #D84315; paint-order: stroke fill;
 }
-.egg-spritz-wordmark-wedge { display: inline-block; width: 70px; height: 70px; margin-left: 4px; transform: translateY(-58px) rotate(14deg); }
+.egg-spritz-letter:last-child { letter-spacing: 0; }
+.egg-spritz-wordmark-wedge { position: absolute; top: -34px; right: -56px; width: 92px; height: 92px; transform: rotate(16deg); }
 @media (max-width: 900px) {
-    .egg-spritz-letter { font-size: 92px; letter-spacing: -4px; }
-    .egg-spritz-wordmark-wedge { width: 44px; height: 44px; transform: translateY(-36px) rotate(14deg); }
+    .egg-spritz-letter { font-size: 94px; letter-spacing: -14px; }
+    .egg-spritz-row--1 { margin-bottom: -14px; }
+    .egg-spritz-row--2 { margin-top: -14px; }
+    .egg-spritz-wordmark-wedge { top: -20px; right: -34px; width: 58px; height: 58px; }
 }
 
 .egg-spritz-glasses { position: absolute; left: 280px; right: 24px; bottom: -18px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 3vw; opacity: .15; }
