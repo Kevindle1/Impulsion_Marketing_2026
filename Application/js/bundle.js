@@ -5772,10 +5772,10 @@ window.ImpulsionMarketing.adminConfig = (function () {
     }
     var wordmark =
       '<div class="egg-spritz-row egg-spritz-row--1">' +
-      spritzLine(['S', 'P', 'R'], [-8, 6, -5], [8, -10, 9]) +
+      spritzLine(['A', 'P', 'É', 'R', 'O'], [-6, 5, -4, 6, -5], [6, -8, 7, -9, 6]) +
       '</div>' +
       '<div class="egg-spritz-row egg-spritz-row--2">' +
-      spritzLine(['I', 'T', 'Z'], [7, -6, 8], [-9, 10, -7]) +
+      spritzLine(['S', 'P', 'R', 'I', 'T', 'Z'], [5, -6, 4, -7, 5, -4], [-7, 8, -6, 9, -8, 7]) +
       '</div>';
 
     return (

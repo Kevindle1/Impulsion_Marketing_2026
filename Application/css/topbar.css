@@ -85,22 +85,22 @@
 .egg-spritz-logo { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); opacity: .09; }
 .egg-spritz-wordmark { position: relative; display: flex; flex-direction: column; align-items: center; }
 .egg-spritz-row { display: flex; align-items: center; justify-content: center; }
-.egg-spritz-row--1 { margin-bottom: -22px; }
-.egg-spritz-row--2 { margin-top: -22px; }
+.egg-spritz-row--1 { margin-bottom: -12px; }
+.egg-spritz-row--2 { margin-top: -12px; }
 .egg-spritz-letter {
     display: inline-block; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-weight: 900; font-size: 150px; line-height: 1; letter-spacing: -22px; transform-origin: center;
+    font-weight: 900; font-size: 84px; line-height: 1; letter-spacing: -9px; transform-origin: center;
     background: linear-gradient(160deg, #FFB46B 0%, #D84315 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent;
-    -webkit-text-stroke: 2.5px #D84315; paint-order: stroke fill;
+    -webkit-text-stroke: 1.6px #D84315; paint-order: stroke fill;
 }
 .egg-spritz-letter:last-child { letter-spacing: 0; }
-.egg-spritz-wordmark-wedge { position: absolute; top: -34px; right: -56px; width: 92px; height: 92px; transform: rotate(16deg); }
+.egg-spritz-wordmark-wedge { position: absolute; top: -20px; right: -40px; width: 66px; height: 66px; transform: rotate(16deg); }
 @media (max-width: 900px) {
-    .egg-spritz-letter { font-size: 94px; letter-spacing: -14px; }
-    .egg-spritz-row--1 { margin-bottom: -14px; }
-    .egg-spritz-row--2 { margin-top: -14px; }
-    .egg-spritz-wordmark-wedge { top: -20px; right: -34px; width: 58px; height: 58px; }
+    .egg-spritz-letter { font-size: 52px; letter-spacing: -6px; }
+    .egg-spritz-row--1 { margin-bottom: -10px; }
+    .egg-spritz-row--2 { margin-top: -10px; }
+    .egg-spritz-wordmark-wedge { top: -12px; right: -24px; width: 42px; height: 42px; }
 }
 
 .egg-spritz-glasses { position: absolute; left: 280px; right: 24px; bottom: -18px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 3vw; opacity: .15; }
