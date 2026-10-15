@@ -713,6 +713,7 @@
       '<circle cx="100" cy="100" r="14" fill="#FFE3C2"/>';
 
     return (
+      '<div class="egg-spritz-logo"><div class="egg-spritz-logo-mark">IM</div></div>' +
       '<div class="egg-spritz-glasses">' +
       '<svg viewBox="0 0 220 240" xmlns="' + svgNS + '">' + glass('es1') + '</svg>' +
       '<svg viewBox="0 0 220 240" xmlns="' + svgNS + '" style="transform:scaleX(-1)">' + glass('es2') + '</svg>' +
