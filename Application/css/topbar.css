@@ -77,6 +77,23 @@
 .egg-snowflake { position: absolute; top: -10px; color: #6fb3dd; text-shadow: 0 0 4px rgba(255, 255, 255, .9), 0 1px 2px rgba(12, 30, 22, .15); animation-name: eggSnowFall; animation-timing-function: linear; animation-iteration-count: infinite; }
 @keyframes eggSnowFall { to { transform: translateY(110vh) translateX(var(--drift, 0)); } }
 
+/* ── Easter egg : Mode Spritz (5 clics rapides sur le bouton thème, cf. theme.css pour la palette) ── */
+.egg-spritz-overlay { position: fixed; inset: 0; z-index: 30; pointer-events: none; overflow: hidden; animation: eggSpritzFadeIn .5s ease; }
+.egg-spritz-overlay.egg-spritz-leaving { animation: eggSpritzFadeIn .5s ease reverse; }
+@keyframes eggSpritzFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.egg-spritz-glasses { position: absolute; left: 280px; right: 24px; bottom: -18px; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 3vw; opacity: .15; }
+.egg-spritz-glasses svg { width: 200px; height: 218px; }
+@media (max-width: 900px) { .egg-spritz-glasses { left: 16px; } }
+
+.egg-spritz-citrus { position: absolute; right: -30px; bottom: -30px; width: 260px; height: 260px; opacity: .16; }
+
+.egg-spritz-badge { position: absolute; right: 28px; top: 84px; width: 86px; height: 86px; opacity: .92; filter: drop-shadow(0 3px 6px rgba(120, 60, 0, .25)); animation: eggSpritzBadgeIn .6s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes eggSpritzBadgeIn { 0% { transform: scale(.5) rotate(-12deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: .92; } }
+
+.egg-spritz-label { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); text-align: center; opacity: .55; font-family: Georgia, 'Times New Roman', serif; letter-spacing: .22em; font-size: 11px; text-transform: uppercase; color: #D84315; white-space: nowrap; }
+.egg-spritz-label span { opacity: .7; }
+
 /* ── Easter egg : jumpscare Halloween (30 octobre / 2 novembre) ── */
 .egg-scare-overlay {
     position: fixed; inset: 0; z-index: 10060; display: flex; flex-direction: column;
