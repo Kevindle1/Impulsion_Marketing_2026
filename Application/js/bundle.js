@@ -5762,8 +5762,21 @@ window.ImpulsionMarketing.adminConfig = (function () {
       })() +
       '<circle cx="100" cy="100" r="14" fill="#FFE3C2"/>';
 
+    // Logotype « SPRITZ » façon étiquette d'apéritif : lettres bombées sur une
+    // ligne de base ondulée, dégradé orange, rondelle d'agrume en accent.
+    var SPRITZ_LETTERS = ['S', 'P', 'R', 'I', 'T', 'Z'];
+    var SPRITZ_ROTATE = [-7, 5, -4, 7, -5, 4];
+    var SPRITZ_LIFT = [6, -8, 10, -6, 8, -10];
+    var wordmark = SPRITZ_LETTERS.map(function (ch, i) {
+      return '<span class="egg-spritz-letter" style="transform:translateY(' + SPRITZ_LIFT[i] + 'px) rotate(' + SPRITZ_ROTATE[i] + 'deg);">' + ch + '</span>';
+    }).join('');
+
     return (
-      '<div class="egg-spritz-logo"><div class="egg-spritz-logo-mark">IM</div></div>' +
+      '<div class="egg-spritz-logo">' +
+      '<div class="egg-spritz-wordmark">' + wordmark +
+      '<span class="egg-spritz-wordmark-wedge"><svg viewBox="0 0 200 200" xmlns="' + svgNS + '">' + citrusWedge + '</svg></span>' +
+      '</div>' +
+      '</div>' +
       '<div class="egg-spritz-glasses">' +
       '<svg viewBox="0 0 220 240" xmlns="' + svgNS + '">' + glass('es1') + '</svg>' +
       '<svg viewBox="0 0 220 240" xmlns="' + svgNS + '" style="transform:scaleX(-1)">' + glass('es2') + '</svg>' +
