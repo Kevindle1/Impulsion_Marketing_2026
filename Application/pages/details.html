@@ -331,26 +331,30 @@
         .bilan-tile.primary .val { font-size: 1.4rem; }
         .bilan-tile.sec { background: transparent; }
         .bilan-tile.sec .val { font-size: 0.95rem; font-weight: 700; }
-        .bilan-charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
-        .bilan-chart-card { border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 10px 12px; background: var(--bg-card, #fff); }
-        .bilan-chart-card h5 { margin: 0 0 6px; font-size: 0.8rem; font-weight: 700; color: var(--gray-700, #33403a); }
         .bilan-detail summary { cursor: pointer; font-size: 12px; color: var(--muted, #56655e); margin-top: 10px; }
         .bilan-detail table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 8px; }
         .bilan-detail th { text-align: right; padding: 4px 6px; color: var(--muted-2, #8b988f); font-weight: 600; white-space: nowrap; }
         .bilan-detail th:first-child, .bilan-detail td:first-child { text-align: left; }
         .bilan-detail td { text-align: right; padding: 4px 6px; border-top: 1px solid var(--line, #eaefec); white-space: nowrap; }
-        .bilan-cmp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--gray-700, #33403a); }
-        .bilan-cmp select { font-size: 12px; padding: 4px 8px; border: 1px solid var(--line, #eaefec); border-radius: 8px; background: var(--bg-card, #fff); color: var(--ink, #0c1a14); font-family: inherit; }
 
         /* ── Bilan : note sur 100, tableaux de taux, champs manuels ── */
-        .bilan-score-card { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: space-between; }
-        .bilan-score-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-        .bilan-score-num { text-align: center; }
-        .bilan-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
-        .bilan-score-value { font-size: 2.4rem; font-weight: 800; color: var(--primary, #00875A); line-height: 1.1; }
+        .bilan-score-card { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; }
+        .bilan-score-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+        .bilan-score-gauge { position: relative; width: 84px; height: 84px; flex-shrink: 0; }
+        .bilan-score-gauge svg { width: 100%; height: 100%; }
+        .bilan-score-gauge .gauge-track { fill: none; stroke: var(--line-2, #f0f4f1); stroke-width: 9; }
+        .bilan-score-gauge .gauge-fill { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray .4s ease; }
+        .bilan-score-gauge .gauge-fill--good { stroke: var(--green-600, #00734C); }
+        .bilan-score-gauge .gauge-fill--warn { stroke: var(--status-valid, #92600a); }
+        .bilan-score-gauge .gauge-fill--bad { stroke: var(--red, #E2001A); }
+        .bilan-score-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .bilan-score-value { font-size: 1.5rem; font-weight: 800; color: var(--ink, #0c1a14); line-height: 1.1; }
+        .bilan-score-outof { font-size: 9px; font-weight: 700; color: var(--muted-2, #8b988f); letter-spacing: 0.3px; }
+        .bilan-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); margin-bottom: 4px; }
         .bilan-score-hint { font-size: 11.5px; color: var(--muted-2, #8b988f); line-height: 1.5; max-width: 260px; }
-        .bilan-meta-row { display: flex; gap: 20px; flex-wrap: wrap; }
-        .bilan-meta-item { display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 650; color: var(--ink, #0c1a14); }
+        .bilan-meta-row { display: flex; gap: 22px; flex-wrap: wrap; }
+        .bilan-meta-item { display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 650; color: var(--ink, #0c1a14); padding-left: 16px; border-left: 2px solid var(--line, #eaefec); }
+        .bilan-meta-item:first-child { padding-left: 0; border-left: none; }
         .bilan-meta-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
         .bilan-rate-table-wrap { overflow-x: auto; }
         .bilan-rate-table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -4582,7 +4586,6 @@
     var _suiviIndex = null;
     var _bilanResults = null;   // résultats par canal (cache pour graphiques / comparaison)
     var _bilanState = null;     // { campaignName, channels, results, idx }
-    var _bilanCompareSeries = null; // série de comparaison (autre campagne)
     var _bilanCanalIdx = 0;         // canal sélectionné dans « Résultats par canal »
     var BILAN_IDENT = _BILAN_CFG.ident || ['Canal', 'ID_ACTION', 'code_communication', 'CAMPAGNE', 'ACTION'];
     // Chaque KPI porte désormais aussi son mode d'agrégation ('somme' ou 'moyenne',
@@ -4832,7 +4835,7 @@
     function renderBilanPage() {
         var h = '<div class="detail-section">';
         h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">';
-        h += '<h3 style="margin:0;">📊 Bilan par canal</h3>';
+        h += '<h3 style="margin:0;">📊 Bilan</h3>';
         h += '<span id="bilan-file" style="font-size:12px;color:var(--muted-2,#8b988f);"></span></div>';
         h += '<div id="bilan-loading" style="color:var(--muted-2);font-size:13px;margin-top:10px;">Chargement…</div>';
         h += '<div id="bilan-content" style="display:none;margin-top:10px;"></div>';
@@ -4871,7 +4874,6 @@
                     if (snapChanged) writeBilanSnapshot(campaignName, snap);
                     _bilanResults = results;
                     _bilanState = { campaignName: campaignName, channels: channels, results: results, idx: idx, marketPeers: marketPeers, snap: snap };
-                    _bilanCompareSeries = null;
                     _bilanCanalIdx = 0;
                     for (var fi = 0; fi < results.length; fi++) { if (results[fi].rows && results[fi].rows.length) { _bilanCanalIdx = fi; break; } }
                     loading.style.display = 'none'; content.style.display = 'block';
@@ -4916,8 +4918,6 @@
         if (sec.length) h += '<div class="bilan-tiles sec">' + sec.join('') + '</div>';
         return h;
     }
-
-    var BILAN_COLORS = ['#00875A', '#2563EB', '#E8A100', '#7C3AED', '#E2001A', '#0891b2', '#65a30d', '#db2777'];
 
     // Agrège les lignes d'un canal : pour chaque KPI de BILAN_KPIS (piloté par
     // _config.json / Administration ▸ Bilan), on additionne ('somme') ou on fait une
@@ -4991,95 +4991,8 @@
         return out;
     }
 
-    function buildBilanSeries(channels, results) {
-        var series = [];
-        channels.forEach(function (ch, i) {
-            var res = results[i];
-            if (res && res.rows && res.rows.length) {
-                series.push({ name: ch.deliverableName || ('Canal ' + (i + 1)), color: BILAN_COLORS[i % BILAN_COLORS.length], agg: bilanAggregate(res.rows) });
-            }
-        });
-        return series;
-    }
-
-    // Graphe en barres groupées (SVG autonome). groups: libellés X ; series: [{name,color,values[]}].
-    function svgGroupedBars(groups, series, opts) {
-        opts = opts || {};
-        var unit = opts.unit || '';
-        var W = 460, H = opts.height || 170;
-        var padL = 30, padR = 8, padT = 12, padB = 32;
-        var plotW = W - padL - padR, plotH = H - padT - padB;
-        var maxV = 0;
-        series.forEach(function (s) { s.values.forEach(function (v) { if (v != null && v > maxV) maxV = v; }); });
-        if (maxV <= 0) maxV = 1;
-        var esc = security.escapeHtml;
-        var g = groups.length || 1, n = series.length || 1;
-        var groupW = plotW / g, barGap = 3;
-        var barW = Math.max(5, Math.min(46, (groupW * 0.72) / n));
-        var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;font-family:inherit;">';
-        [0, 0.5, 1].forEach(function (t) {
-            var y = padT + plotH - t * plotH;
-            svg += '<line x1="' + padL + '" y1="' + y.toFixed(1) + '" x2="' + (W - padR) + '" y2="' + y.toFixed(1) + '" stroke="var(--line,#eaefec)"/>';
-            svg += '<text x="' + (padL - 4) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end" font-size="9" fill="var(--muted-2,#8b988f)">' + (Math.round(maxV * t * 10) / 10) + '</text>';
-        });
-        groups.forEach(function (gl, gi) {
-            var gx = padL + gi * groupW;
-            var clusterW = n * barW + (n - 1) * barGap;
-            var startX = gx + (groupW - clusterW) / 2;
-            series.forEach(function (s, si) {
-                var v = s.values[gi];
-                var x = startX + si * (barW + barGap);
-                if (v != null) {
-                    var hh = (v / maxV) * plotH, y = padT + plotH - hh;
-                    svg += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + Math.max(0, hh).toFixed(1) + '" rx="2" fill="' + s.color + '"><title>' + esc(s.name + ' — ' + gl + ' : ' + (Math.round(v * 10) / 10) + unit) + '</title></rect>';
-                    if (barW >= 16) svg += '<text x="' + (x + barW / 2).toFixed(1) + '" y="' + (y - 3).toFixed(1) + '" text-anchor="middle" font-size="9" fill="var(--gray-700,#33403a)">' + (Math.round(v * 10) / 10) + '</text>';
-                }
-            });
-            svg += '<text x="' + (gx + groupW / 2).toFixed(1) + '" y="' + (padT + plotH + 14) + '" text-anchor="middle" font-size="10" fill="var(--gray-700,#33403a)">' + esc(gl) + '</text>';
-        });
-        svg += '</svg>';
-        var legend = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 2px;">';
-        series.forEach(function (s) { legend += '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--gray-700,#33403a);"><span style="width:10px;height:10px;border-radius:2px;background:' + s.color + ';display:inline-block;"></span>' + esc(s.name) + '</span>'; });
-        legend += '</div>';
-        return legend + svg;
-    }
-
-    // Un graphe de taux pour un sous-ensemble d'indicateurs (échelle propre), si données.
-    function bilanRateChart(all, keys, labels, title) {
-        var groups = keys.map(function (k) { return labels[k]; });
-        var ser = all.map(function (s) { return { name: s.name, color: s.color, values: keys.map(function (k) { return s.agg[k]; }) }; });
-        var has = ser.some(function (s) { return s.values.some(function (v) { return v != null; }); });
-        if (!has) return '';
-        return '<div class="bilan-chart-card"><h5>' + title + '</h5>' + svgGroupedBars(groups, ser, { unit: '%' }) + '</div>';
-    }
-
-    // Bloc graphiques : on sépare les gros taux (ouverture/réussite) des petits (clic/désab)
-    // pour des échelles lisibles, + leads si renseignés. `extra` = série de comparaison.
-    function renderBilanCharts(series, extra) {
-        var all = series.slice(); if (extra) all.push(extra);
-        if (!all.length) return '';
-        var L = { Tx_Ouvreurs: 'Ouverture', Tx_Reussite: 'Réussite', Tx_Cliqueurs: 'Clic', Tx_Desabonnement: 'Désab.' };
-        var cards = '';
-        cards += bilanRateChart(all, ['Tx_Ouvreurs', 'Tx_Reussite'], L, 'Ouverture & réussite (%)');
-        cards += bilanRateChart(all, ['Tx_Cliqueurs', 'Tx_Desabonnement'], L, 'Clic & désabonnement (%)');
-        var hasLeads = all.some(function (s) { return s.agg.Nb_leads != null && s.agg.Nb_leads !== 0; });
-        if (hasLeads) {
-            cards += '<div class="bilan-chart-card"><h5>Leads</h5>'
-                + svgGroupedBars(all.map(function (s) { return s.name; }), [{ name: 'Leads', color: '#7C3AED', values: all.map(function (s) { return s.agg.Nb_leads; }) }], { unit: '' })
-                + '</div>';
-        }
-        if (!cards) return '<div style="font-size:12px;color:var(--muted-2);">Pas encore de données chiffrées à représenter' + (extra ? '' : ' (choisissez une comparaison ci-dessus)') + '.</div>';
-        return '<div class="bilan-charts-grid">' + cards + '</div>';
-    }
-
-    // ── Comparaison avec une communication d'une autre campagne ──
-    function listCampaignsForCompare() {
-        return currentRootHandle.getDirectoryHandle('Campagnes')
-            .then(function (d) { return d.getFileHandle('_index.json'); })
-            .then(function (fh) { return fh.getFile(); }).then(function (f) { return f.text(); })
-            .then(function (t) { var idx = JSON.parse(t); return Object.keys(idx.campaigns || {}); })
-            .catch(function () { return []; });
-    }
+    // ── Lecture des canaux d'une campagne quelconque (utilisé pour la moyenne
+    // marché automatique, cf. loadMarketPeers ci-dessus) ──
     function loadCampaignChannels(name) {
         return currentRootHandle.getDirectoryHandle('Campagnes')
             .then(function (d) { return d.getDirectoryHandle(name); })
@@ -5102,64 +5015,6 @@
             return readBilanSnapshot(campName).then(function (snap) { var s = snap.channels[String(chIdx)]; return (s && s.rows) ? s.rows : []; });
         });
     }
-    function resolveExternalChannelBilan(campName, chIdx) {
-        return loadCampaignChannels(campName).then(function (channels) {
-            var ch = channels[chIdx]; if (!ch) return null;
-            return resolveChannelRows(campName, ch, chIdx).then(function (rows) {
-                if (!rows.length) return null;
-                return { name: campName + ' · ' + (ch.deliverableName || ('Canal ' + (chIdx + 1))), color: '#111827', agg: bilanAggregate(rows), rows: rows };
-            });
-        });
-    }
-
-    function refreshBilanCharts() {
-        var el = document.getElementById('bilan-charts');
-        if (!el || !_bilanState) return;
-        var series = buildBilanSeries(_bilanState.channels, _bilanState.results);
-        el.innerHTML = series.length ? renderBilanCharts(series, _bilanCompareSeries) : '<div style="font-size:12px;color:var(--muted-2);">Aucune donnée chiffrée à représenter.</div>';
-    }
-
-    function setupBilanCompare() {
-        var campSel = document.getElementById('cmp-campaign'), chSel = document.getElementById('cmp-channel'),
-            note = document.getElementById('cmp-note'), detail = document.getElementById('bilan-compare-detail');
-        if (!campSel) return;
-        listCampaignsForCompare().then(function (names) {
-            // La campagne courante reste dans la liste (marquée) : on peut ainsi
-            // comparer deux livrables de la MÊME campagne, pas seulement entre
-            // deux campagnes différentes.
-            var current = _bilanState && _bilanState.campaignName;
-            names.slice().sort().forEach(function (n) {
-                var o = document.createElement('option');
-                o.value = n;
-                o.textContent = (n === current) ? ('📍 ' + n + ' (cette campagne)') : n;
-                campSel.appendChild(o);
-            });
-        });
-        campSel.addEventListener('change', function () {
-            chSel.innerHTML = '<option value="">— livrable —</option>'; chSel.disabled = true;
-            if (detail) detail.innerHTML = '';
-            _bilanCompareSeries = null; refreshBilanCharts();
-            if (!campSel.value) { if (note) note.textContent = ''; return; }
-            if (note) note.textContent = 'Chargement…';
-            loadCampaignChannels(campSel.value).then(function (channels) {
-                channels.forEach(function (ch, i) { var o = document.createElement('option'); o.value = String(i); o.textContent = ch.deliverableName || ('Canal ' + (i + 1)); chSel.appendChild(o); });
-                chSel.disabled = channels.length === 0;
-                if (note) note.textContent = channels.length ? '' : 'Aucun canal sur cette campagne.';
-            });
-        });
-        chSel.addEventListener('change', function () {
-            if (detail) detail.innerHTML = '';
-            if (!chSel.value) { _bilanCompareSeries = null; refreshBilanCharts(); return; }
-            if (note) note.textContent = 'Chargement…';
-            resolveExternalChannelBilan(campSel.value, parseInt(chSel.value, 10)).then(function (ext) {
-                if (note) note.textContent = '';
-                if (!ext) { _bilanCompareSeries = null; refreshBilanCharts(); if (detail) detail.innerHTML = '<div style="font-size:12px;color:var(--muted-2);">Aucun chiffre pour ce livrable (fichier ni archive).</div>'; return; }
-                _bilanCompareSeries = ext; refreshBilanCharts();
-                if (detail) detail.innerHTML = '<div style="font-weight:600;font-size:12.5px;margin:6px 0 4px;">Comparé : ' + security.escapeHtml(ext.name) + '</div>' + bilanTable(ext.rows);
-            });
-        });
-    }
-
     // ── Rendu des tableaux « Performance de la campagne / du canal » ──
     function bilanRateCell(v, cls) { return '<td class="bilan-rate-cell' + (cls ? ' ' + cls : '') + '">' + tpct(v) + '</td>'; }
     function bilanRateTable(rowLabel, agg, marketAvg, refLabel) {
@@ -5179,11 +5034,26 @@
         h += '</tbody></table></div>';
         return h;
     }
+    // Jauge circulaire (SVG autonome) : anneau coloré selon le palier de la note
+    // (vert ≥ 70, orange ≥ 40, rouge en dessous), valeur au centre.
+    function bilanScoreGauge(score) {
+        var r = 42, c = 2 * Math.PI * r;
+        var pct = score == null ? 0 : Math.max(0, Math.min(100, score));
+        var tier = score == null ? '' : (score >= 70 ? 'good' : (score >= 40 ? 'warn' : 'bad'));
+        var dash = (pct / 100 * c).toFixed(1);
+        return '<div class="bilan-score-gauge">'
+            + '<svg viewBox="0 0 100 100">'
+            + '<circle cx="50" cy="50" r="' + r + '" class="gauge-track"/>'
+            + (score != null ? '<circle cx="50" cy="50" r="' + r + '" class="gauge-fill gauge-fill--' + tier + '" stroke-dasharray="' + dash + ' ' + c.toFixed(1) + '" transform="rotate(-90 50 50)"/>' : '')
+            + '</svg>'
+            + '<div class="bilan-score-gauge-center"><div class="bilan-score-value">' + (score == null ? '—' : score) + '</div><div class="bilan-score-outof">/ 100</div></div>'
+            + '</div>';
+    }
     function bilanScoreCard(score, dateStats) {
         var h = '<div class="bilan-card bilan-score-card">';
         h += '<div class="bilan-score-head">';
-        h += '<div class="bilan-score-num"><div class="bilan-score-label">Note sur 100</div><div class="bilan-score-value">' + (score == null ? '—' : score) + '</div></div>';
-        h += '<div class="bilan-score-hint">Vert / orange / rouge : comparaison au marché.<br>Pondération automatique hors cases vides.</div>';
+        h += bilanScoreGauge(score);
+        h += '<div class="bilan-score-text"><div class="bilan-score-label">Note sur 100</div><div class="bilan-score-hint">Vert / orange / rouge : comparaison au marché.<br>Pondération automatique hors cases vides.</div></div>';
         h += '</div>';
         h += '<div class="bilan-meta-row">';
         h += '<div class="bilan-meta-item"><span class="bilan-meta-label">Date 1ère injection</span><span>' + (dateStats && dateStats.first ? bilanDateShort(dateStats.first) : '—') + '</span></div>';
@@ -5224,6 +5094,7 @@
     function bilanManualCard(snap) {
         var decision = snap.decision || '', comment = snap.comment || '', sent = snap.sent || null;
         var h = '<div class="bilan-card bilan-manual-card">';
+        h += '<div class="bilan-card-title" style="margin-bottom:12px;">Décision &amp; suivi</div>';
         h += '<div class="form-row"><label>Je recommence / j\'arrête</label><select id="bilan-decision" class="form-control">'
             + '<option value=""' + (decision === '' ? ' selected' : '') + '>—</option>'
             + '<option value="recommence"' + (decision === 'recommence' ? ' selected' : '') + '>Je recommence</option>'
@@ -5308,27 +5179,9 @@
             + '<div id="bilan-canal-body">' + renderCanalBody(channels, results, marketPeers, _bilanCanalIdx) + '</div>'
             + '</div>';
 
-        // Graphiques (taux d'engagement + leads) en tête.
-        var series = buildBilanSeries(channels, results);
-        var chartsBlock = '';
-        if (series.length) {
-            chartsBlock = '<div class="bilan-card">'
-                + '<div class="bilan-card-head">'
-                + '<span class="bilan-card-title">📈 Graphiques</span>'
-                + '<span class="bilan-cmp">Comparer avec :'
-                + '<select id="cmp-campaign"><option value="">— campagne —</option></select>'
-                + '<select id="cmp-channel" disabled><option value="">— livrable —</option></select>'
-                + '<span id="cmp-note" style="color:var(--muted-2);"></span></span>'
-                + '</div>'
-                + '<div id="bilan-charts">' + renderBilanCharts(series) + '</div>'
-                + '<div id="bilan-compare-detail" style="margin-top:8px;"></div>'
-                + '</div>';
-        }
-
-        content.innerHTML = topHtml + canalHtml + bilanManualCard(snap) + chartsBlock;
+        content.innerHTML = topHtml + canalHtml + bilanManualCard(snap);
         wireBilanCanalSelect();
         wireBilanManualFields(_bilanState.campaignName);
-        if (series.length) setupBilanCompare();
     }
 
     // ── Documents (Item 21) ─────────────────────────────────
