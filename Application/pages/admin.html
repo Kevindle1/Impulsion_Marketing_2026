@@ -1520,10 +1520,6 @@
             if (!Array.isArray(bc.kpis)) bc.kpis = [];
             if (!Array.isArray(bc.chartRates)) bc.chartRates = [];
             if (!bc.score || !Array.isArray(bc.score.kpis) || !bc.score.kpis.length) bc.score = { kpis: JSON.parse(JSON.stringify(SCORE_KPIS_DEFAULT)) };
-            if (!bc.benchmark || typeof bc.benchmark !== 'object') bc.benchmark = {};
-            if (!Array.isArray(bc.benchmark.kpis) || !bc.benchmark.kpis.length) {
-                bc.benchmark.kpis = SCORE_KPIS_DEFAULT.map(function (s) { return { k: s.k, label: s.label, marketCol: '', populationCol: '' }; });
-            }
             var AGG_OPTS = [['moyenne', 'Moyenne'], ['somme', 'Somme']];
             function syncKpis() {
                 cont.querySelectorAll('[data-kk]').forEach(function (inp) { var i = +inp.getAttribute('data-kk'); if (bc.kpis[i]) bc.kpis[i].k = inp.value; });
@@ -1534,13 +1530,6 @@
             function syncScore() {
                 cont.querySelectorAll('[data-sctarget]').forEach(function (inp) { var i = +inp.getAttribute('data-sctarget'); if (bc.score.kpis[i]) bc.score.kpis[i].target = parseFloat(inp.value) || 0; });
                 cont.querySelectorAll('[data-scweight]').forEach(function (inp) { var i = +inp.getAttribute('data-scweight'); if (bc.score.kpis[i]) bc.score.kpis[i].weight = parseFloat(inp.value) || 0; });
-            }
-            function syncBenchmark() {
-                var b = document.getElementById('bench-folder'); if (b) bc.benchmark.folder = b.value.trim();
-                var s = document.getElementById('bench-sheet'); if (s) bc.benchmark.sheet = s.value.trim();
-                var c = document.getElementById('bench-canalcol'); if (c) bc.benchmark.canalColumn = c.value.trim();
-                cont.querySelectorAll('[data-bkmarket]').forEach(function (inp) { var i = +inp.getAttribute('data-bkmarket'); if (bc.benchmark.kpis[i]) bc.benchmark.kpis[i].marketCol = inp.value.trim(); });
-                cont.querySelectorAll('[data-bkpop]').forEach(function (inp) { var i = +inp.getAttribute('data-bkpop'); if (bc.benchmark.kpis[i]) bc.benchmark.kpis[i].populationCol = inp.value.trim(); });
             }
             var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>Doit correspondre aux <strong>colonnes du fichier de suivi .xlsx</strong>. À ne modifier que si le format du fichier change.</div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Fichier</h3></div>'
@@ -1577,19 +1566,7 @@
             });
             html += '</div>';
 
-            html += '<div class="admin-card"><div class="admin-card-title"><h3>Référence marché (fichier importé)</h3></div>'
-                + '<div class="empty-hint" style="padding-top:0;">Fichier contenant, par canal, la moyenne du marché sur 12 mois et la population témoin (« population blanche »), affichées en comparaison dans le Bilan. Même principe que le fichier de suivi : le fichier le plus récent du dossier est utilisé automatiquement.</div>'
-                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Dossier</label><input class="admin-input" id="bench-folder" value="' + esc(bc.benchmark.folder || '') + '" placeholder="ex. Reference"></div>'
-                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Nom de l\'onglet</label><input class="admin-input" id="bench-sheet" value="' + esc(bc.benchmark.sheet || '') + '"></div>'
-                + '<div class="form-row"><label class="admin-label">Colonne « Canal »</label><input class="admin-input" id="bench-canalcol" value="' + esc(bc.benchmark.canalColumn || '') + '" placeholder="ex. Canal"></div>';
-            bc.benchmark.kpis.forEach(function (kp, i) {
-                html += '<div class="person-row" style="flex-wrap:wrap;margin-top:10px;">'
-                    + '<span style="flex:1;min-width:140px;font-size:13px;font-weight:600;">' + esc(kp.label || kp.k) + '</span>'
-                    + '<input class="admin-input" data-bkmarket="' + i + '" value="' + esc(kp.marketCol || '') + '" placeholder="colonne moyenne marché" style="flex:1;min-width:160px;">'
-                    + '<input class="admin-input" data-bkpop="' + i + '" value="' + esc(kp.populationCol || '') + '" placeholder="colonne population blanche" style="flex:1;min-width:160px;">'
-                    + '</div>';
-            });
-            html += '</div>';
+            html += '<div class="admin-note"><span class="admin-note-ic">ℹ️</span><div>La moyenne du marché sur 12 mois est calculée automatiquement : moyenne des autres campagnes du même marché (champ « Marché » de la campagne), à partir du même fichier de suivi — aucun import séparé n\'est nécessaire.</div></div>';
 
             html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-bilan">💾 Enregistrer</button></div>';
             cont.innerHTML = html;
@@ -1600,7 +1577,7 @@
             cont.querySelectorAll('[data-delkpi]').forEach(function (b) { b.addEventListener('click', function () { syncKpis(); bc.kpis.splice(+b.getAttribute('data-delkpi'), 1); renderBilanCfg(); }); });
             document.getElementById('add-kpi').addEventListener('click', function () { syncKpis(); bc.kpis.push({ k: '', label: '', pct: false, agg: 'moyenne' }); renderBilanCfg(); });
             document.getElementById('save-bilan').addEventListener('click', function () {
-                syncKpis(); syncScore(); syncBenchmark();
+                syncKpis(); syncScore();
                 var out = {
                     suiviFolder: (document.getElementById('bilan-folder').value || '').trim(),
                     suiviSheet: (document.getElementById('bilan-sheet').value || '').trim(),
@@ -1608,13 +1585,7 @@
                     ident: bc.ident.slice(),
                     kpis: bc.kpis.filter(function (k) { return (k.k || '').trim(); }).map(function (k) { return { k: k.k.trim(), label: (k.label || '').trim(), pct: !!k.pct, agg: (k.agg === 'somme') ? 'somme' : 'moyenne' }; }),
                     chartRates: bc.chartRates.slice(),
-                    score: { kpis: bc.score.kpis.map(function (k) { return { k: k.k, label: k.label, target: k.target, weight: k.weight }; }) },
-                    benchmark: {
-                        folder: bc.benchmark.folder || '',
-                        sheet: bc.benchmark.sheet || '',
-                        canalColumn: bc.benchmark.canalColumn || '',
-                        kpis: bc.benchmark.kpis.map(function (k) { return { k: k.k, label: k.label, marketCol: k.marketCol || '', populationCol: k.populationCol || '' }; })
-                    }
+                    score: { kpis: bc.score.kpis.map(function (k) { return { k: k.k, label: k.label, target: k.target, weight: k.weight }; }) }
                 };
                 saveConfig({ bilan: out }, 'Bilan enregistré.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ bilan: out }); bilanCfgState = JSON.parse(JSON.stringify(out)); renderBilanCfg(); });
             });
