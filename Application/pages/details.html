@@ -313,57 +313,61 @@
         #lightbox-close:hover { opacity: 1; }
 
         /* ── Bilan ── */
-        .bilan-meta { font-size: 12px; color: var(--muted-2, #8b988f); }
-        .bilan-card { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow-xs); }
-        .bilan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-        .bilan-card-title { font-weight: 700; font-size: 0.9rem; color: var(--ink, #0c1a14); letter-spacing: -0.2px; }
-        .bilan-badge { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+        .bilan-meta { font-size: 13px; color: var(--muted-2, #8b988f); }
+        .bilan-card { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 16px; padding: 22px 26px; margin-bottom: 18px; box-shadow: var(--shadow-xs); }
+        .bilan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .bilan-card-title { font-weight: 800; font-size: 1.15rem; color: var(--ink, #0c1a14); letter-spacing: -0.3px; }
+        .bilan-badge { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
         .bilan-badge.live { color: var(--green-600, #00734C); background: var(--green-50, #e8f6ef); border: 1px solid var(--green-100, #ccebdd); }
         .bilan-badge.arch { color: var(--status-valid, #92600a); background: var(--amber-50, #fdf3e2); border: 1px solid var(--amber-100, #f0d98a); }
-        .bilan-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
-        .bilan-tile { background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 10px; padding: 8px 10px; }
-        .bilan-tile .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
-        .bilan-tile .val { font-size: 1.05rem; font-weight: 750; color: var(--ink, #0c1a14); margin-top: 2px; line-height: 1.1; }
+        .bilan-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 14px; }
+        .bilan-tile { background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 12px; padding: 14px 16px; }
+        .bilan-tile .lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
+        .bilan-tile .val { font-size: 1.3rem; font-weight: 800; color: var(--ink, #0c1a14); margin-top: 4px; line-height: 1.1; }
         .bilan-tile.accent .val { color: var(--primary, #00875A); }
-        .bilan-tiles.primary { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); margin-bottom: 8px; }
-        .bilan-tiles.sec { grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); }
-        .bilan-tile.primary { padding: 10px 12px; }
-        .bilan-tile.primary .val { font-size: 1.4rem; }
+        .bilan-tiles.primary { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); margin-bottom: 14px; }
+        .bilan-tiles.sec { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+        .bilan-tile.primary { padding: 16px 18px; }
+        .bilan-tile.primary .val { font-size: 1.9rem; }
         .bilan-tile.sec { background: transparent; }
-        .bilan-tile.sec .val { font-size: 0.95rem; font-weight: 700; }
-        .bilan-detail summary { cursor: pointer; font-size: 12px; color: var(--muted, #56655e); margin-top: 10px; }
-        .bilan-detail table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 8px; }
-        .bilan-detail th { text-align: right; padding: 4px 6px; color: var(--muted-2, #8b988f); font-weight: 600; white-space: nowrap; }
+        .bilan-tile.sec .val { font-size: 1.15rem; font-weight: 750; }
+        .bilan-detail summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted, #56655e); margin-top: 14px; }
+        .bilan-detail table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+        .bilan-detail th { text-align: right; padding: 5px 7px; color: var(--muted-2, #8b988f); font-weight: 600; white-space: nowrap; }
         .bilan-detail th:first-child, .bilan-detail td:first-child { text-align: left; }
-        .bilan-detail td { text-align: right; padding: 4px 6px; border-top: 1px solid var(--line, #eaefec); white-space: nowrap; }
+        .bilan-detail td { text-align: right; padding: 5px 7px; border-top: 1px solid var(--line, #eaefec); white-space: nowrap; }
 
         /* ── Bilan : note sur 100, tableaux de taux, champs manuels ── */
-        .bilan-score-card { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; }
-        .bilan-score-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-        .bilan-score-gauge { position: relative; width: 84px; height: 84px; flex-shrink: 0; }
+        .bilan-score-card { display: flex; flex-wrap: wrap; gap: 28px; align-items: center; justify-content: space-between; }
+        .bilan-score-head { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+        .bilan-score-gauge { position: relative; width: 136px; height: 136px; flex-shrink: 0; }
         .bilan-score-gauge svg { width: 100%; height: 100%; }
-        .bilan-score-gauge .gauge-track { fill: none; stroke: var(--line-2, #f0f4f1); stroke-width: 9; }
-        .bilan-score-gauge .gauge-fill { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray .4s ease; }
+        .bilan-score-gauge .gauge-track { fill: none; stroke: var(--line-2, #f0f4f1); stroke-width: 10; }
+        .bilan-score-gauge .gauge-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dasharray .4s ease; }
         .bilan-score-gauge .gauge-fill--good { stroke: var(--green-600, #00734C); }
         .bilan-score-gauge .gauge-fill--warn { stroke: var(--status-valid, #92600a); }
         .bilan-score-gauge .gauge-fill--bad { stroke: var(--red, #E2001A); }
         .bilan-score-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .bilan-score-value { font-size: 1.5rem; font-weight: 800; color: var(--ink, #0c1a14); line-height: 1.1; }
-        .bilan-score-outof { font-size: 9px; font-weight: 700; color: var(--muted-2, #8b988f); letter-spacing: 0.3px; }
-        .bilan-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); margin-bottom: 4px; }
-        .bilan-score-hint { font-size: 11.5px; color: var(--muted-2, #8b988f); line-height: 1.5; max-width: 260px; }
-        .bilan-meta-row { display: flex; gap: 22px; flex-wrap: wrap; }
-        .bilan-meta-item { display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 650; color: var(--ink, #0c1a14); padding-left: 16px; border-left: 2px solid var(--line, #eaefec); }
+        .bilan-score-value { font-size: 2.7rem; font-weight: 800; color: var(--ink, #0c1a14); line-height: 1; }
+        .bilan-score-outof { font-size: 12px; font-weight: 700; color: var(--muted-2, #8b988f); letter-spacing: 0.3px; margin-top: 2px; }
+        .bilan-score-tier { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 10px; border-radius: 999px; }
+        .bilan-score-tier.good { background: var(--green-50, #e8f6ef); color: var(--green-700, #005C3D); }
+        .bilan-score-tier.warn { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #92600a); }
+        .bilan-score-tier.bad { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .bilan-score-label { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); margin-bottom: 6px; }
+        .bilan-score-hint { font-size: 13.5px; color: var(--muted, #56655e); line-height: 1.6; max-width: 320px; }
+        .bilan-meta-row { display: flex; gap: 30px; flex-wrap: wrap; }
+        .bilan-meta-item { display: flex; flex-direction: column; gap: 4px; font-size: 19px; font-weight: 800; color: var(--ink, #0c1a14); padding-left: 20px; border-left: 2px solid var(--line, #eaefec); }
         .bilan-meta-item:first-child { padding-left: 0; border-left: none; }
-        .bilan-meta-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
+        .bilan-meta-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
         .bilan-rate-table-wrap { overflow-x: auto; }
-        .bilan-rate-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .bilan-rate-table th { text-align: center; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--muted-2, #8b988f); text-transform: uppercase; letter-spacing: 0.3px; }
-        .bilan-rate-table td { text-align: center; padding: 8px; border-top: 1px solid var(--line, #eaefec); white-space: nowrap; }
-        .bilan-rate-table td:first-child, .bilan-rate-table th:first-child { text-align: left; font-weight: 650; color: var(--ink, #0c1a14); white-space: normal; }
-        .bilan-rate-table tr.row-ref td { color: var(--muted, #56655e); font-size: 12.5px; }
-        .bilan-rate-table tr.row-ref:first-of-type td { border-top: 2px solid var(--line, #eaefec); }
-        .bilan-rate-cell { font-weight: 750; border-radius: 8px; }
+        .bilan-rate-table { width: 100%; border-collapse: separate; border-spacing: 0 6px; font-size: 16px; }
+        .bilan-rate-table th { text-align: center; padding: 4px 12px 10px; font-size: 12.5px; font-weight: 700; color: var(--muted-2, #8b988f); text-transform: uppercase; letter-spacing: 0.3px; }
+        .bilan-rate-table td { text-align: center; padding: 16px 12px; white-space: nowrap; }
+        .bilan-rate-table td:first-child, .bilan-rate-table th:first-child { text-align: left; font-weight: 700; color: var(--ink, #0c1a14); white-space: normal; }
+        .bilan-rate-table tr.row-main td:first-child { font-size: 15px; }
+        .bilan-rate-table tr.row-ref td { color: var(--muted, #56655e); font-size: 14px; padding-top: 8px; padding-bottom: 8px; }
+        .bilan-rate-cell { font-weight: 800; font-size: 1.25rem; border-radius: 10px; }
         .bilan-rate-cell.good { background: var(--green-50, #e8f6ef); color: var(--green-700, #005C3D); }
         .bilan-rate-cell.warn { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #92600a); }
         .bilan-rate-cell.bad { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
@@ -4613,9 +4617,11 @@
         { k: 'Tx_Leads', label: 'Taux de leads', target: 3, weight: 3 },
         { k: 'Tx_Reussite', label: 'Taux de réussite', target: 1, weight: 4 }
     ];
-    // ── Colonne de date du fichier de suivi (optionnelle) : permet de calculer
-    // automatiquement 1ère injection / dernière exécution / fréquence constatée.
-    var BILAN_DATE_COLUMN = _BILAN_CFG.dateColumn || '';
+    // ── Colonnes déjà calculées par le fichier de suivi (dates sur 12 mois glissants
+    // + fréquence) : on les relit telles quelles, sans rien recalculer.
+    var BILAN_FIRST_INJ_COL = _BILAN_CFG.firstInjectionColumn || 'Date_1ere_injection_sur_12M';
+    var BILAN_LAST_INJ_COL = _BILAN_CFG.lastInjectionColumn || 'Date_derniere_injection_sur_12M';
+    var BILAN_FREQ_COL = _BILAN_CFG.frequencyColumn || 'Frequence_execution';
     // Les 4 taux affichés dans les tableaux « Performance de la campagne / du canal ».
     var BILAN_RATE_KPIS = [
         { k: 'Tx_Ouvreurs', label: 'Taux d\'ouvreurs' },
@@ -4632,8 +4638,12 @@
     function bilanToNumber(v) { v = bilanClean(v); if (v === '') return null; var n = Number(v.replace(',', '.')); return isNaN(n) ? null : n; }
     function bilanDateShort(iso) { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch (e) { return ''; } }
 
-    // Date d'une cellule du fichier de suivi : numéro de série Excel, ou texte
-    // JJ/MM/AAAA, ou toute date analysable par le navigateur. Renvoie null sinon.
+    // Date d'une cellule du fichier de suivi : format français abrégé sans séparateurs
+    // (ex. « 06juil2025 », « 22août2025 »), numéro de série Excel, JJ/MM/AAAA, ou
+    // toute date analysable par le navigateur.
+    var FR_MONTHS = { janv: 1, fevr: 2, mars: 3, avr: 4, mai: 5, juin: 6, juil: 7, aout: 8, sept: 9, oct: 10, nov: 11, dec: 12 };
+    var FR_MONTH_KEYS = Object.keys(FR_MONTHS).sort(function (a, b) { return b.length - a.length; });
+    function stripAccents(s) { return s.normalize ? s.normalize('NFD').replace(/[̀-ͯ]/g, '') : s; }
     function bilanParseDate(v) {
         v = bilanClean(v);
         if (v === '') return null;
@@ -4644,31 +4654,33 @@
                 if (!isNaN(d0.getTime())) return d0;
             }
         }
+        var norm = stripAccents(v.toLowerCase()).replace(/\s+/g, '');
+        var mFr = /^(\d{1,2})([a-z]+)(\d{4})$/.exec(norm);
+        if (mFr) {
+            var monStr = mFr[2], monNum = null;
+            for (var i = 0; i < FR_MONTH_KEYS.length; i++) { if (monStr.indexOf(FR_MONTH_KEYS[i]) === 0) { monNum = FR_MONTHS[FR_MONTH_KEYS[i]]; break; } }
+            if (monNum) { var dFr = new Date(Date.UTC(+mFr[3], monNum - 1, +mFr[1])); if (!isNaN(dFr.getTime())) return dFr; }
+        }
         var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v);
         if (m) { var d1 = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])); return isNaN(d1.getTime()) ? null : d1; }
         var d2 = new Date(v);
         return isNaN(d2.getTime()) ? null : d2;
     }
-    // 1ère injection / dernière exécution / fréquence constatée, déduites des dates
-    // présentes dans les lignes du suivi (nécessite BILAN_DATE_COLUMN configurée).
-    function bilanDateStats(rows) {
-        if (!BILAN_DATE_COLUMN) return null;
-        var times = [];
-        rows.forEach(function (o) { var d = bilanParseDate(o[BILAN_DATE_COLUMN]); if (d) times.push(d.getTime()); });
-        if (!times.length) return null;
-        var uniq = times.filter(function (t, i) { return times.indexOf(t) === i; }).sort(function (a, b) { return a - b; });
-        var freqLabel;
-        if (uniq.length > 1) {
-            var avgDays = Math.round((uniq[uniq.length - 1] - uniq[0]) / (uniq.length - 1) / 86400000);
-            if (avgDays <= 1) freqLabel = 'Quotidienne';
-            else if (avgDays <= 8) freqLabel = 'Hebdomadaire';
-            else if (avgDays <= 16) freqLabel = 'Toutes les 2 semaines';
-            else if (avgDays <= 35) freqLabel = 'Mensuelle';
-            else freqLabel = 'Tous les ' + avgDays + ' jours';
-        } else {
-            freqLabel = 'Ponctuelle';
-        }
-        return { first: new Date(uniq[0]), last: new Date(uniq[uniq.length - 1]), freqLabel: freqLabel };
+    // 1ère injection / dernière injection / fréquence : le fichier de suivi fournit
+    // déjà ces 3 valeurs toutes calculées par ligne (sur 12 mois glissants) — on les
+    // relit directement depuis la première ligne qui les renseigne, sans recalculer.
+    function bilanInjectionStats(rows) {
+        var firstRaw = null, lastRaw = null, freqRaw = null;
+        rows.some(function (o) {
+            if (!firstRaw && o[BILAN_FIRST_INJ_COL]) firstRaw = o[BILAN_FIRST_INJ_COL];
+            if (!lastRaw && o[BILAN_LAST_INJ_COL]) lastRaw = o[BILAN_LAST_INJ_COL];
+            if (!freqRaw && o[BILAN_FREQ_COL]) freqRaw = o[BILAN_FREQ_COL];
+            return firstRaw && lastRaw && freqRaw;
+        });
+        var first = firstRaw ? bilanParseDate(firstRaw) : null;
+        var last = lastRaw ? bilanParseDate(lastRaw) : null;
+        if (!first && !last && !freqRaw) return null;
+        return { first: first, last: last, freqLabel: freqRaw || '' };
     }
 
     function collectSuiviXlsx(dir) {
@@ -4811,7 +4823,9 @@
         var o = {};
         BILAN_IDENT.forEach(function (k) { o[k] = (col[k] != null) ? bilanClean(row[col[k]]) : ''; });
         BILAN_KPIS.forEach(function (kp) { o[kp.k] = (col[kp.k] != null) ? bilanClean(row[col[kp.k]]) : ''; });
-        if (BILAN_DATE_COLUMN && col[BILAN_DATE_COLUMN] != null) o[BILAN_DATE_COLUMN] = bilanClean(row[col[BILAN_DATE_COLUMN]]);
+        [BILAN_FIRST_INJ_COL, BILAN_LAST_INJ_COL, BILAN_FREQ_COL].forEach(function (k) {
+            if (k && col[k] != null) o[k] = bilanClean(row[col[k]]);
+        });
         return o;
     }
 
@@ -5039,17 +5053,21 @@
     }
     // Jauge circulaire (SVG autonome) : anneau coloré selon le palier de la note
     // (vert ≥ 70, orange ≥ 40, rouge en dessous), valeur au centre.
+    var BILAN_SCORE_TIER_LABELS = { good: 'Bon', warn: 'Moyen', bad: 'Faible' };
+    function bilanScoreTier(score) { return score == null ? '' : (score >= 70 ? 'good' : (score >= 40 ? 'warn' : 'bad')); }
     function bilanScoreGauge(score) {
         var r = 42, c = 2 * Math.PI * r;
         var pct = score == null ? 0 : Math.max(0, Math.min(100, score));
-        var tier = score == null ? '' : (score >= 70 ? 'good' : (score >= 40 ? 'warn' : 'bad'));
+        var tier = bilanScoreTier(score);
         var dash = (pct / 100 * c).toFixed(1);
         return '<div class="bilan-score-gauge">'
             + '<svg viewBox="0 0 100 100">'
             + '<circle cx="50" cy="50" r="' + r + '" class="gauge-track"/>'
             + (score != null ? '<circle cx="50" cy="50" r="' + r + '" class="gauge-fill gauge-fill--' + tier + '" stroke-dasharray="' + dash + ' ' + c.toFixed(1) + '" transform="rotate(-90 50 50)"/>' : '')
             + '</svg>'
-            + '<div class="bilan-score-gauge-center"><div class="bilan-score-value">' + (score == null ? '—' : score) + '</div><div class="bilan-score-outof">/ 100</div></div>'
+            + '<div class="bilan-score-gauge-center"><div class="bilan-score-value">' + (score == null ? '—' : score) + '</div><div class="bilan-score-outof">/ 100</div>'
+            + (tier ? '<span class="bilan-score-tier ' + tier + '">' + BILAN_SCORE_TIER_LABELS[tier] + '</span>' : '')
+            + '</div>'
             + '</div>';
     }
     function bilanScoreCard(score, dateStats) {
@@ -5164,7 +5182,7 @@
         var campaignMarketAvg = bilanMarketCampaignAvg(marketPeers);
         var score = campaignAgg ? computeBilanScore(campaignAgg) : null;
         var allRows = [].concat.apply([], results.map(function (r) { return r.rows || []; }));
-        var dateStats = bilanDateStats(allRows);
+        var dateStats = bilanInjectionStats(allRows);
 
         var marketRefLabel = 'Moyenne du marché sur 12 mois'
             + (marketPeers.length ? (' (' + marketPeers.length + ' autre' + (marketPeers.length > 1 ? 's' : '') + ' campagne' + (marketPeers.length > 1 ? 's' : '') + ')') : ' (aucune autre campagne de ce marché)');
