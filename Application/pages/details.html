@@ -383,12 +383,7 @@
         .bilan-kpi-compare-ref { font-size: 12px; color: var(--muted-2, #8b988f); }
         .bilan-kpi-compare-ref b { color: var(--muted, #56655e); }
         @media (max-width: 900px) { .bilan-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
-        .bilan-explain-row { padding: 14px 0; border-top: 1px solid var(--line, #eaefec); }
-        .bilan-explain-row:first-child { padding-top: 0; border-top: none; }
-        .bilan-explain-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
-        .bilan-explain-label { font-weight: 700; font-size: 14px; color: var(--ink, #0c1a14); }
-        .bilan-explain-value { font-weight: 800; font-size: 14px; color: var(--muted, #56655e); }
-        .bilan-explain-text { font-size: 14px; color: var(--muted, #56655e); line-height: 1.55; max-width: 680px; }
+        .bilan-detail-text { font-size: 14.5px; color: var(--ink, #0c1a14); line-height: 1.65; max-width: 760px; }
         .bilan-manual-card .form-row:last-child { margin-bottom: 0; }
         #bilan-canal-select { max-width: 260px; }
 
@@ -5134,48 +5129,46 @@
     }
     // ── Analyse détaillée : ce que chaque taux indique concrètement, selon qu'il
     // soit au-dessus, proche ou en retrait de la moyenne du marché. Pas un simple
-    // chiffre : une explication exploitable (quoi regarder, quoi ajuster).
+    // chiffre : une explication exploitable (quoi regarder, quoi ajuster), fondue
+    // en un seul texte qui enchaîne les taux renseignés.
+    var BILAN_TIER_PHRASES = { good: 'au-dessus de la moyenne du marché', warn: 'proche de la moyenne du marché', bad: 'en retrait de la moyenne du marché' };
     var BILAN_KPI_EXPLANATIONS = {
         Tx_Ouvreurs: {
-            good: 'L\'objet du mail et le moment d\'envoi ont visiblement bien fonctionné pour capter l\'attention des destinataires.',
-            warn: 'L\'objet du mail et/ou le moment d\'envoi sont corrects mais peuvent sans doute être retravaillés pour capter davantage l\'attention.',
-            bad: 'L\'objet du mail et/ou le moment d\'envoi n\'ont probablement pas suffisamment capté l\'attention des destinataires — à retravailler en priorité.'
+            good: 'l\'objet du mail et le moment d\'envoi ont visiblement bien fonctionné pour capter l\'attention des destinataires',
+            warn: 'l\'objet du mail et/ou le moment d\'envoi sont corrects mais peuvent sans doute être retravaillés pour capter davantage l\'attention',
+            bad: 'l\'objet du mail et/ou le moment d\'envoi n\'ont probablement pas suffisamment capté l\'attention des destinataires, à retravailler en priorité'
         },
         Tx_Cliqueurs: {
-            good: 'Le contenu et l\'appel à l\'action du message donnent envie d\'aller plus loin : ceux qui ouvrent le mail cliquent bien.',
-            warn: 'Le contenu ou l\'appel à l\'action pourraient être rendus plus engageants pour convertir davantage d\'ouvreurs en clics.',
-            bad: 'Le contenu ou l\'appel à l\'action n\'incitent probablement pas assez les destinataires à cliquer, même quand ils ouvrent le mail.'
+            good: 'le contenu et l\'appel à l\'action du message donnent envie d\'aller plus loin, ceux qui ouvrent le mail cliquent bien',
+            warn: 'le contenu ou l\'appel à l\'action pourraient être rendus plus engageants pour convertir davantage d\'ouvreurs en clics',
+            bad: 'le contenu ou l\'appel à l\'action n\'incitent probablement pas assez les destinataires à cliquer, même quand ils ouvrent le mail'
         },
         Tx_Leads: {
-            good: 'La page d\'atterrissage et l\'offre convertissent bien les visiteurs intéressés en leads qualifiés.',
-            warn: 'La page d\'atterrissage ou l\'offre pourraient être optimisées pour mieux convertir les clics en leads.',
-            bad: 'La page d\'atterrissage ou l\'offre ne convertissent probablement pas assez les clics en leads — un point à vérifier en priorité.'
+            good: 'la page d\'atterrissage et l\'offre convertissent bien les visiteurs intéressés en leads qualifiés',
+            warn: 'la page d\'atterrissage ou l\'offre pourraient être optimisées pour mieux convertir les clics en leads',
+            bad: 'la page d\'atterrissage ou l\'offre ne convertissent probablement pas assez les clics en leads, un point à vérifier en priorité'
         },
         Tx_Reussite: {
-            good: 'La chaîne complète (objet, contenu, offre) fonctionne bien jusqu\'à l\'objectif final de la campagne.',
-            warn: 'La conversion globale jusqu\'à l\'objectif final est correcte mais perfectible sur l\'une des étapes du parcours.',
-            bad: 'La conversion globale jusqu\'à l\'objectif final est en retrait — plusieurs étapes du parcours méritent d\'être revues.'
+            good: 'la chaîne complète (objet, contenu, offre) fonctionne bien jusqu\'à l\'objectif final de la campagne',
+            warn: 'la conversion globale jusqu\'à l\'objectif final est correcte mais perfectible sur l\'une des étapes du parcours',
+            bad: 'la conversion globale jusqu\'à l\'objectif final est en retrait, plusieurs étapes du parcours méritent d\'être revues'
         }
     };
-    function bilanDetailRow(kp, value, cls) {
-        var expl = cls ? BILAN_KPI_EXPLANATIONS[kp.k][cls] : 'Pas encore de moyenne marché pour analyser ce taux.';
-        var h = '<div class="bilan-explain-row">';
-        h += '<div class="bilan-explain-head"><span class="bilan-kpi-icon">' + (BILAN_KPI_ICONS[kp.k] || '') + '</span>'
-            + '<span class="bilan-explain-label">' + security.escapeHtml(kp.label) + '</span>'
-            + '<span class="bilan-explain-value">' + tpct(value) + '</span>'
-            + (cls ? '<span class="bilan-kpi-tag ' + cls + '">' + BILAN_TAG_LABELS[cls] + '</span>' : '') + '</div>';
-        h += '<div class="bilan-explain-text">' + security.escapeHtml(expl) + '</div>';
-        h += '</div>';
-        return h;
+    function bilanDetailSentence(kp, value, cls) {
+        var label = security.escapeHtml(kp.label), val = tpct(value);
+        if (!cls) return label + ' (' + val + ') : pas encore de moyenne marché pour l\'analyser.';
+        return label + ' (' + val + ') est ' + BILAN_TIER_PHRASES[cls] + ' : ' + BILAN_KPI_EXPLANATIONS[kp.k][cls] + '.';
     }
     function bilanDetailCard(agg, marketAvg) {
-        var h = '<div class="bilan-card"><div class="bilan-card-title" style="margin-bottom:14px;">Ce que ça signifie</div>';
-        h += BILAN_RATE_KPIS.map(function (kp) {
+        var sentences = BILAN_RATE_KPIS.map(function (kp) {
             var v = agg ? agg[kp.k] : null;
-            if (v == null) return '';
+            if (v == null) return null;
             var m = marketAvg ? marketAvg[kp.k] : null;
-            return bilanDetailRow(kp, v, bilanCompareClass(v, m));
-        }).join('');
+            return bilanDetailSentence(kp, v, bilanCompareClass(v, m));
+        }).filter(Boolean);
+        if (!sentences.length) return '';
+        var h = '<div class="bilan-card"><div class="bilan-card-title" style="margin-bottom:12px;">Ce que ça signifie</div>';
+        h += '<div class="bilan-detail-text">' + sentences.join(' ') + '</div>';
         h += '</div>';
         return h;
     }
