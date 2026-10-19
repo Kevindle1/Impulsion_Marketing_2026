@@ -1427,6 +1427,10 @@ window.ImpulsionMarketing.workflow = (function () {
         deliverableName: c.deliverableName,
         content: c.content,
         comType: c.comType || '',
+        // Univers de besoin du canal : si vide, celui de la campagne s'applique
+        // (même règle que dans campaign.html) — utilisé par le Bilan pour comparer
+        // un canal à ses pairs du même univers de besoin.
+        ubs: (Array.isArray(c.ubs) && c.ubs.length) ? c.ubs : (campaignData.ubs || []),
         siteWebDateFin: (c.siteWeb && c.siteWeb.dateFin) ? c.siteWeb.dateFin : null,
         ebfWebmaster: (c.siteWeb && c.siteWeb.webmaster) ? c.siteWeb.webmaster : null
       };
@@ -1439,6 +1443,7 @@ window.ImpulsionMarketing.workflow = (function () {
       launch:      campaignData.launchDate || '',
       mkt:         campaignData.market || '',
       typ:         campaignData.typology || '',
+      ubs:         campaignData.ubs || [],
       chs:         chs,
       mod:         Date.now(),
       asn:         Object.assign({}, campaignData.workflow.assignments),

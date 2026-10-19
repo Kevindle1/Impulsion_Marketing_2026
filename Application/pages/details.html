@@ -313,60 +313,76 @@
         #lightbox-close:hover { opacity: 1; }
 
         /* ── Bilan ── */
-        .bilan-meta { font-size: 12px; color: var(--muted-2, #8b988f); }
-        .bilan-card { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; box-shadow: var(--shadow-xs); }
-        .bilan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-        .bilan-card-title { font-weight: 700; font-size: 0.9rem; color: var(--ink, #0c1a14); letter-spacing: -0.2px; }
-        .bilan-badge { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+        .bilan-meta { font-size: 13px; color: var(--muted-2, #8b988f); }
+        .bilan-card { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 16px; padding: 22px 26px; margin-bottom: 18px; box-shadow: var(--shadow-xs); }
+        .bilan-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+        .bilan-card-title { font-weight: 800; font-size: 1.15rem; color: var(--ink, #0c1a14); letter-spacing: -0.3px; }
+        .bilan-badge { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 5px 13px; white-space: nowrap; }
         .bilan-badge.live { color: var(--green-600, #00734C); background: var(--green-50, #e8f6ef); border: 1px solid var(--green-100, #ccebdd); }
         .bilan-badge.arch { color: var(--status-valid, #92600a); background: var(--amber-50, #fdf3e2); border: 1px solid var(--amber-100, #f0d98a); }
-        .bilan-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
-        .bilan-tile { background: var(--line-2, #f0f4f1); border: 1px solid var(--line, #eaefec); border-radius: 10px; padding: 8px 10px; }
-        .bilan-tile .lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
-        .bilan-tile .val { font-size: 1.05rem; font-weight: 750; color: var(--ink, #0c1a14); margin-top: 2px; line-height: 1.1; }
-        .bilan-tile.accent .val { color: var(--primary, #00875A); }
-        .bilan-tiles.primary { grid-template-columns: repeat(auto-fit, minmax(108px, 1fr)); margin-bottom: 8px; }
-        .bilan-tiles.sec { grid-template-columns: repeat(auto-fit, minmax(86px, 1fr)); }
-        .bilan-tile.primary { padding: 10px 12px; }
-        .bilan-tile.primary .val { font-size: 1.4rem; }
-        .bilan-tile.sec { background: transparent; }
-        .bilan-tile.sec .val { font-size: 0.95rem; font-weight: 700; }
-        .bilan-detail summary { cursor: pointer; font-size: 12px; color: var(--muted, #56655e); margin-top: 10px; }
-        .bilan-detail table { width: 100%; border-collapse: collapse; font-size: 11.5px; margin-top: 8px; }
-        .bilan-detail th { text-align: right; padding: 4px 6px; color: var(--muted-2, #8b988f); font-weight: 600; white-space: nowrap; }
+        .bilan-meta-strip { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 4px; padding-top: 16px; border-top: 1px solid var(--line, #eaefec); font-size: 13px; color: var(--muted, #56655e); }
+        .bilan-meta-strip b { color: var(--ink, #0c1a14); }
+        .bilan-detail summary { cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted, #56655e); margin-top: 14px; }
+        .bilan-detail table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+        .bilan-detail th { text-align: right; padding: 5px 7px; color: var(--muted-2, #8b988f); font-weight: 600; white-space: nowrap; }
         .bilan-detail th:first-child, .bilan-detail td:first-child { text-align: left; }
-        .bilan-detail td { text-align: right; padding: 4px 6px; border-top: 1px solid var(--line, #eaefec); white-space: nowrap; }
+        .bilan-detail td { text-align: right; padding: 5px 7px; border-top: 1px solid var(--line, #eaefec); white-space: nowrap; }
 
         /* ── Bilan : note sur 100, tableaux de taux, champs manuels ── */
-        .bilan-score-card { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; }
-        .bilan-score-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
-        .bilan-score-gauge { position: relative; width: 84px; height: 84px; flex-shrink: 0; }
+        .bilan-score-card { display: flex; flex-wrap: wrap; gap: 28px; align-items: center; justify-content: space-between; }
+        .bilan-score-head { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+        .bilan-score-gauge { position: relative; width: 136px; height: 136px; flex-shrink: 0; }
         .bilan-score-gauge svg { width: 100%; height: 100%; }
-        .bilan-score-gauge .gauge-track { fill: none; stroke: var(--line-2, #f0f4f1); stroke-width: 9; }
-        .bilan-score-gauge .gauge-fill { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dasharray .4s ease; }
+        .bilan-score-gauge .gauge-track { fill: none; stroke: var(--line-2, #f0f4f1); stroke-width: 10; }
+        .bilan-score-gauge .gauge-fill { fill: none; stroke-width: 10; stroke-linecap: round; transition: stroke-dasharray .4s ease; }
         .bilan-score-gauge .gauge-fill--good { stroke: var(--green-600, #00734C); }
         .bilan-score-gauge .gauge-fill--warn { stroke: var(--status-valid, #92600a); }
         .bilan-score-gauge .gauge-fill--bad { stroke: var(--red, #E2001A); }
         .bilan-score-gauge-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .bilan-score-value { font-size: 1.5rem; font-weight: 800; color: var(--ink, #0c1a14); line-height: 1.1; }
-        .bilan-score-outof { font-size: 9px; font-weight: 700; color: var(--muted-2, #8b988f); letter-spacing: 0.3px; }
-        .bilan-score-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); margin-bottom: 4px; }
-        .bilan-score-hint { font-size: 11.5px; color: var(--muted-2, #8b988f); line-height: 1.5; max-width: 260px; }
-        .bilan-meta-row { display: flex; gap: 22px; flex-wrap: wrap; }
-        .bilan-meta-item { display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 650; color: var(--ink, #0c1a14); padding-left: 16px; border-left: 2px solid var(--line, #eaefec); }
+        .bilan-score-value { font-size: 2.7rem; font-weight: 800; color: var(--ink, #0c1a14); line-height: 1; }
+        .bilan-score-outof { font-size: 12px; font-weight: 700; color: var(--muted-2, #8b988f); letter-spacing: 0.3px; margin-top: 2px; }
+        .bilan-score-tier { display: inline-block; margin-top: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; padding: 3px 10px; border-radius: 999px; }
+        .bilan-score-tier.good { background: var(--green-50, #e8f6ef); color: var(--green-700, #005C3D); }
+        .bilan-score-tier.warn { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #92600a); }
+        .bilan-score-tier.bad { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .bilan-score-tag { display: inline-block; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; padding: 4px 11px; border-radius: 999px; margin-bottom: 10px; }
+        .bilan-score-tag.good { background: var(--green-50, #e8f6ef); color: var(--green-700, #005C3D); }
+        .bilan-score-tag.warn { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #92600a); }
+        .bilan-score-tag.bad { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .bilan-score-insight { font-size: 16px; font-weight: 650; color: var(--ink, #0c1a14); line-height: 1.45; max-width: 520px; margin-bottom: 8px; }
+        .bilan-score-legend { font-size: 12.5px; color: var(--muted, #56655e); display: flex; align-items: flex-start; gap: 6px; max-width: 520px; line-height: 1.45; }
+        .bilan-score-legend svg { flex-shrink: 0; margin-top: 1px; color: var(--muted-2, #8b988f); }
+        .bilan-score-legend b { color: var(--muted, #56655e); }
+        .bilan-meta-row { display: flex; gap: 30px; flex-wrap: wrap; }
+        .bilan-meta-item { display: flex; flex-direction: column; gap: 4px; font-size: 19px; font-weight: 800; color: var(--ink, #0c1a14); padding-left: 20px; border-left: 2px solid var(--line, #eaefec); }
         .bilan-meta-item:first-child { padding-left: 0; border-left: none; }
-        .bilan-meta-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
-        .bilan-rate-table-wrap { overflow-x: auto; }
-        .bilan-rate-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .bilan-rate-table th { text-align: center; padding: 6px 8px; font-size: 11px; font-weight: 700; color: var(--muted-2, #8b988f); text-transform: uppercase; letter-spacing: 0.3px; }
-        .bilan-rate-table td { text-align: center; padding: 8px; border-top: 1px solid var(--line, #eaefec); white-space: nowrap; }
-        .bilan-rate-table td:first-child, .bilan-rate-table th:first-child { text-align: left; font-weight: 650; color: var(--ink, #0c1a14); white-space: normal; }
-        .bilan-rate-table tr.row-ref td { color: var(--muted, #56655e); font-size: 12.5px; }
-        .bilan-rate-table tr.row-ref:first-of-type td { border-top: 2px solid var(--line, #eaefec); }
-        .bilan-rate-cell { font-weight: 750; border-radius: 8px; }
-        .bilan-rate-cell.good { background: var(--green-50, #e8f6ef); color: var(--green-700, #005C3D); }
-        .bilan-rate-cell.warn { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #92600a); }
-        .bilan-rate-cell.bad { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .bilan-meta-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted-2, #8b988f); }
+        .bilan-kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .bilan-kpi-card { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 14px; padding: 18px 20px; border-top: 4px solid var(--line, #eaefec); }
+        .bilan-kpi-card.good { border-top-color: var(--green-600, #00734C); }
+        .bilan-kpi-card.warn { border-top-color: var(--status-valid, #92600a); }
+        .bilan-kpi-card.bad { border-top-color: var(--red, #E2001A); }
+        .bilan-kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .bilan-kpi-icon { color: var(--muted-2, #8b988f); display: inline-flex; }
+        .bilan-kpi-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; padding: 3px 9px; border-radius: 999px; }
+        .bilan-kpi-tag.good { background: var(--green-50, #e8f6ef); color: var(--green-700, #005C3D); }
+        .bilan-kpi-tag.warn { background: var(--amber-50, #fdf3e2); color: var(--status-valid, #92600a); }
+        .bilan-kpi-tag.bad { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        .bilan-kpi-label { font-size: 12px; font-weight: 700; color: var(--muted, #56655e); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
+        .bilan-kpi-value { font-size: 2rem; font-weight: 800; color: var(--ink, #0c1a14); line-height: 1; margin-bottom: 8px; }
+        .bilan-kpi-progress { height: 7px; border-radius: 999px; background: var(--line-2, #f0f4f1); margin-bottom: 10px; overflow: hidden; }
+        .bilan-kpi-progress-fill { height: 100%; border-radius: 999px; background: var(--muted-2, #8b988f); }
+        .bilan-kpi-progress-fill.good { background: var(--green-600, #00734C); }
+        .bilan-kpi-progress-fill.warn { background: var(--status-valid, #92600a); }
+        .bilan-kpi-progress-fill.bad { background: var(--red, #E2001A); }
+        .bilan-kpi-compare { display: flex; flex-direction: column; gap: 3px; }
+        .bilan-kpi-compare-val { font-size: 13px; font-weight: 700; color: var(--muted, #56655e); }
+        .bilan-kpi-compare-val.good { color: var(--green-700, #005C3D); }
+        .bilan-kpi-compare-val.warn { color: var(--status-valid, #92600a); }
+        .bilan-kpi-compare-val.bad { color: var(--red, #E2001A); }
+        .bilan-kpi-compare-ref { font-size: 12px; color: var(--muted-2, #8b988f); }
+        .bilan-kpi-compare-ref b { color: var(--muted, #56655e); }
+        @media (max-width: 900px) { .bilan-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
         .bilan-manual-card .form-row:last-child { margin-bottom: 0; }
         #bilan-canal-select { max-width: 260px; }
 
@@ -4605,17 +4621,19 @@
     var BILAN_CHART_RATES = _BILAN_CFG.chartRates || ['Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
 
     // ── Note sur 100 : poids/cible par taux (Administration ▸ Bilan ▸ Note sur 100).
-    // Tx_Leads est calculé (Nb_leads / Nb_Envois), le fichier de suivi ne fournissant
-    // qu'un nombre de leads brut — cf. bilanAggregate().
+    // Tx_Leads est calculé (Nb_leads / Nb_communications), le fichier de suivi ne
+    // fournissant qu'un nombre de leads brut — cf. bilanAggregate().
     var BILAN_SCORE_KPIS = (_BILAN_CFG.score && Array.isArray(_BILAN_CFG.score.kpis) && _BILAN_CFG.score.kpis.length) ? _BILAN_CFG.score.kpis : [
         { k: 'Tx_Ouvreurs', label: 'Taux d\'ouvreurs', target: 40, weight: 1 },
         { k: 'Tx_Cliqueurs', label: 'Taux de clic', target: 6, weight: 2 },
         { k: 'Tx_Leads', label: 'Taux de leads', target: 3, weight: 3 },
         { k: 'Tx_Reussite', label: 'Taux de réussite', target: 1, weight: 4 }
     ];
-    // ── Colonne de date du fichier de suivi (optionnelle) : permet de calculer
-    // automatiquement 1ère injection / dernière exécution / fréquence constatée.
-    var BILAN_DATE_COLUMN = _BILAN_CFG.dateColumn || '';
+    // ── Colonnes déjà calculées par le fichier de suivi (dates sur 12 mois glissants
+    // + fréquence) : on les relit telles quelles, sans rien recalculer.
+    var BILAN_FIRST_INJ_COL = _BILAN_CFG.firstInjectionColumn || 'Date_1ere_injection_sur_12M';
+    var BILAN_LAST_INJ_COL = _BILAN_CFG.lastInjectionColumn || 'Date_derniere_injection_sur_12M';
+    var BILAN_FREQ_COL = _BILAN_CFG.frequencyColumn || 'Frequence_execution';
     // Les 4 taux affichés dans les tableaux « Performance de la campagne / du canal ».
     var BILAN_RATE_KPIS = [
         { k: 'Tx_Ouvreurs', label: 'Taux d\'ouvreurs' },
@@ -4632,8 +4650,12 @@
     function bilanToNumber(v) { v = bilanClean(v); if (v === '') return null; var n = Number(v.replace(',', '.')); return isNaN(n) ? null : n; }
     function bilanDateShort(iso) { try { return new Date(iso).toLocaleDateString('fr-FR'); } catch (e) { return ''; } }
 
-    // Date d'une cellule du fichier de suivi : numéro de série Excel, ou texte
-    // JJ/MM/AAAA, ou toute date analysable par le navigateur. Renvoie null sinon.
+    // Date d'une cellule du fichier de suivi : format français abrégé sans séparateurs
+    // (ex. « 06juil2025 », « 22août2025 »), numéro de série Excel, JJ/MM/AAAA, ou
+    // toute date analysable par le navigateur.
+    var FR_MONTHS = { janv: 1, fevr: 2, mars: 3, avr: 4, mai: 5, juin: 6, juil: 7, aout: 8, sept: 9, oct: 10, nov: 11, dec: 12 };
+    var FR_MONTH_KEYS = Object.keys(FR_MONTHS).sort(function (a, b) { return b.length - a.length; });
+    function stripAccents(s) { return s.normalize ? s.normalize('NFD').replace(/[̀-ͯ]/g, '') : s; }
     function bilanParseDate(v) {
         v = bilanClean(v);
         if (v === '') return null;
@@ -4644,31 +4666,33 @@
                 if (!isNaN(d0.getTime())) return d0;
             }
         }
+        var norm = stripAccents(v.toLowerCase()).replace(/\s+/g, '');
+        var mFr = /^(\d{1,2})([a-z]+)(\d{4})$/.exec(norm);
+        if (mFr) {
+            var monStr = mFr[2], monNum = null;
+            for (var i = 0; i < FR_MONTH_KEYS.length; i++) { if (monStr.indexOf(FR_MONTH_KEYS[i]) === 0) { monNum = FR_MONTHS[FR_MONTH_KEYS[i]]; break; } }
+            if (monNum) { var dFr = new Date(Date.UTC(+mFr[3], monNum - 1, +mFr[1])); if (!isNaN(dFr.getTime())) return dFr; }
+        }
         var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(v);
         if (m) { var d1 = new Date(Date.UTC(+m[3], +m[2] - 1, +m[1])); return isNaN(d1.getTime()) ? null : d1; }
         var d2 = new Date(v);
         return isNaN(d2.getTime()) ? null : d2;
     }
-    // 1ère injection / dernière exécution / fréquence constatée, déduites des dates
-    // présentes dans les lignes du suivi (nécessite BILAN_DATE_COLUMN configurée).
-    function bilanDateStats(rows) {
-        if (!BILAN_DATE_COLUMN) return null;
-        var times = [];
-        rows.forEach(function (o) { var d = bilanParseDate(o[BILAN_DATE_COLUMN]); if (d) times.push(d.getTime()); });
-        if (!times.length) return null;
-        var uniq = times.filter(function (t, i) { return times.indexOf(t) === i; }).sort(function (a, b) { return a - b; });
-        var freqLabel;
-        if (uniq.length > 1) {
-            var avgDays = Math.round((uniq[uniq.length - 1] - uniq[0]) / (uniq.length - 1) / 86400000);
-            if (avgDays <= 1) freqLabel = 'Quotidienne';
-            else if (avgDays <= 8) freqLabel = 'Hebdomadaire';
-            else if (avgDays <= 16) freqLabel = 'Toutes les 2 semaines';
-            else if (avgDays <= 35) freqLabel = 'Mensuelle';
-            else freqLabel = 'Tous les ' + avgDays + ' jours';
-        } else {
-            freqLabel = 'Ponctuelle';
-        }
-        return { first: new Date(uniq[0]), last: new Date(uniq[uniq.length - 1]), freqLabel: freqLabel };
+    // 1ère injection / dernière injection / fréquence : le fichier de suivi fournit
+    // déjà ces 3 valeurs toutes calculées par ligne (sur 12 mois glissants) — on les
+    // relit directement depuis la première ligne qui les renseigne, sans recalculer.
+    function bilanInjectionStats(rows) {
+        var firstRaw = null, lastRaw = null, freqRaw = null;
+        rows.some(function (o) {
+            if (!firstRaw && o[BILAN_FIRST_INJ_COL]) firstRaw = o[BILAN_FIRST_INJ_COL];
+            if (!lastRaw && o[BILAN_LAST_INJ_COL]) lastRaw = o[BILAN_LAST_INJ_COL];
+            if (!freqRaw && o[BILAN_FREQ_COL]) freqRaw = o[BILAN_FREQ_COL];
+            return firstRaw && lastRaw && freqRaw;
+        });
+        var first = firstRaw ? bilanParseDate(firstRaw) : null;
+        var last = lastRaw ? bilanParseDate(lastRaw) : null;
+        if (!first && !last && !freqRaw) return null;
+        return { first: first, last: last, freqLabel: freqRaw || '' };
     }
 
     function collectSuiviXlsx(dir) {
@@ -4754,6 +4778,34 @@
         _marketPeersCache[market] = p;
         return p;
     }
+    // ── Univers de besoin : même mécanisme que la moyenne marché, mais les pairs
+    // sont les autres campagnes (ou canaux) qui partagent au moins un univers de
+    // besoin avec la campagne courante (campaignData.ubs — tableau, un canal sans
+    // univers de besoin propre hérite de celui de la campagne, cf. extractIndexEntry).
+    var _ubsPeersCache = {};
+    function arraysOverlap(a, b) {
+        if (!a || !b || !a.length || !b.length) return false;
+        for (var i = 0; i < a.length; i++) { if (b.indexOf(a[i]) !== -1) return true; }
+        return false;
+    }
+    function loadUbsPeers(ubs, excludeName) {
+        if (!ubs || !ubs.length) return Promise.resolve([]);
+        var key = ubs.slice().sort().join('|');
+        if (_ubsPeersCache[key]) return _ubsPeersCache[key];
+        var p = loadMarketIndex().then(function (campaigns) {
+            var names = Object.keys(campaigns).filter(function (n) { return n !== excludeName && arraysOverlap(campaigns[n].ubs, ubs); });
+            return Promise.all(names.map(function (n) {
+                return loadCampaignChannels(n).then(function (channels) {
+                    return Promise.all(channels.map(function (ch, i) { return resolveChannelRows(n, ch, i).catch(function () { return []; }); }))
+                        .then(function (rowsList) {
+                            return { name: n, results: channels.map(function (ch, i) { return { content: ch.content, rows: rowsList[i] || [] }; }) };
+                        });
+                }).catch(function () { return null; });
+            })).then(function (list) { return list.filter(Boolean); });
+        }).catch(function () { return []; });
+        _ubsPeersCache[key] = p;
+        return p;
+    }
     // Moyenne du marché — tableau « Performance de la campagne » : moyenne simple
     // des agrégats de CHAQUE AUTRE campagne du marché (un point par campagne,
     // pas pondéré par le volume — cohérent avec « diviser par le nombre de
@@ -4811,7 +4863,9 @@
         var o = {};
         BILAN_IDENT.forEach(function (k) { o[k] = (col[k] != null) ? bilanClean(row[col[k]]) : ''; });
         BILAN_KPIS.forEach(function (kp) { o[kp.k] = (col[kp.k] != null) ? bilanClean(row[col[kp.k]]) : ''; });
-        if (BILAN_DATE_COLUMN && col[BILAN_DATE_COLUMN] != null) o[BILAN_DATE_COLUMN] = bilanClean(row[col[BILAN_DATE_COLUMN]]);
+        [BILAN_FIRST_INJ_COL, BILAN_LAST_INJ_COL, BILAN_FREQ_COL].forEach(function (k) {
+            if (k && col[k] != null) o[k] = bilanClean(row[col[k]]);
+        });
         return o;
     }
 
@@ -4848,11 +4902,13 @@
         if (!loading || !content) return;
         var channels = currentCampaignData.channels || [];
         var market = currentCampaignData.market || '';
-        // loadMarketPeers() s'appuie sur _suiviIndex (via resolveChannelRows) : il doit
-        // attendre que loadSuiviFile() ait fini de le peupler, pas tourner en parallèle.
+        var ubs = currentCampaignData.ubs || [];
+        // loadMarketPeers()/loadUbsPeers() s'appuient sur _suiviIndex (via
+        // resolveChannelRows) : ils doivent attendre que loadSuiviFile() ait fini de
+        // le peupler, pas tourner en parallèle.
         loadSuiviFile().then(function (idx) {
-            return Promise.all([readBilanSnapshot(campaignName), loadMarketPeers(market, campaignName)]).then(function (r) {
-            var snap = r[0] || { channels: {} }, marketPeers = r[1] || [];
+            return Promise.all([readBilanSnapshot(campaignName), loadMarketPeers(market, campaignName), loadUbsPeers(ubs, campaignName)]).then(function (r) {
+            var snap = r[0] || { channels: {} }, marketPeers = r[1] || [], ubsPeers = r[2] || [];
             Promise.all(channels.map(function (ch, i) { return readChannelCodes(campaignName, i); }))
                 .then(function (codesList) {
                     var results = [], snapChanged = false;
@@ -4873,11 +4929,11 @@
                     });
                     if (snapChanged) writeBilanSnapshot(campaignName, snap);
                     _bilanResults = results;
-                    _bilanState = { campaignName: campaignName, channels: channels, results: results, idx: idx, marketPeers: marketPeers, snap: snap };
+                    _bilanState = { campaignName: campaignName, channels: channels, results: results, idx: idx, marketPeers: marketPeers, ubsPeers: ubsPeers, snap: snap };
                     _bilanCanalIdx = 0;
                     for (var fi = 0; fi < results.length; fi++) { if (results[fi].rows && results[fi].rows.length) { _bilanCanalIdx = fi; break; } }
                     loading.style.display = 'none'; content.style.display = 'block';
-                    renderBilanContent(channels, results, idx, marketPeers, snap);
+                    renderBilanContent(channels, results, idx, marketPeers, ubsPeers, snap);
                 });
             });
         });
@@ -4899,24 +4955,14 @@
 
     function tnum(n) { return (n == null) ? '—' : Math.round(n).toLocaleString('fr-FR'); }
     function tpct(n) { return (n == null) ? '—' : (Math.round(n * 10) / 10).toLocaleString('fr-FR') + ' %'; }
-    function bilanTile(lbl, val, cls) {
-        return '<div class="bilan-tile ' + cls + '"><div class="lbl">' + lbl + '</div><div class="val">' + security.escapeHtml(val) + '</div></div>';
-    }
-    function bilanTiles(agg) {
-        // Principaux : envois + taux clés (on masque un taux absent).
-        var prim = [bilanTile('Envois', tnum(agg.Nb_Envois), 'primary')];
-        if (agg.Tx_Ouvreurs != null) prim.push(bilanTile('Tx ouverture', tpct(agg.Tx_Ouvreurs), 'primary accent'));
-        if (agg.Tx_Cliqueurs != null) prim.push(bilanTile('Tx clic', tpct(agg.Tx_Cliqueurs), 'primary accent'));
-        if (agg.Tx_Reussite != null) prim.push(bilanTile('Tx réussite', tpct(agg.Tx_Reussite), 'primary accent'));
-        // Secondaires : on masque les valeurs vides, et les zéros peu informatifs.
-        var sec = [];
-        if (agg.Nb_communications != null) sec.push(bilanTile('Comm.', tnum(agg.Nb_communications), 'sec'));
-        if (agg.Nb_MDC_Actifs != null && agg.Nb_MDC_Actifs !== 0) sec.push(bilanTile('MDC actifs', tnum(agg.Nb_MDC_Actifs), 'sec'));
-        if (agg.Tx_Desabonnement != null) sec.push(bilanTile('Tx désab.', tpct(agg.Tx_Desabonnement), 'sec'));
-        if (agg.Nb_leads != null && agg.Nb_leads !== 0) sec.push(bilanTile('Leads', tnum(agg.Nb_leads), 'sec'));
-        var h = '<div class="bilan-tiles primary">' + prim.join('') + '</div>';
-        if (sec.length) h += '<div class="bilan-tiles sec">' + sec.join('') + '</div>';
-        return h;
+    // Ligne compacte de stats secondaires (volume), sous les cartes KPI d'un canal.
+    function bilanMetaStrip(agg) {
+        var parts = ['Envois <b>' + tnum(agg.Nb_Envois) + '</b>'];
+        if (agg.Nb_communications != null) parts.push('Communications <b>' + tnum(agg.Nb_communications) + '</b>');
+        if (agg.Nb_MDC_Actifs != null && agg.Nb_MDC_Actifs !== 0) parts.push('MDC actifs <b>' + tnum(agg.Nb_MDC_Actifs) + '</b>');
+        if (agg.Tx_Desabonnement != null) parts.push('Désabonnement <b>' + tpct(agg.Tx_Desabonnement) + '</b>');
+        if (agg.Nb_leads != null && agg.Nb_leads !== 0) parts.push('Leads <b>' + tnum(agg.Nb_leads) + '</b>');
+        return '<div class="bilan-meta-strip">' + parts.join(' &nbsp;·&nbsp; ') + '</div>';
     }
 
     // Agrège les lignes d'un canal : pour chaque KPI de BILAN_KPIS (piloté par
@@ -4937,8 +4983,11 @@
             }
         });
         // Taux de leads, calculé — le fichier de suivi ne fournit qu'un nombre de
-        // leads brut (Nb_leads), pas de taux. Nécessite des envois (> 0).
-        agg.Tx_Leads = (agg.Nb_leads != null && agg.Nb_Envois) ? (agg.Nb_leads / agg.Nb_Envois * 100) : null;
+        // leads brut (Nb_leads), pas de taux. Rapporté au volume réel de messages
+        // envoyés (Nb_communications), PAS à Nb_Envois qui compte des injections/
+        // vagues d'envoi (un petit nombre, ex. 3) et non un volume — sinon le taux
+        // explose au-delà de 100 %.
+        agg.Tx_Leads = (agg.Nb_leads != null && agg.Nb_communications) ? (agg.Nb_leads / agg.Nb_communications * 100) : null;
         return agg;
     }
 
@@ -5016,44 +5065,97 @@
         });
     }
     // ── Rendu des tableaux « Performance de la campagne / du canal » ──
-    function bilanRateCell(v, cls) { return '<td class="bilan-rate-cell' + (cls ? ' ' + cls : '') + '">' + tpct(v) + '</td>'; }
-    function bilanRateTable(rowLabel, agg, marketAvg, refLabel) {
-        var h = '<div class="bilan-rate-table-wrap"><table class="bilan-rate-table"><thead><tr><th></th>';
-        BILAN_RATE_KPIS.forEach(function (kp) { h += '<th>' + security.escapeHtml(kp.label) + '</th>'; });
-        h += '</tr></thead><tbody>';
-        h += '<tr class="row-main"><td>' + security.escapeHtml(rowLabel) + '</td>';
-        BILAN_RATE_KPIS.forEach(function (kp) {
-            var v = agg ? agg[kp.k] : null;
-            var m = marketAvg ? marketAvg[kp.k] : null;
-            h += bilanRateCell(v, bilanCompareClass(v, m));
-        });
-        h += '</tr>';
-        h += '<tr class="row-ref"><td>' + security.escapeHtml(refLabel) + '</td>';
-        BILAN_RATE_KPIS.forEach(function (kp) { var m = marketAvg ? marketAvg[kp.k] : null; h += '<td>' + tpct(m) + '</td>'; });
-        h += '</tr>';
-        h += '</tbody></table></div>';
+    // ── Icônes (SVG autonomes, un trait, une par taux) ──
+    var BILAN_KPI_ICONS = {
+        Tx_Ouvreurs: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>',
+        Tx_Cliqueurs: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l7.07 17 2.51-7.39L21 11.07z"/></svg>',
+        Tx_Leads: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>',
+        Tx_Reussite: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4Z"/><path d="M17 5h2.5a1 1 0 0 1 1 1.3A4.5 4.5 0 0 1 17 9M7 5H4.5a1 1 0 0 0-1 1.3A4.5 4.5 0 0 0 7 9"/></svg>'
+    };
+    var BILAN_TAG_LABELS = { good: 'Au-dessus', warn: 'Proche', bad: 'En retrait' };
+    function bilanPeerCountLabel(n) { return n ? (' (' + n + ' campagne' + (n > 1 ? 's' : '') + ')') : ''; }
+    function bilanDeltaLabel(value, ref) {
+        if (value == null || ref == null) return '';
+        var d = value - ref, sign = d >= 0 ? '+' : '';
+        return sign + (Math.round(d * 10) / 10).toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' pts vs marché';
+    }
+    // Une carte KPI : valeur + barre vs marché (pilote la couleur, toujours dispo car
+    // calculée automatiquement) + comparaisons marché et univers de besoin en texte.
+    function bilanKpiCard(kp, value, marketAvg, marketCount, ubsAvg, ubsCount) {
+        var cls = bilanCompareClass(value, marketAvg);
+        var fillPct = (value != null && marketAvg) ? Math.min(100, (value / marketAvg) * 100) : 0;
+        var h = '<div class="bilan-kpi-card' + (cls ? ' ' + cls : '') + '">';
+        h += '<div class="bilan-kpi-top"><span class="bilan-kpi-icon">' + (BILAN_KPI_ICONS[kp.k] || '') + '</span>'
+            + (cls ? '<span class="bilan-kpi-tag ' + cls + '">' + BILAN_TAG_LABELS[cls] + '</span>' : '') + '</div>';
+        h += '<div class="bilan-kpi-label">' + security.escapeHtml(kp.label) + '</div>';
+        h += '<div class="bilan-kpi-value">' + tpct(value) + '</div>';
+        h += '<div class="bilan-kpi-progress"><div class="bilan-kpi-progress-fill' + (cls ? ' ' + cls : '') + '" style="width:' + fillPct.toFixed(1) + '%"></div></div>';
+        h += '<div class="bilan-kpi-compare">';
+        if (marketAvg != null) {
+            h += '<div class="bilan-kpi-compare-val ' + cls + '">' + bilanDeltaLabel(value, marketAvg) + '</div>'
+                + '<div class="bilan-kpi-compare-ref">Moyenne du marché : <b>' + tpct(marketAvg) + '</b>' + bilanPeerCountLabel(marketCount) + '</div>';
+        } else {
+            h += '<div class="bilan-kpi-compare-ref">Pas encore de moyenne marché disponible</div>';
+        }
+        h += '<div class="bilan-kpi-compare-ref">Univers de besoin : <b>' + tpct(ubsAvg) + '</b>' + bilanPeerCountLabel(ubsCount) + '</div>';
+        h += '</div></div>';
         return h;
+    }
+    function bilanKpiGrid(agg, marketAvg, marketCount, ubsAvg, ubsCount) {
+        return '<div class="bilan-kpi-grid">' + BILAN_RATE_KPIS.map(function (kp) {
+            return bilanKpiCard(kp, agg ? agg[kp.k] : null, marketAvg ? marketAvg[kp.k] : null, marketCount, ubsAvg ? ubsAvg[kp.k] : null, ubsCount);
+        }).join('') + '</div>';
+    }
+    // Phrase d'analyse auto-générée : repère le taux le plus fort et le plus faible
+    // par rapport au marché (seule comparaison toujours disponible).
+    function bilanInsightSentence(agg, marketAvg) {
+        var items = BILAN_RATE_KPIS.map(function (kp) {
+            var v = agg ? agg[kp.k] : null, m = marketAvg ? marketAvg[kp.k] : null;
+            if (v == null || !m) return null;
+            return { label: kp.label, ratio: v / m, cls: bilanCompareClass(v, m) };
+        }).filter(Boolean);
+        if (!items.length) return 'Pas encore assez de données marché pour analyser cette campagne.';
+        items.sort(function (a, b) { return a.ratio - b.ratio; });
+        var worst = items[0], best = items[items.length - 1];
+        if (worst.cls === 'good') return 'Tous les taux renseignés sont au-dessus de la moyenne du marché — bonne performance d\'ensemble.';
+        if (items.length === 1 || best.label === worst.label) return worst.label + ' est ' + (worst.cls === 'bad' ? 'nettement en retrait' : 'un peu en retrait') + ' de la moyenne du marché.';
+        return best.label + ' tient la route, mais ' + worst.label.charAt(0).toLowerCase() + worst.label.slice(1) + ' est ' + (worst.cls === 'bad' ? 'très en retrait' : 'un peu en retrait') + ' de la moyenne du marché.';
+    }
+    function bilanComparisonLegend(marketCount, ubsCount) {
+        return 'Chaque taux est comparé à la <b>moyenne du marché</b> sur 12 mois' + bilanPeerCountLabel(marketCount)
+            + (marketCount ? '' : ' (aucune autre campagne de ce marché)')
+            + ' et à l\'<b>univers de besoin</b>' + bilanPeerCountLabel(ubsCount) + (ubsCount ? '' : ' (aucune autre campagne de cet univers)') + '.';
     }
     // Jauge circulaire (SVG autonome) : anneau coloré selon le palier de la note
     // (vert ≥ 70, orange ≥ 40, rouge en dessous), valeur au centre.
+    var BILAN_SCORE_TIER_LABELS = { good: 'Bon', warn: 'Moyen', bad: 'Faible' };
+    var BILAN_SCORE_TAG_LABELS = { good: 'Bonne performance', warn: 'Performance moyenne', bad: 'Performance en retrait' };
+    function bilanScoreTier(score) { return score == null ? '' : (score >= 70 ? 'good' : (score >= 40 ? 'warn' : 'bad')); }
     function bilanScoreGauge(score) {
         var r = 42, c = 2 * Math.PI * r;
         var pct = score == null ? 0 : Math.max(0, Math.min(100, score));
-        var tier = score == null ? '' : (score >= 70 ? 'good' : (score >= 40 ? 'warn' : 'bad'));
+        var tier = bilanScoreTier(score);
         var dash = (pct / 100 * c).toFixed(1);
         return '<div class="bilan-score-gauge">'
             + '<svg viewBox="0 0 100 100">'
             + '<circle cx="50" cy="50" r="' + r + '" class="gauge-track"/>'
             + (score != null ? '<circle cx="50" cy="50" r="' + r + '" class="gauge-fill gauge-fill--' + tier + '" stroke-dasharray="' + dash + ' ' + c.toFixed(1) + '" transform="rotate(-90 50 50)"/>' : '')
             + '</svg>'
-            + '<div class="bilan-score-gauge-center"><div class="bilan-score-value">' + (score == null ? '—' : score) + '</div><div class="bilan-score-outof">/ 100</div></div>'
+            + '<div class="bilan-score-gauge-center"><div class="bilan-score-value">' + (score == null ? '—' : score) + '</div><div class="bilan-score-outof">/ 100</div>'
+            + (tier ? '<span class="bilan-score-tier ' + tier + '">' + BILAN_SCORE_TIER_LABELS[tier] + '</span>' : '')
+            + '</div>'
             + '</div>';
     }
-    function bilanScoreCard(score, dateStats) {
+    function bilanScoreCard(score, dateStats, insightText, marketCount, ubsCount) {
+        var tier = bilanScoreTier(score);
         var h = '<div class="bilan-card bilan-score-card">';
         h += '<div class="bilan-score-head">';
         h += bilanScoreGauge(score);
-        h += '<div class="bilan-score-text"><div class="bilan-score-label">Note sur 100</div><div class="bilan-score-hint">Vert / orange / rouge : comparaison au marché.<br>Pondération automatique hors cases vides.</div></div>';
+        h += '<div class="bilan-score-text">';
+        if (tier) h += '<span class="bilan-score-tag ' + tier + '">' + BILAN_SCORE_TAG_LABELS[tier] + '</span>';
+        h += '<div class="bilan-score-insight">' + security.escapeHtml(insightText) + '</div>';
+        h += '<div class="bilan-score-legend">' + BILAN_KPI_ICONS.Tx_Leads + '<span>' + bilanComparisonLegend(marketCount, ubsCount) + '</span></div>';
+        h += '</div>';
         h += '</div>';
         h += '<div class="bilan-meta-row">';
         h += '<div class="bilan-meta-item"><span class="bilan-meta-label">Date 1ère injection</span><span>' + (dateStats && dateStats.first ? bilanDateShort(dateStats.first) : '—') + '</span></div>';
@@ -5063,13 +5165,18 @@
         h += '</div>';
         return h;
     }
-    function renderCanalBody(channels, results, marketPeers, i) {
+    function bilanCanalPeerCount(peers, content) {
+        var n = 0;
+        (peers || []).forEach(function (p) { p.results.forEach(function (r) { if (r.content === content && r.rows.length) n++; }); });
+        return n;
+    }
+    function renderCanalBody(channels, results, marketPeers, ubsPeers, i) {
         var ch = channels[i], res = results[i];
         if (!ch || !res) return '';
         var badge = '';
         if (res.source === 'archive') badge = '<span class="bilan-badge arch">🗄️ Archivé le ' + bilanDateShort(res.savedAt) + (res.label ? ' · ' + security.escapeHtml(res.label) : '') + '</span>';
         else if (res.source === 'live') badge = '<span class="bilan-badge live">● À jour' + (res.label ? ' · ' + security.escapeHtml(res.label) : '') + '</span>';
-        var h = badge ? '<div style="margin-bottom:8px;">' + badge + '</div>' : '';
+        var h = badge ? '<div style="margin-bottom:14px;">' + badge + '</div>' : '';
         if (!res.rows || !res.rows.length) {
             var hasCodes = res.codes && (res.codes.codeActions.length || res.codes.codeComs.length);
             h += '<div style="font-size:12px;color:var(--muted-2);">— ' + (hasCodes ? 'aucune ligne correspondante (ni dans le fichier ni en archive)' : 'code action / communication non renseigné dans les dépôts') + '</div>';
@@ -5077,8 +5184,9 @@
         }
         var agg = bilanAggregate(res.rows);
         var marketAvg = bilanMarketCanalAvg(marketPeers || [], ch.content);
-        h += bilanRateTable('Performance du canal', agg, marketAvg, 'Moyenne marché (même canal) sur 12 mois');
-        h += bilanTiles(agg);
+        var ubsAvg = bilanMarketCanalAvg(ubsPeers || [], ch.content);
+        h += bilanKpiGrid(agg, marketAvg, bilanCanalPeerCount(marketPeers, ch.content), ubsAvg, bilanCanalPeerCount(ubsPeers, ch.content));
+        h += bilanMetaStrip(agg);
         if (res.rows.length > 1) h += '<details class="bilan-detail"><summary>Détail (' + res.rows.length + ' lignes)</summary>' + bilanTable(res.rows) + '</details>';
         return h;
     }
@@ -5088,7 +5196,7 @@
         sel.addEventListener('change', function () {
             _bilanCanalIdx = parseInt(sel.value, 10) || 0;
             var body = document.getElementById('bilan-canal-body');
-            if (body && _bilanState) body.innerHTML = renderCanalBody(_bilanState.channels, _bilanState.results, _bilanState.marketPeers, _bilanCanalIdx);
+            if (body && _bilanState) body.innerHTML = renderCanalBody(_bilanState.channels, _bilanState.results, _bilanState.marketPeers, _bilanState.ubsPeers, _bilanCanalIdx);
         });
     }
     function bilanManualCard(snap) {
@@ -5131,10 +5239,11 @@
         });
     }
 
-    function renderBilanContent(channels, results, idx, marketPeers, snap) {
+    function renderBilanContent(channels, results, idx, marketPeers, ubsPeers, snap) {
         var content = document.getElementById('bilan-content'), fileEl = document.getElementById('bilan-file');
         if (!content) return;
         marketPeers = marketPeers || [];
+        ubsPeers = ubsPeers || [];
         snap = snap || { channels: {} };
         if (fileEl) fileEl.textContent = idx ? ('Fichier courant : ' + (idx.label || '') + ' · 12 mois glissants') : 'Aucun fichier de suivi dans « Suivi »';
         if (!channels.length) { content.innerHTML = '<p style="color:var(--muted-2);font-size:13px;margin:0;">Aucun canal sur cette campagne.</p>'; return; }
@@ -5159,15 +5268,15 @@
 
         var campaignAgg = bilanCampaignAggregate(results);
         var campaignMarketAvg = bilanMarketCampaignAvg(marketPeers);
+        var campaignUbsAvg = bilanMarketCampaignAvg(ubsPeers);
         var score = campaignAgg ? computeBilanScore(campaignAgg) : null;
         var allRows = [].concat.apply([], results.map(function (r) { return r.rows || []; }));
-        var dateStats = bilanDateStats(allRows);
+        var dateStats = bilanInjectionStats(allRows);
 
-        var marketRefLabel = 'Moyenne du marché sur 12 mois'
-            + (marketPeers.length ? (' (' + marketPeers.length + ' autre' + (marketPeers.length > 1 ? 's' : '') + ' campagne' + (marketPeers.length > 1 ? 's' : '') + ')') : ' (aucune autre campagne de ce marché)');
-        var topHtml = bilanScoreCard(score, dateStats);
-        topHtml += '<div class="bilan-card"><div class="bilan-card-title" style="margin-bottom:10px;">Performance de la campagne</div>'
-            + bilanRateTable('Performance de la campagne', campaignAgg, campaignMarketAvg, marketRefLabel)
+        var insightText = bilanInsightSentence(campaignAgg, campaignMarketAvg);
+        var topHtml = bilanScoreCard(score, dateStats, insightText, marketPeers.length, ubsPeers.length);
+        topHtml += '<div class="bilan-card"><div class="bilan-card-title" style="margin-bottom:16px;">Performance de la campagne</div>'
+            + bilanKpiGrid(campaignAgg, campaignMarketAvg, marketPeers.length, campaignUbsAvg, ubsPeers.length)
             + '</div>';
 
         if (_bilanCanalIdx >= channels.length) _bilanCanalIdx = 0;
@@ -5176,7 +5285,7 @@
             + '<select id="bilan-canal-select" class="form-control">'
             + channels.map(function (ch, i) { return '<option value="' + i + '"' + (i === _bilanCanalIdx ? ' selected' : '') + '>' + security.escapeHtml(ch.deliverableName || ('Canal ' + (i + 1))) + '</option>'; }).join('')
             + '</select></div>'
-            + '<div id="bilan-canal-body">' + renderCanalBody(channels, results, marketPeers, _bilanCanalIdx) + '</div>'
+            + '<div id="bilan-canal-body">' + renderCanalBody(channels, results, marketPeers, ubsPeers, _bilanCanalIdx) + '</div>'
             + '</div>';
 
         content.innerHTML = topHtml + canalHtml + bilanManualCard(snap);

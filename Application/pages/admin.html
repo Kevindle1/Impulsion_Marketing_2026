@@ -1504,7 +1504,7 @@
         })();
 
         // Indicateurs utilisés pour la note /100 et le benchmark marché : les 3 taux
-        // bruts du fichier de suivi + le taux de leads, calculé (Nb_leads / Nb_Envois)
+        // bruts du fichier de suivi + le taux de leads, calculé (Nb_leads / Nb_communications)
         // puisque le fichier de suivi ne fournit qu'un nombre de leads brut.
         var SCORE_KPIS_DEFAULT = [
             { k: 'Tx_Ouvreurs', label: 'Taux d\'ouvreurs', target: 40, weight: 1 },
@@ -1520,6 +1520,9 @@
             if (!Array.isArray(bc.kpis)) bc.kpis = [];
             if (!Array.isArray(bc.chartRates)) bc.chartRates = [];
             if (!bc.score || !Array.isArray(bc.score.kpis) || !bc.score.kpis.length) bc.score = { kpis: JSON.parse(JSON.stringify(SCORE_KPIS_DEFAULT)) };
+            if (bc.firstInjectionColumn == null) bc.firstInjectionColumn = 'Date_1ere_injection_sur_12M';
+            if (bc.lastInjectionColumn == null) bc.lastInjectionColumn = 'Date_derniere_injection_sur_12M';
+            if (bc.frequencyColumn == null) bc.frequencyColumn = 'Frequence_execution';
             var AGG_OPTS = [['moyenne', 'Moyenne'], ['somme', 'Somme']];
             function syncKpis() {
                 cont.querySelectorAll('[data-kk]').forEach(function (inp) { var i = +inp.getAttribute('data-kk'); if (bc.kpis[i]) bc.kpis[i].k = inp.value; });
@@ -1535,8 +1538,10 @@
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Fichier</h3></div>'
                 + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Dossier</label><input class="admin-input" id="bilan-folder" value="' + esc(bc.suiviFolder || '') + '"></div>'
                 + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Nom de l\'onglet</label><input class="admin-input" id="bilan-sheet" value="' + esc(bc.suiviSheet || '') + '"></div>'
-                + '<div class="form-row"><label class="admin-label">Colonne de date (optionnel)</label><input class="admin-input" id="bilan-datecol" value="' + esc(bc.dateColumn || '') + '" placeholder="ex. Date_Envoi"></div>'
-                + '<div class="empty-hint" style="padding-top:4px;">Si renseignée, le Bilan calcule automatiquement la date de 1ère injection, la date de dernière exécution et la fréquence constatée, à partir de cette colonne du fichier de suivi. Laissez vide si le fichier n\'a pas de colonne de date exploitable — ces 3 champs resteront alors vides.</div></div>';
+                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Colonne « 1ère injection »</label><input class="admin-input" id="bilan-col-first" value="' + esc(bc.firstInjectionColumn || '') + '" placeholder="ex. Date_1ere_injection_sur_12M"></div>'
+                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Colonne « Dernière injection »</label><input class="admin-input" id="bilan-col-last" value="' + esc(bc.lastInjectionColumn || '') + '" placeholder="ex. Date_derniere_injection_sur_12M"></div>'
+                + '<div class="form-row"><label class="admin-label">Colonne « Fréquence d\'exécution »</label><input class="admin-input" id="bilan-col-freq" value="' + esc(bc.frequencyColumn || '') + '" placeholder="ex. Frequence_execution"></div>'
+                + '<div class="empty-hint" style="padding-top:4px;">Le fichier de suivi fournit déjà ces 3 valeurs toutes calculées — le Bilan les relit directement, sans rien recalculer. Laissez vide ce qui n\'existe pas dans votre fichier, le champ correspondant restera alors vide.</div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Colonnes d\'identification</h3></div>' + chipsHtml(bc.ident, 'delident')
                 + '<div class="add-row"><input class="admin-input" id="add-ident" placeholder="Nom de colonne…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-ident">+ Ajouter</button></div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs (KPIs)</h3><span class="count-pill">' + bc.kpis.length + '</span></div>';
@@ -1581,7 +1586,9 @@
                 var out = {
                     suiviFolder: (document.getElementById('bilan-folder').value || '').trim(),
                     suiviSheet: (document.getElementById('bilan-sheet').value || '').trim(),
-                    dateColumn: (document.getElementById('bilan-datecol').value || '').trim(),
+                    firstInjectionColumn: (document.getElementById('bilan-col-first').value || '').trim(),
+                    lastInjectionColumn: (document.getElementById('bilan-col-last').value || '').trim(),
+                    frequencyColumn: (document.getElementById('bilan-col-freq').value || '').trim(),
                     ident: bc.ident.slice(),
                     kpis: bc.kpis.filter(function (k) { return (k.k || '').trim(); }).map(function (k) { return { k: k.k.trim(), label: (k.label || '').trim(), pct: !!k.pct, agg: (k.agg === 'somme') ? 'somme' : 'moyenne' }; }),
                     chartRates: bc.chartRates.slice(),
