@@ -4605,8 +4605,8 @@
     var BILAN_CHART_RATES = _BILAN_CFG.chartRates || ['Tx_Ouvreurs', 'Tx_Cliqueurs', 'Tx_Desabonnement', 'Tx_Reussite'];
 
     // ── Note sur 100 : poids/cible par taux (Administration ▸ Bilan ▸ Note sur 100).
-    // Tx_Leads est calculé (Nb_leads / Nb_Envois), le fichier de suivi ne fournissant
-    // qu'un nombre de leads brut — cf. bilanAggregate().
+    // Tx_Leads est calculé (Nb_leads / Nb_communications), le fichier de suivi ne
+    // fournissant qu'un nombre de leads brut — cf. bilanAggregate().
     var BILAN_SCORE_KPIS = (_BILAN_CFG.score && Array.isArray(_BILAN_CFG.score.kpis) && _BILAN_CFG.score.kpis.length) ? _BILAN_CFG.score.kpis : [
         { k: 'Tx_Ouvreurs', label: 'Taux d\'ouvreurs', target: 40, weight: 1 },
         { k: 'Tx_Cliqueurs', label: 'Taux de clic', target: 6, weight: 2 },
@@ -4937,8 +4937,11 @@
             }
         });
         // Taux de leads, calculé — le fichier de suivi ne fournit qu'un nombre de
-        // leads brut (Nb_leads), pas de taux. Nécessite des envois (> 0).
-        agg.Tx_Leads = (agg.Nb_leads != null && agg.Nb_Envois) ? (agg.Nb_leads / agg.Nb_Envois * 100) : null;
+        // leads brut (Nb_leads), pas de taux. Rapporté au volume réel de messages
+        // envoyés (Nb_communications), PAS à Nb_Envois qui compte des injections/
+        // vagues d'envoi (un petit nombre, ex. 3) et non un volume — sinon le taux
+        // explose au-delà de 100 %.
+        agg.Tx_Leads = (agg.Nb_leads != null && agg.Nb_communications) ? (agg.Nb_leads / agg.Nb_communications * 100) : null;
         return agg;
     }
 
