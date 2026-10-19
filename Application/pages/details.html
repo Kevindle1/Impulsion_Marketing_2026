@@ -383,6 +383,12 @@
         .bilan-kpi-compare-ref { font-size: 12px; color: var(--muted-2, #8b988f); }
         .bilan-kpi-compare-ref b { color: var(--muted, #56655e); }
         @media (max-width: 900px) { .bilan-kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+        .bilan-explain-row { padding: 14px 0; border-top: 1px solid var(--line, #eaefec); }
+        .bilan-explain-row:first-child { padding-top: 0; border-top: none; }
+        .bilan-explain-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+        .bilan-explain-label { font-weight: 700; font-size: 14px; color: var(--ink, #0c1a14); }
+        .bilan-explain-value { font-weight: 800; font-size: 14px; color: var(--muted, #56655e); }
+        .bilan-explain-text { font-size: 14px; color: var(--muted, #56655e); line-height: 1.55; max-width: 680px; }
         .bilan-manual-card .form-row:last-child { margin-bottom: 0; }
         #bilan-canal-select { max-width: 260px; }
 
@@ -5126,6 +5132,53 @@
             + (marketCount ? '' : ' (aucune autre campagne de ce marché)')
             + ' et à l\'<b>univers de besoin</b>' + bilanPeerCountLabel(ubsCount) + (ubsCount ? '' : ' (aucune autre campagne de cet univers)') + '.';
     }
+    // ── Analyse détaillée : ce que chaque taux indique concrètement, selon qu'il
+    // soit au-dessus, proche ou en retrait de la moyenne du marché. Pas un simple
+    // chiffre : une explication exploitable (quoi regarder, quoi ajuster).
+    var BILAN_KPI_EXPLANATIONS = {
+        Tx_Ouvreurs: {
+            good: 'L\'objet du mail et le moment d\'envoi ont visiblement bien fonctionné pour capter l\'attention des destinataires.',
+            warn: 'L\'objet du mail et/ou le moment d\'envoi sont corrects mais peuvent sans doute être retravaillés pour capter davantage l\'attention.',
+            bad: 'L\'objet du mail et/ou le moment d\'envoi n\'ont probablement pas suffisamment capté l\'attention des destinataires — à retravailler en priorité.'
+        },
+        Tx_Cliqueurs: {
+            good: 'Le contenu et l\'appel à l\'action du message donnent envie d\'aller plus loin : ceux qui ouvrent le mail cliquent bien.',
+            warn: 'Le contenu ou l\'appel à l\'action pourraient être rendus plus engageants pour convertir davantage d\'ouvreurs en clics.',
+            bad: 'Le contenu ou l\'appel à l\'action n\'incitent probablement pas assez les destinataires à cliquer, même quand ils ouvrent le mail.'
+        },
+        Tx_Leads: {
+            good: 'La page d\'atterrissage et l\'offre convertissent bien les visiteurs intéressés en leads qualifiés.',
+            warn: 'La page d\'atterrissage ou l\'offre pourraient être optimisées pour mieux convertir les clics en leads.',
+            bad: 'La page d\'atterrissage ou l\'offre ne convertissent probablement pas assez les clics en leads — un point à vérifier en priorité.'
+        },
+        Tx_Reussite: {
+            good: 'La chaîne complète (objet, contenu, offre) fonctionne bien jusqu\'à l\'objectif final de la campagne.',
+            warn: 'La conversion globale jusqu\'à l\'objectif final est correcte mais perfectible sur l\'une des étapes du parcours.',
+            bad: 'La conversion globale jusqu\'à l\'objectif final est en retrait — plusieurs étapes du parcours méritent d\'être revues.'
+        }
+    };
+    function bilanDetailRow(kp, value, cls) {
+        var expl = cls ? BILAN_KPI_EXPLANATIONS[kp.k][cls] : 'Pas encore de moyenne marché pour analyser ce taux.';
+        var h = '<div class="bilan-explain-row">';
+        h += '<div class="bilan-explain-head"><span class="bilan-kpi-icon">' + (BILAN_KPI_ICONS[kp.k] || '') + '</span>'
+            + '<span class="bilan-explain-label">' + security.escapeHtml(kp.label) + '</span>'
+            + '<span class="bilan-explain-value">' + tpct(value) + '</span>'
+            + (cls ? '<span class="bilan-kpi-tag ' + cls + '">' + BILAN_TAG_LABELS[cls] + '</span>' : '') + '</div>';
+        h += '<div class="bilan-explain-text">' + security.escapeHtml(expl) + '</div>';
+        h += '</div>';
+        return h;
+    }
+    function bilanDetailCard(agg, marketAvg) {
+        var h = '<div class="bilan-card"><div class="bilan-card-title" style="margin-bottom:14px;">Ce que ça signifie</div>';
+        h += BILAN_RATE_KPIS.map(function (kp) {
+            var v = agg ? agg[kp.k] : null;
+            if (v == null) return '';
+            var m = marketAvg ? marketAvg[kp.k] : null;
+            return bilanDetailRow(kp, v, bilanCompareClass(v, m));
+        }).join('');
+        h += '</div>';
+        return h;
+    }
     // Jauge circulaire (SVG autonome) : anneau coloré selon le palier de la note
     // (vert ≥ 70, orange ≥ 40, rouge en dessous), valeur au centre.
     var BILAN_SCORE_TIER_LABELS = { good: 'Bon', warn: 'Moyen', bad: 'Faible' };
@@ -5275,6 +5328,7 @@
 
         var insightText = bilanInsightSentence(campaignAgg, campaignMarketAvg);
         var topHtml = bilanScoreCard(score, dateStats, insightText, marketPeers.length, ubsPeers.length);
+        topHtml += bilanDetailCard(campaignAgg, campaignMarketAvg);
         topHtml += '<div class="bilan-card"><div class="bilan-card-title" style="margin-bottom:16px;">Performance de la campagne</div>'
             + bilanKpiGrid(campaignAgg, campaignMarketAvg, marketPeers.length, campaignUbsAvg, ubsPeers.length)
             + '</div>';
