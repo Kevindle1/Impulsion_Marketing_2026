@@ -1503,6 +1503,15 @@
             }
         })();
 
+        // Indicateurs utilisés pour la note /100 et le benchmark marché : les 3 taux
+        // bruts du fichier de suivi + le taux de leads, calculé (Nb_leads / Nb_Envois)
+        // puisque le fichier de suivi ne fournit qu'un nombre de leads brut.
+        var SCORE_KPIS_DEFAULT = [
+            { k: 'Tx_Ouvreurs', label: 'Taux d\'ouvreurs', target: 40, weight: 1 },
+            { k: 'Tx_Cliqueurs', label: 'Taux de clic', target: 6, weight: 2 },
+            { k: 'Tx_Leads', label: 'Taux de leads', target: 3, weight: 3 },
+            { k: 'Tx_Reussite', label: 'Taux de réussite', target: 1, weight: 4 }
+        ];
         function renderBilanCfg() {
             var cont = document.getElementById('bilan-container');
             if (!cont) return;
@@ -1510,6 +1519,11 @@
             if (!Array.isArray(bc.ident)) bc.ident = [];
             if (!Array.isArray(bc.kpis)) bc.kpis = [];
             if (!Array.isArray(bc.chartRates)) bc.chartRates = [];
+            if (!bc.score || !Array.isArray(bc.score.kpis) || !bc.score.kpis.length) bc.score = { kpis: JSON.parse(JSON.stringify(SCORE_KPIS_DEFAULT)) };
+            if (!bc.benchmark || typeof bc.benchmark !== 'object') bc.benchmark = {};
+            if (!Array.isArray(bc.benchmark.kpis) || !bc.benchmark.kpis.length) {
+                bc.benchmark.kpis = SCORE_KPIS_DEFAULT.map(function (s) { return { k: s.k, label: s.label, marketCol: '', populationCol: '' }; });
+            }
             var AGG_OPTS = [['moyenne', 'Moyenne'], ['somme', 'Somme']];
             function syncKpis() {
                 cont.querySelectorAll('[data-kk]').forEach(function (inp) { var i = +inp.getAttribute('data-kk'); if (bc.kpis[i]) bc.kpis[i].k = inp.value; });
@@ -1517,10 +1531,23 @@
                 cont.querySelectorAll('[data-kpct]').forEach(function (cb) { var i = +cb.getAttribute('data-kpct'); if (bc.kpis[i]) bc.kpis[i].pct = cb.checked; });
                 cont.querySelectorAll('[data-kagg]').forEach(function (sel) { var i = +sel.getAttribute('data-kagg'); if (bc.kpis[i]) bc.kpis[i].agg = sel.value; });
             }
+            function syncScore() {
+                cont.querySelectorAll('[data-sctarget]').forEach(function (inp) { var i = +inp.getAttribute('data-sctarget'); if (bc.score.kpis[i]) bc.score.kpis[i].target = parseFloat(inp.value) || 0; });
+                cont.querySelectorAll('[data-scweight]').forEach(function (inp) { var i = +inp.getAttribute('data-scweight'); if (bc.score.kpis[i]) bc.score.kpis[i].weight = parseFloat(inp.value) || 0; });
+            }
+            function syncBenchmark() {
+                var b = document.getElementById('bench-folder'); if (b) bc.benchmark.folder = b.value.trim();
+                var s = document.getElementById('bench-sheet'); if (s) bc.benchmark.sheet = s.value.trim();
+                var c = document.getElementById('bench-canalcol'); if (c) bc.benchmark.canalColumn = c.value.trim();
+                cont.querySelectorAll('[data-bkmarket]').forEach(function (inp) { var i = +inp.getAttribute('data-bkmarket'); if (bc.benchmark.kpis[i]) bc.benchmark.kpis[i].marketCol = inp.value.trim(); });
+                cont.querySelectorAll('[data-bkpop]').forEach(function (inp) { var i = +inp.getAttribute('data-bkpop'); if (bc.benchmark.kpis[i]) bc.benchmark.kpis[i].populationCol = inp.value.trim(); });
+            }
             var html = '<div class="admin-note"><span class="admin-note-ic">⚠️</span><div>Doit correspondre aux <strong>colonnes du fichier de suivi .xlsx</strong>. À ne modifier que si le format du fichier change.</div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Fichier</h3></div>'
                 + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Dossier</label><input class="admin-input" id="bilan-folder" value="' + esc(bc.suiviFolder || '') + '"></div>'
-                + '<div class="form-row"><label class="admin-label">Nom de l\'onglet</label><input class="admin-input" id="bilan-sheet" value="' + esc(bc.suiviSheet || '') + '"></div></div>';
+                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Nom de l\'onglet</label><input class="admin-input" id="bilan-sheet" value="' + esc(bc.suiviSheet || '') + '"></div>'
+                + '<div class="form-row"><label class="admin-label">Colonne de date (optionnel)</label><input class="admin-input" id="bilan-datecol" value="' + esc(bc.dateColumn || '') + '" placeholder="ex. Date_Envoi"></div>'
+                + '<div class="empty-hint" style="padding-top:4px;">Si renseignée, le Bilan calcule automatiquement la date de 1ère injection, la date de dernière exécution et la fréquence constatée, à partir de cette colonne du fichier de suivi. Laissez vide si le fichier n\'a pas de colonne de date exploitable — ces 3 champs resteront alors vides.</div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Colonnes d\'identification</h3></div>' + chipsHtml(bc.ident, 'delident')
                 + '<div class="add-row"><input class="admin-input" id="add-ident" placeholder="Nom de colonne…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-ident">+ Ajouter</button></div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs (KPIs)</h3><span class="count-pill">' + bc.kpis.length + '</span></div>';
@@ -1536,6 +1563,34 @@
             html += '<div class="add-row"><button class="btn btn-secondary" id="add-kpi">+ Ajouter un indicateur</button></div></div>';
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Indicateurs tracés (graphiques)</h3></div>' + chipsHtml(bc.chartRates, 'delchart')
                 + '<div class="add-row"><input class="admin-input" id="add-chart" placeholder="clé d\'indicateur…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-chart">+ Ajouter</button></div></div>';
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Note sur 100</h3></div>'
+                + '<div class="empty-hint" style="padding-top:0;">Pour chaque taux : « Cible » = la valeur qui obtient tous les points, « Poids » = son importance relative dans la note. La note finale ne tient compte que des taux renseignés sur la campagne (un canal non concerné ne fait pas chuter la note).</div>';
+            bc.score.kpis.forEach(function (kp, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;">'
+                    + '<span style="flex:1;min-width:140px;font-size:13px;font-weight:600;">' + esc(kp.label || kp.k) + '</span>'
+                    + '<label class="admin-label" style="margin:0;">Cible</label>'
+                    + '<input class="admin-input" type="number" step="0.1" data-sctarget="' + i + '" value="' + esc(kp.target == null ? '' : kp.target) + '" style="width:90px;" placeholder="%">'
+                    + '<label class="admin-label" style="margin:0;">Poids</label>'
+                    + '<input class="admin-input" type="number" step="1" min="0" data-scweight="' + i + '" value="' + esc(kp.weight == null ? '' : kp.weight) + '" style="width:70px;">'
+                    + '</div>';
+            });
+            html += '</div>';
+
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Référence marché (fichier importé)</h3></div>'
+                + '<div class="empty-hint" style="padding-top:0;">Fichier contenant, par canal, la moyenne du marché sur 12 mois et la population témoin (« population blanche »), affichées en comparaison dans le Bilan. Même principe que le fichier de suivi : le fichier le plus récent du dossier est utilisé automatiquement.</div>'
+                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Dossier</label><input class="admin-input" id="bench-folder" value="' + esc(bc.benchmark.folder || '') + '" placeholder="ex. Reference"></div>'
+                + '<div class="form-row" style="margin-bottom:12px;"><label class="admin-label">Nom de l\'onglet</label><input class="admin-input" id="bench-sheet" value="' + esc(bc.benchmark.sheet || '') + '"></div>'
+                + '<div class="form-row"><label class="admin-label">Colonne « Canal »</label><input class="admin-input" id="bench-canalcol" value="' + esc(bc.benchmark.canalColumn || '') + '" placeholder="ex. Canal"></div>';
+            bc.benchmark.kpis.forEach(function (kp, i) {
+                html += '<div class="person-row" style="flex-wrap:wrap;margin-top:10px;">'
+                    + '<span style="flex:1;min-width:140px;font-size:13px;font-weight:600;">' + esc(kp.label || kp.k) + '</span>'
+                    + '<input class="admin-input" data-bkmarket="' + i + '" value="' + esc(kp.marketCol || '') + '" placeholder="colonne moyenne marché" style="flex:1;min-width:160px;">'
+                    + '<input class="admin-input" data-bkpop="' + i + '" value="' + esc(kp.populationCol || '') + '" placeholder="colonne population blanche" style="flex:1;min-width:160px;">'
+                    + '</div>';
+            });
+            html += '</div>';
+
             html += '<div class="save-bar sticky"><button class="btn btn-primary" id="save-bilan">💾 Enregistrer</button></div>';
             cont.innerHTML = html;
             document.getElementById('addbtn-ident').addEventListener('click', function () { var el = document.getElementById('add-ident'); var v = (el.value || '').trim(); if (v && bc.ident.indexOf(v) === -1) bc.ident.push(v); syncKpis(); renderBilanCfg(); });
@@ -1545,13 +1600,21 @@
             cont.querySelectorAll('[data-delkpi]').forEach(function (b) { b.addEventListener('click', function () { syncKpis(); bc.kpis.splice(+b.getAttribute('data-delkpi'), 1); renderBilanCfg(); }); });
             document.getElementById('add-kpi').addEventListener('click', function () { syncKpis(); bc.kpis.push({ k: '', label: '', pct: false, agg: 'moyenne' }); renderBilanCfg(); });
             document.getElementById('save-bilan').addEventListener('click', function () {
-                syncKpis();
+                syncKpis(); syncScore(); syncBenchmark();
                 var out = {
                     suiviFolder: (document.getElementById('bilan-folder').value || '').trim(),
                     suiviSheet: (document.getElementById('bilan-sheet').value || '').trim(),
+                    dateColumn: (document.getElementById('bilan-datecol').value || '').trim(),
                     ident: bc.ident.slice(),
                     kpis: bc.kpis.filter(function (k) { return (k.k || '').trim(); }).map(function (k) { return { k: k.k.trim(), label: (k.label || '').trim(), pct: !!k.pct, agg: (k.agg === 'somme') ? 'somme' : 'moyenne' }; }),
-                    chartRates: bc.chartRates.slice()
+                    chartRates: bc.chartRates.slice(),
+                    score: { kpis: bc.score.kpis.map(function (k) { return { k: k.k, label: k.label, target: k.target, weight: k.weight }; }) },
+                    benchmark: {
+                        folder: bc.benchmark.folder || '',
+                        sheet: bc.benchmark.sheet || '',
+                        canalColumn: bc.benchmark.canalColumn || '',
+                        kpis: bc.benchmark.kpis.map(function (k) { return { k: k.k, label: k.label, marketCol: k.marketCol || '', populationCol: k.populationCol || '' }; })
+                    }
                 };
                 saveConfig({ bilan: out }, 'Bilan enregistré.').then(function () { if (adminConfig.applyConfig) adminConfig.applyConfig({ bilan: out }); bilanCfgState = JSON.parse(JSON.stringify(out)); renderBilanCfg(); });
             });
