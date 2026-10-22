@@ -983,8 +983,11 @@
                 h += '<button class="details-nav-item" id="nav-item-' + idx + '" data-page="' + idx + '" title="' + security.escapeHtml(label) + '">📡 ' + security.escapeHtml(label) + '</button>';
             });
         }
-        // Bilan : en dernier, après les onglets canal (cf. maquette validée).
-        h += '<button class="details-nav-item" id="nav-item-bilan" data-page="bilan">📊 Bilan</button>';
+        // Bilan : onglet masqué le temps de retravailler le calcul/la présentation
+        // (cf. retours utilisateur) — le code (render/logique) reste en place,
+        // seul l'accès par la navigation est coupé. Remettre cette ligne pour
+        // le réactiver.
+        // h += '<button class="details-nav-item" id="nav-item-bilan" data-page="bilan">📊 Bilan</button>';
         nav.innerHTML = h;
         nav.querySelectorAll('.details-nav-item').forEach(function(btn) {
             btn.addEventListener('click', function() {
