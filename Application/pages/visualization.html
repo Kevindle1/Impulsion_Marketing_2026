@@ -147,6 +147,7 @@
                 </button>
                 <button id="reset-filters-btn" class="btn secondary small">Réinitialiser</button>
                 <button id="toggle-my-campaigns" class="btn secondary small" title="Afficher uniquement mes campagnes">👤 Mes campagnes</button>
+                <button id="export-campaigns-btn" class="btn secondary small" title="Exporter les campagnes actuellement filtrées (CSV)">⬇️ Exporter</button>
             </div>
 
             <!-- Filtres avancés : repliés par défaut, sur les champs renseignés pendant
@@ -574,6 +575,8 @@
                 currentPage = 0;
                 filterCampaigns();
             });
+            var exportBtn = document.getElementById('export-campaigns-btn');
+            if (exportBtn) exportBtn.addEventListener('click', exportCampaignsCsv);
             var toggleBtn = document.getElementById('toggle-my-campaigns');
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function() {
@@ -795,6 +798,39 @@
                 if (currentUser.role === 'data' && a.data === currentUser.name) return true;
             }
             return false;
+        }
+
+        // Export CSV (ouvrable dans Excel) des campagnes actuellement filtrées —
+        // mêmes filtres actifs (recherche, canal, état, exclusions…) que ce qui
+        // est affiché, pas toutes les campagnes du dossier.
+        function exportCampaignsCsv() {
+            var wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var cols = ['Nom', 'PO', 'État', 'Typologie', 'Marché', 'Univers de besoin', 'Canaux', 'Date d\'envoi', 'Date de saisie', 'Dernière MAJ'];
+            var lines = [cols];
+            filteredCampaigns.forEach(function (campaign) {
+                var data = campaign.data || {};
+                var st = vcStatus(data, wfMod);
+                var canaux = (data.channels || []).map(function (ch) { return ch.deliverableName || ch.content || ''; }).filter(Boolean).join(', ');
+                lines.push([
+                    campaign.name || '',
+                    data.po || '',
+                    st.text || '',
+                    data.typology || '',
+                    data.market || '',
+                    (data.ubs || []).join(', '),
+                    canaux,
+                    data.launchDate || '',
+                    data.instantiation || '',
+                    campaign.lastModified ? new Date(campaign.lastModified).toISOString().slice(0, 10) : ''
+                ]);
+            });
+            var csv = lines.map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+            var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'campagnes.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
         }
 
         function filterCampaigns() {
