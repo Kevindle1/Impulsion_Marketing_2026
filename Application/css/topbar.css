@@ -67,6 +67,20 @@
 @keyframes eggPop { 0% { transform: scale(.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes eggSpin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(200deg) scale(1.2); } 100% { transform: rotate(360deg) scale(1); } }
 
+/* ── Modale de choix de thème (5 clics rapides sur le bouton thème) ── */
+.egg-theme-card { max-width: 400px; }
+.egg-theme-options { display: flex; gap: 10px; margin-top: 18px; }
+.egg-theme-opt {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 14px 10px; border: 2px solid var(--line, #eaefec); border-radius: 12px;
+    background: var(--bg-card, #fff); cursor: pointer; font-family: inherit;
+    transition: border-color .15s, transform .15s, background .15s;
+}
+.egg-theme-opt:hover { border-color: var(--primary, #00875A); transform: translateY(-2px); }
+.egg-theme-opt.is-active { border-color: var(--primary, #00875A); background: var(--green-50, #e8f6ef); }
+.egg-theme-opt-ic { font-size: 28px; line-height: 1; }
+.egg-theme-opt-label { font-size: 12.5px; font-weight: 700; color: var(--ink, #0c1a14); }
+
 .confetti-piece { position: absolute; width: 7px; height: 12px; opacity: 0; pointer-events: none; border-radius: 2px; animation: confettiFall 1.5s ease-out forwards; }
 @keyframes confettiFall { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(80px) rotate(360deg); opacity: 0; } }
 
