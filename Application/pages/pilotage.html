@@ -424,6 +424,7 @@
                                                     <th class="pil-th-sortable" data-sort="ebf">EBF <span class="pil-sort-ic" data-sort-ic="ebf">⇅</span></th>
                                                     <th class="pil-th-sortable" data-sort="data">Data <span class="pil-sort-ic" data-sort-ic="data">⇅</span></th>
                                                     <th class="pil-th-sortable" data-sort="producteur">Doit produire <span class="pil-sort-ic" data-sort-ic="producteur">⇅</span></th>
+                                                    <th class="pil-th-sortable" data-sort="saisie">Date de saisie <span class="pil-sort-ic" data-sort-ic="saisie">⇅</span></th>
                                                     <th class="pil-th-sortable" data-sort="envoi">Date d'envoi <span class="pil-sort-ic" data-sort-ic="envoi">⇅</span></th>
                                                     <th class="pil-th-sortable" data-sort="depuis">Depuis <span class="pil-sort-ic" data-sort-ic="depuis">⇅</span></th>
                                                     <th class="pil-th-sortable" data-sort="valeur">Valeur métier <span class="pil-sort-ic" data-sort-ic="valeur">⇅</span></th>
@@ -441,6 +442,7 @@
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-ebf" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-data" placeholder="Filtrer…"></th>
                                                     <th class="pil-col-filter-th"><input type="text" id="v-f-producteur" placeholder="Filtrer…"></th>
+                                                    <th class="pil-col-filter-th"></th>
                                                     <th class="pil-col-filter-th">
                                                         <select id="v-f-envoi" title="Pour repérer les envois de communication à risque : bloqués en validation alors que la date d'envoi approche ou est dépassée.">
                                                             <option value="">Tout risque</option>
@@ -895,6 +897,7 @@
                                 ebf:  (function () { var a = wf.channelAssignees(c, idx, 'ebf');  return a.length ? a : ['—']; })(),
                                 data: (function () { var a = wf.channelAssignees(c, idx, 'data'); return a.length ? a : ['—']; })()
                             },
+                            saisieDate: c.instantiation || null,
                             dateRef: dateRef, delay: computeDelay(dateRef),
                             sinceIso: sinceIso, since: elapsedSince(sinceIso),
                             valeurMetier: valeurMetier, chargeCom: charge.com, chargeEbf: charge.ebf, chargeData: charge.data
@@ -1199,6 +1202,7 @@
             ebf:         function (it) { return it.team.ebf.join(', '); },
             data:        function (it) { return it.team.data.join(', '); },
             producteur:  function (it) { return it.names.join(', '); },
+            saisie:      function (it) { return it.saisieDate || null; },
             envoi:       function (it) { return it.dateRef || null; },
             depuis:      function (it) { return it.since.unknown ? null : it.since.days; },
             valeur:      function (it) { return it.valeurMetier; },
@@ -1311,6 +1315,7 @@
                     + '<td class="pil-team-cell">' + teamCell(it.team.ebf) + '</td>'
                     + '<td class="pil-team-cell">' + teamCell(it.team.data) + '</td>'
                     + '<td>' + esc(it.names.join(', ')) + ' <span class="pil-badge pil-role-' + esc(it.role) + '">' + esc(roleLabel(it.role)) + '</span></td>'
+                    + '<td>' + frDate(it.saisieDate) + '</td>'
                     + '<td class="pil-envoi ' + envoiClass + '">' + frDate(it.dateRef) + envoiTag + '</td>'
                     + '<td class="pil-since ' + sinceClass + '">' + esc(it.since.text) + '</td>'
                     + '<td>' + fmtNumPil(it.valeurMetier) + '</td>'
@@ -1324,7 +1329,7 @@
             var groups = fGroupBy ? groupValidationItems(items, fGroupBy) : null;
             if (groups) {
                 groups.forEach(function (g) {
-                    html += '<tr class="pil-group-row"><td colspan="15">' + esc(g.label) + '<span class="pil-group-count">' + g.items.length + '</span></td></tr>';
+                    html += '<tr class="pil-group-row"><td colspan="16">' + esc(g.label) + '<span class="pil-group-count">' + g.items.length + '</span></td></tr>';
                     g.items.forEach(function (it) { html += renderRow(it); });
                 });
             } else {
