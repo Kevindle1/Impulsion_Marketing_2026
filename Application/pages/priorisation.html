@@ -526,12 +526,11 @@
         var p = c.priorisation || {};
         var cfg = workflow.getPriorisationConfig();
         var bareme = cfg.bareme || {};
-        var reutil = workflow.reutilisabiliteApplicable(c);
         return [
             'Potentiel business : ' + (p.potentielBusiness || 0),
             'Satisfaction client : ' + (p.satisfactionClient || 0),
             'Volume client cible : ' + (p.volumeClientCible || 0),
-            'Réutilisabilité : ' + (reutil ? (bareme.reutilisabilite || 0) : 0),
+            'Réutilisabilité : ' + (p.reutilisabilite ? (bareme.reutilisabilite || 0) : 0),
             'Impact stratégique : ' + (p.impactStrategique ? (bareme.impactStrategique || 0) : 0),
             'Réglementaire : ' + (p.reglementaire ? (bareme.reglementaire || 0) : 0),
             'Valeur métier : ' + workflow.computeValeurMetier(c),

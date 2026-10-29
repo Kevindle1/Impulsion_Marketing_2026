@@ -2280,24 +2280,16 @@ window.ImpulsionMarketing.workflow = (function () {
   }
   function getPriorisationConfig() { return _priorisationCfg(); }
 
-  // Réutilisabilité / amélioration d'un existant : auto-dérivée de la
-  // Typologie de la campagne (pas de saisie PO) — toute typologie dont le
-  // libellé évoque une réutilisation/amélioration (ex. « Amélioration d'un
-  // existant ») déclenche les points de réutilisabilité du barème.
-  function reutilisabiliteApplicable(campaignData) {
-    var t = (campaignData && campaignData.typology) || '';
-    return /r[ée]utilis|am[ée]lior/i.test(t);
-  }
-
   // Valeur métier = somme du barème : les 3 critères à paliers saisis par le
   // PO (campaignData.priorisation.{potentielBusiness,satisfactionClient,
-  // volumeClientCible} — valeurs de points, pas des index) + réutilisabilité
-  // auto + impact stratégique/réglementaire si cochés.
+  // volumeClientCible} — valeurs de points, pas des index) + réutilisabilité/
+  // impact stratégique/réglementaire si cochés (cases à cocher manuelles,
+  // cf. campaign.html ▸ étape « Bénéfices attendus »).
   function computeValeurMetier(campaignData) {
     var cfg = _priorisationCfg();
     var p = (campaignData && campaignData.priorisation) || {};
     var total = (p.potentielBusiness || 0) + (p.satisfactionClient || 0) + (p.volumeClientCible || 0);
-    if (reutilisabiliteApplicable(campaignData)) total += (cfg.bareme.reutilisabilite || 0);
+    if (p.reutilisabilite) total += (cfg.bareme.reutilisabilite || 0);
     if (p.impactStrategique) total += (cfg.bareme.impactStrategique || 0);
     if (p.reglementaire) total += (cfg.bareme.reglementaire || 0);
     return total;
@@ -3710,7 +3702,6 @@ window.ImpulsionMarketing.workflow = (function () {
     updateCampaignIndexFromDir: updateCampaignIndexFromDir,
     buildFullIndex:           buildFullIndex,
     getPriorisationConfig:        getPriorisationConfig,
-    reutilisabiliteApplicable:    reutilisabiliteApplicable,
     computeValeurMetier:          computeValeurMetier,
     computeValeurMetierCorrigee:  computeValeurMetierCorrigee,
     computeChargeRealisation:     computeChargeRealisation,
