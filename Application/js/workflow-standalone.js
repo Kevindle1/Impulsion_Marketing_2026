@@ -1378,6 +1378,10 @@ window.ImpulsionMarketing.workflow = (function () {
         return fileHandle.createWritable();
       })
       .then(function (writable) {
+        // Horodatage de la vraie dernière modification (affiché « Dernière MAJ »,
+        // ex. visualization.html) — distinct de campaignData.instantiation (date de
+        // création, posée une seule fois et jamais mise à jour).
+        campaignData.lastModified = Date.now();
         var json = JSON.stringify(campaignData, null, 2);
         return writable.write(json).then(function () {
           return writable.close();

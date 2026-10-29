@@ -3374,6 +3374,10 @@
                     }
                 } catch (e) { console.warn('Affectation automatique ignorée :', e && e.message); }
 
+                // Horodatage de la vraie dernière modification (distinct de
+                // data.instantiation, posé une seule fois à la création).
+                data.lastModified = Date.now();
+
                 // Write JSON file
                 const jsonHandle = await campaignDir.getFileHandle("campagne.json", { create: true });
                 const writable = await jsonHandle.createWritable();

@@ -1330,6 +1330,7 @@
                     if (newZone)           fch.siteWeb.zone    = newZone;
                     if (newUnivers !== null) fch.siteWeb.univers = newUnivers;
                 }
+                data.lastModified = Date.now();
                 var w = await jh.createWritable();
                 await w.write(JSON.stringify(data, null, 2));
                 await w.close();
@@ -1381,6 +1382,7 @@
                     ch.siteWeb.status = newStatus;
                 }
             });
+            d.lastModified = Date.now();
             var w = await jh.createWritable();
             await w.write(JSON.stringify(d, null, 2));
             await w.close();

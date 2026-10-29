@@ -651,7 +651,10 @@
                             return {
                                 name: name,
                                 data: cached[name],
-                                lastModified: Date.parse(cached[name].instantiation) || Date.now(),
+                                // lastModified : vraie date de dernière sauvegarde (posée à chaque
+                                // écriture de campagne.json) — repli sur instantiation (date de
+                                // création) pour une campagne sauvegardée avant l'ajout de ce champ.
+                                lastModified: cached[name].lastModified || Date.parse(cached[name].instantiation) || Date.now(),
                                 completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
                             };
                         }
@@ -664,7 +667,7 @@
                             return {
                                 name: name,
                                 data: data,
-                                lastModified: Date.parse(data.instantiation) || Date.now(),
+                                lastModified: data.lastModified || Date.parse(data.instantiation) || Date.now(),
                                 completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
                             };
                         } catch(e) {
