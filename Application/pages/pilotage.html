@@ -1102,10 +1102,16 @@
             if (IM.errors && IM.errors.showNotification) IM.errors.showNotification(msg, type);
         }
 
+        // Ouverture dans un nouvel onglet (pas dans l'onglet courant) : on garde le
+        // tableau de pilotage ouvert en arrière-plan pendant qu'on consulte/édite
+        // une fiche campagne — plus pratique pour traiter plusieurs lignes de suite.
+        function openCampaign(name) {
+            window.open('details.html?name=' + encodeURIComponent(name), '_blank', 'noopener');
+        }
         function wireRowNav(tbody) {
             tbody.querySelectorAll('.pil-row').forEach(function (row) {
                 row.addEventListener('click', function () {
-                    window.location.href = 'details.html?name=' + encodeURIComponent(row.getAttribute('data-name'));
+                    openCampaign(row.getAttribute('data-name'));
                 });
             });
         }
@@ -1597,7 +1603,7 @@
             }
             $('cal-grid').innerHTML = html;
             $('cal-grid').querySelectorAll('.pil-cal-item').forEach(function (el) {
-                el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
+                el.addEventListener('click', function () { openCampaign(el.getAttribute('data-name')); });
             });
             $('cal-grid').querySelectorAll('.pil-cal-more').forEach(function (el) {
                 el.addEventListener('click', function () { openComDayModal(el.getAttribute('data-iso')); });
@@ -1626,7 +1632,7 @@
                     + '</div></div>';
             }).join('');
             body.querySelectorAll('.pil-cal-modal-row').forEach(function (el) {
-                el.addEventListener('click', function () { window.location.href = 'details.html?name=' + encodeURIComponent(el.getAttribute('data-name')); });
+                el.addEventListener('click', function () { openCampaign(el.getAttribute('data-name')); });
             });
             $('cal-day-modal').classList.add('show');
         }
@@ -1764,7 +1770,7 @@
 
             tbody.querySelectorAll('.pil-row').forEach(function(row) {
                 row.addEventListener('click', function() {
-                    window.location.href = 'details.html?name=' + encodeURIComponent(row.getAttribute('data-name'));
+                    openCampaign(row.getAttribute('data-name'));
                 });
             });
         }
