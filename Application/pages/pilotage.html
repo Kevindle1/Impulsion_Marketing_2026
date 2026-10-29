@@ -61,8 +61,14 @@
         /* ---- Tableau ---- */
         .pil-table-wrap { overflow-x: auto; }
         .pil-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-        .pil-table th { text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted-2); border-bottom: 2px solid var(--line); white-space: nowrap; }
+        .pil-table th { text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted-2); border-bottom: 2px solid var(--line); white-space: normal; }
         .pil-table td { padding: 10px 12px; border-bottom: 1px solid var(--line-2); vertical-align: top; }
+        /* Tableaux larges (beaucoup de colonnes, ex. Suivi de campagne, Charge
+           estimée par semaine) : la 1ère colonne reste visible pendant le défilement
+           horizontal, pour ne jamais perdre de vue à quelle ligne on regarde. */
+        .pil-table th:first-child, .pil-table td:first-child { position: sticky; left: 0; z-index: 2; background: var(--bg-card, #fff); }
+        .pil-table thead th:first-child { z-index: 3; }
+        .pil-row:hover td:first-child { background: var(--line-2); }
         .pil-row { cursor: pointer; transition: background 0.12s; }
         .pil-row:hover { background: var(--line-2); }
         .pil-date { font-weight: 700; color: var(--ink); white-space: nowrap; }
