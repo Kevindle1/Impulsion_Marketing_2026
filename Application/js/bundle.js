@@ -3813,7 +3813,8 @@ window.ImpulsionMarketing.customFields = (function () {
     // référence encore l'id complet 'data-mepdate-' + idx directement.
     'ebf_bat': [
       { id: 'ebf-emailobject-', label: 'Objet de l\'email', type: 'text', order: 1, canalTypes: ['MAIL', 'MAIL + E-MESSAGE'], help: 'Ex : Découvrez notre offre exclusive...' },
-      { id: 'ebf-codecom-', label: 'Code Com', type: 'text', order: 2 }
+      { id: 'ebf-codecom-', label: 'Code Com', type: 'text', order: 2 },
+      { id: 'ebf-codeapporteur-', label: 'Code apporteur', type: 'text', order: 3 }
     ],
     // Volume cible reste en dur (libellé avec seuil d'alerte configurable par
     // caisse, non exprimable dans une définition de champ statique).

@@ -1475,6 +1475,7 @@
         // Codes saisis dans les dépôts (EBF/Data) puis recopiés sur le canal :
         // on les restitue aussi dans l'en-tête général du canal.
         if (ch.codeCom)    html += '<div class="detail-item"><span class="detail-label">Code Com</span><span class="detail-value">' + security.escapeHtml(ch.codeCom) + '</span></div>';
+        if (ch.codeApporteur) html += '<div class="detail-item"><span class="detail-label">Code apporteur</span><span class="detail-value">' + security.escapeHtml(ch.codeApporteur) + '</span></div>';
         if (ch.refParacom) html += '<div class="detail-item"><span class="detail-label">Réf Paracom</span><span class="detail-value">' + security.escapeHtml(ch.refParacom) + '</span></div>';
         if (ch.codeProjet) html += '<div class="detail-item"><span class="detail-label">Code Projet</span><span class="detail-value">' + security.escapeHtml(ch.codeProjet) + '</span></div>';
         if (ch.codeAction) html += '<div class="detail-item"><span class="detail-label">Code Action</span><span class="detail-value">' + security.escapeHtml(ch.codeAction) + '</span></div>';
@@ -2648,6 +2649,7 @@
             webmaster: (document.getElementById('ebf-webmaster-' + idx) || {}).value || '',
             emailObject: (document.getElementById('ebf-emailobject-' + idx) || {}).value || '',
             codeCom: (document.getElementById('ebf-codecom-' + idx) || {}).value || '',
+            codeApporteur: (document.getElementById('ebf-codeapporteur-' + idx) || {}).value || '',
             refParacom: (document.getElementById('ebf-refpara-' + idx) || {}).value || '',
             numCta: numCta, ctaUrls: ctaUrls,
             pdfBatFileName: _primaryEbfFileName(pdfBatEl && pdfBatEl.files),
@@ -2744,6 +2746,7 @@
     function fillEbfForm(idx, d) {
         setVal('ebf-webmaster-' + idx, d.webmaster);
         setVal('ebf-codecom-' + idx, d.codeCom);
+        setVal('ebf-codeapporteur-' + idx, d.codeApporteur);
         setVal('ebf-refpara-' + idx, d.refParacom);
         setVal('ebf-emailobject-' + idx, d.emailObject);
         setVal('ebf-numcta-' + idx, d.numCta || 0);
@@ -2934,6 +2937,7 @@
         if (d.emailObject) h += '<div class="depot-readonly-item"><strong>Objet de l\'email</strong>' + security.escapeHtml(d.emailObject) + '</div>';
         if (d.webmaster) h += '<div class="depot-readonly-item"><strong>Webmaster</strong>' + security.escapeHtml(d.webmaster) + '</div>';
         if (d.codeCom) h += '<div class="depot-readonly-item"><strong>Code Com</strong>' + security.escapeHtml(d.codeCom) + '</div>';
+        if (d.codeApporteur) h += '<div class="depot-readonly-item"><strong>Code apporteur</strong>' + security.escapeHtml(d.codeApporteur) + '</div>';
         if (d.refParacom) h += '<div class="depot-readonly-item"><strong>Ref Paracom</strong>' + security.escapeHtml(d.refParacom) + '</div>';
         if (d.numCta) h += '<div class="depot-readonly-item"><strong>CTA</strong>' + d.numCta + '</div>';
         if (d.pdfBatFileName) h += '<div class="depot-readonly-item"><strong>Fichier BAT</strong>' + security.escapeHtml(d.pdfBatFileName) + '</div>';
@@ -3365,7 +3369,7 @@
         var ch = currentCampaignData.channels[idx];
         if (!ch) return false;
         var changed = false;
-        ['codeCom', 'refParacom', 'codeProjet', 'codeAction', 'codeMK', 'emailObject'].forEach(function(k) {
+        ['codeCom', 'codeApporteur', 'refParacom', 'codeProjet', 'codeAction', 'codeMK', 'emailObject'].forEach(function(k) {
             var v = (depot[k] || '').toString().trim();
             if (v && ch[k] !== v) { ch[k] = v; changed = true; }
         });
