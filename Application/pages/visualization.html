@@ -128,6 +128,19 @@
                     </select>
                 </div>
 
+                <div class="filter-group">
+                    <label for="filter-etat-exclude">Masquer les statuts :</label>
+                    <select id="filter-etat-exclude" multiple size="1" title="Ctrl/Cmd-clic (ou glisser) pour en sélectionner plusieurs à masquer">
+                        <option value="Affectation">Affectation</option>
+                        <option value="Kick-off">Kick-off</option>
+                        <option value="Maquette">Maquette</option>
+                        <option value="En Fabrication">En Fabrication</option>
+                        <option value="À valider">À valider</option>
+                        <option value="Révision">Révision</option>
+                        <option value="Terminée">Terminée</option>
+                    </select>
+                </div>
+
                 <button type="button" id="toggle-more-filters" class="btn secondary small">
                     Plus de filtres<span id="more-filters-badge" class="filters-badge" style="display:none;"></span>
                     <span class="chev">▾</span>
@@ -540,7 +553,7 @@
             document.getElementById('search-input').addEventListener('input',
                 performance.debounce(function() { currentPage = 0; filterCampaigns(); }, 300)
             );
-            var FILTER_IDS = ['filter-ub', 'filter-canal', 'filter-type', 'filter-etat', 'filter-comtypology', 'filter-typology', 'filter-selfcare'];
+            var FILTER_IDS = ['filter-ub', 'filter-canal', 'filter-type', 'filter-etat', 'filter-etat-exclude', 'filter-comtypology', 'filter-typology', 'filter-selfcare'];
             FILTER_IDS.forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
@@ -790,6 +803,8 @@
             var canalFilter = document.getElementById('filter-canal').value;
             var typeFilter  = document.getElementById('filter-type').value;
             var etatFilter  = (document.getElementById('filter-etat') || {}).value || '';
+            var etatExcludeSel = document.getElementById('filter-etat-exclude');
+            var etatExcludeVals = etatExcludeSel ? Array.prototype.map.call(etatExcludeSel.selectedOptions, function(o) { return o.value; }) : [];
             var comTypologyFilter = (document.getElementById('filter-comtypology') || {}).value || '';
             var typologyFilter    = (document.getElementById('filter-typology') || {}).value || '';
             var selfcareFilter    = (document.getElementById('filter-selfcare') || {}).value || '';
@@ -843,10 +858,12 @@
 
                 var matchesKpi = matchesKpiCategory(campaign);
 
-                var matchesEtat = !etatFilter || (vcStatus(campaign.data, wfMod).text === etatFilter);
+                var etatText = (etatFilter || etatExcludeVals.length) ? vcStatus(campaign.data, wfMod).text : '';
+                var matchesEtat = !etatFilter || etatText === etatFilter;
+                var excludedByEtat = etatExcludeVals.length && etatExcludeVals.indexOf(etatText) !== -1;
 
                 return matchesSearch && matchesUB && matchesCanal && matchesType && matchesComTypology
-                    && matchesTypology && matchesSelfcare && matchesUser && matchesKpi && matchesEtat;
+                    && matchesTypology && matchesSelfcare && matchesUser && matchesKpi && matchesEtat && !excludedByEtat;
             });
 
             currentPage = 0;
