@@ -129,6 +129,13 @@
         /* Statut d'une étape (Validations en attente) */
         .pil-status-pending { background: var(--line-2); color: var(--muted); }
         .pil-status-revision { background: var(--red-50, #fdeaec); color: var(--red, #E2001A); }
+        /* Campagne en attente d'affectation d'un manager — bloquée avant même le
+           kick-off, donc distinguée des étapes de production classiques. */
+        .pil-status-affectation { background: var(--amber-50, #fff8e6); color: var(--status-valid, #9a6b00); }
+        .pil-row-affectation { background: var(--amber-50, #fffdf6); }
+        .pil-row-affectation:hover { background: var(--amber-100, #fef3d9); }
+        .pil-row-affectation td:first-child { background: var(--amber-50, #fffdf6); }
+        .pil-row-affectation:hover td:first-child { background: var(--amber-100, #fef3d9); }
 
         /* Thèmes mis en avant (Coms attendues) : Produit / Selfcare / Promotion —
            champs renseignés à la création (bloc « Produit ») sur la campagne. */
@@ -349,7 +356,7 @@
                                     <div class="pil-table-wrap">
                                         <table class="pil-table" id="pil-table" style="display:none;">
                                             <thead><tr>
-                                                <th>Date</th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>Thèmes</th><th>Canaux &amp; volumes</th><th>PO</th>
+                                                <th class="pil-th-sortable" id="pil-th-date">Date <span class="pil-sort-ic" id="pil-sort-ic-date">↑</span></th><th>Campagne</th><th>Livrable</th><th>Canal</th><th>Type de com</th><th>Thèmes</th><th>Canaux &amp; volumes</th><th>PO</th>
                                             </tr></thead>
                                             <tbody id="pil-tbody"></tbody>
                                         </table>
@@ -1306,15 +1313,17 @@
             }
 
             function renderRow(it) {
-                var statusClass = it.status === 'revision_requested' ? 'pil-status-revision' : 'pil-status-pending';
+                var isAwaitingAffectation = it.stepId === 'manager_affectation';
+                var statusClass = isAwaitingAffectation ? 'pil-status-affectation' : (it.status === 'revision_requested' ? 'pil-status-revision' : 'pil-status-pending');
+                var statusLabel = isAwaitingAffectation ? '⏳ En attente d\'affectation' : (STATUS_LABEL[it.status] || it.status);
                 var sinceClass = it.since.unknown ? 'pil-since-unknown' : (it.since.urgent ? 'pil-since-urgent' : '');
                 var risk = envoiRiskBucket(it);
                 var envoiClass = risk === 'none' ? 'pil-envoi-none' : 'pil-envoi-' + risk;
                 var envoiTag = it.delay ? '<span class="pil-envoi-tag' + (risk === 'ok' ? ' pil-envoi-far' : '') + '">' + esc(it.delay.text) + '</span>' : '';
-                return '<tr class="pil-row" data-name="' + esc(it.folderName) + '">'
+                return '<tr class="pil-row' + (isAwaitingAffectation ? ' pil-row-affectation' : '') + '" data-name="' + esc(it.folderName) + '">'
                     + '<td class="pil-camp">' + esc(it.campaignName) + '</td>'
                     + '<td>' + esc(it.deliverableName) + (it.canal ? ' <span class="pil-badge pil-canal">' + esc(it.canal) + '</span>' : '') + '</td>'
-                    + '<td>' + esc(it.stepLabel) + '<br><span class="pil-badge ' + statusClass + '">' + esc(STATUS_LABEL[it.status] || it.status) + '</span></td>'
+                    + '<td>' + esc(it.stepLabel) + '<br><span class="pil-badge ' + statusClass + '">' + esc(statusLabel) + '</span></td>'
                     + '<td>' + esc(it.comTypology || '—') + '</td>'
                     + '<td class="pil-team-cell">' + teamCell(it.team.po) + '</td>'
                     + '<td class="pil-team-cell">' + teamCell(it.team.com) + '</td>'
@@ -1688,6 +1697,10 @@
             return d.toISOString().slice(0, 10);
         }
 
+        // Tri par date du tableau « Coms attendues » — ascendant par défaut
+        // (ordre naturel de state.coms, déjà trié dans buildComs), inversable en
+        // cliquant l'en-tête (le regroupement par semaine suit, insensible au sens).
+        var comsSortDir = 'asc';
         function render() {
             var du = $('f-du').value, au = $('f-au').value;
             var canal = $('f-canal').value, type = $('f-type').value;
@@ -1707,6 +1720,9 @@
             });
 
             $('f-count').textContent = list.length + ' com' + (list.length > 1 ? 's' : '') + ' attendue' + (list.length > 1 ? 's' : '');
+            if (comsSortDir === 'desc') list = list.slice().reverse();
+            var icDate = $('pil-sort-ic-date');
+            if (icDate) icDate.textContent = comsSortDir === 'desc' ? '↓' : '↑';
 
             var table = $('pil-table'), empty = $('pil-empty'), tbody = $('pil-tbody');
             if (!list.length) {
@@ -1854,6 +1870,10 @@
         function wireFilters() {
             ['f-du', 'f-au', 'f-canal', 'f-type'].forEach(function(id) {
                 $(id).addEventListener('change', render);
+            });
+            $('pil-th-date').addEventListener('click', function() {
+                comsSortDir = comsSortDir === 'desc' ? 'asc' : 'desc';
+                render();
             });
             document.querySelectorAll('.pil-chip-toggle').forEach(function(btn) {
                 btn.addEventListener('click', function() { btn.classList.toggle('active'); render(); });
