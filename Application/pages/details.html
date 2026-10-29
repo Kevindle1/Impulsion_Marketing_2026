@@ -980,7 +980,8 @@
             h += '<span class="details-sidenav-label">Canaux</span>';
             channels.forEach(function(ch, idx) {
                 var label = ch.deliverableName || ('Canal ' + (idx + 1));
-                h += '<button class="details-nav-item" id="nav-item-' + idx + '" data-page="' + idx + '" title="' + security.escapeHtml(label) + '">📡 ' + security.escapeHtml(label) + '</button>';
+                var blocked = ch.blocageTechnique && ch.blocageTechnique.actif;
+                h += '<button class="details-nav-item" id="nav-item-' + idx + '" data-page="' + idx + '" title="' + security.escapeHtml(label) + (blocked ? ' — Blocage technique en cours' : '') + '">📡 ' + security.escapeHtml(label) + (blocked ? ' 🚫' : '') + '</button>';
             });
         }
         // Bilan : onglet masqué le temps de retravailler le calcul/la présentation
@@ -1485,6 +1486,29 @@
         var isAssignedCom  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'com').indexOf(currentUser.name)  !== -1);
         var isAssignedEbf  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'ebf').indexOf(currentUser.name)  !== -1);
         var isAssignedData = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'data').indexOf(currentUser.name) !== -1);
+
+        // Blocage technique du canal — indépendant de la progression du
+        // workflow (ex. plateforme d'envoi en panne) : signalé ici, avec si
+        // besoin un numéro de ticket CA Nous (incident interne Crédit Agricole).
+        // Éditable par toute personne affectée au canal, pas seulement le PO.
+        var blocage = ch.blocageTechnique || {};
+        var canEditBlocage = _isSuperAdmin || isPO || isAssignedCom || isAssignedEbf || isAssignedData;
+        html += '<div class="detail-section" style="border:1px solid ' + (blocage.actif ? 'var(--red,#E2001A)' : 'var(--line,#eaefec)') + ';background:' + (blocage.actif ? 'var(--red-50,#fdeaec)' : 'var(--bg-card,#fff)') + ';border-radius:12px;padding:14px 16px;margin-bottom:14px;">';
+        html += '<label style="display:flex;align-items:center;gap:8px;cursor:' + (canEditBlocage ? 'pointer' : 'default') + ';font-weight:700;font-size:13.5px;color:' + (blocage.actif ? 'var(--red,#E2001A)' : 'var(--ink)') + ';margin:0;">';
+        html += '<input type="checkbox" id="blocage-actif-' + idx + '"' + (blocage.actif ? ' checked' : '') + (canEditBlocage ? '' : ' disabled') + ' style="width:auto;">';
+        html += '🚫 Blocage technique en cours</label>';
+        if (canEditBlocage) {
+            html += '<div id="blocage-form-' + idx + '" style="margin-top:10px;' + (blocage.actif ? '' : 'display:none;') + '">';
+            html += '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Motif</label>';
+            html += '<textarea id="blocage-motif-' + idx + '" rows="2" style="width:100%;box-sizing:border-box;margin-bottom:8px;" placeholder="Ex : plateforme d\'envoi indisponible">' + security.escapeHtml(blocage.motif || '') + '</textarea>';
+            html += '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">N° de ticket CA Nous</label>';
+            html += '<input type="text" id="blocage-ticket-' + idx + '" value="' + security.escapeHtml(blocage.ticketCANous || '') + '" style="width:100%;box-sizing:border-box;margin-bottom:10px;" placeholder="Ex : INC0012345">';
+            html += '<button id="btn-blocage-save-' + idx + '" style="padding:8px 14px;border:none;border-radius:8px;background:var(--primary,#00875A);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">💾 Enregistrer</button>';
+            html += '</div>';
+        } else if (blocage.actif) {
+            html += '<div style="margin-top:8px;font-size:12.5px;color:var(--ink);">' + (blocage.motif ? security.escapeHtml(blocage.motif) + '<br>' : '') + (blocage.ticketCANous ? 'Ticket CA Nous : <strong>' + security.escapeHtml(blocage.ticketCANous) + '</strong>' : '') + '</div>';
+        }
+        html += '</div>';
         // Autorisation d'agir sur une étape donnée, acteur résolu PAR CANAL
         // (surcharge admin éventuelle — Administration ▸ Workflow, ex. la Com
         // peut déposer le test en prod pour le canal Courrier).
@@ -3481,6 +3505,36 @@
     function setupChannelPageEvents(idx) {
         var chForCfWire = currentCampaignData.channels[idx];
         ALL_STEP_IDS.forEach(function (sid) { wireCustomFieldsSection(sid, chForCfWire); });
+
+        // Blocage technique du canal — la case affiche/masque le formulaire,
+        // mais rien n'est sauvegardé avant un clic explicite sur « Enregistrer »
+        // (cohérent avec le reste de la page : une case seule ne mute jamais
+        // currentCampaignData).
+        var blocageCb = document.getElementById('blocage-actif-' + idx);
+        if (blocageCb) {
+            blocageCb.addEventListener('change', function () {
+                var f = document.getElementById('blocage-form-' + idx);
+                if (f) f.style.display = blocageCb.checked ? 'block' : 'none';
+            });
+        }
+        var btnBlocageSave = document.getElementById('btn-blocage-save-' + idx);
+        if (btnBlocageSave) {
+            btnBlocageSave.addEventListener('click', function () {
+                var ch = currentCampaignData.channels[idx];
+                if (!ch) return;
+                var actif = document.getElementById('blocage-actif-' + idx).checked;
+                var motif = (document.getElementById('blocage-motif-' + idx) || {}).value || '';
+                var ticket = (document.getElementById('blocage-ticket-' + idx) || {}).value || '';
+                ch.blocageTechnique = { actif: actif, motif: motif.trim(), ticketCANous: ticket.trim(), date: new Date().toISOString() };
+                disableBtn(btnBlocageSave, 'Enregistrement...');
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function () {
+                        logActivity(currentCampaignName, 'canal', (actif ? 'Blocage technique signalé' : 'Blocage technique levé') + ' — ' + (ch.deliverableName || ('Canal ' + (idx + 1))) + (ticket.trim() ? ' (ticket ' + ticket.trim() + ')' : ''));
+                        refreshCurrentPage();
+                    })
+                    .catch(function (err) { enableBtn(btnBlocageSave, '💾 Enregistrer'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
+            });
+        }
 
         // COM : numImages → dynamic URL inputs
         var numImgInput = document.getElementById('com-numimages-' + idx);
