@@ -773,7 +773,7 @@
                 group.querySelectorAll('.marche-tab').forEach(function(b) {
                     var active = b.getAttribute('data-marche') === state.activeMarche;
                     b.style.color = active ? 'var(--green-700)' : 'var(--muted,#6b7280)';
-                    b.style.borderBottomColor = active ? '#308276' : 'transparent';
+                    b.style.borderBottomColor = active ? 'var(--primary, #308276)' : 'transparent';
                     b.style.fontWeight = active ? '700' : '600';
                 });
                 renderGantt();

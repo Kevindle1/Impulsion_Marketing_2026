@@ -2367,7 +2367,7 @@
                     html += '<div class="summary-section">';
                     html += '  <h4>📢 Canaux de communication (' + numChannels + ')</h4>';
                     for (var i = 1; i <= numChannels; i++) {
-                        html += '  <div style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 8px;">';
+                        html += '  <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-card, #fff); border-radius: 8px;">';
                         html += '    <strong>Canal ' + i + ' :</strong><br>';
                         html += '    <div class="summary-item"><span class="summary-label">Nom du livrable :</span><span class="summary-value">' + ($(`#deliverableName${i}`)?.value || '-') + '</span></div>';
                         html += '    <div class="summary-item"><span class="summary-label">Canal du contenu :</span><span class="summary-value">' + ($(`#channelContent${i}`)?.value || '-') + '</span></div>';
