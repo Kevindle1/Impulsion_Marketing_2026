@@ -1609,6 +1609,7 @@
             if (!pc.chargeCom) pc.chargeCom = {};
             if (!pc.chargeData) pc.chargeData = {};
             if (!Array.isArray(pc.prioritesMarketing)) pc.prioritesMarketing = [];
+            if (!pc.decalageSemaines) pc.decalageSemaines = { com: 2, ebf: 2, data: 2 };
             var canaux = config.CANAUX || [];
             var typologies = config.TYPOLOGIES || [];
             var b = pc.bareme;
@@ -1683,6 +1684,14 @@
                 html += '</tbody></table></div></div>';
             }
 
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Charge de travail — décalage par semaine</h3></div>'
+                + '<div class="empty-hint" style="padding-top:0;">Nombre de semaines entre la date d\'envoi d\'un livrable et la semaine où la charge correspondante est affectée au coéquipier dans Pilotage ▸ Charge (ex. envoi S52, décalage 2 → charge affectée à S50).</div>'
+                + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">'
+                + ['com', 'ebf', 'data'].map(function (role) {
+                    return '<div><label class="admin-label">' + esc(roleLabel(role)) + '</label><input type="number" min="0" class="admin-input prio-num" data-decalage="' + role + '" value="' + (typeof pc.decalageSemaines[role] === 'number' ? pc.decalageSemaines[role] : 2) + '" style="width:100%;"></div>';
+                }).join('')
+                + '</div></div>';
+
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Niveaux de priorité marketing</h3><span class="count-pill">' + pc.prioritesMarketing.length + '</span></div>' + chipsHtml(pc.prioritesMarketing, 'delpriorite')
                 + '<div class="add-row"><input class="admin-input" id="add-priorite" placeholder="Nouveau niveau…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-priorite">+ Ajouter</button></div></div>';
 
@@ -1718,6 +1727,9 @@
                     var stateKey = parts[0], canal = parts[1], origine = parts[2];
                     if (!pc[stateKey][canal]) pc[stateKey][canal] = {};
                     pc[stateKey][canal][origine] = parseFloat(inp.value) || 0;
+                });
+                cont.querySelectorAll('[data-decalage]').forEach(function (inp) {
+                    pc.decalageSemaines[inp.getAttribute('data-decalage')] = parseInt(inp.value, 10) || 0;
                 });
                 var out = JSON.parse(JSON.stringify(pc));
                 saveConfig({ priorisation: out }, 'Priorisation enregistrée.').then(function () {

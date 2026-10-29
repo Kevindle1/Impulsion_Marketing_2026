@@ -495,6 +495,24 @@
                                             Personne n'a de livrable en attente pour le moment.
                                         </div>
                                     </div>
+
+                                    <div class="admin-sec-head" style="margin-top:28px;">
+                                        <div class="admin-sec-ic">⏱️</div>
+                                        <div>
+                                            <h2>Charge estimée par semaine</h2>
+                                            <p>À partir des abaques de charge de réalisation (Admin ▸ Priorisation), temps estimé par coéquipier, affecté à la semaine où le travail sera théoriquement réalisé (date d'envoi du livrable décalée du nombre de semaines configuré par équipe).</p>
+                                        </div>
+                                    </div>
+                                    <div class="pil-table-wrap">
+                                        <table class="pil-table" id="ch-week-table" style="display:none;">
+                                            <thead id="ch-week-thead"></thead>
+                                            <tbody id="ch-week-tbody"></tbody>
+                                        </table>
+                                        <div id="ch-week-empty" class="pil-empty" style="display:none;">
+                                            <div class="big">🎉</div>
+                                            Aucune charge estimée pour le moment (aucun canal avec une charge &gt; 0 et une personne affectée).
+                                        </div>
+                                    </div>
                                 </section>
 
                                 <!-- ═══ Points de friction ═══ -->
@@ -1055,6 +1073,7 @@
                     populateValidationFilters();
                     renderValidations();
                     renderCharge();
+                    renderChargeWeek();
                     renderKpi();
                 })
                 .catch(function (err) {
@@ -1351,6 +1370,118 @@
                     + '<td>' + r.total + '</td>'
                     + '<td>' + (r.urgent ? '<span class="pil-badge pil-badge-overdue">' + r.urgent + '</span>' : '0') + '</td>'
                     + '</tr>';
+            }).join('');
+        }
+
+        // ── Charge de travail estimée (HH:MM, abaques + décalage par semaine) ──
+        function fmtHHMM(min) {
+            min = Math.round(min || 0);
+            var h = Math.floor(min / 60), m = min % 60;
+            return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+        }
+        function mondayOf(date) {
+            var d = new Date(date.getTime()); d.setHours(0, 0, 0, 0);
+            var day = (d.getDay() + 6) % 7; // lundi=0 … dimanche=6
+            d.setDate(d.getDate() - day);
+            return d;
+        }
+        var CHARGE_WEEKS_AHEAD = 11; // fenêtre affichée : semaine courante + 11 suivantes (~3 mois)
+        function buildWeekColumns() {
+            var wf = IM.workflow;
+            var monday = mondayOf(new Date());
+            var cols = [];
+            for (var i = 0; i <= CHARGE_WEEKS_AHEAD; i++) {
+                var d = new Date(monday.getTime()); d.setDate(d.getDate() + i * 7);
+                var iso = d.toISOString().slice(0, 10);
+                var key = wf.isoWeekKey(iso);
+                cols.push({ key: key, label: 'S' + key.split('-S')[1] });
+            }
+            return cols;
+        }
+        // Agrège, pour chaque coéquipier, la charge (minutes) par semaine ISO
+        // d'affectation (cf. workflow.chargeWeekKey) sur toutes les campagnes
+        // actives — Com/EBF canal par canal (selon qui est affecté sur CE
+        // canal), Data une seule fois par campagne (charge non répétée par
+        // canal, cf. computeChargeBreakdown).
+        function buildWorkloadByPerson() {
+            var wf = IM.workflow;
+            var byPerson = {};
+            var cols = buildWeekColumns();
+            var firstKey = cols[0].key;
+            var colSet = {};
+            cols.forEach(function (c) { colSet[c.key] = true; });
+            function add(name, role, weekKey, minutes) {
+                if (!name || !minutes) return;
+                if (!byPerson[name]) byPerson[name] = { roles: {}, weeks: {}, before: 0, after: 0, total: 0 };
+                var p = byPerson[name];
+                p.roles[role] = true;
+                p.total += minutes;
+                if (!weekKey) { p.after += minutes; return; }
+                if (colSet[weekKey]) { p.weeks[weekKey] = (p.weeks[weekKey] || 0) + minutes; return; }
+                if (weekKey < firstKey) p.before += minutes; else p.after += minutes;
+            }
+            state.allCampaigns.forEach(function (c) {
+                if (wf.isCompleted(c)) return;
+                wf.initWorkflow(c);
+                var channels = c.channels || [];
+                var dataAssignees = {}, dataDates = [];
+                channels.forEach(function (ch, idx) {
+                    if (!(ch && ch.content)) return;
+                    var charge = wf.computeChannelCharge(c, ch);
+                    var dateRef = resolveChannelDate(c, ch);
+                    if (charge.com) {
+                        var comNames = wf.channelAssignees(c, idx, 'com');
+                        if (comNames.length) {
+                            var shareCom = charge.com / comNames.length;
+                            var wkCom = wf.chargeWeekKey(dateRef, 'com');
+                            comNames.forEach(function (n) { add(n, 'com', wkCom, shareCom); });
+                        }
+                    }
+                    if (charge.ebf) {
+                        var ebfNames = wf.channelAssignees(c, idx, 'ebf');
+                        if (ebfNames.length) {
+                            var shareEbf = charge.ebf / ebfNames.length;
+                            var wkEbf = wf.chargeWeekKey(dateRef, 'ebf');
+                            ebfNames.forEach(function (n) { add(n, 'ebf', wkEbf, shareEbf); });
+                        }
+                    }
+                    wf.channelAssignees(c, idx, 'data').forEach(function (n) { dataAssignees[n] = true; });
+                    if (dateRef) dataDates.push(dateRef);
+                });
+                var dataCharge = wf.computeChargeBreakdown(c).data;
+                var dataNames = Object.keys(dataAssignees);
+                if (dataCharge && dataNames.length) {
+                    dataDates.sort();
+                    var dataDateRef = dataDates[0] || c.launchDate || null;
+                    var wkData = wf.chargeWeekKey(dataDateRef, 'data');
+                    var shareData = dataCharge / dataNames.length;
+                    dataNames.forEach(function (n) { add(n, 'data', wkData, shareData); });
+                }
+            });
+            return { cols: cols, byPerson: byPerson };
+        }
+        function renderChargeWeek() {
+            var data = buildWorkloadByPerson();
+            var cols = data.cols, byPerson = data.byPerson;
+            var names = Object.keys(byPerson).sort(function (a, b) { return byPerson[b].total - byPerson[a].total; });
+            var table = $('ch-week-table'), empty = $('ch-week-empty'), head = $('ch-week-thead'), tbody = $('ch-week-tbody');
+            if (!names.length) { table.style.display = 'none'; empty.style.display = 'block'; return; }
+            empty.style.display = 'none'; table.style.display = 'table';
+            head.innerHTML = '<tr><th>Personne</th><th>Équipe</th><th>En retard</th>'
+                + cols.map(function (c) { return '<th>' + esc(c.label) + '</th>'; }).join('')
+                + '<th>Plus tard</th><th>Total</th></tr>';
+            tbody.innerHTML = names.map(function (name) {
+                var p = byPerson[name];
+                var roles = Object.keys(p.roles).map(roleLabel).join(' / ');
+                var weekCells = cols.map(function (c) {
+                    var v = p.weeks[c.key] || 0;
+                    return '<td' + (v ? '' : ' style="color:var(--muted-2);"') + '>' + (v ? fmtHHMM(v) : '—') + '</td>';
+                }).join('');
+                return '<tr><td class="pil-camp">' + esc(name) + '</td><td>' + esc(roles) + '</td>'
+                    + '<td>' + (p.before ? '<span class="pil-badge pil-badge-overdue">' + fmtHHMM(p.before) + '</span>' : '—') + '</td>'
+                    + weekCells
+                    + '<td>' + (p.after ? fmtHHMM(p.after) : '—') + '</td>'
+                    + '<td><strong>' + fmtHHMM(p.total) + '</strong></td></tr>';
             }).join('');
         }
 
@@ -1752,6 +1883,7 @@
                 renderRetards();
                 renderValidations();
                 renderCharge();
+                renderChargeWeek();
                 renderKpi();
                 renderFriction();
                 wireCalendarNav();

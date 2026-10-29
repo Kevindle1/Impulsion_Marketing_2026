@@ -2251,7 +2251,13 @@ window.ImpulsionMarketing.workflow = (function () {
       Campagne: { Natio: 300, CR: 420 },
       Étude:    { Natio: 360, CR: 480 }
     },
-    prioritesMarketing: ['Incontournable', 'Elevé', 'Standard', 'Faible', 'Ne pas lancer']
+    prioritesMarketing: ['Incontournable', 'Elevé', 'Standard', 'Faible', 'Ne pas lancer'],
+    // Charge de travail par personne (Pilotage ▸ Charge) : nombre de semaines
+    // entre la date d'envoi d'un livrable et la semaine où la charge
+    // correspondante est réputée réalisée (ex. envoi S52, décalage 2 → charge
+    // affectée à S50). Un décalage par équipe (le travail Data démarre
+    // généralement plus tôt que la mise en forme Com/EBF).
+    decalageSemaines: { com: 2, ebf: 2, data: 2 }
   };
   // Config effective (fusion defaults + surcharge admin — comme _stepDef pour
   // le workflow). Le barème et les libellés fusionnent clé par clé (une admin
@@ -2268,7 +2274,8 @@ window.ImpulsionMarketing.workflow = (function () {
       chargeEbf: (p.chargeEbf && typeof p.chargeEbf === 'object') ? p.chargeEbf : DEFAULT_PRIORISATION.chargeEbf,
       chargeCom: (p.chargeCom && typeof p.chargeCom === 'object') ? p.chargeCom : DEFAULT_PRIORISATION.chargeCom,
       chargeData: (p.chargeData && typeof p.chargeData === 'object') ? p.chargeData : DEFAULT_PRIORISATION.chargeData,
-      prioritesMarketing: (Array.isArray(p.prioritesMarketing) && p.prioritesMarketing.length) ? p.prioritesMarketing : DEFAULT_PRIORISATION.prioritesMarketing
+      prioritesMarketing: (Array.isArray(p.prioritesMarketing) && p.prioritesMarketing.length) ? p.prioritesMarketing : DEFAULT_PRIORISATION.prioritesMarketing,
+      decalageSemaines: Object.assign({}, DEFAULT_PRIORISATION.decalageSemaines, p.decalageSemaines || {})
     };
   }
   function getPriorisationConfig() { return _priorisationCfg(); }
@@ -2319,22 +2326,72 @@ window.ImpulsionMarketing.workflow = (function () {
   // Priorisation). L'origine DATA retenue est CR dès qu'au moins un canal
   // est en CR (le travail de coordination Data est traité au plus lourd des
   // deux dès qu'une partie de la campagne sort du cadre national).
+  // Charge Com/EBF d'UN SEUL canal (pas la campagne entière) — utilisé par
+  // computeChargeBreakdown ci-dessous (charge totale) et par le calcul de
+  // charge par personne (Pilotage ▸ Charge), qui doit répartir la charge
+  // canal par canal selon qui est affecté sur CE canal précis.
+  function computeChannelCharge(campaignData, ch) {
+    var cfg = _priorisationCfg();
+    var canal = ch && ch.content;
+    if (!canal) return { com: 0, ebf: 0 };
+    var origine = _channelOrigine(ch);
+    return {
+      com: ((cfg.chargeCom[canal] || {})[origine]) || 0,
+      ebf: ((cfg.chargeEbf[canal] || {})[origine]) || 0
+    };
+  }
   function computeChargeBreakdown(campaignData) {
     var cfg = _priorisationCfg();
     var channels = (campaignData && campaignData.channels) || [];
     var chargeEbf = 0, chargeCom = 0, anyCr = false;
     channels.forEach(function (ch) {
-      var canal = ch && ch.content;
-      if (!canal) return;
-      var origine = _channelOrigine(ch);
-      if (origine === 'CR') anyCr = true;
-      chargeEbf += ((cfg.chargeEbf[canal] || {})[origine]) || 0;
-      chargeCom += ((cfg.chargeCom[canal] || {})[origine]) || 0;
+      if (!(ch && ch.content)) return;
+      var c = computeChannelCharge(campaignData, ch);
+      chargeCom += c.com;
+      chargeEbf += c.ebf;
+      if (_channelOrigine(ch) === 'CR') anyCr = true;
     });
     var dataOrigine = anyCr ? 'CR' : 'Natio';
     var type = (campaignData && campaignData.typology) || '';
     var chargeData = ((cfg.chargeData[type] || {})[dataOrigine]) || 0;
     return { com: chargeCom, ebf: chargeEbf, data: chargeData };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // SEMAINE ISO 8601 — pour répartir la charge de travail par semaine
+  // (Pilotage ▸ Charge). Le jeudi de la semaine détermine son année.
+  // ─────────────────────────────────────────────────────────
+  function _isoWeekInfo(date) {
+    var d = new Date(date.getTime());
+    d.setHours(0, 0, 0, 0);
+    var day = (d.getDay() + 6) % 7; // lundi=0 … dimanche=6
+    d.setDate(d.getDate() - day + 3); // jeudi de cette semaine
+    var firstThursday = new Date(d.getFullYear(), 0, 4);
+    var fDay = (firstThursday.getDay() + 6) % 7;
+    firstThursday.setDate(firstThursday.getDate() - fDay + 3);
+    var week = 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000));
+    return { year: d.getFullYear(), week: week };
+  }
+  function _weekKeyFromInfo(info) {
+    return info.year + '-S' + (info.week < 10 ? '0' : '') + info.week;
+  }
+  function isoWeekKey(dateStr) {
+    if (!dateStr) return null;
+    var d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    return _weekKeyFromInfo(_isoWeekInfo(d));
+  }
+  // Semaine d'affectation de la charge pour une équipe donnée : date d'envoi
+  // décalée en arrière du nombre de semaines configuré (Admin ▸ Priorisation
+  // ▸ Charge de travail). Ex. envoi S52, décalage 2 → charge affectée à S50.
+  function chargeWeekKey(envoiDateStr, role) {
+    if (!envoiDateStr) return null;
+    var d = new Date(envoiDateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    var cfg = _priorisationCfg();
+    var weeks = (cfg.decalageSemaines && cfg.decalageSemaines[role]) || 0;
+    d.setDate(d.getDate() - weeks * 7);
+    return _weekKeyFromInfo(_isoWeekInfo(d));
   }
   // Charge de réalisation = somme du détail par équipe (cf. computeChargeBreakdown).
   function computeChargeRealisation(campaignData) {
@@ -3654,6 +3711,9 @@ window.ImpulsionMarketing.workflow = (function () {
     computeValeurMetierCorrigee:  computeValeurMetierCorrigee,
     computeChargeRealisation:     computeChargeRealisation,
     computeChargeBreakdown:       computeChargeBreakdown,
+    computeChannelCharge:         computeChannelCharge,
+    isoWeekKey:                   isoWeekKey,
+    chargeWeekKey:                chargeWeekKey,
     computeValeurCampagne:        computeValeurCampagne
   };
 })();
