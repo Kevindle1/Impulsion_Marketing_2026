@@ -4475,6 +4475,48 @@ window.ImpulsionMarketing.incident = (function () {
     return t || (location.pathname.split('/').pop() || 'Page inconnue');
   }
 
+  // Campagne de contexte (ex. ouverte depuis details.html?name=...) — pré-remplit
+  // le champ "Campagne concernée" et permet de capturer silencieusement sa date
+  // de création (campagneDate), pour le filtre « ancienneté » en Administration
+  // ▸ Signalements ▸ Recherche. Sans lien structuré (texte libre modifiable par
+  // l'utilisateur), on n'attache la date que si le champ n'a pas été changé.
+  var _ctxCampagne = null; // { name, instantiation } | null
+  function currentCampaignNameFromUrl() {
+    try {
+      var n = new URLSearchParams(location.search).get('name');
+      return n ? n.trim() : '';
+    } catch (e) { return ''; }
+  }
+  function prefetchCtxCampagne(name) {
+    _ctxCampagne = null;
+    if (!name || !IM.directoryStorage) return;
+    IM.directoryStorage.getRootHandleWithCheck()
+      .then(function (res) {
+        if (res.status !== 'success') throw new Error('no root');
+        return res.handle.getDirectoryHandle('Campagnes');
+      })
+      .then(function (d) { return d.getDirectoryHandle(name); })
+      .then(function (d) { return d.getFileHandle('campagne.json'); })
+      .then(function (fh) { return fh.getFile(); })
+      .then(function (f) { return f.text(); })
+      .then(function (txt) {
+        var data = JSON.parse(txt);
+        _ctxCampagne = { name: name, instantiation: data.instantiation || null };
+      })
+      .catch(function () { _ctxCampagne = null; });
+  }
+  function populateEtapeOptions() {
+    var sel = $('im-inc-etape');
+    var wf = IM.workflow;
+    if (!sel || !wf || !Array.isArray(wf.STEPS) || sel.options.length > 1) return;
+    wf.STEPS.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.id;
+      o.textContent = wf.stepLabel ? wf.stepLabel(s.id) : s.label;
+      sel.appendChild(o);
+    });
+  }
+
   function frDate(iso) {
     if (!iso) return '';
     var d = new Date(iso);
@@ -4489,8 +4531,16 @@ window.ImpulsionMarketing.incident = (function () {
     var type = $('im-inc-type').value;
     var name = $('im-inc-name').value.trim();
     var page = $('im-inc-page').value.trim();
+    var etapeId = $('im-inc-etape').value;
+    var campagne = $('im-inc-campagne').value.trim();
     var desc = $('im-inc-desc').value.trim();
     if (!name || !desc) { showErr('Merci d\'indiquer au moins votre nom et une description.'); return; }
+    var wf = IM.workflow;
+    // On n'attache la date de création de la campagne (pour le filtre
+    // « ancienneté » en Administration) que si le champ campagne n'a pas été
+    // modifié par rapport à la campagne détectée automatiquement — un texte
+    // libre tapé/modifié à la main n'a pas de date fiable à y associer.
+    var campagneDate = (_ctxCampagne && _ctxCampagne.name === campagne) ? _ctxCampagne.instantiation : null;
 
     var btn = $('im-inc-submit');
     btn.disabled = true; btn.textContent = 'Envoi…';
@@ -4513,6 +4563,10 @@ window.ImpulsionMarketing.incident = (function () {
               type: type,
               auteur: name,
               page: page,
+              etapeId: etapeId || '',
+              etapeLabel: (etapeId && wf && wf.stepLabel) ? wf.stepLabel(etapeId) : '',
+              campagne: campagne || '',
+              campagneDate: campagneDate || null,
               description: desc,
               statut: 'nouveau'
             });
@@ -4664,6 +4718,12 @@ window.ImpulsionMarketing.incident = (function () {
     var user = IM.users && IM.users.getCurrentUser ? IM.users.getCurrentUser() : null;
     if (user && !$('im-inc-name').value) $('im-inc-name').value = user.name;
     if (!$('im-inc-page').value) $('im-inc-page').value = currentPageLabel();
+    populateEtapeOptions();
+    var ctxName = currentCampaignNameFromUrl();
+    if (ctxName && !$('im-inc-campagne').value) {
+      $('im-inc-campagne').value = ctxName;
+      prefetchCtxCampagne(ctxName);
+    }
     $('im-incident-error').style.display = 'none';
     activateTab('new');
     m.style.display = 'flex';
@@ -4730,6 +4790,8 @@ window.ImpulsionMarketing.incident = (function () {
             '<label style="' + lab + '">Type<select id="im-inc-type" style="' + fld + 'cursor:pointer;"><option value="incident">🐞 Incident / bug</option><option value="amelioration">💡 Amélioration</option></select></label>' +
             '<label style="' + lab + '">Nom et prénom<input id="im-inc-name" type="text" style="' + fld + '" placeholder="Votre nom"></label>' +
             '<label style="' + lab + '">Page concernée<input id="im-inc-page" type="text" style="' + fld + '" placeholder="Ex : Détails, Pilotage…"></label>' +
+            '<label style="' + lab + '">Étape du workflow concernée <span style="font-weight:400;">(optionnel)</span><select id="im-inc-etape" style="' + fld + 'cursor:pointer;"><option value="">— Non applicable / général —</option></select></label>' +
+            '<label style="' + lab + '">Campagne concernée <span style="font-weight:400;">(optionnel)</span><input id="im-inc-campagne" type="text" style="' + fld + '" placeholder="Ex : BAQ_Mars2026"></label>' +
             '<label style="' + lab + '">Description<textarea id="im-inc-desc" rows="4" style="' + fld + 'resize:vertical;" placeholder="Décrivez le problème ou l\'amélioration…"></textarea></label>' +
             '<button id="im-inc-submit" style="margin-top:4px;padding:12px;border:none;border-radius:12px;background:var(--primary,#00875A);color:#fff;font-weight:700;font-size:15px;cursor:pointer;">Envoyer</button>' +
           '</div>' +
