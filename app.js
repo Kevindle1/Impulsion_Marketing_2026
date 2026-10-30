@@ -1,58 +1,66 @@
 'use strict';
 
 /* ==========================================================================
-   Carto Process — diagnostic de poste et amélioration des processus
+   Carto Process — accompagnement d'une immersion sur un poste
+   Phase 1 Immersion → 2 Réflexion → 3 Validation → 4 Restitution
    - 100 % hors ligne : ouvrir index.html dans le navigateur.
    - Données enregistrées dans le navigateur (localStorage), export/import JSON.
-   - Méthodes : cartographie de processus (Businessmap) + notation BPMN simplifiée.
    ========================================================================== */
 
-const STORE_KEY = 'cartoProcess.v1';
-const NA = 'Non attribué';
+const STORE_KEY = 'cartoProcess.v2';
+const NA = 'Non renseigné';
 
-const STEP_TYPES = {
-  tache:    'Tâche (dans un outil)',
-  manuelle: 'Tâche manuelle (papier, hors outil)',
-  auto:     'Tâche automatisée (système)',
-  decision: 'Décision / contrôle',
-  attente:  'Attente / délai'
-};
-const FLAGS = [
-  { key: 'ressaisie', label: 'Ressaisie', short: 'R', color: '#c8372d' },
-  { key: 'manuel',    label: 'Retraitement manuel', short: 'M', color: '#d9730d' },
-  { key: 'suivi',     label: 'Difficulté de suivi', short: 'S', color: '#8a4baf' }
+const PHASES = [
+  { n: 1, titre: 'Immersion', quand: 'Avec la personne, sur le moment', but: 'Relever chaque tâche, une par une : ce qui est fait, qui intervient, combien de temps, ce qui coince.' },
+  { n: 2, titre: 'Réflexion', quand: 'Seul, au calme', but: 'Pour chaque étape qui coince, proposer une solution (outil, modèle, automatisation…). Sans mettre de temps.' },
+  { n: 3, titre: 'Validation', quand: 'Avec la personne', but: 'Présenter chaque solution. C\'est la personne qui estime le nouveau temps : le gain se calcule tout seul.' },
+  { n: 4, titre: 'Restitution', quand: 'Pour ta hiérarchie', but: 'Le dossier final : temps gagné, tâches simplifiées, risque « personne clé » réduit.' }
 ];
-const STATUTS = { afaire: 'À cartographier', encours: 'En cours', fait: 'Cartographié', valide: 'Validé avec l\'équipe' };
-const CRITICITES = { 1: 'Faible', 2: 'Moyenne', 3: 'Forte' };
 const PERIODES = {
   jour:    { label: 'par jour',    mult: 220 },
   semaine: { label: 'par semaine', mult: 47 },
   mois:    { label: 'par mois',    mult: 12 },
   an:      { label: 'par an',      mult: 1 }
 };
-const LEVIERS = {
-  supprimer:    'Supprimer l\'étape',
-  automatiser:  'Automatiser',
-  simplifier:   'Simplifier / outiller',
-  standardiser: 'Standardiser (modèle, règle)'
-};
-const EFFORTS = { 1: 'Faible', 2: 'Moyen', 3: 'Fort' };
-const IMP_STATUTS = { proposee: 'Proposée', retenue: 'Retenue', realisee: 'Réalisée', ecartee: 'Écartée' };
-const QUADRANTS = {
-  quickwin:    'Gain rapide',
-  planifier:   'À planifier',
-  structurant: 'Projet structurant',
-  petit:       'Petit plus',
-  arbitrer:    'À arbitrer',
-  ecarter:     'À reconsidérer'
-};
-const TABS = [
-  ['cadrage', 'Cadrage'],
-  ['etapes', 'Relevé des étapes'],
-  ['carte', 'Cartographie actuelle'],
-  ['analyse', 'Analyse & pistes'],
-  ['cible', 'Cible & gains']
+const FLAGS = [
+  { key: 'ressaisie', label: 'Je ressaisis une info', nom: 'Ressaisie', short: 'R', color: '#c8372d' },
+  { key: 'manuel',    label: 'Je fais à la main',     nom: 'Travail manuel', short: 'M', color: '#d9730d' },
+  { key: 'suivi',     label: 'Je dois relancer / suivre', nom: 'Suivi difficile', short: 'S', color: '#8a4baf' }
 ];
+const LEVIERS = {
+  supprimer:   'Supprimer l\'étape',
+  automatiser: 'Automatiser',
+  outiller:    'Outil / fonctionnalité',
+  modele:      'Modèle ou règle commune',
+  organiser:   'Réorganiser'
+};
+// Idées de solutions proposées selon ce qui coince
+const IDEES = {
+  ressaisie: [
+    ['outiller', 'Formulaire en ligne (Microsoft Forms) qui alimente directement le suivi'],
+    ['outiller', 'Une seule liste partagée (SharePoint / Excel en ligne) au lieu de plusieurs fichiers'],
+    ['automatiser', 'Copie automatique d\'un outil à l\'autre (Power Automate)']
+  ],
+  manuel: [
+    ['modele', 'Modèle prérempli (Word / Excel) avec la mise en forme déjà faite'],
+    ['automatiser', 'Calculs automatiques dans Excel (formules, tableau croisé dynamique)'],
+    ['automatiser', 'Rapport automatique (Power BI) au lieu de consolider à la main']
+  ],
+  suivi: [
+    ['outiller', 'Tableau de suivi partagé avec statuts (Planner / liste SharePoint)'],
+    ['automatiser', 'Relance automatique au bout de X jours (Power Automate)'],
+    ['organiser', 'Boîte mail partagée avec catégories par sujet']
+  ],
+  general: [
+    ['supprimer', 'Supprimer l\'étape : est-elle vraiment utile ?'],
+    ['modele', 'Mode opératoire écrit pour qu\'une autre personne puisse la faire'],
+    ['organiser', 'Regrouper avec une autre étape ou la faire en une seule fois']
+  ]
+};
+const QUI_SAIT = { personne: 'Personne d\'autre', une: 'Une autre personne', plusieurs: 'Plusieurs personnes' };
+const MODE_OP = { non: 'Non, rien d\'écrit', partiel: 'En partie / pas à jour', oui: 'Oui, à jour' };
+const AVIS = { ok: 'D\'accord', discuter: 'À discuter', non: 'Pas convaincu(e)' };
+const RISQUES = { 3: 'Élevé', 2: 'Moyen', 1: 'Faible' };
 
 /* ---------- Utilitaires ---------- */
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -60,145 +68,110 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const num = v => { const n = parseFloat(String(v ?? '').replace(',', '.')); return isFinite(n) ? n : 0; };
 const fmtInt = n => Math.round(n).toLocaleString('fr-FR');
 const fmtDec = (n, d = 1) => n.toLocaleString('fr-FR', { maximumFractionDigits: d });
-const splitList = s => String(s || '').split(/[,;\n]/).map(x => x.trim()).filter(Boolean);
 const slug = s => String(s || 'export').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+const plural = (n, w, ws) => `${fmtInt(n)} ${n > 1 ? (ws || w + 's') : w}`;
 
 function fmtDur(min) {
-  if (min < 60) return fmtInt(min) + ' min';
-  const h = min / 60;
-  return (h < 10 ? fmtDec(h) : fmtInt(h)) + ' h';
+  const neg = min < 0;
+  min = Math.abs(min);
+  let out;
+  if (min < 60) out = fmtDec(min) + ' min';
+  else { const h = min / 60; out = (h < 10 ? fmtDec(h) : fmtInt(h)) + ' h'; }
+  return (neg ? '+' : '') + out;
 }
 function fmtEtp(min) {
   const etp = min / 60 / (num(state.settings.heuresEtp) || 1607);
   return etp.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ETP';
 }
 const pct = (a, b) => b ? Math.round(a / b * 100) + ' %' : '—';
+const who = () => (state.mission.personne || '').trim() || 'la personne';
 
 /* ---------- Modèle ---------- */
 function newStep(o) {
   return Object.assign({
-    id: uid(), type: 'tache', nom: '', acteur: '', outil: '', donnees: '', duree: '', taux: '100',
-    ressaisie: false, manuel: false, suivi: false, irritant: '',
-    cible: '', labelSuite: 'Oui', labelCible: 'Non'
+    id: uid(), quoi: '', qui: '', outil: '', duree: '', taux: '100',
+    ressaisie: false, manuel: false, suivi: false, precision: '',
+    controle: false, retour: '',
+    // Phase 2
+    solOpen: false, sol: '', levier: '', tracabilite: false, securise: false,
+    // Phase 3
+    nouveauTemps: '', avis: ''
   }, o);
 }
-function newImp(o) {
+function newTask(o) {
   return Object.assign({
-    id: uid(), titre: '', stepId: '', levier: 'simplifier', gain: '', manips: '',
-    tracabilite: false, controle: false, effort: '1', statut: 'proposee', description: ''
-  }, o);
-}
-function newProcess(o) {
-  return Object.assign({
-    id: uid(), nom: 'Nouveau processus', domaine: '', finalite: '', declencheur: '', resultat: '',
-    volQty: '', volPer: 'mois', criticite: '2', statut: 'afaire',
-    fournisseurs: '', entrees: '', sorties: '', clients: '',
-    acteurs: '', outils: '', interlocuteurs: '', dateEntretien: '', notes: '',
-    steps: [], ameliorations: []
+    id: uid(), nom: '', description: '', freqQty: '', freqPer: 'mois', origine: '', resultat: '',
+    quiSait: '', modeOp: '', notes: '',
+    quiSaitApres: '', modeOpApres: '', notesValidation: '',
+    p1Done: false, p2Done: false, p3Done: false,
+    steps: []
   }, o);
 }
 function emptyState() {
   return {
-    version: 1, isDemo: false,
-    mission: { service: '', poste: '', titulaire: '', analyste: '', debut: '', fin: '', contexte: '' },
-    settings: { heuresEtp: '1607', seuilGain: '20' },
-    processes: []
+    version: 2, isDemo: false,
+    mission: { service: '', personne: '', poste: '', analyste: '', debut: '', fin: '', contexte: '' },
+    settings: { heuresEtp: '1607' },
+    taches: []
   };
 }
 
 /* ---------- Calculs ---------- */
-const volume = p => num(p.volQty) * (PERIODES[p.volPer]?.mult ?? 1);
+const volume = t => num(t.freqQty) * (PERIODES[t.freqPer]?.mult ?? 1);
 const taux = s => (s.taux === '' || s.taux == null) ? 100 : num(s.taux);
-const stepOcc = (p, s) => volume(p) * taux(s) / 100;               // nombre d'exécutions par an
-const stepAnnual = (p, s) => num(s.duree) * stepOcc(p, s);         // minutes par an
-const isIrritant = s => FLAGS.some(f => s[f.key]) || !!String(s.irritant || '').trim();
-const activeImps = p => p.ameliorations.filter(a => a.statut !== 'ecartee');
-const stepOf = (p, id) => p.steps.find(s => s.id === id);
+const stepOcc = (t, s) => volume(t) * taux(s) / 100;
+const isIrritant = s => FLAGS.some(f => s[f.key]) || !!String(s.precision || '').trim();
+const hasSol = s => !!(String(s.sol || '').trim() || s.levier);
+// Un gain ne compte que si la personne a donné son estimation et n'a pas rejeté la solution
+const isValidated = s => hasSol(s) && String(s.nouveauTemps ?? '') !== '' && s.avis !== 'non';
+const newDuree = s => isValidated(s) ? num(s.nouveauTemps) : num(s.duree);
 
-// Minutes économisées par exécution d'une étape (toutes pistes actives confondues)
-function stepReduction(p, s) {
-  const imps = activeImps(p).filter(a => a.stepId === s.id);
-  if (imps.some(a => a.levier === 'supprimer')) return num(s.duree);
-  return Math.min(num(s.duree), imps.reduce((t, a) => t + num(a.gain), 0));
-}
-function impGainPerOcc(p, a) {
-  const s = stepOf(p, a.stepId);
-  if (!s) return 0;
-  return a.levier === 'supprimer' ? num(s.duree) : Math.min(num(a.gain), num(s.duree));
-}
-function impAnnualGain(p, a) {
-  const s = stepOf(p, a.stepId);
-  return s ? impGainPerOcc(p, a) * stepOcc(p, s) : 0;
-}
-function impAnnualManips(p, a) {
-  const s = stepOf(p, a.stepId);
-  return s ? num(a.manips) * stepOcc(p, s) : 0;
-}
-function quadrant(p, a) {
-  const high = impAnnualGain(p, a) / 60 >= num(state.settings.seuilGain);
-  const e = num(a.effort) || 2;
-  if (high) return e <= 1 ? 'quickwin' : e === 2 ? 'planifier' : 'structurant';
-  return e <= 1 ? 'petit' : e === 2 ? 'arbitrer' : 'ecarter';
+function riskScore(qs, mo) {
+  if (!qs || !mo) return 0;
+  const pts = { personne: 2, une: 1, plusieurs: 0 }[qs] + { non: 2, partiel: 1, oui: 0 }[mo];
+  return pts >= 3 ? 3 : pts === 2 ? 2 : 1;
 }
 
-// Étapes du processus cible : étapes supprimées retirées, durées réduites, irritants traités
-function toBeSteps(p) {
-  const imps = activeImps(p);
-  const kept = [];
-  p.steps.forEach((s, i) => {
-    const mine = imps.filter(a => a.stepId === s.id);
-    if (mine.some(a => a.levier === 'supprimer')) return;
-    const red = stepReduction(p, s);
-    const c = Object.assign({}, s, { _n: i + 1, duree: num(s.duree) - red, _gain: red, _imps: mine });
-    if (mine.length) {
-      c._improved = true;
-      c.ressaisie = c.manuel = c.suivi = false;
-      c.irritant = '';
-      if (mine.some(a => a.levier === 'automatiser') && s.type !== 'decision') c.type = 'auto';
-    }
-    kept.push(c);
-  });
-  const keptIds = new Set(kept.map(s => s.id));
-  kept.forEach(c => {
-    if (c.type === 'decision' && c.cible && !keptIds.has(c.cible)) {
-      const idx = p.steps.findIndex(s => s.id === c.cible);
-      const next = p.steps.slice(idx + 1).find(s => keptIds.has(s.id));
-      c.cible = next ? next.id : '';
-    }
-  });
-  return kept;
-}
-
-function procStats(p) {
-  let total = 0, irrit = 0, gain = 0, nbIrr = 0, ressaisies = 0;
-  p.steps.forEach(s => {
-    const a = stepAnnual(p, s);
-    total += a;
-    if (isIrritant(s)) { irrit += a; nbIrr++; }
-    if (s.ressaisie) ressaisies++;
-    gain += stepReduction(p, s) * stepOcc(p, s);
-  });
-  const imps = activeImps(p);
-  const tobe = toBeSteps(p);
-  return {
-    total, irrit, gain, after: total - gain, nbIrr, ressaisies,
-    manips: imps.reduce((t, a) => t + impAnnualManips(p, a), 0),
-    tracab: imps.filter(a => a.tracabilite).length,
-    controles: imps.filter(a => a.controle).length,
-    nbImps: imps.length,
-    nbSteps: p.steps.length,
-    nbStepsAfter: tobe.length,
-    nbIrrAfter: tobe.filter(isIrritant).length,
-    ressaisiesAfter: tobe.filter(s => s.ressaisie).length
+function taskStats(t) {
+  const r = {
+    avant: 0, apres: 0, irrit: 0, parFois: 0, nbIrr: 0, solutions: 0, validees: 0, supprimees: 0,
+    tracab: 0, controles: 0, flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 }
   };
+  t.steps.forEach(s => {
+    const occ = stepOcc(t, s);
+    const v = isValidated(s);
+    r.avant += num(s.duree) * occ;
+    r.apres += newDuree(s) * occ;
+    r.parFois += num(s.duree) * taux(s) / 100;
+    if (isIrritant(s)) { r.nbIrr++; r.irrit += num(s.duree) * occ; }
+    if (hasSol(s)) r.solutions++;
+    FLAGS.forEach(f => { if (s[f.key]) { r.flagsAvant[f.key]++; if (v) r.flagsLeves[f.key]++; } });
+    if (v) {
+      r.validees++;
+      if (s.levier === 'supprimer') r.supprimees++;
+      if (s.tracabilite) r.tracab++;
+      if (s.securise) r.controles++;
+    }
+  });
+  r.gain = r.avant - r.apres;
+  r.riskAvant = riskScore(t.quiSait, t.modeOp);
+  r.riskApres = riskScore(t.quiSaitApres || t.quiSait, t.modeOpApres || t.modeOp);
+  return r;
 }
 function globalStats() {
-  const t = { total: 0, irrit: 0, gain: 0, manips: 0, tracab: 0, controles: 0, nbImps: 0 };
-  state.processes.forEach(p => {
-    const s = procStats(p);
-    Object.keys(t).forEach(k => { t[k] += s[k]; });
+  const g = { avant: 0, apres: 0, gain: 0, irrit: 0, solutions: 0, validees: 0, supprimees: 0, tracab: 0, controles: 0,
+    flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 },
+    simplifiees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0 };
+  state.taches.forEach(t => {
+    const s = taskStats(t);
+    ['avant', 'apres', 'gain', 'irrit', 'solutions', 'validees', 'supprimees', 'tracab', 'controles'].forEach(k => { g[k] += s[k]; });
+    FLAGS.forEach(f => { g.flagsAvant[f.key] += s.flagsAvant[f.key]; g.flagsLeves[f.key] += s.flagsLeves[f.key]; });
+    if (s.gain > 0.0001) g.simplifiees++;
+    if (s.riskAvant === 3) g.riskHautAvant++;
+    if (s.riskApres === 3) g.riskHautApres++;
+    if (s.riskAvant && s.riskApres < s.riskAvant) g.riskBaisse++;
   });
-  return t;
+  return g;
 }
 
 /* ---------- Persistance ---------- */
@@ -213,15 +186,13 @@ function loadState() {
   return demoState();
 }
 function normalize(s) {
-  const base = emptyState();
-  const out = Object.assign(base, s);
+  const out = Object.assign(emptyState(), s);
   out.mission = Object.assign(emptyState().mission, s.mission);
   out.settings = Object.assign(emptyState().settings, s.settings);
-  out.processes = (s.processes || []).map(p => {
-    const np = newProcess(p);
-    np.steps = (p.steps || []).map(newStep);
-    np.ameliorations = (p.ameliorations || []).map(newImp);
-    return np;
+  out.taches = (s.taches || []).map(t => {
+    const nt = newTask(t);
+    nt.steps = (t.steps || []).map(newStep);
+    return nt;
   });
   return out;
 }
@@ -232,31 +203,33 @@ function save() {
     const el = document.getElementById('savedAt');
     if (el) el.textContent = savedLabel();
   } catch (e) {
-    toast('Enregistrement impossible dans ce navigateur : pensez à exporter en JSON.');
+    toast('Enregistrement impossible dans ce navigateur : pense à exporter une sauvegarde.');
   }
 }
 const savedLabel = () => lastSaved
-  ? 'Enregistré à ' + lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  ? '✓ Enregistré à ' + lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   : 'Enregistrement automatique';
 
 /* ---------- Navigation ---------- */
 function route() {
-  const parts = (location.hash || '#/tableau').replace(/^#\/?/, '').split('/');
-  return { page: parts[0] || 'tableau', id: parts[1], tab: parts[2] || 'cadrage' };
+  const parts = (location.hash || '#/accueil').replace(/^#\/?/, '').split('/');
+  const phase = Number(parts[0]);
+  return { phase: phase >= 1 && phase <= 4 ? phase : 0, id: parts[1] || null };
 }
-function currentProcess() {
+function currentTask() {
   const r = route();
-  return r.page === 'p' ? state.processes.find(p => p.id === r.id) : null;
+  return r.id ? state.taches.find(t => t.id === r.id) : null;
 }
-function go(hash) { location.hash = hash; }
+const go = hash => { location.hash = hash; };
 
 /* ---------- Rendu ---------- */
+const $top = document.getElementById('topbar');
 const $main = document.getElementById('main');
-const $side = document.getElementById('sidebar');
 let renderPending = false;
-let flashStep = null;
+let flashId = null;
 let mapSeq = 0;
-let fitMaps = false;   // « Vue d'ensemble » : le diagramme tient dans la largeur
+let fitMaps = false;        // « Vue d'ensemble » : le schéma tient dans la largeur
+const openDetails = new Set();
 
 function scheduleRender() {
   if (renderPending) return;
@@ -275,7 +248,7 @@ function render() {
   document.querySelectorAll('[data-scroll-key]').forEach(el => { hScroll[el.dataset.scrollKey] = el.scrollLeft; });
 
   mapSeq = 0;
-  $side.innerHTML = viewSidebar();
+  $top.innerHTML = viewTopbar();
   $main.innerHTML = viewMain();
 
   document.querySelectorAll('[data-scroll-key]').forEach(el => {
@@ -289,690 +262,586 @@ function render() {
       try { if (selStart != null) el.setSelectionRange(selStart, selEnd); } catch (e) { /* idem */ }
     }
   }
-  if (flashStep) {
-    const el = document.getElementById(flashStep);
-    if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); }
-    flashStep = null;
+  if (flashId) {
+    const el = document.getElementById(flashId);
+    if (el) {
+      el.scrollIntoView({ block: 'center' });
+      el.classList.add('flash');
+      const input = el.querySelector('input, textarea');
+      if (input && el.dataset.autofocus) input.focus({ preventScroll: true });
+    }
+    flashId = null;
   }
 }
 
 function viewMain() {
   const r = route();
   const banner = state.isDemo ? `
-    <div class="banner"><span><b>Données de démonstration (fictives).</b> Explorez librement, puis repartez de zéro pour votre mission.</span>
-    <span class="actions"><button class="btn sm" data-action="reset-all">Repartir de zéro</button></span></div>` : '';
+    <div class="banner no-print"><span><b>Données de démonstration (fictives).</b> Explore librement, puis repars de zéro pour ta mission.</span>
+    <button class="btn sm" data-action="reset-all">Repartir de zéro</button></div>` : '';
   let body;
-  switch (r.page) {
-    case 'mission': body = viewMission(); break;
-    case 'processus': body = viewInventory(); break;
-    case 'synthese': body = viewSynthese(); break;
-    case 'methode': body = viewMethode(); break;
-    case 'p': {
-      const p = currentProcess();
-      body = p ? viewProcess(p, r.tab) : `<div class="empty">Processus introuvable. <br><a href="#/processus">Retour à l'inventaire</a></div>`;
-      break;
-    }
-    default: body = viewDashboard();
-  }
+  if (!r.phase) body = viewAccueil();
+  else if (r.phase === 4) body = viewRestitution();
+  else if (r.id) {
+    const t = currentTask();
+    body = !t ? `<div class="empty">Tâche introuvable.<br><a class="btn" href="#/${r.phase}">Retour à la liste</a></div>`
+      : r.phase === 1 ? viewFiche1(t) : r.phase === 2 ? viewFiche2(t) : viewFiche3(t);
+  } else body = viewPhaseList(r.phase);
   return banner + body;
+}
+
+/* ---------- Barre du haut : les 4 phases ---------- */
+function phaseProgress(n) {
+  const ts = state.taches;
+  const releves = ts.filter(t => t.p1Done);
+  if (n === 1) return { done: ts.length > 0 && releves.length === ts.length, txt: ts.length ? `${releves.length} / ${plural(ts.length, 'tâche')} relevée${releves.length > 1 ? 's' : ''}` : 'À commencer' };
+  if (n === 2) { const d = releves.filter(t => t.p2Done).length; return { done: releves.length > 0 && d === releves.length, txt: releves.length ? `${d} / ${releves.length} analysée${d > 1 ? 's' : ''}` : 'Après l\'immersion' }; }
+  if (n === 3) { const a = ts.filter(t => t.p2Done); const d = a.filter(t => t.p3Done).length; return { done: a.length > 0 && d === a.length, txt: a.length ? `${d} / ${a.length} validée${d > 1 ? 's' : ''}` : 'Après la réflexion' }; }
+  const g = globalStats();
+  return { done: false, txt: g.gain > 0 ? `${fmtDur(g.gain)} gagnées / an` : 'Le dossier final' };
+}
+function viewTopbar() {
+  const r = route();
+  return `
+    <a class="brand" href="#/accueil" title="Accueil et mission"><span class="logo">CP</span><span><strong>Carto Process</strong><small>${esc(state.mission.service || 'Immersion sur un poste')}</small></span></a>
+    <nav class="stepper">${PHASES.map(p => {
+      const pr = phaseProgress(p.n);
+      return `<a class="phase-step${r.phase === p.n ? ' active' : ''}${pr.done ? ' done' : ''}" href="#/${p.n}">
+        <span class="n">${pr.done ? '✓' : p.n}</span><span class="txt"><b>${p.titre}</b><small>${pr.txt}</small></span></a>`;
+    }).join('<span class="sep">›</span>')}</nav>
+    <span class="saved" id="savedAt">${savedLabel()}</span>`;
 }
 
 /* ---------- Champs liés ---------- */
 const bindAttr = (scope, field) => `data-bind="${esc(scope + '|' + field)}"`;
-function inp(scope, field, val, attrs = '') {
-  return `<input ${bindAttr(scope, field)} value="${esc(val)}" ${attrs}>`;
-}
-function numInp(scope, field, val, attrs = '') {
-  return `<input type="number" min="0" step="any" ${bindAttr(scope, field)} value="${esc(val)}" ${attrs}>`;
-}
-function area(scope, field, val, attrs = '') {
-  return `<textarea ${bindAttr(scope, field)} ${attrs}>${esc(val)}</textarea>`;
-}
+const inp = (scope, field, val, attrs = '') => `<input ${bindAttr(scope, field)} value="${esc(val)}" ${attrs}>`;
+const numInp = (scope, field, val, attrs = '') => `<input type="number" min="0" step="any" inputmode="decimal" ${bindAttr(scope, field)} value="${esc(val)}" ${attrs}>`;
+const area = (scope, field, val, attrs = '') => `<textarea ${bindAttr(scope, field)} ${attrs}>${esc(val)}</textarea>`;
 function sel(scope, field, val, options, attrs = '') {
   const opts = Array.isArray(options) ? options : Object.entries(options);
   return `<select ${bindAttr(scope, field)} ${attrs}>${opts.map(([v, l]) =>
     `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
 }
-function chk(scope, field, val, label, title = '') {
-  return `<label class="check" title="${esc(title)}"><input type="checkbox" ${bindAttr(scope, field)}${val ? ' checked' : ''}> ${label}</label>`;
+const chk = (scope, field, val, label) =>
+  `<label class="check"><input type="checkbox" ${bindAttr(scope, field)}${val ? ' checked' : ''}> ${label}</label>`;
+function chips(scope, field, val, options, cls = '') {
+  return `<div class="chips ${cls}">${Object.entries(options).map(([v, l]) =>
+    `<button type="button" class="chip${String(val) === String(v) ? ' on' : ''}" data-action="chip" data-scope="${esc(scope)}" data-field="${esc(field)}" data-value="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
 }
+const toggle = (scope, field, val, label, cls = '') =>
+  `<button type="button" class="chip toggle ${cls}${val ? ' on' : ''}" data-action="toggle" data-scope="${esc(scope)}" data-field="${esc(field)}">${label}</button>`;
 const field = (label, control, cls = '') => `<label class="field ${cls}"><span>${label}</span>${control}</label>`;
+
+// Une question du guide : numéro, intitulé, exemple, réponse
+function question(n, titre, hint, control, cls = '') {
+  return `<div class="q ${cls}">
+    <div class="q-head"><span class="q-n">${n}</span><div><div class="q-title">${titre}</div>${hint ? `<div class="q-hint">${hint}</div>` : ''}</div></div>
+    <div class="q-body">${control}</div></div>`;
+}
 
 function resolveScope(scope) {
   if (scope === 'mission') return state.mission;
   if (scope === 'settings') return state.settings;
-  const p = currentProcess();
-  if (scope === 'p') return p;
+  const t = currentTask();
+  if (scope === 't') return t;
   const [k, id] = scope.split(':');
-  if (k === 'pid') return state.processes.find(x => x.id === id);
-  if (!p) return null;
-  if (k === 's') return stepOf(p, id);
-  if (k === 'a') return p.ameliorations.find(x => x.id === id);
+  if (k === 's' && t) return t.steps.find(s => s.id === id);
   return null;
 }
 function applyBinding(el) {
   const [scope, f] = el.dataset.bind.split('|');
   const obj = resolveScope(scope);
-  if (!obj) return;
-  obj[f] = el.type === 'checkbox' ? el.checked : el.value;
+  if (obj) obj[f] = el.type === 'checkbox' ? el.checked : el.value;
 }
 
-/* ---------- Barre latérale ---------- */
-function viewSidebar() {
-  const r = route();
-  const link = (hash, ico, label, active) =>
-    `<a class="nav-link${active ? ' active' : ''}" href="${hash}"><span class="ico">${ico}</span>${label}</a>`;
-  const procs = state.processes.map(p => `
-    <a class="nav-link nav-proc${r.page === 'p' && r.id === p.id ? ' active' : ''}" href="#/p/${p.id}/${r.page === 'p' ? r.tab : 'cadrage'}" title="${esc(p.nom)} — ${esc(STATUTS[p.statut])}">
-      <span class="dot ${p.statut}"></span><span class="name">${esc(p.nom || 'Sans nom')}</span></a>`).join('');
-  return `
-    <div class="brand"><div class="logo">CP</div><div><strong>Carto Process</strong><small>Diagnostic &amp; amélioration</small></div></div>
-    ${link('#/tableau', '◧', 'Tableau de bord', r.page === 'tableau')}
-    ${link('#/mission', '◎', 'Mission &amp; poste', r.page === 'mission')}
-    ${link('#/processus', '☰', 'Inventaire des processus', r.page === 'processus')}
-    ${link('#/synthese', '▤', 'Synthèse / vitrine', r.page === 'synthese')}
-    ${link('#/methode', '?', 'Méthode &amp; guide', r.page === 'methode')}
-    <div class="nav-title">Processus du poste (${state.processes.length})</div>
-    ${procs}
-    <button class="side-btn" data-action="add-process">+ Nouveau processus</button>
-    <div class="side-foot"><div id="savedAt">${savedLabel()}</div><div>Données stockées sur ce poste uniquement.</div></div>`;
-}
-
-/* ---------- Tableau de bord ---------- */
-function viewDashboard() {
+/* ---------- Accueil ---------- */
+function viewAccueil() {
   const m = state.mission;
-  const ps = state.processes;
-  if (!ps.length) {
-    return `${pageHead('Tableau de bord', m.poste || 'Diagnostic de poste')}
-      <div class="empty">Aucun processus répertorié pour l'instant.<br>
-        <button class="btn primary" data-action="add-process">+ Répertorier un premier processus</button>
-        <button class="btn" data-action="load-demo">Charger la démo</button></div>`;
-  }
-  const g = globalStats();
-  const mapped = ps.filter(p => p.steps.length).length;
-  const rows = ps.map(p => ({ p, s: procStats(p) }));
-  const max = Math.max(1, ...rows.map(r => r.s.total));
-
-  const irritants = [];
-  ps.forEach(p => p.steps.forEach((s, i) => { if (isIrritant(s)) irritants.push({ p, s, i, v: stepAnnual(p, s) }); }));
-  irritants.sort((a, b) => b.v - a.v);
-
-  const wins = [];
-  ps.forEach(p => activeImps(p).forEach(a => { if (quadrant(p, a) === 'quickwin') wins.push({ p, a, v: impAnnualGain(p, a) }); }));
-  wins.sort((a, b) => b.v - a.v);
-
-  const sub = [m.service, m.titulaire ? 'Poste de ' + m.titulaire : ''].filter(Boolean).join(' · ');
   return `
-    ${pageHead('Tableau de bord', m.poste || 'Diagnostic de poste', sub, `<a class="btn" href="#/synthese">Voir la synthèse</a>`)}
-    <div class="kpis">
-      ${kpi('Processus répertoriés', ps.length, `${mapped} cartographié${mapped > 1 ? 's' : ''}`)}
-      ${kpi('Temps annuel du poste', fmtDur(g.total), fmtEtp(g.total))}
-      ${kpi('Temps sur étapes irritantes', fmtDur(g.irrit), pct(g.irrit, g.total) + ' du temps total', 'bad')}
-      ${kpi('Gain potentiel', fmtDur(g.gain), fmtEtp(g.gain) + ' · ' + pct(g.gain, g.total), 'good')}
-      ${kpi('Manipulations évitées', fmtInt(g.manips), 'par an')}
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Processus du poste</h2><p class="muted small">Temps annuel par processus : part irritante en rouge, gain potentiel à droite.</p></div>
-        <a class="btn sm" href="#/processus">Gérer l'inventaire</a></div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Processus</th><th>Statut</th><th class="right">Volume / an</th><th style="width:34%">Temps annuel</th><th class="right">Total</th><th class="right">Gain potentiel</th></tr></thead>
-        <tbody>${rows.map(({ p, s }) => `
-          <tr>
-            <td><a href="#/p/${p.id}/${p.steps.length ? 'carte' : 'cadrage'}"><b>${esc(p.nom)}</b></a><div class="small muted">${esc(p.domaine)}</div></td>
-            <td><span class="badge ${p.statut}">${esc(STATUTS[p.statut])}</span></td>
-            <td class="right num">${fmtInt(volume(p))}</td>
-            <td><div class="bar-track" title="Irritant : ${fmtDur(s.irrit)} / Total : ${fmtDur(s.total)}">
-              <div class="bar irr" style="width:${s.irrit / max * 100}%"></div>
-              <div class="bar" style="width:${(s.total - s.irrit) / max * 100}%"></div></div></td>
-            <td class="right num">${s.total ? fmtDur(s.total) : '—'}</td>
-            <td class="right num" style="color:var(--ok);font-weight:600">${s.gain ? '−' + fmtDur(s.gain) : '—'}</td>
-          </tr>`).join('')}</tbody>
-      </table></div>
-      <div class="legend-inline"><span><i style="background:var(--danger)"></i>Temps sur étapes irritantes</span><span><i style="background:#7d93c4"></i>Autre temps</span></div>
-    </div>
-    <div class="grid two">
-      <div class="card">
-        <div class="card-head"><div><h2>Principaux irritants</h2><p class="muted small">Classés par temps annuel consommé.</p></div></div>
-        ${irritants.length ? `<ul class="list-plain">${irritants.slice(0, 7).map(({ p, s, i, v }) => `
-          <li><div><a href="#/p/${p.id}/analyse"><b>${esc(s.nom)}</b></a> ${flagChips(s)}
-            <div class="meta">${esc(p.nom)} · étape ${i + 1}${s.irritant ? ' · ' + esc(s.irritant) : ''}</div></div>
-            <b class="num" style="white-space:nowrap">${fmtDur(v)}</b></li>`).join('')}</ul>` : '<p class="muted">Aucun irritant relevé.</p>'}
-      </div>
-      <div class="card">
-        <div class="card-head"><div><h2>Gains rapides</h2><p class="muted small">Effort faible et gain ≥ ${esc(state.settings.seuilGain)} h/an.</p></div></div>
-        ${wins.length ? `<ul class="list-plain">${wins.slice(0, 7).map(({ p, a, v }) => `
-          <li><div><a href="#/p/${p.id}/analyse"><b>${esc(a.titre || 'Piste sans titre')}</b></a>
-            <div class="meta">${esc(p.nom)} · ${esc(LEVIERS[a.levier])} · ${esc(IMP_STATUTS[a.statut])}</div></div>
-            <b class="num" style="color:var(--ok);white-space:nowrap">−${fmtDur(v)}</b></li>`).join('')}</ul>` : '<p class="muted">Aucun gain rapide identifié pour l\'instant.</p>'}
-      </div>
-    </div>`;
-}
+    <section class="hero">
+      <h1>Accompagner une immersion, de la première tâche au dossier final</h1>
+      <p>Le logiciel te guide en quatre temps. Pas besoin de connaître une méthode : réponds simplement aux questions, dans l'ordre.</p>
+    </section>
+    <div class="phase-cards">${PHASES.map(p => `
+      <a class="phase-card" href="#/${p.n}">
+        <div class="pc-n">${p.n}</div><h3>${p.titre}</h3>
+        <div class="pc-when">${p.quand}</div><p>${p.but}</p></a>`).join('')}</div>
 
-function pageHead(title, eyebrow, sub = '', actions = '') {
-  return `<header class="page-head"><div>
-    ${eyebrow ? `<div class="eyebrow">${eyebrow}</div>` : ''}<h1>${title}</h1>
-    ${sub ? `<p class="sub">${sub}</p>` : ''}</div>
-    ${actions ? `<div class="actions no-print">${actions}</div>` : ''}</header>`;
-}
-function kpi(label, value, hint, cls = '') {
-  return `<div class="kpi ${cls}"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`;
-}
-function flagChips(s) {
-  const chips = FLAGS.filter(f => s[f.key]).map(f => `<span class="flag-chip ${f.short}" title="${f.label}">${f.short}</span>`);
-  if (!chips.length && String(s.irritant || '').trim()) chips.push('<span class="flag-chip X" title="Irritant">!</span>');
-  return chips.join(' ');
-}
+    <div class="card">
+      <div class="card-head"><div><h2>Avant de commencer : la mission</h2><p class="muted">Quelques informations pour personnaliser les questions et le dossier final.</p></div></div>
+      <div class="form-grid">
+        ${field('Service', inp('mission', 'service', m.service, 'placeholder="ex : Gestion de la connaissance"'))}
+        ${field('Prénom de la personne accompagnée', inp('mission', 'personne', m.personne, 'placeholder="ex : Sophie"'))}
+        ${field('Son poste', inp('mission', 'poste', m.poste, 'placeholder="ex : Chargée de gestion de la connaissance"'))}
+        ${field('Toi (qui mènes la mission)', inp('mission', 'analyste', m.analyste, 'placeholder="Ton nom"'))}
+        ${field('Début de l\'immersion', inp('mission', 'debut', m.debut, 'type="date"'))}
+        ${field('Fin de l\'immersion', inp('mission', 'fin', m.fin, 'type="date"'))}
+        ${field('Contexte (pourquoi cette mission ?)', area('mission', 'contexte', m.contexte, 'rows="3" placeholder="ex : Reprise du poste, objectif : comprendre le travail actuel et identifier ce qui peut être simplifié."'), 'wide')}
+      </div>
+      <div class="actions" style="margin-top:16px"><a class="btn primary lg" href="#/1">Commencer l'immersion →</a></div>
+    </div>
 
-/* ---------- Mission ---------- */
-function viewMission() {
-  const m = state.mission, st = state.settings;
-  return `
-    ${pageHead('Mission &amp; poste', 'Cadrage de la mission', 'Le contexte général : quel service, quel poste, quelle période. Les paramètres servent aux calculs de gains.')}
     <div class="card">
-      <div class="card-head"><h2>La mission</h2></div>
-      <div class="form-grid">
-        ${field('Service', inp('mission', 'service', m.service, 'placeholder="Ex. Gestion de la connaissance"'))}
-        ${field('Poste analysé', inp('mission', 'poste', m.poste, 'placeholder="Intitulé du poste repris"'))}
-        ${field('Titulaire / personne interrogée', inp('mission', 'titulaire', m.titulaire))}
-        ${field('Analyste', inp('mission', 'analyste', m.analyste))}
-        ${field('Début de mission', inp('mission', 'debut', m.debut, 'type="date"'))}
-        ${field('Fin de mission', inp('mission', 'fin', m.fin, 'type="date"'))}
-        ${field('Contexte et objectifs', area('mission', 'contexte', m.contexte, 'rows="4"'), 'wide')}
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Paramètres de calcul</h2><p class="muted small">Les temps sont saisis en minutes par exécution, puis projetés à l'année.</p></div></div>
-      <div class="form-grid">
-        ${field('Heures travaillées par ETP et par an', numInp('settings', 'heuresEtp', st.heuresEtp))}
-        ${field('Seuil « gain fort » (heures / an)', numInp('settings', 'seuilGain', st.seuilGain))}
-        <div class="help" style="align-self:end">Conversion des volumes : 1 jour ouvré = ×220/an, 1 semaine = ×47/an, 1 mois = ×12/an.</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Données</h2><p class="muted small">Tout est enregistré automatiquement dans ce navigateur, sur ce poste. Exportez régulièrement une sauvegarde JSON.</p></div></div>
+      <div class="card-head"><div><h2>Sauvegarde</h2><p class="muted">Tout s'enregistre automatiquement dans ce navigateur, sur ce poste uniquement. Exporte une sauvegarde à la fin de chaque journée.</p></div></div>
       <div class="actions">
-        <button class="btn primary" data-action="export-json">⭳ Exporter la sauvegarde (JSON)</button>
+        <button class="btn primary" data-action="export-json">⭳ Exporter la sauvegarde</button>
         <button class="btn" data-action="import-json">⭱ Importer une sauvegarde</button>
         <button class="btn" data-action="load-demo">Recharger la démo</button>
         <button class="btn danger" data-action="reset-all">Tout effacer et repartir de zéro</button>
       </div>
+      <p class="muted small" style="margin-top:12px">Calcul : temps par an = minutes par fois × nombre de fois par an (1 jour = 220 jours ouvrés, 1 semaine = 47, 1 mois = 12).
+        Un ETP = ${numInp('settings', 'heuresEtp', state.settings.heuresEtp, 'class="tiny"')} heures par an.</p>
     </div>`;
 }
 
-/* ---------- Inventaire ---------- */
-function viewInventory() {
-  const ps = state.processes;
+/* ---------- Listes de tâches par phase ---------- */
+function phaseHead(n, extra = '') {
+  const p = PHASES[n - 1];
+  return `<header class="phase-head">
+    <div><div class="eyebrow">Phase ${n} · ${p.quand.replace('la personne', esc(who()))}</div><h1>${p.titre}</h1><p class="sub">${p.but.replace('la personne', esc(who()))}</p></div>
+    ${extra ? `<div class="actions no-print">${extra}</div>` : ''}</header>`;
+}
+function statusBadge(t, phase) {
+  if (phase === 1) return t.p1Done ? '<span class="badge ok">✓ Relevée</span>' : (t.steps.length || t.nom ? '<span class="badge warn">En cours</span>' : '<span class="badge">À relever</span>');
+  if (phase === 2) return !t.p1Done ? '<span class="badge">Pas encore relevée</span>' : t.p2Done ? '<span class="badge ok">✓ Analysée</span>' : '<span class="badge warn">À analyser</span>';
+  return !t.p2Done ? '<span class="badge">Pas encore analysée</span>' : t.p3Done ? '<span class="badge ok">✓ Validée</span>' : '<span class="badge warn">À valider</span>';
+}
+
+function viewPhaseList(n) {
+  const ts = state.taches;
+  const name = esc(who());
+  const tips = {
+    1: `<b>Comment faire :</b> demande à ${name} de te montrer son travail sur un cas réel. Crée une fiche par tâche et remplis-la de haut en bas, au fil de la démonstration.
+        Une tâche finie ? Clique sur « Tâche relevée » et passe à la suivante.`,
+    2: `<b>Comment faire :</b> reprends les tâches une par une. Le schéma montre où ça coince ; pour chaque étape en rouge, choisis une idée ou écris ta solution.
+        <b>Ne mets pas de temps</b> : c'est ${name} qui les donnera en phase 3.`,
+    3: `<b>Comment faire :</b> avec ${name}, présente chaque solution puis demande : « Avec ça, combien de temps ça te prendrait ? ».
+        Note la réponse telle quelle. Termine par les questions sur les absences.`
+  }[n];
+  const eligible = t => n === 1 || (n === 2 ? t.p1Done : t.p2Done);
+  const cards = ts.map((t, i) => {
+    const s = taskStats(t);
+    const ok = eligible(t);
+    const meta = n === 1
+      ? [t.freqQty ? `${esc(t.freqQty)} ${esc(PERIODES[t.freqPer].label)}` : 'Fréquence ?', plural(t.steps.length, 'étape'), s.avant ? fmtDur(s.avant) + ' / an' : '']
+      : n === 2
+        ? [plural(s.nbIrr, 'étape qui coince', 'étapes qui coincent'), plural(s.solutions, 'solution'), s.avant ? fmtDur(s.avant) + ' / an' : '']
+        : [plural(s.solutions, 'solution'), `${s.validees} estimée${s.validees > 1 ? 's' : ''}`, s.gain > 0 ? `<b class="good">−${fmtDur(s.gain)} / an</b>` : ''];
+    return `<a class="task-card${ok ? '' : ' disabled'}" href="${ok ? `#/${n}/${t.id}` : `#/${n === 2 ? 1 : 2}/${t.id}`}">
+      <div class="tc-n">${i + 1}</div>
+      <div class="tc-body"><div class="tc-title">${esc(t.nom || 'Tâche sans nom')}</div>
+        ${t.description ? `<div class="tc-desc">${esc(t.description)}</div>` : ''}
+        <div class="tc-meta">${meta.filter(Boolean).join(' · ')}</div></div>
+      <div class="tc-side">${statusBadge(t, n)}<span class="tc-go">${ok ? 'Ouvrir →' : 'Terminer la phase précédente'}</span></div></a>`;
+  }).join('');
+
+  const next = {
+    1: ts.length && ts.every(t => t.p1Done) ? `<a class="btn primary lg" href="#/2">Toutes les tâches sont relevées : passer à la réflexion →</a>` : '',
+    2: ts.some(t => t.p1Done) && ts.filter(t => t.p1Done).every(t => t.p2Done) ? `<a class="btn primary lg" href="#/3">Toutes les tâches sont analysées : passer à la validation →</a>` : '',
+    3: ts.some(t => t.p2Done) && ts.filter(t => t.p2Done).every(t => t.p3Done) ? `<a class="btn primary lg" href="#/4">Tout est validé : voir le dossier final →</a>` : ''
+  }[n];
+
   return `
-    ${pageHead('Inventaire des processus', 'Étape 1 · Répertorier', 'Listez toutes les activités du poste avant de cartographier. Le volume permet de projeter les temps à l\'année ; la criticité aide à prioriser l\'ordre des entretiens.',
-      `<button class="btn primary" data-action="add-process">+ Ajouter un processus</button>`)}
-    <div class="card">
-      ${ps.length ? `<div class="table-wrap"><table class="inv">
-        <thead><tr><th>#</th><th>Processus</th><th>Domaine</th><th>Volume</th><th>Criticité</th><th>Statut</th><th class="right">Étapes</th><th class="right">Temps / an</th><th></th></tr></thead>
-        <tbody>${ps.map((p, i) => {
-          const s = procStats(p);
-          return `<tr>
-            <td class="muted">${i + 1}</td>
-            <td>${inp('pid:' + p.id, 'nom', p.nom)}</td>
-            <td>${inp('pid:' + p.id, 'domaine', p.domaine)}</td>
-            <td><div class="inline" style="min-width:190px">${numInp('pid:' + p.id, 'volQty', p.volQty, 'style="max-width:80px"')}${sel('pid:' + p.id, 'volPer', p.volPer, Object.entries(PERIODES).map(([k, v]) => [k, v.label]))}</div></td>
-            <td>${sel('pid:' + p.id, 'criticite', p.criticite, CRITICITES)}</td>
-            <td>${sel('pid:' + p.id, 'statut', p.statut, STATUTS)}</td>
-            <td class="right num">${p.steps.length}</td>
-            <td class="right num">${s.total ? fmtDur(s.total) : '—'}</td>
-            <td class="actions-cell">
-              <a class="btn sm" href="#/p/${p.id}/cadrage">Ouvrir</a>
-              <button class="icon-btn" title="Dupliquer" data-action="dup-process" data-id="${p.id}">⧉</button>
-              <button class="icon-btn danger" title="Supprimer" data-action="del-process" data-id="${p.id}">✕</button>
-            </td></tr>`;
-        }).join('')}</tbody></table></div>`
-        : `<div class="empty">Aucun processus. Commencez par lister les activités du poste.<br><button class="btn primary" data-action="add-process">+ Ajouter un processus</button></div>`}
+    ${phaseHead(n, n === 1 ? '<button class="btn primary lg" data-action="add-task">+ Nouvelle tâche</button>' : '')}
+    <div class="tip">${tips}</div>
+    ${ts.length ? `<div class="task-list">${cards}</div>`
+      : `<div class="empty">Aucune tâche pour l'instant.<br>${n === 1 ? '<button class="btn primary lg" data-action="add-task">+ Relever une première tâche</button>' : '<a class="btn" href="#/1">Commencer par l\'immersion</a>'}</div>`}
+    ${n === 1 && ts.length ? '<button class="add-big" data-action="add-task">+ Nouvelle tâche</button>' : ''}
+    ${next ? `<div class="next-bar">${next}</div>` : ''}`;
+}
+
+/* ---------- Phase 1 : fiche d'immersion ---------- */
+function peopleList() {
+  const set = new Set();
+  if (state.mission.personne) set.add(state.mission.personne);
+  state.taches.forEach(t => t.steps.forEach(s => { if (s.qui) set.add(s.qui.trim()); }));
+  return [...set];
+}
+function toolList() {
+  const set = new Set();
+  state.taches.forEach(t => t.steps.forEach(s => { if (s.outil) set.add(s.outil.trim()); }));
+  return [...set];
+}
+function datalists() {
+  return `<datalist id="dl-qui">${peopleList().map(a => `<option value="${esc(a)}">`).join('')}</datalist>
+    <datalist id="dl-outils">${toolList().map(a => `<option value="${esc(a)}">`).join('')}</datalist>`;
+}
+function taskNav(t, n) {
+  const i = state.taches.indexOf(t);
+  return `<div class="crumbs no-print"><a href="#/${n}">← Toutes les tâches</a><span>Tâche ${i + 1} sur ${state.taches.length}</span></div>`;
+}
+function flagChips(s) {
+  const c = FLAGS.filter(f => s[f.key]).map(f => `<span class="flag-chip ${f.short}" title="${f.nom}">${f.short}</span>`);
+  if (!c.length && String(s.precision || '').trim()) c.push('<span class="flag-chip X" title="Ça coince">!</span>');
+  return c.join(' ');
+}
+function riskBadge(r) {
+  return r ? `<span class="badge risk${r}">${RISQUES[r]}</span>` : '<span class="badge">À évaluer</span>';
+}
+
+function viewFiche1(t) {
+  const s = taskStats(t);
+  const name = esc(who());
+  const steps = t.steps.map((st, i) => stepEditor(t, st, i)).join('');
+  return `
+    ${datalists()}
+    ${taskNav(t, 1)}
+    <div class="fiche">
+      <div class="fiche-main">
+        <h1 class="fiche-title">${esc(t.nom || 'Nouvelle tâche')}</h1>
+        <p class="sub">Pose les questions dans l'ordre, en t'appuyant sur un cas réel que ${name} traite devant toi.</p>
+
+        <section class="block">
+          <h2 class="block-title"><span>A</span> La tâche</h2>
+          ${question(1, 'Comment s\'appelle cette tâche ?', 'Un verbe + un objet. Exemple : « Mettre à jour une fiche procédure », « Répondre aux questions des agences ».',
+            inp('t', 'nom', t.nom, 'class="big" placeholder="ex : Mettre à jour une fiche procédure"'))}
+          ${question(2, 'En quoi consiste-t-elle ? À quoi sert-elle ?', 'Une ou deux phrases, avec les mots de ' + name + '.',
+            area('t', 'description', t.description, 'rows="2" placeholder="ex : Quand une procédure change, je modifie la fiche, je la fais valider par l\'expert puis je la publie pour les agences."'))}
+          ${question(3, 'Combien de fois la fais-tu ?', 'Une moyenne suffit. Exemple : 40 par mois, 10 par jour.',
+            `<div class="inline">${numInp('t', 'freqQty', t.freqQty, 'class="w-num" placeholder="ex : 40"')}${chips('t', 'freqPer', t.freqPer, Object.fromEntries(Object.entries(PERIODES).map(([k, v]) => [k, v.label])))}</div>`)}
+          ${question(4, 'Qu\'est-ce qui la déclenche ?', 'D\'où vient la demande. Exemple : « Un mail d\'une agence », « Le 1er du mois ».',
+            inp('t', 'origine', t.origine, 'placeholder="ex : Une demande de mise à jour reçue par mail"'))}
+          ${question(5, 'Qu\'est-ce que tu produis à la fin, et pour qui ?', 'Le résultat. Exemple : « La fiche publiée, pour les conseillers ».',
+            inp('t', 'resultat', t.resultat, 'placeholder="ex : La fiche publiée et le demandeur prévenu"'))}
+        </section>
+
+        <section class="block">
+          <h2 class="block-title"><span>B</span> Le déroulé, étape par étape</h2>
+          <div class="tip">Demande : <b>« Que fais-tu en premier ? »</b> puis <b>« Et ensuite ? »</b> jusqu'au résultat.
+            Pour chaque étape : qui la fait, avec quel outil, combien de minutes (sans compter l'attente), et ce qui coince.
+            <span class="muted">Astuce : la touche Entrée dans une étape crée la suivante.</span></div>
+          ${steps || `<div class="empty small">Aucune étape. Point de départ : « ${esc(t.origine || 'que se passe-t-il en premier ?')} ». Que fais-tu ensuite ?</div>`}
+          <button class="add-big" data-action="add-step">+ ${t.steps.length ? 'Et ensuite ?' : 'Première étape'}</button>
+        </section>
+
+        <section class="block">
+          <h2 class="block-title"><span>C</span> En cas d'absence de ${name}</h2>
+          ${question(6, 'Qui d\'autre sait faire cette tâche ?', 'Pour mesurer le risque « personne clé ».', chips('t', 'quiSait', t.quiSait, QUI_SAIT))}
+          ${question(7, 'Existe-t-il un mode opératoire écrit ?', 'Une procédure, une fiche, une checklist qu\'un remplaçant pourrait suivre.', chips('t', 'modeOp', t.modeOp, MODE_OP))}
+        </section>
+
+        <section class="block">
+          <h2 class="block-title"><span>D</span> Notes libres</h2>
+          ${area('t', 'notes', t.notes, 'rows="3" placeholder="Ce qui a été dit, les cas particuliers, les idées qui te viennent…"')}
+        </section>
+
+        ${t.steps.length ? `<section class="block">
+          <h2 class="block-title"><span>✓</span> Le schéma de la tâche</h2>
+          <p class="muted small">Généré automatiquement. Montre-le à ${name} pour vérifier qu'il ne manque rien.</p>
+          ${mapBlock(t, false, 'p1')}
+        </section>` : ''}
+
+        <div class="finish no-print">
+          ${t.p1Done
+            ? `<span class="badge ok">✓ Tâche relevée</span><button class="btn" data-action="undone" data-phase="1">Rouvrir</button><button class="btn primary lg" data-action="add-task">+ Tâche suivante</button>`
+            : `<button class="btn primary lg" data-action="done" data-phase="1" data-next="new">✓ Tâche relevée — tâche suivante</button>
+               <button class="btn lg" data-action="done" data-phase="1" data-next="list">✓ Tâche relevée — retour à la liste</button>`}
+          <button class="btn ghost danger" data-action="del-task">Supprimer cette tâche</button>
+        </div>
+      </div>
+
+      <aside class="recap">
+        <h3>En résumé</h3>
+        <div class="recap-row"><span>Une fois</span><b>${fmtDur(s.parFois)}</b></div>
+        <div class="recap-row"><span>Fréquence</span><b>${fmtInt(volume(t))} / an</b></div>
+        <div class="recap-row big"><span>Par an</span><b>${fmtDur(s.avant)}</b></div>
+        <div class="recap-row"><span>Soit</span><b>${fmtEtp(s.avant)}</b></div>
+        <div class="recap-row"><span>Étapes</span><b>${t.steps.length}</b></div>
+        <div class="recap-row"><span>Qui coincent</span><b class="${s.nbIrr ? 'bad' : ''}">${s.nbIrr}</b></div>
+        <div class="recap-row"><span>Temps qui coince</span><b class="${s.irrit ? 'bad' : ''}">${fmtDur(s.irrit)} / an</b></div>
+        <div class="recap-row"><span>Personne clé</span>${riskBadge(s.riskAvant)}</div>
+      </aside>
     </div>`;
 }
 
-/* ---------- Processus ---------- */
-function viewProcess(p, tab) {
-  const s = procStats(p);
-  const tabs = TABS.map(([k, l], i) =>
-    `<a class="tab${tab === k ? ' active' : ''}" href="#/p/${p.id}/${k}"><span class="n">${i + 1}</span>${l}</a>`).join('');
-  let body;
-  switch (tab) {
-    case 'etapes': body = tabEtapes(p); break;
-    case 'carte': body = tabCarte(p); break;
-    case 'analyse': body = tabAnalyse(p); break;
-    case 'cible': body = tabCible(p, s); break;
-    default: body = tabCadrage(p);
-  }
+function stepEditor(t, s, i) {
+  const sc = 's:' + s.id;
+  const others = t.steps.filter(x => x.id !== s.id).map(x => [x.id, `${t.steps.indexOf(x) + 1}. ${x.quoi || 'Sans nom'}`]);
+  const open = openDetails.has(s.id) || taux(s) < 100 || s.controle;
   return `
-    ${pageHead(esc(p.nom || 'Sans nom'), `Processus <span class="badge ${p.statut}">${esc(STATUTS[p.statut])}</span>`, esc(p.finalite))}
-    <div class="strip">
-      <div>Volume<b>${fmtInt(volume(p))} / an</b></div>
-      <div>Étapes<b>${s.nbSteps}</b></div>
-      <div>Temps annuel<b>${fmtDur(s.total)}</b></div>
-      <div>Équivalent<b>${fmtEtp(s.total)}</b></div>
-      <div>Sur étapes irritantes<b class="bad">${fmtDur(s.irrit)} (${pct(s.irrit, s.total)})</b></div>
-      <div>Gain potentiel<b class="good">${s.gain ? '−' + fmtDur(s.gain) : '—'}</b></div>
-    </div>
-    <nav class="tabs">${tabs}</nav>
-    ${body}`;
-}
-
-function tabCadrage(p) {
-  return `
-    <div class="card">
-      <div class="card-head"><div><h2>Identité du processus</h2><p class="muted small">But, début, fin et volume : de quoi parle-t-on et combien de fois par an ?</p></div></div>
-      <div class="form-grid">
-        ${field('Nom du processus', inp('p', 'nom', p.nom))}
-        ${field('Domaine / famille', inp('p', 'domaine', p.domaine))}
-        ${field('Volume', `<div class="inline">${numInp('p', 'volQty', p.volQty, 'placeholder="Nombre"')}${sel('p', 'volPer', p.volPer, Object.entries(PERIODES).map(([k, v]) => [k, v.label]))}</div>`)}
-        ${field('Criticité', sel('p', 'criticite', p.criticite, CRITICITES))}
-        ${field('Statut de la cartographie', sel('p', 'statut', p.statut, STATUTS))}
-        ${field('Finalité (à quoi sert ce processus ?)', area('p', 'finalite', p.finalite, 'rows="2"'), 'wide')}
-        ${field('Événement déclencheur (début)', inp('p', 'declencheur', p.declencheur, 'placeholder="Ex. Réception d\'une demande"'))}
-        ${field('Résultat attendu (fin)', inp('p', 'resultat', p.resultat, 'placeholder="Ex. Fiche publiée"'))}
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Vue SIPOC</h2><p class="muted small">Fournisseurs → Entrées → Processus → Sorties → Clients. Une ligne par élément.</p></div></div>
-      <div class="sipoc">
-        <div class="col"><h4><b>S</b>uppliers · Fournisseurs</h4>${area('p', 'fournisseurs', p.fournisseurs)}</div>
-        <div class="col"><h4><b>I</b>nputs · Entrées</h4>${area('p', 'entrees', p.entrees)}</div>
-        <div class="col center"><h4><b>P</b>rocessus</h4><div class="proc-name">${esc(p.nom)}</div>
-          <div class="small muted">${p.steps.length} étape${p.steps.length > 1 ? 's' : ''}<br>${esc(p.declencheur || 'Début ?')} → ${esc(p.resultat || 'Fin ?')}</div></div>
-        <div class="col"><h4><b>O</b>utputs · Sorties</h4>${area('p', 'sorties', p.sorties)}</div>
-        <div class="col"><h4><b>C</b>ustomers · Clients</h4>${area('p', 'clients', p.clients)}</div>
-      </div>
-    </div>
-    <div class="grid two">
-      <div class="card">
-        <div class="card-head"><div><h2>Acteurs &amp; outils</h2><p class="muted small">Séparés par des virgules. Chaque acteur devient un couloir du diagramme.</p></div></div>
-        <div class="form-grid">
-          ${field('Acteurs (couloirs)', area('p', 'acteurs', p.acteurs, 'rows="3" placeholder="Gestionnaire, Expert métier, Manager"'), 'wide')}
-          ${field('Outils utilisés', area('p', 'outils', p.outils, 'rows="2" placeholder="Outlook, Excel, SharePoint"'), 'wide')}
+    <div class="step${isIrritant(s) ? ' irritant' : ''}" id="step-${s.id}" data-autofocus="1">
+      <div class="step-n">${i + 1}</div>
+      <div class="step-main">
+        ${inp(sc, 'quoi', s.quoi, `class="big" placeholder="${i === 0 ? 'Que fais-tu en premier ? ex : Je lis la demande reçue par mail' : 'Et ensuite ? ex : Je recopie la demande dans le fichier Excel'}"`)}
+        <div class="step-meta">
+          <label>Qui ? ${inp(sc, 'qui', s.qui, `list="dl-qui" placeholder="ex : ${esc(state.mission.personne || 'Sophie')}, l'expert…"`)}</label>
+          <label>Avec quoi ? ${inp(sc, 'outil', s.outil, 'list="dl-outils" placeholder="ex : Outlook, Excel…"')}</label>
+          <label class="dur">Combien de temps ? <span class="inline nowrap">${numInp(sc, 'duree', s.duree, 'placeholder="0"')}<span>min</span></span></label>
         </div>
+        <div class="step-pb">
+          <span class="lbl">Ce qui coince :</span>
+          ${FLAGS.map(f => toggle(sc, f.key, s[f.key], `<span class="flag-chip ${f.short}">${f.short}</span> ${f.label}`, 'flag')).join('')}
+        </div>
+        ${inp(sc, 'precision', s.precision, 'class="soft" placeholder="Précise ce qui coince (facultatif) : ex : je recopie l\'objet et le demandeur déjà présents dans le mail"')}
+        <details class="step-more" data-detail="${s.id}"${open ? ' open' : ''}>
+          <summary>Cas particuliers</summary>
+          <div class="more-row">Cette étape n'a lieu que dans ${numInp(sc, 'taux', s.taux, 'class="w-num" max="100"')} % des cas</div>
+          <div class="more-row">${chk(sc, 'controle', s.controle, 'C\'est une vérification : si ce n\'est pas bon, on revient à l\'étape')}
+            ${s.controle ? sel(sc, 'retour', s.retour, [['', '— choisir —'], ...others]) : ''}</div>
+        </details>
       </div>
-      <div class="card">
-        <div class="card-head"><div><h2>Entretiens</h2><p class="muted small">Avec qui, quand, et ce qui a été dit.</p></div></div>
-        <div class="form-grid">
-          ${field('Interlocuteurs rencontrés', inp('p', 'interlocuteurs', p.interlocuteurs))}
-          ${field('Date', inp('p', 'dateEntretien', p.dateEntretien, 'type="date"'))}
-          ${field('Notes d\'entretien', area('p', 'notes', p.notes, 'rows="4"'), 'wide')}
-        </div>
-      </div>
-    </div>
-    <div class="actions"><a class="btn primary" href="#/p/${p.id}/etapes">Étape suivante : relever les étapes →</a></div>`;
-}
-
-function datalists(p) {
-  const acteurs = [...new Set([...splitList(p.acteurs), ...p.steps.map(s => s.acteur).filter(Boolean)])];
-  const outils = [...new Set([...splitList(p.outils), ...p.steps.map(s => s.outil).filter(Boolean)])];
-  return `<datalist id="dl-acteurs">${acteurs.map(a => `<option value="${esc(a)}">`).join('')}</datalist>
-    <datalist id="dl-outils">${outils.map(a => `<option value="${esc(a)}">`).join('')}</datalist>`;
-}
-
-function tabEtapes(p) {
-  const steps = p.steps;
-  const cards = steps.map((s, i) => {
-    const sc = 's:' + s.id;
-    const isDec = s.type === 'decision';
-    const targets = [['', '— choisir l\'étape —'], ...steps.map((t, j) => [t.id, `${j + 1}. ${t.nom || 'Sans nom'}`]).filter(([id]) => id !== s.id)];
-    return `
-    <div class="step-card${isIrritant(s) ? ' irritant' : ''}${isDec ? ' decision' : ''}" id="step-${s.id}">
-      <div class="step-num">${i + 1}</div>
-      <div class="step-body">
-        <div class="step-row r1">
-          ${field('Type', sel(sc, 'type', s.type, STEP_TYPES))}
-          ${field(isDec ? 'Question / contrôle' : 'Étape (verbe + objet)', inp(sc, 'nom', s.nom, `placeholder="${isDec ? 'Ex. Dossier complet ?' : 'Ex. Saisir la demande dans Excel'}"`))}
-          ${field('Qui ? (acteur)', inp(sc, 'acteur', s.acteur, 'list="dl-acteurs"'))}
-          ${field('Avec quel outil ?', inp(sc, 'outil', s.outil, 'list="dl-outils"'))}
-        </div>
-        <div class="step-row r2">
-          ${field('Données manipulées', inp(sc, 'donnees', s.donnees))}
-          ${field('Durée (min)', numInp(sc, 'duree', s.duree))}
-          ${field('% des cas', numInp(sc, 'taux', s.taux, 'max="100" title="Part des exécutions où cette étape a lieu"'))}
-          <div class="calc">Par an : <b>${fmtDur(stepAnnual(p, s))}</b><br>${fmtInt(stepOcc(p, s))} exécutions</div>
-        </div>
-        <div class="step-row r3">
-          <div class="flags">${FLAGS.map(f => chk(sc, f.key, s[f.key], `<span class="flag-chip ${f.short}">${f.short}</span> ${f.label}`)).join('')}</div>
-          ${inp(sc, 'irritant', s.irritant, 'placeholder="Irritant constaté (ce qui fait perdre du temps, source d\'erreur…)"')}
-        </div>
-        ${isDec ? `<div class="step-row r4">
-          Si ${inp(sc, 'labelSuite', s.labelSuite)} → étape suivante (${i + 2 <= steps.length ? i + 2 : 'fin'}) ; si ${inp(sc, 'labelCible', s.labelCible)} → ${sel(sc, 'cible', s.cible, targets)}
-        </div>` : ''}
-      </div>
-      <div class="step-actions">
+      <div class="step-act">
         <button class="icon-btn" title="Monter" data-action="move-step" data-id="${s.id}" data-dir="-1"${i === 0 ? ' disabled' : ''}>↑</button>
-        <button class="icon-btn" title="Descendre" data-action="move-step" data-id="${s.id}" data-dir="1"${i === steps.length - 1 ? ' disabled' : ''}>↓</button>
-        <button class="icon-btn" title="Insérer une étape après" data-action="add-step" data-after="${s.id}">+</button>
-        <button class="icon-btn danger" title="Supprimer" data-action="del-step" data-id="${s.id}">✕</button>
+        <button class="icon-btn" title="Descendre" data-action="move-step" data-id="${s.id}" data-dir="1"${i === t.steps.length - 1 ? ' disabled' : ''}>↓</button>
+        <button class="icon-btn" title="Insérer une étape juste après" data-action="add-step" data-after="${s.id}">+</button>
+        <button class="icon-btn danger" title="Supprimer l'étape" data-action="del-step" data-id="${s.id}">✕</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- Phase 2 : réflexion ---------- */
+function ideasFor(s) {
+  const list = [];
+  FLAGS.forEach(f => { if (s[f.key]) list.push(...IDEES[f.key]); });
+  list.push(...IDEES.general);
+  return list;
+}
+function viewFiche2(t) {
+  const s = taskStats(t);
+  const irr = t.steps.filter(isIrritant);
+  const others = t.steps.filter(x => !isIrritant(x));
+  return `
+    ${taskNav(t, 2)}
+    <h1 class="fiche-title">${esc(t.nom || 'Tâche sans nom')}</h1>
+    <p class="sub">${esc(t.description)}</p>
+    <div class="strip">
+      <div>Fréquence<b>${fmtInt(volume(t))} / an</b></div><div>Temps par an<b>${fmtDur(s.avant)}</b></div>
+      <div>Étapes qui coincent<b class="bad">${s.nbIrr} · ${fmtDur(s.irrit)} / an</b></div>
+      <div>Solutions proposées<b>${s.solutions}</b></div><div>Personne clé<span>${riskBadge(s.riskAvant)}</span></div>
+    </div>
+    <section class="block">
+      <h2 class="block-title"><span>1</span> Le déroulé aujourd'hui</h2>
+      ${mapBlock(t, false, 'p2', true)}
+      ${t.notes ? `<div class="note"><b>Notes d'immersion :</b> ${esc(t.notes)}</div>` : ''}
+    </section>
+    <section class="block">
+      <h2 class="block-title"><span>2</span> Les étapes qui coincent</h2>
+      <p class="muted small">Pour chacune : clique sur une idée (elle remplit la solution) ou écris la tienne. Pas de temps ici : ${esc(who())} les estimera en phase 3.</p>
+      ${irr.length ? irr.map(st => solEditor(t, st, true)).join('') : '<div class="empty small">Aucune étape signalée comme bloquante. Tu peux quand même améliorer les autres étapes ci-dessous.</div>'}
+    </section>
+    ${others.length ? `<section class="block">
+      <h2 class="block-title"><span>3</span> Les autres étapes</h2>
+      <p class="muted small">Elles ne coincent pas, mais une simplification reste possible.</p>
+      ${others.map(st => solEditor(t, st, false)).join('')}
+    </section>` : ''}
+    <div class="finish no-print">
+      ${t.p2Done
+        ? `<span class="badge ok">✓ Analyse terminée</span><button class="btn" data-action="undone" data-phase="2">Rouvrir</button>${nextLink(2, t)}`
+        : `<button class="btn primary lg" data-action="done" data-phase="2" data-next="next">✓ Analyse terminée — tâche suivante</button>`}
+    </div>`;
+}
+function solEditor(t, s, irritant) {
+  const sc = 's:' + s.id;
+  const i = t.steps.indexOf(s) + 1;
+  const head = `<div class="sol-head">
+      <div><span class="step-n sm">${i}</span> <b>${esc(s.quoi || 'Étape sans nom')}</b> ${flagChips(s)}
+        <div class="muted small">${esc(s.qui || NA)}${s.outil ? ' · ' + esc(s.outil) : ''} · ${fmtDec(num(s.duree))} min${taux(s) < 100 ? ` (${fmtDec(taux(s))} % des cas)` : ''} · <b>${fmtDur(num(s.duree) * stepOcc(t, s))} / an</b></div>
+        ${s.precision ? `<div class="pb-text">« ${esc(s.precision)} »</div>` : ''}</div></div>`;
+  if (!irritant && !hasSol(s) && !s.solOpen) {
+    return `<div class="sol-card compact" id="sol-${s.id}">${head}<button class="btn sm" data-action="open-sol" data-id="${s.id}">+ Proposer une amélioration</button></div>`;
+  }
+  return `<div class="sol-card${irritant ? ' irritant' : ''}${hasSol(s) ? ' has' : ''}" id="sol-${s.id}">
+    ${head}
+    <div class="ideas"><span class="lbl">Idées :</span>${ideasFor(s).map(([, txt], k) =>
+      `<button type="button" class="idea" data-action="idea" data-id="${s.id}" data-k="${k}">${esc(txt)}</button>`).join('')}</div>
+    <label class="field"><span>Ta solution</span>${area(sc, 'sol', s.sol, 'rows="2" placeholder="ex : Un formulaire en ligne remplace le mail ; la demande arrive directement dans la liste de suivi."')}</label>
+    <div class="sol-foot">
+      <div class="lev"><span class="lbl">Type de solution :</span>${chips(sc, 'levier', s.levier, LEVIERS, 'small')}</div>
+      <div class="flags">${chk(sc, 'tracabilite', s.tracabilite, 'Améliore la traçabilité')}${chk(sc, 'securise', s.securise, 'Sécurise un contrôle')}</div>
+    </div>
+  </div>`;
+}
+function nextLink(phase, t) {
+  const n = nextTask(phase, t.id);
+  return n ? `<a class="btn primary lg" href="#/${phase}/${n.id}">Tâche suivante : ${esc(n.nom || 'sans nom')} →</a>`
+    : `<a class="btn primary lg" href="#/${phase + 1}">Passer à la phase ${phase + 1} →</a>`;
+}
+
+/* ---------- Phase 3 : validation ---------- */
+function viewFiche3(t) {
+  const s = taskStats(t);
+  const name = esc(who());
+  const sols = t.steps.filter(hasSol);
+  const cards = sols.map(st => {
+    const sc = 's:' + st.id;
+    const i = t.steps.indexOf(st) + 1;
+    const v = isValidated(st);
+    const g = num(st.duree) - num(st.nouveauTemps);
+    const sup = st.levier === 'supprimer';
+    return `<div class="val-card${v ? ' ok' : ''}${st.avis === 'non' ? ' rejected' : ''}" id="val-${st.id}">
+      <div class="val-step"><span class="step-n sm">${i}</span> <b>${esc(st.quoi)}</b> ${flagChips(st)}</div>
+      <div class="val-grid">
+        <div class="val-today"><div class="lbl">Aujourd'hui</div><div class="big-num">${fmtDec(num(st.duree))}<small> min</small></div></div>
+        <div class="val-sol"><div class="lbl">Solution proposée${st.levier ? ' · ' + esc(LEVIERS[st.levier]) : ''}</div><div class="pre">${esc(st.sol || LEVIERS[st.levier])}</div></div>
+        <div class="val-ask">
+          <div class="lbl">« Avec cette solution, combien de temps ça te prendrait ? »</div>
+          <div class="inline">${numInp(sc, 'nouveauTemps', st.nouveauTemps, `class="w-num big" placeholder="${sup ? '0' : '?'}"`)}<span>min</span></div>
+          ${sup ? '<div class="muted small">Étape supprimée : indique 0 si la suppression est confirmée.</div>' : ''}
+        </div>
+      </div>
+      <div class="val-foot">
+        <div><span class="lbl">Son avis :</span>${chips(sc, 'avis', st.avis, AVIS, 'small')}</div>
+        <div class="val-gain">${String(st.nouveauTemps) === '' ? '<span class="muted">En attente de son estimation</span>'
+          : st.avis === 'non' ? '<span class="muted">Non retenue : pas comptée dans les gains</span>'
+          : `Gain : <b class="${g >= 0 ? 'good' : 'bad'}">${g >= 0 ? '−' : '+'}${fmtDec(Math.abs(g))} min par fois · ${g >= 0 ? '−' : '+'}${fmtDur(Math.abs(g) * stepOcc(t, st))} / an</b>`}</div>
       </div>
     </div>`;
   }).join('');
+
   return `
-    ${datalists(p)}
-    <div class="card">
-      <div class="card-head"><div><h2>Relevé des étapes</h2>
-        <p class="muted small">Dans l'ordre, du déclencheur au résultat. Pour chaque étape : qui, avec quoi, combien de temps (hors attente), et les irritants.
-        Cochez <b>R</b> ressaisie, <b>M</b> retraitement manuel, <b>S</b> difficulté de suivi. « % des cas » sert aux étapes conditionnelles (ex. 25 % des demandes).</p></div>
-        <a class="btn" href="#/p/${p.id}/carte">Voir la cartographie →</a></div>
-      ${steps.length ? cards : `<div class="empty">Aucune étape relevée. Partez du déclencheur : « ${esc(p.declencheur || 'que se passe-t-il en premier ?')} »</div>`}
-      <div class="actions" style="margin-top:12px">
-        <button class="btn primary" data-action="add-step">+ Ajouter une étape</button>
-        <button class="btn" data-action="add-step" data-type="decision">+ Ajouter une décision</button>
+    ${taskNav(t, 3)}
+    <h1 class="fiche-title">${esc(t.nom || 'Tâche sans nom')}</h1>
+    <p class="sub">Présente chaque solution à ${name}. <b>C'est son estimation qui compte</b> : note le temps annoncé, sans le corriger.</p>
+    <div class="fiche">
+      <div class="fiche-main">
+        <section class="block">
+          <h2 class="block-title"><span>A</span> Les solutions, une par une</h2>
+          ${cards || `<div class="empty small">Aucune solution proposée pour cette tâche.<br><a class="btn" href="#/2/${t.id}">Retour à la réflexion</a></div>`}
+        </section>
+        <section class="block">
+          <h2 class="block-title"><span>B</span> Demain, en cas d'absence de ${name}</h2>
+          <p class="muted small">Aujourd'hui : ${esc(QUI_SAIT[t.quiSait] || 'non renseigné')} · mode opératoire : ${esc(MODE_OP[t.modeOp] || 'non renseigné')}.</p>
+          ${question(1, 'Avec ces changements, qui d\'autre pourrait faire cette tâche ?', 'Par exemple si le travail est mieux outillé ou documenté.', chips('t', 'quiSaitApres', t.quiSaitApres, QUI_SAIT))}
+          ${question(2, 'Y aura-t-il un mode opératoire écrit ?', 'S\'il est prévu dans les solutions, réponds « Oui, à jour ».', chips('t', 'modeOpApres', t.modeOpApres, MODE_OP))}
+          ${question(3, 'Remarques de ' + name, '', area('t', 'notesValidation', t.notesValidation, 'rows="2" placeholder="Son avis sur les solutions, ses conditions, ses craintes…"'))}
+        </section>
+        ${sols.length ? `<section class="block">
+          <h2 class="block-title"><span>C</span> Le déroulé demain</h2>
+          <p class="muted small">Seules les solutions estimées et non rejetées sont prises en compte.</p>
+          ${mapBlock(t, true, 'p3')}
+        </section>` : ''}
+        <div class="finish no-print">
+          ${t.p3Done
+            ? `<span class="badge ok">✓ Validée avec ${name}</span><button class="btn" data-action="undone" data-phase="3">Rouvrir</button>${nextLink(3, t)}`
+            : `<button class="btn primary lg" data-action="done" data-phase="3" data-next="next">✓ Validée avec ${name} — tâche suivante</button>`}
+        </div>
       </div>
+      <aside class="recap">
+        <h3>Avant / après</h3>
+        <div class="recap-row"><span>Aujourd'hui</span><b>${fmtDur(s.avant)} / an</b></div>
+        <div class="recap-row"><span>Demain</span><b>${fmtDur(s.apres)} / an</b></div>
+        <div class="recap-row big"><span>Temps gagné</span><b class="${s.gain >= 0 ? 'good' : 'bad'}">${s.gain >= 0 ? '−' : ''}${fmtDur(s.gain)}</b></div>
+        <div class="recap-row"><span>Soit</span><b>${fmtEtp(Math.max(0, s.gain))}</b></div>
+        <div class="recap-row"><span>Solutions estimées</span><b>${s.validees} / ${s.solutions}</b></div>
+        <div class="recap-row"><span>Étapes supprimées</span><b>${s.supprimees}</b></div>
+        <div class="recap-row"><span>Personne clé</span><span>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</span></div>
+      </aside>
     </div>`;
 }
 
-function tabCarte(p) {
-  if (!p.steps.length) return `<div class="empty">Relevez d'abord les étapes pour générer la cartographie.<br><a class="btn primary" href="#/p/${p.id}/etapes">Relever les étapes</a></div>`;
-  return `
-    <div class="card">
-      <div class="card-head">
-        <div><h2>Cartographie actuelle (AS-IS)</h2><p class="muted small">Diagramme BPMN simplifié en couloirs, généré depuis le relevé. Cliquez sur une étape pour la modifier.</p></div>
-        <div class="actions">
-          <button class="btn sm" data-action="toggle-fit">${fitMaps ? '⤢ Taille réelle' : '⤡ Vue d\'ensemble'}</button>
-          <button class="btn sm" data-action="export-png" data-which="asis">⭳ PNG</button>
-          <button class="btn sm" data-action="export-svg" data-which="asis">⭳ SVG</button>
-          <button class="btn sm" data-action="export-csv" title="Tableau pour Visio · Data Visualizer">⭳ CSV pour Visio</button>
-        </div>
-      </div>
-      <div class="map-wrap${fitMaps ? ' fit' : ''}" data-scroll-key="asis">${renderMap(p, p.steps)}</div>
-      ${mapLegend()}
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Temps par étape</h2><p class="muted small">Où part le temps sur une année.</p></div></div>
-      ${paretoHtml(p)}
-    </div>
-    <p class="help">Export Visio : ouvrez le CSV dans Excel, mettez les données sous forme de tableau, puis dans Visio utilisez <i>Data Visualizer</i> (Organigramme de base / couloirs) en pointant sur ce tableau.</p>`;
-}
-
-function mapLegend() {
-  return `<div class="map-legend">
-    <span>${miniSvg('start')} Début</span><span>${miniSvg('end')} Fin</span><span>${miniSvg('tache')} Tâche</span>
-    <span>${miniSvg('manuelle')} Manuelle</span><span>${miniSvg('auto')} Automatisée</span><span>${miniSvg('decision')} Décision</span>
-    <span>${miniSvg('attente')} Attente</span>
-    ${FLAGS.map(f => `<span><span class="flag-chip ${f.short}">${f.short}</span> ${f.label}</span>`).join('')}
-    <span><span class="flag-chip X">!</span> Autre irritant</span>
-    <span><span class="flag-chip ok">✓</span> Étape améliorée (cible)</span>
-  </div>`;
-}
-
-function paretoHtml(p) {
-  const rows = p.steps.map((s, i) => ({ s, i, v: stepAnnual(p, s) })).filter(r => r.v > 0).sort((a, b) => b.v - a.v);
-  if (!rows.length) return '<p class="muted">Renseignez les durées et le volume pour voir la répartition.</p>';
-  const max = rows[0].v;
-  return `<div class="bars">${rows.map(({ s, i, v }) => `
-    <div class="bar-row"><div class="bar-label" title="${esc(s.nom)}">${i + 1}. ${esc(s.nom)}</div>
-      <div class="bar-track"><div class="bar${isIrritant(s) ? ' irr' : ''}" style="width:${v / max * 100}%"></div></div>
-      <div class="bar-val">${fmtDur(v)}</div></div>`).join('')}</div>
-    <div class="legend-inline"><span><i style="background:var(--danger)"></i>Étape irritante</span><span><i style="background:#7d93c4"></i>Autre étape</span></div>`;
-}
-
-function tabAnalyse(p) {
-  const irr = p.steps.map((s, i) => ({ s, i })).filter(({ s }) => isIrritant(s));
-  const stepOpts = [['', '— étape concernée —'], ...p.steps.map((s, i) => [s.id, `${i + 1}. ${s.nom || 'Sans nom'}`])];
-  const impCards = p.ameliorations.map((a, k) => {
-    const sc = 'a:' + a.id;
-    const s = stepOf(p, a.stepId);
-    const q = quadrant(p, a);
-    const sup = a.levier === 'supprimer';
-    return `
-    <div class="imp-card${a.statut === 'ecartee' ? ' ecartee' : ''}" id="imp-${a.id}">
-      <div class="imp-num">${k + 1}</div>
-      <div class="imp-body">
-        <div class="imp-row r1">
-          ${field('Piste d\'amélioration', inp(sc, 'titre', a.titre, 'placeholder="Ex. Formulaire de demande en ligne"'))}
-          ${field('Étape concernée', sel(sc, 'stepId', a.stepId, stepOpts))}
-          ${field('Levier', sel(sc, 'levier', a.levier, LEVIERS))}
-        </div>
-        <div class="imp-row r2">
-          ${field('Gain (min / fois)', sup ? `<input disabled value="${s ? num(s.duree) : 0} (étape supprimée)">` : numInp(sc, 'gain', a.gain))}
-          ${field('Manip. évitées / fois', numInp(sc, 'manips', a.manips, 'title="Nombre de manipulations (clics, copier-coller, saisies) évitées à chaque exécution"'))}
-          ${field('Effort', sel(sc, 'effort', a.effort, EFFORTS))}
-          ${field('Statut', sel(sc, 'statut', a.statut, IMP_STATUTS))}
-          <div class="flags" style="padding-bottom:8px">${chk(sc, 'tracabilite', a.tracabilite, 'Améliore la traçabilité')}${chk(sc, 'controle', a.controle, 'Sécurise un contrôle')}</div>
-        </div>
-        ${area(sc, 'description', a.description, 'rows="2" placeholder="Comment ? (outil, règle, qui porte la mise en œuvre…)"')}
-        <div class="imp-foot">
-          <span>Gain annuel : <b style="color:var(--ok)">${fmtDur(impAnnualGain(p, a))}</b> (${fmtEtp(impAnnualGain(p, a))})</span>
-          <span>Manipulations évitées : <b>${fmtInt(impAnnualManips(p, a))}</b> / an</span>
-          <span class="badge ${q}">${QUADRANTS[q]}</span>
-        </div>
-      </div>
-      <div class="step-actions"><button class="icon-btn danger" title="Supprimer la piste" data-action="del-imp" data-id="${a.id}">✕</button></div>
-    </div>`;
-  }).join('');
-
-  return `
-    <div class="grid two">
-      <div class="card">
-        <div class="card-head"><div><h2>Irritants relevés</h2><p class="muted small">${irr.length} étape${irr.length > 1 ? 's' : ''} irritante${irr.length > 1 ? 's' : ''}. Chaque irritant devrait avoir au moins une piste.</p></div></div>
-        ${irr.length ? `<div class="irr-list">${irr.map(({ s, i }) => {
-          const imps = p.ameliorations.filter(a => a.stepId === s.id);
-          return `<div class="irr-item"><div class="top">
-              <div><div class="title">${i + 1}. ${esc(s.nom)} ${flagChips(s)}</div>
-                <div class="desc">${esc(s.irritant || 'Irritant à préciser')}</div></div>
-              <b class="num" style="white-space:nowrap">${fmtDur(stepAnnual(p, s))}/an</b></div>
-            ${imps.length ? `<div class="imps">✓ ${imps.map(a => esc(a.titre || 'Piste sans titre')).join(' · ')}</div>`
-              : `<div class="imps none">Aucune piste · <a href="#" data-action="add-imp" data-step="${s.id}">+ proposer une amélioration</a></div>`}
-          </div>`;
-        }).join('')}</div>` : '<p class="muted">Aucun irritant relevé. Cochez R / M / S ou décrivez l\'irritant dans le relevé des étapes.</p>'}
-      </div>
-      <div class="card">
-        <div class="card-head"><div><h2>Temps par étape</h2><p class="muted small">Concentrer l'effort là où part le temps.</p></div></div>
-        ${paretoHtml(p)}
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Pistes d'amélioration</h2><p class="muted small">Une piste agit sur une étape : la supprimer, l'automatiser, la simplifier ou la standardiser. Les pistes « écartées » ne comptent pas dans les gains.</p></div>
-        <button class="btn primary" data-action="add-imp">+ Ajouter une piste</button></div>
-      ${impCards || '<div class="empty">Aucune piste pour l\'instant.</div>'}
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Matrice effort / gain</h2><p class="muted small">Gain fort = au moins ${esc(state.settings.seuilGain)} h/an (modifiable dans Mission &amp; poste). Survolez une bulle pour le détail.</p></div></div>
-      ${matrixHtml(p.ameliorations.filter(a => a.statut !== 'ecartee').map(a => ({ p, a, label: p.ameliorations.indexOf(a) + 1 })))}
-    </div>`;
-}
-
-function matrixHtml(items) {
-  const cell = (q, title) => {
-    const b = items.filter(it => quadrant(it.p, it.a) === q);
-    return `<div class="mcell ${q}"><h4>${title}</h4><div class="bubbles">${b.map(it =>
-      `<span class="bubble" title="${esc((it.a.titre || 'Piste') + ' — ' + fmtDur(impAnnualGain(it.p, it.a)) + '/an, effort ' + EFFORTS[it.a.effort])}">${esc(it.label)}</span>`).join('')}</div></div>`;
-  };
-  return `<div class="matrix">
-    <div class="axis-y">Gain annuel →</div>
-    ${cell('quickwin', 'Gains rapides')}${cell('planifier', 'À planifier')}${cell('structurant', 'Projets structurants')}
-    ${cell('petit', 'Petits plus')}${cell('arbitrer', 'À arbitrer')}${cell('ecarter', 'À reconsidérer')}
-    <div></div><div class="axis-x"><span>Effort faible</span><span>Effort moyen</span><span>Effort fort</span></div>
-  </div>`;
-}
-
-function tabCible(p, s) {
-  if (!p.steps.length) return `<div class="empty">Relevez d'abord les étapes.<br><a class="btn primary" href="#/p/${p.id}/etapes">Relever les étapes</a></div>`;
-  const tobe = toBeSteps(p);
-  const cmp = (label, before, after, fmt, hint = '') => `
-    <div class="kpi compare"><div class="label">${label}</div>
-      <div class="row"><span class="before">${fmt(before)}</span><span class="after">${fmt(after)}</span></div>
-      <div class="delta">${before > after ? '−' + fmt(before - after) + ' (' + pct(before - after, before) + ')' : hint || 'inchangé'}</div></div>`;
-  const plan = activeImps(p).slice().sort((a, b) => impAnnualGain(p, b) - impAnnualGain(p, a));
-  const max = Math.max(1, s.total);
-  return `
-    <div class="kpis">
-      ${cmp('Temps annuel', s.total, s.after, fmtDur)}
-      ${cmp('Équivalent temps plein', s.total, s.after, fmtEtp)}
-      ${cmp('Nombre d\'étapes', s.nbSteps, s.nbStepsAfter, fmtInt)}
-      ${cmp('Étapes avec ressaisie', s.ressaisies, s.ressaisiesAfter, fmtInt)}
-      ${cmp('Étapes irritantes', s.nbIrr, s.nbIrrAfter, fmtInt)}
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Valeur apportée</h2><p class="muted small">Les quatre indicateurs demandés : temps gagné, manipulations évitées, traçabilité, sécurisation des contrôles.</p></div></div>
-      <div class="kpis" style="margin-bottom:0">
-        ${kpi('Temps gagné', fmtDur(s.gain), fmtEtp(s.gain) + ' par an', 'good')}
-        ${kpi('Manipulations évitées', fmtInt(s.manips), 'par an', 'good')}
-        ${kpi('Traçabilité améliorée', s.tracab, `piste${s.tracab > 1 ? 's' : ''} concernée${s.tracab > 1 ? 's' : ''}`)}
-        ${kpi('Contrôles sécurisés', s.controles, `piste${s.controles > 1 ? 's' : ''} concernée${s.controles > 1 ? 's' : ''}`)}
-      </div>
-      <div class="bars" style="margin-top:16px">
-        <div class="bar-row"><div class="bar-label">Aujourd'hui</div><div class="bar-track"><div class="bar" style="width:${s.total / max * 100}%"></div></div><div class="bar-val">${fmtDur(s.total)}</div></div>
-        <div class="bar-row"><div class="bar-label">Cible</div><div class="bar-track"><div class="bar after" style="width:${s.after / max * 100}%"></div><div class="bar gain" style="width:${s.gain / max * 100}%;opacity:.35"></div></div><div class="bar-val">${fmtDur(s.after)}</div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head">
-        <div><h2>Cartographie cible (TO-BE)</h2><p class="muted small">Calculée à partir des pistes non écartées : étapes supprimées retirées, durées réduites, étapes automatisées passées en « système ». Les numéros renvoient au relevé actuel.</p></div>
-        <div class="actions">
-          <button class="btn sm" data-action="toggle-fit">${fitMaps ? '⤢ Taille réelle' : '⤡ Vue d\'ensemble'}</button>
-          <button class="btn sm" data-action="export-png" data-which="tobe">⭳ PNG</button>
-          <button class="btn sm" data-action="export-svg" data-which="tobe">⭳ SVG</button>
-        </div>
-      </div>
-      <div class="map-wrap${fitMaps ? ' fit' : ''}" data-scroll-key="tobe">${tobe.length ? renderMap(p, tobe, { tobe: true }) : '<div class="empty">Toutes les étapes sont supprimées.</div>'}</div>
-      ${mapLegend()}
-    </div>
-    <div class="card">
-      <div class="card-head"><div><h2>Plan d'action</h2><p class="muted small">Pistes retenues ou proposées, classées par gain.</p></div></div>
-      ${plan.length ? planTable(p, plan) : '<p class="muted">Aucune piste. Ajoutez-en dans l\'onglet « Analyse &amp; pistes ».</p>'}
-    </div>`;
-}
-
-function planTable(p, plan) {
-  return `<div class="table-wrap"><table>
-    <thead><tr><th>Piste</th><th>Étape</th><th>Levier</th><th>Priorité</th><th>Statut</th><th class="right">Gain / an</th><th class="right">Manip. évitées</th></tr></thead>
-    <tbody>${plan.map(a => {
-      const s = stepOf(p, a.stepId), q = quadrant(p, a);
-      return `<tr><td><b>${esc(a.titre || 'Sans titre')}</b>${a.description ? `<div class="small muted">${esc(a.description)}</div>` : ''}</td>
-        <td class="small">${s ? (p.steps.indexOf(s) + 1) + '. ' + esc(s.nom) : '—'}</td>
-        <td class="small">${esc(LEVIERS[a.levier])}${a.tracabilite ? ' · traçabilité' : ''}${a.controle ? ' · contrôle' : ''}</td>
-        <td><span class="badge ${q}">${QUADRANTS[q]}</span></td>
-        <td class="small">${esc(IMP_STATUTS[a.statut])}</td>
-        <td class="right num" style="color:var(--ok);font-weight:600">${fmtDur(impAnnualGain(p, a))}</td>
-        <td class="right num">${fmtInt(impAnnualManips(p, a))}</td></tr>`;
-    }).join('')}</tbody></table></div>`;
-}
-
-/* ---------- Synthèse ---------- */
-function viewSynthese() {
+/* ---------- Phase 4 : restitution ---------- */
+function viewRestitution() {
   const m = state.mission;
   const g = globalStats();
-  const ps = state.processes;
+  const ts = state.taches;
+  const pending = ts.filter(t => t.p1Done && !t.p3Done).length;
   const period = [m.debut, m.fin].filter(Boolean).map(d => new Date(d).toLocaleDateString('fr-FR')).join(' → ');
-  const procs = ps.filter(p => p.steps.length).map(p => {
-    const s = procStats(p);
-    const irr = p.steps.map((st, i) => ({ st, i })).filter(({ st }) => isIrritant(st));
-    const plan = activeImps(p).slice().sort((a, b) => impAnnualGain(p, b) - impAnnualGain(p, a));
-    return `
-    <section class="report-proc">
+  const leves = FLAGS.reduce((a, f) => a + g.flagsLeves[f.key], 0);
+  const avantFlags = FLAGS.reduce((a, f) => a + g.flagsAvant[f.key], 0);
+  const max = Math.max(1, ...ts.map(t => taskStats(t).avant));
+
+  const details = ts.filter(t => t.steps.length).map((t, k) => {
+    const s = taskStats(t);
+    const sols = t.steps.filter(hasSol);
+    return `<section class="report-task">
       <div class="card">
-        <div class="eyebrow">${esc(p.domaine)} <span class="badge ${p.statut}">${esc(STATUTS[p.statut])}</span></div>
-        <h2>${esc(p.nom)}</h2>
-        <p class="muted">${esc(p.finalite)}</p>
+        <div class="eyebrow">Tâche ${k + 1} · ${fmtInt(volume(t))} fois par an</div>
+        <h2>${esc(t.nom)}</h2>
+        ${t.description ? `<p class="muted">${esc(t.description)}</p>` : ''}
         <div class="strip">
-          <div>Volume<b>${fmtInt(volume(p))} / an</b></div>
-          <div>Temps actuel<b>${fmtDur(s.total)}</b></div>
-          <div>Irritants<b class="bad">${s.nbIrr} étapes · ${fmtDur(s.irrit)}</b></div>
-          <div>Temps cible<b>${fmtDur(s.after)}</b></div>
-          <div>Gain<b class="good">${fmtDur(s.gain)} · ${fmtEtp(s.gain)}</b></div>
-          <div>Manip. évitées<b>${fmtInt(s.manips)} / an</b></div>
+          <div>Aujourd'hui<b>${fmtDur(s.avant)} / an</b></div><div>Demain<b>${fmtDur(s.apres)} / an</b></div>
+          <div>Temps gagné<b class="good">${fmtDur(Math.max(0, s.gain))} · ${pct(Math.max(0, s.gain), s.avant)}</b></div>
+          <div>Étapes<b>${t.steps.length} → ${t.steps.length - s.supprimees}</b></div>
+          <div>Personne clé<span>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</span></div>
         </div>
-        <h3 style="margin:10px 0 8px">Aujourd'hui</h3>
-        <div class="map-wrap">${renderMap(p, p.steps)}</div>
-        ${irr.length ? `<h3 style="margin:16px 0 6px">Irritants</h3><ul class="list-plain">${irr.map(({ st, i }) =>
-          `<li><div>${i + 1}. <b>${esc(st.nom)}</b> ${flagChips(st)}<div class="meta">${esc(st.irritant)}</div></div><b class="num">${fmtDur(stepAnnual(p, st))}/an</b></li>`).join('')}</ul>` : ''}
-        ${plan.length ? `<h3 style="margin:16px 0 6px">Pistes d'amélioration</h3>${planTable(p, plan)}
-          <h3 style="margin:16px 0 8px">Demain (cible)</h3><div class="map-wrap">${renderMap(p, toBeSteps(p), { tobe: true })}</div>` : ''}
-      </div>
-    </section>`;
+        <h3 class="h-sub">Aujourd'hui</h3>
+        ${mapBlock(t, false, 'r' + k, false, true)}
+        ${sols.length ? `<h3 class="h-sub">Ce qu'on change</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Étape</th><th>Ce qui coince</th><th>Solution</th><th class="right">Avant</th><th class="right">Après*</th><th>Avis</th></tr></thead>
+          <tbody>${sols.map(st => `<tr${st.avis === 'non' ? ' class="rejected"' : ''}>
+            <td><b>${t.steps.indexOf(st) + 1}. ${esc(st.quoi)}</b></td>
+            <td class="small">${flagChips(st)} ${esc(st.precision)}</td>
+            <td class="small">${esc(st.sol || LEVIERS[st.levier])}${st.levier ? `<div class="muted">${esc(LEVIERS[st.levier])}${st.tracabilite ? ' · traçabilité' : ''}${st.securise ? ' · contrôle sécurisé' : ''}</div>` : ''}</td>
+            <td class="right num">${fmtDec(num(st.duree))} min</td>
+            <td class="right num">${String(st.nouveauTemps) === '' ? '<span class="muted">à estimer</span>' : fmtDec(num(st.nouveauTemps)) + ' min'}</td>
+            <td class="small">${esc(AVIS[st.avis] || '—')}</td></tr>`).join('')}</tbody>
+        </table></div>
+        <h3 class="h-sub">Demain</h3>
+        ${mapBlock(t, true, 'rt' + k, false, true)}` : ''}
+        ${t.notesValidation ? `<div class="note"><b>Remarques de ${esc(who())} :</b> ${esc(t.notesValidation)}</div>` : ''}
+      </div></section>`;
   }).join('');
+
   return `
     <div class="report">
-      ${pageHead('Synthèse du diagnostic', esc(m.service || 'Diagnostic de poste'),
-        [m.poste, m.titulaire && 'Titulaire : ' + esc(m.titulaire), m.analyste && 'Analyse : ' + esc(m.analyste), period].filter(Boolean).map(esc).join(' · '),
-        `<button class="btn primary" data-action="print">🖶 Imprimer / PDF</button>`)}
-      ${m.contexte ? `<div class="card"><h3 style="margin-bottom:6px">Contexte</h3><p style="white-space:pre-line">${esc(m.contexte)}</p></div>` : ''}
+      ${phaseHead(4, '<button class="btn primary lg" data-action="print">🖶 Imprimer / enregistrer en PDF</button>')}
+      ${pending ? `<div class="tip warn no-print">${pending > 1 ? `${pending} tâches relevées ne sont pas encore validées` : '1 tâche relevée n\'est pas encore validée'} : seules les solutions déjà estimées comptent dans les gains.</div>` : ''}
+      <div class="report-cover card">
+        <div class="eyebrow">${esc(m.service || 'Diagnostic de poste')}${period ? ' · ' + esc(period) : ''}</div>
+        <h2 class="cover-title">${esc(m.poste || 'Poste analysé')}${m.personne ? ' — ' + esc(m.personne) : ''}</h2>
+        ${m.contexte ? `<p style="white-space:pre-line">${esc(m.contexte)}</p>` : ''}
+        ${m.analyste ? `<p class="muted small">Mission menée par ${esc(m.analyste)}.</p>` : ''}
+      </div>
+
       <div class="kpis">
-        ${kpi('Processus répertoriés', ps.length, ps.filter(p => p.steps.length).length + ' cartographiés')}
-        ${kpi('Temps annuel actuel', fmtDur(g.total), fmtEtp(g.total))}
-        ${kpi('Temps sur irritants', fmtDur(g.irrit), pct(g.irrit, g.total), 'bad')}
-        ${kpi('Temps gagné', fmtDur(g.gain), fmtEtp(g.gain), 'good')}
-        ${kpi('Manipulations évitées', fmtInt(g.manips), 'par an', 'good')}
-        ${kpi('Traçabilité / contrôles', `${g.tracab} / ${g.controles}`, 'pistes concernées')}
+        ${kpi('Temps gagné', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ${pct(Math.max(0, g.gain), g.avant)} du temps`, 'good')}
+        ${kpi('Tâches simplifiées', `${g.simplifiees} / ${ts.length}`, plural(g.validees, 'solution validée', 'solutions validées'))}
+        ${kpi('Irritants levés', `${leves} / ${avantFlags}`, FLAGS.map(f => `${g.flagsLeves[f.key]} ${f.nom.toLowerCase()}`).join(' · '))}
+        ${kpi('Étapes supprimées', g.supprimees, `${g.tracab} traçabilité · ${plural(g.controles, 'contrôle sécurisé', 'contrôles sécurisés')}`)}
+        ${kpi('Risque personne clé', `${g.riskHautAvant} → ${g.riskHautApres}`, `tâches à risque élevé · ${g.riskBaisse} en baisse`, g.riskHautApres < g.riskHautAvant ? 'good' : '')}
       </div>
+
       <div class="card">
-        <h3 style="margin-bottom:8px">Inventaire des processus du poste</h3>
+        <div class="card-head"><div><h2>Vue d'ensemble des tâches</h2><p class="muted small">Temps annuel aujourd'hui (gris) et demain (bleu).</p></div></div>
         <div class="table-wrap"><table>
-          <thead><tr><th>Processus</th><th>Domaine</th><th>Statut</th><th class="right">Volume / an</th><th class="right">Temps actuel</th><th class="right">Gain</th></tr></thead>
-          <tbody>${ps.map(p => { const s = procStats(p); return `<tr><td><b>${esc(p.nom)}</b></td><td>${esc(p.domaine)}</td>
-            <td><span class="badge ${p.statut}">${esc(STATUTS[p.statut])}</span></td><td class="right num">${fmtInt(volume(p))}</td>
-            <td class="right num">${s.total ? fmtDur(s.total) : '—'}</td><td class="right num" style="color:var(--ok)">${s.gain ? fmtDur(s.gain) : '—'}</td></tr>`; }).join('')}</tbody>
-        </table></div>
+          <thead><tr><th>Tâche</th><th class="right">Fréquence</th><th style="width:30%">Aujourd'hui → demain</th><th class="right">Avant</th><th class="right">Après</th><th class="right">Gain</th><th>Personne clé</th></tr></thead>
+          <tbody>${ts.map(t => { const s = taskStats(t); return `<tr>
+            <td><b>${esc(t.nom || 'Sans nom')}</b>${t.p3Done ? '' : ' <span class="badge">non validée</span>'}</td>
+            <td class="right num">${fmtInt(volume(t))} / an</td>
+            <td><div class="bar-track"><div class="bar" style="width:${s.avant / max * 100}%"></div></div>
+                <div class="bar-track mt"><div class="bar after" style="width:${s.apres / max * 100}%"></div></div></td>
+            <td class="right num">${fmtDur(s.avant)}</td><td class="right num">${fmtDur(s.apres)}</td>
+            <td class="right num good">${s.gain > 0 ? '−' + fmtDur(s.gain) : '—'}</td>
+            <td>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</td></tr>`; }).join('')}
+            <tr class="total"><td><b>Total</b></td><td></td><td></td><td class="right num"><b>${fmtDur(g.avant)}</b></td><td class="right num"><b>${fmtDur(g.apres)}</b></td><td class="right num good"><b>−${fmtDur(Math.max(0, g.gain))}</b></td><td></td></tr>
+          </tbody></table></div>
+        <p class="muted small" style="margin-top:10px">* Les temps « après » ont été estimés par ${esc(who())}, lors de l'entretien de validation.</p>
       </div>
-      ${procs}
+      ${details}
     </div>`;
 }
+function kpi(label, value, hint, cls = '') {
+  return `<div class="kpi ${cls}"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`;
+}
 
-/* ---------- Méthode ---------- */
-function viewMethode() {
-  const steps = [
-    ['Identifier', 'Choisir le processus, son but, son début et sa fin. Répertorier toutes les activités du poste.', 'Inventaire · Cadrage'],
-    ['Collecter', 'Entretiens et observation : étapes, acteurs, outils, données, temps passé, irritants.', 'Cadrage · Relevé des étapes'],
-    ['Cartographier', 'Diagramme en couloirs (un couloir par acteur), notation BPMN simplifiée.', 'Cartographie actuelle'],
-    ['Analyser', 'Repérer ressaisies, retraitements manuels, difficultés de suivi, attentes et goulots.', 'Analyse & pistes'],
-    ['Améliorer & mesurer', 'Proposer des pistes, prioriser effort/gain, chiffrer la valeur et dessiner la cible.', 'Cible & gains · Synthèse']
-  ];
-  const questions = [
-    'Qu\'est-ce qui déclenche ce travail ? Combien de fois par jour, semaine ou mois ?',
-    'À quoi sert-il ? Qui utilise le résultat ?',
-    'Quelles sont les étapes, dans l\'ordre ? Qui fait quoi ?',
-    'Quels outils et quelles données utilisez-vous à chaque étape ?',
-    'Combien de temps prend chaque étape, sans compter les attentes ?',
-    'Saisissez-vous une information qui existe déjà ailleurs ? (ressaisie)',
-    'Faites-vous des copier-coller, des mises en forme ou des calculs à la main ? (retraitement manuel)',
-    'Comment savez-vous où en est une demande ? Qui relance, et comment ? (suivi)',
-    'Quels contrôles sont faits ? Sont-ils tracés ? Que se passe-t-il en cas d\'erreur ?',
-    'Dans quels cas le processus change-t-il de chemin ? Dans quelle proportion ?',
-    'Qu\'est-ce qui vous fait perdre le plus de temps ? Que changeriez-vous en premier ?'
-  ];
-  const legend = [
-    ['start', 'Événement de début', 'Ce qui déclenche le processus.'],
-    ['end', 'Événement de fin', 'Le résultat obtenu.'],
-    ['tache', 'Tâche', 'Action réalisée par un acteur dans un outil.'],
-    ['manuelle', 'Tâche manuelle', 'Action hors outil (papier, téléphone…).'],
-    ['auto', 'Tâche automatisée', 'Réalisée par le système, sans intervention.'],
-    ['decision', 'Décision (passerelle)', 'Le chemin se sépare selon une condition.'],
-    ['attente', 'Attente', 'Délai : validation, retour d\'un tiers…'],
-    ['flow', 'Flux de séquence', 'L\'ordre d\'enchaînement des étapes.']
-  ];
-  return `
-    ${pageHead('Méthode &amp; guide d\'entretien', 'Cartographie de processus · BPMN simplifié', 'Démarche en cinq temps, inspirée de la cartographie de processus (Businessmap) et de la notation BPMN (exemples Outscale). Objectif : une cartographie simple et rapide, pas un document lourd.')}
-    <div class="card">
-      <div class="card-head"><h2>La démarche</h2></div>
-      <div class="method-steps">${steps.map(([t, d, w], i) => `
-        <div class="method-step"><div class="n">${i + 1}</div><h4>${t}</h4><p>${d}</p><div class="where">→ <b>${w}</b></div></div>`).join('')}</div>
+/* ---------- Bloc schéma (diagramme + boutons) ---------- */
+function mapBlock(t, tobe, key, withCsv = false, report = false) {
+  const steps = mapSteps(t, tobe);
+  if (!steps.length) return '<div class="empty small">Aucune étape à afficher.</div>';
+  const svg = renderMap(t, steps);
+  if (report) return `<div class="map-wrap fit">${svg}</div>`;
+  return `<div class="map-tools no-print">
+      <button class="btn sm" data-action="toggle-fit">${fitMaps ? '⤢ Taille réelle' : '⤡ Vue d\'ensemble'}</button>
+      <button class="btn sm" data-action="export-png" data-tobe="${tobe ? 1 : ''}">⭳ Image PNG</button>
+      <button class="btn sm" data-action="export-svg" data-tobe="${tobe ? 1 : ''}">⭳ SVG</button>
+      ${withCsv ? '<button class="btn sm" data-action="export-csv" title="Ouvrir dans Excel, puis Visio › Data Visualizer">⭳ CSV pour Visio</button>' : ''}
     </div>
-    <div class="grid two">
-      <div class="card">
-        <div class="card-head"><h2>Guide d'entretien</h2></div>
-        <ol class="questions">${questions.map(q => `<li>${esc(q)}</li>`).join('')}</ol>
-      </div>
-      <div class="card">
-        <div class="card-head"><h2>Les trois irritants à traquer</h2></div>
-        <ul class="list-plain">
-          <li><div><span class="flag-chip R">R</span> <b>Ressaisie</b><div class="meta">Une même information saisie plusieurs fois, dans plusieurs outils.</div></div></li>
-          <li><div><span class="flag-chip M">M</span> <b>Retraitement manuel</b><div class="meta">Copier-coller, mise en forme, calcul, consolidation faits à la main.</div></div></li>
-          <li><div><span class="flag-chip S">S</span> <b>Difficulté de suivi</b><div class="meta">Pas de vision de l'avancement, relances manuelles, pas de trace.</div></div></li>
-        </ul>
-        <h3 style="margin:16px 0 6px">Calcul des temps</h3>
-        <p class="muted small">Temps annuel d'une étape = durée (min) × volume annuel × % des cas. Un ETP = ${esc(state.settings.heuresEtp)} h par an (paramétrable).</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><h2>Notation utilisée (BPMN simplifié)</h2><p class="muted small">Chaque acteur a son couloir horizontal ; on lit le processus de gauche à droite.</p></div>
-      <div class="legend-grid">${legend.map(([k, t, d]) => `<div class="legend-item">${miniSvg(k, 34)}<div><b>${t}</b><p>${d}</p></div></div>`).join('')}</div>
-    </div>`;
+    <div class="map-wrap${fitMaps ? ' fit' : ''}" data-scroll-key="${key}">${svg}</div>
+    ${mapLegend(tobe)}`;
+}
+function mapLegend(tobe) {
+  return `<div class="map-legend">
+    <span>${miniSvg('start')} Début</span><span>${miniSvg('end')} Fin</span><span>${miniSvg('tache')} Étape</span>
+    <span>${miniSvg('decision')} Vérification</span>${tobe ? `<span>${miniSvg('auto')} Automatisée</span>` : ''}
+    ${FLAGS.map(f => `<span><span class="flag-chip ${f.short}">${f.short}</span> ${f.nom}</span>`).join('')}
+    ${tobe ? '<span><span class="flag-chip ok">✓</span> Étape améliorée</span>' : ''}
+    <span class="muted">Un couloir = une personne. Clique sur une étape pour la retrouver.</span>
+  </div>`;
 }
 
 /* ==========================================================================
-   Diagramme BPMN en couloirs (SVG autonome, exportable)
+   Schéma BPMN simplifié en couloirs (SVG autonome, exportable)
    ========================================================================== */
 const C = {
   ink: '#1d2433', muted: '#5b6578', line: '#4a5568', laneHead: '#e9eef6', laneA: '#ffffff', laneB: '#f7f9fc', laneLine: '#d5dbe5',
@@ -980,8 +849,35 @@ const C = {
   decFill: '#fff6e5', dec: '#b45309', start: '#1d8a5a', alt: '#b45309'
 };
 
-function wrapText(t, max, maxLines) {
-  const words = String(t || '').split(/\s+/).filter(Boolean);
+// Étapes à dessiner : actuelles, ou cible (solutions validées appliquées)
+function mapSteps(t, tobe) {
+  const out = [];
+  t.steps.forEach((s, i) => {
+    const v = tobe && isValidated(s);
+    if (v && s.levier === 'supprimer') return;
+    const duree = v ? num(s.nouveauTemps) : num(s.duree);
+    out.push({
+      id: s.id, n: i + 1, nom: s.quoi, acteur: s.qui, outil: s.outil,
+      duree, taux: taux(s), annual: duree * stepOcc(t, s),
+      type: s.controle ? 'decision' : (v && s.levier === 'automatiser') ? 'auto' : 'tache',
+      ressaisie: !v && s.ressaisie, manuel: !v && s.manuel, suivi: !v && s.suivi, precision: v ? '' : s.precision,
+      improved: v, gain: v ? num(s.duree) - num(s.nouveauTemps) : 0, sol: v ? s.sol : '',
+      cible: s.controle ? s.retour : ''
+    });
+  });
+  const kept = new Set(out.map(s => s.id));
+  out.forEach(c => {
+    if (c.cible && !kept.has(c.cible)) {
+      const idx = t.steps.findIndex(s => s.id === c.cible);
+      const next = t.steps.slice(idx + 1).find(s => kept.has(s.id));
+      c.cible = next ? next.id : '';
+    }
+  });
+  return out;
+}
+
+function wrapText(txt, max, maxLines) {
+  const words = String(txt || '').split(/\s+/).filter(Boolean);
   const lines = [];
   let cur = '';
   words.forEach(w => {
@@ -1003,49 +899,38 @@ function svgLines(x, y, lines, o = {}) {
   return `<text x="${x}" y="${y0}" text-anchor="${o.anchor || 'middle'}" font-size="${o.size || 11.5}" fill="${o.fill || C.ink}"${o.weight ? ` font-weight="${o.weight}"` : ''}>${lines.map((l, i) =>
     `<tspan x="${x}" dy="${i ? lh : 0}">${esc(l)}</tspan>`).join('')}</text>`;
 }
-
-function laneList(p, steps) {
-  const used = steps.map(s => (s.acteur || '').trim() || NA);
-  const lanes = splitList(p.acteurs).filter(a => used.includes(a));
-  used.forEach(a => { if (!lanes.includes(a)) lanes.push(a); });
-  return lanes.length ? lanes : [NA];
-}
-
 function shapeIcon(type, x, y) {
   if (type === 'auto') {
     return `<g fill="none" stroke="${C.auto}"><circle cx="${x}" cy="${y}" r="4.6" stroke-width="2.6" stroke-dasharray="2 1.6"/><circle cx="${x}" cy="${y}" r="1.6" stroke-width="1.2"/></g>`;
   }
-  if (type === 'manuelle') {
-    return `<path d="M${x - 4} ${y - 5} h5 l3 3 v8 h-8 z M${x + 1} ${y - 5} v3 h3" fill="none" stroke="${C.muted}" stroke-width="1.2"/>`;
-  }
   return `<g fill="none" stroke="${C.muted}" stroke-width="1.3"><circle cx="${x}" cy="${y - 2.5}" r="2.6"/><path d="M${x - 4.5} ${y + 5} a4.5 4.5 0 0 1 9 0"/></g>`;
 }
 
-function renderMap(p, steps, opt = {}) {
-  const id = 'mk' + (++mapSeq) + (opt.tobe ? 't' : 'a');
-  const lanes = laneList(p, steps);
+function renderMap(t, steps) {
+  const id = 'mk' + (++mapSeq);
+  const lanes = [];
+  steps.forEach(s => { const a = (s.acteur || '').trim() || NA; if (!lanes.includes(a)) lanes.push(a); });
   const HEAD = 132, COL = 152, LANE = 132, BW = 122, BH = 58, DR = 28, ER = 17;
   const n = steps.length;
   const loops = [];
   steps.forEach((s, i) => {
     if (s.type !== 'decision' || !s.cible) return;
-    const t = steps.findIndex(x => x.id === s.cible);
-    if (t >= 0 && t !== i + 1) loops.push({ i, t });
+    const k = steps.findIndex(x => x.id === s.cible);
+    if (k >= 0 && k !== i + 1) loops.push({ i, t: k });
   });
   const LH = lanes.length * LANE;
-  const GUT = loops.length ? 16 + loops.length * 14 : 0;
+  const H = LH + (loops.length ? 16 + loops.length * 14 : 0);
   const W = HEAD + (n + 2) * COL;
-  const H = LH + GUT;
   const li = a => Math.max(0, lanes.indexOf((a || '').trim() || NA));
   const X = c => HEAD + c * COL + COL / 2;
   const Y = l => l * LANE + LANE / 2;
 
   const nodes = [
     { k: 'start', x: X(0), y: Y(li(steps[0].acteur)) },
-    ...steps.map((s, i) => ({ k: s.type || 'tache', s, i, x: X(i + 1), y: Y(li(s.acteur)) })),
+    ...steps.map((s, i) => ({ k: s.type, s, i, x: X(i + 1), y: Y(li(s.acteur)) })),
     { k: 'end', x: X(n + 1), y: Y(li(steps[n - 1].acteur)) }
   ];
-  const round = k => k === 'start' || k === 'end' || k === 'attente';
+  const round = k => k === 'start' || k === 'end';
   const hw = nd => nd.k === 'decision' ? DR : round(nd.k) ? ER : BW / 2;
   const hh = nd => nd.k === 'decision' ? DR : round(nd.k) ? ER : BH / 2;
 
@@ -1055,89 +940,77 @@ function renderMap(p, steps, opt = {}) {
     <marker id="${id}b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="${C.alt}"/></marker></defs>`);
   o.push(`<rect x="0" y="0" width="${W}" height="${H}" fill="#fff"/>`);
 
-  // Couloirs
+  // Couloirs : une ligne par personne
   lanes.forEach((name, l) => {
     o.push(`<rect x="0" y="${l * LANE}" width="${W}" height="${LANE}" fill="${l % 2 ? C.laneB : C.laneA}" stroke="${C.laneLine}"/>`);
     o.push(`<rect x="0" y="${l * LANE}" width="${HEAD - 12}" height="${LANE}" fill="${C.laneHead}" stroke="${C.laneLine}"/>`);
     o.push(svgLines((HEAD - 12) / 2, Y(l) + 4, wrapText(name, 15, 3), { center: true, weight: 600, size: 12 }));
   });
 
-  // Flux de séquence
+  // Enchaînement des étapes
   for (let k = 0; k < nodes.length - 1; k++) {
     const a = nodes[k], b = nodes[k + 1];
     const x1 = a.x + hw(a), y1 = a.y, x2 = b.x - hw(b), y2 = b.y;
     const d = y1 === y2 ? `M${x1} ${y1} H${x2}` : `M${x1} ${y1} H${(x1 + x2) / 2} V${y2} H${x2}`;
     o.push(`<path d="${d}" fill="none" stroke="${C.line}" stroke-width="1.4" marker-end="url(#${id})"/>`);
-    if (a.k === 'decision') o.push(`<text x="${x1 + 5}" y="${y1 - 6}" font-size="10.5" fill="${C.muted}">${esc(a.s.labelSuite || 'Oui')}</text>`);
+    if (a.k === 'decision') o.push(`<text x="${x1 + 5}" y="${y1 - 6}" font-size="10.5" fill="${C.muted}">OK</text>`);
   }
-  // Branches alternatives des décisions (passent sous les couloirs)
+  // Retours des vérifications (passent sous les couloirs)
   loops.forEach((lp, k) => {
-    const a = nodes[lp.i + 1], t = nodes[lp.t + 1];
+    const a = nodes[lp.i + 1], tg = nodes[lp.t + 1];
     const gy = LH + 10 + k * 14;
-    // Entrée par le bas de la cible, décalée à droite pour ne pas couvrir la durée et l'outil
-    const tx = t.k === 'decision' || round(t.k) ? t.x : t.x + BW / 2 - 12;
-    o.push(`<path d="M${a.x} ${a.y + DR} V${gy} H${tx} V${t.y + hh(t)}" fill="none" stroke="${C.alt}" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#${id}b)"/>`);
-    o.push(`<text x="${a.x + 6}" y="${a.y + DR + 26}" font-size="10.5" fill="${C.alt}" font-weight="600">${esc(a.s.labelCible || 'Non')}</text>`);
+    const tx = tg.k === 'decision' ? tg.x : tg.x + BW / 2 - 12;
+    o.push(`<path d="M${a.x} ${a.y + DR} V${gy} H${tx} V${tg.y + hh(tg)}" fill="none" stroke="${C.alt}" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#${id}b)"/>`);
+    o.push(`<text x="${a.x + 6}" y="${a.y + DR + 26}" font-size="10.5" fill="${C.alt}" font-weight="600">À reprendre</text>`);
   });
 
-  // Nœuds
   nodes.forEach(nd => {
-    if (nd.k === 'start' || nd.k === 'end') {
+    if (round(nd.k)) {
       const isStart = nd.k === 'start';
       o.push(`<circle cx="${nd.x}" cy="${nd.y}" r="${ER}" fill="#fff" stroke="${isStart ? C.start : C.ink}" stroke-width="${isStart ? 2 : 4}"/>`);
-      o.push(svgLines(nd.x, nd.y + ER + 15, wrapText((isStart ? p.declencheur : p.resultat) || (isStart ? 'Début' : 'Fin'), 20, 3), { size: 10.5, fill: C.muted }));
+      o.push(svgLines(nd.x, nd.y + ER + 15, wrapText((isStart ? t.origine : t.resultat) || (isStart ? 'Début' : 'Fin'), 20, 3), { size: 10.5, fill: C.muted }));
       return;
     }
     const s = nd.s;
-    const num0 = s._n || nd.i + 1;
     const irr = isIrritant(s);
-    const annual = stepAnnual(p, s);
-    const tip = [`${num0}. ${s.nom}`, `Acteur : ${s.acteur || NA}`, s.outil && `Outil : ${s.outil}`, s.donnees && `Données : ${s.donnees}`,
-      `Durée : ${num(s.duree)} min${taux(s) < 100 ? ` (${taux(s)} % des cas)` : ''} · ${fmtDur(annual)}/an`,
-      s.irritant && `Irritant : ${s.irritant}`,
-      s._imps && s._imps.length && `Améliorations : ${s._imps.map(a => a.titre).join(' ; ')}`].filter(Boolean).join('\n');
+    const tip = [`${s.n}. ${s.nom}`, `Qui : ${s.acteur || NA}`, s.outil && `Outil : ${s.outil}`,
+      `Durée : ${fmtDec(s.duree)} min${s.taux < 100 ? ` (${fmtDec(s.taux)} % des cas)` : ''} · ${fmtDur(s.annual)} / an`,
+      s.precision && `Ce qui coince : ${s.precision}`, s.sol && `Solution : ${s.sol}`].filter(Boolean).join('\n');
     const g = [`<g data-step="${s.id}" style="cursor:pointer"><title>${esc(tip)}</title>`];
-    let top = nd.y - BH / 2;
-    const durTxt = num(s.duree) > 0 || s._gain ? `${fmtDec(num(s.duree))} min${taux(s) < 100 ? ` · ${fmtDec(taux(s))} %` : ''}` : '';
+    const durTxt = `${fmtDec(s.duree)} min${s.taux < 100 ? ` · ${fmtDec(s.taux)} %` : ''}`;
+    const top = nd.y - BH / 2;
 
     if (nd.k === 'decision') {
       g.push(`<polygon points="${nd.x},${nd.y - DR} ${nd.x + DR},${nd.y} ${nd.x},${nd.y + DR} ${nd.x - DR},${nd.y}" fill="${irr ? C.irrFill : C.decFill}" stroke="${irr ? C.irr : C.dec}" stroke-width="1.6"/>`);
       g.push(`<text x="${nd.x}" y="${nd.y + 5}" text-anchor="middle" font-size="15" font-weight="700" fill="${C.dec}">?</text>`);
       const lines = wrapText(s.nom, 22, 2);
       g.push(svgLines(nd.x, nd.y - DR - 7 - (lines.length - 1) * 13, lines, { size: 10.5, weight: 600 }));
-      if (num(s.duree) > 0) g.push(`<text x="${nd.x + DR + 4}" y="${nd.y + 16}" font-size="10" fill="${C.muted}">${esc(durTxt)}</text>`);
-    } else if (nd.k === 'attente') {
-      top = nd.y - ER;
-      g.push(`<circle cx="${nd.x}" cy="${nd.y}" r="${ER}" fill="#fff" stroke="${irr ? C.irr : C.muted}" stroke-width="1.5"/>`);
-      g.push(`<circle cx="${nd.x}" cy="${nd.y}" r="${ER - 4}" fill="none" stroke="${irr ? C.irr : C.muted}" stroke-width="1.2"/>`);
-      g.push(`<path d="M${nd.x} ${nd.y - 8} V${nd.y} L${nd.x + 6} ${nd.y + 3}" fill="none" stroke="${C.muted}" stroke-width="1.4"/>`);
-      g.push(svgLines(nd.x, nd.y + ER + 14, wrapText(s.nom, 20, 2), { size: 10.5 }));
-      if (durTxt) g.push(`<text x="${nd.x}" y="${nd.y + ER + 42}" text-anchor="middle" font-size="10" fill="${C.muted}">${esc(durTxt)}</text>`);
+      if (s.duree > 0) g.push(`<text x="${nd.x + DR + 4}" y="${nd.y + 16}" font-size="10" fill="${C.muted}">${esc(durTxt)}</text>`);
     } else {
-      const x0 = nd.x - BW / 2, y0 = nd.y - BH / 2;
+      const x0 = nd.x - BW / 2, y0 = top;
       let fill = '#fff', stroke = C.muted;
-      if (s._improved) { fill = C.okFill; stroke = C.ok; }
+      if (s.improved) { fill = C.okFill; stroke = C.ok; }
       else if (irr) { fill = C.irrFill; stroke = C.irr; }
-      else if (nd.k === 'auto') { fill = C.autoFill; stroke = C.auto; }
-      g.push(`<rect x="${x0}" y="${y0}" width="${BW}" height="${BH}" rx="9" fill="${fill}" stroke="${stroke}" stroke-width="1.6"${nd.k === 'manuelle' ? ' stroke-dasharray="5 3"' : ''}/>`);
+      if (nd.k === 'auto') { fill = C.autoFill; stroke = C.auto; }
+      g.push(`<rect x="${x0}" y="${y0}" width="${BW}" height="${BH}" rx="9" fill="${fill}" stroke="${stroke}" stroke-width="1.6"/>`);
       g.push(shapeIcon(nd.k, x0 + 11, y0 + 11));
-      g.push(`<text x="${x0 + BW - 7}" y="${y0 + 13}" text-anchor="end" font-size="9.5" fill="${C.muted}">${num0}</text>`);
+      g.push(`<text x="${x0 + BW - 7}" y="${y0 + 13}" text-anchor="end" font-size="9.5" fill="${C.muted}">${s.n}</text>`);
       g.push(svgLines(nd.x, nd.y + 8, wrapText(s.nom, 18, 3), { center: true, size: 11.2 }));
-      const gainTxt = s._gain ? ` (−${fmtDec(s._gain)})` : '';
-      g.push(`<text x="${nd.x}" y="${y0 + BH + 13}" text-anchor="middle" font-size="10.5" fill="${s._gain ? C.ok : C.ink}" font-weight="600">${esc(durTxt + gainTxt)}</text>`);
+      const gainTxt = s.gain > 0 ? ` (−${fmtDec(s.gain)})` : '';
+      g.push(`<text x="${nd.x}" y="${y0 + BH + 13}" text-anchor="middle" font-size="10.5" fill="${s.gain > 0 ? C.ok : C.ink}" font-weight="600">${esc(durTxt + gainTxt)}</text>`);
       if (s.outil) g.push(`<text x="${nd.x}" y="${y0 + BH + 25}" text-anchor="middle" font-size="10" fill="${C.muted}">${esc(wrapText(s.outil, 24, 1)[0] || '')}</text>`);
     }
 
-    // Pastilles d'irritants / d'amélioration au-dessus de la forme
-    const chips = FLAGS.filter(f => s[f.key]).map(f => ({ t: f.short, c: f.color }));
-    if (!chips.length && String(s.irritant || '').trim()) chips.push({ t: '!', c: C.irr });
-    if (s._improved) chips.push({ t: '✓', c: C.ok });
-    if (chips.length) {
-      const cw = 17, gap = 3, total = chips.length * cw + (chips.length - 1) * gap;
-      // Décision : pastilles à gauche du losange (le libellé occupe le dessus)
+    // Pastilles au-dessus de la forme : ce qui coince / amélioré
+    const marks = FLAGS.filter(f => s[f.key]).map(f => ({ t: f.short, c: f.color }));
+    if (!marks.length && String(s.precision || '').trim()) marks.push({ t: '!', c: C.irr });
+    if (s.improved) marks.push({ t: '✓', c: C.ok });
+    if (marks.length) {
+      const cw = 17, gap = 3, total = marks.length * cw + (marks.length - 1) * gap;
+      // Vérification : pastilles à gauche du losange (le libellé occupe le dessus)
       let cx = nd.k === 'decision' ? nd.x - DR - total - 4 : nd.x - total / 2;
       const cy = nd.k === 'decision' ? nd.y - 24 : top - 18;
-      chips.forEach(ch => {
+      marks.forEach(ch => {
         g.push(`<rect x="${cx}" y="${cy}" width="${cw}" height="14" rx="3" fill="${ch.c}"/><text x="${cx + cw / 2}" y="${cy + 10.5}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#fff">${ch.t}</text>`);
         cx += cw + gap;
       });
@@ -1145,24 +1018,20 @@ function renderMap(p, steps, opt = {}) {
     g.push('</g>');
     o.push(g.join(''));
   });
-
   o.push('</svg>');
   return o.join('');
 }
 
-// Petites formes pour les légendes
 function miniSvg(kind, size = 22) {
   const s = size, c = s / 2;
-  let body = '';
+  let body;
   switch (kind) {
     case 'start': body = `<circle cx="${c}" cy="${c}" r="${s * .36}" fill="#fff" stroke="${C.start}" stroke-width="2"/>`; break;
     case 'end': body = `<circle cx="${c}" cy="${c}" r="${s * .34}" fill="#fff" stroke="${C.ink}" stroke-width="3.2"/>`; break;
     case 'decision': body = `<polygon points="${c},2 ${s - 2},${c} ${c},${s - 2} 2,${c}" fill="${C.decFill}" stroke="${C.dec}" stroke-width="1.5"/>`; break;
-    case 'attente': body = `<circle cx="${c}" cy="${c}" r="${s * .4}" fill="#fff" stroke="${C.muted}" stroke-width="1.3"/><circle cx="${c}" cy="${c}" r="${s * .28}" fill="none" stroke="${C.muted}"/>`; break;
-    case 'flow': body = `<defs><marker id="lg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${C.line}"/></marker></defs><path d="M2 ${c} H${s - 3}" stroke="${C.line}" stroke-width="1.5" marker-end="url(#lg-arrow)"/>`; break;
     default: {
       const stroke = kind === 'auto' ? C.auto : C.muted, fill = kind === 'auto' ? C.autoFill : '#fff';
-      body = `<rect x="1.5" y="${s * .2}" width="${s - 3}" height="${s * .6}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.4"${kind === 'manuelle' ? ' stroke-dasharray="3 2"' : ''}/>`;
+      body = `<rect x="1.5" y="${s * .2}" width="${s - 3}" height="${s * .6}" rx="3" fill="${fill}" stroke="${stroke}" stroke-width="1.4"/>`;
     }
   }
   return `<svg width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" aria-hidden="true">${body}</svg>`;
@@ -1179,15 +1048,13 @@ function download(blob, name) {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
-function mapSvgFor(p, which) {
-  return which === 'tobe' ? renderMap(p, toBeSteps(p), { tobe: true }) : renderMap(p, p.steps);
+const mapFileName = (t, tobe, ext) => `${slug(t.nom)}-${tobe ? 'demain' : 'aujourd-hui'}.${ext}`;
+function exportSvg(t, tobe) {
+  const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + renderMap(t, mapSteps(t, tobe));
+  download(new Blob([svg], { type: 'image/svg+xml' }), mapFileName(t, tobe, 'svg'));
 }
-function exportSvg(p, which) {
-  const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + mapSvgFor(p, which);
-  download(new Blob([svg], { type: 'image/svg+xml' }), `${slug(p.nom)}-${which === 'tobe' ? 'cible' : 'actuel'}.svg`);
-}
-function exportPng(p, which) {
-  const svg = mapSvgFor(p, which);
+function exportPng(t, tobe) {
+  const svg = renderMap(t, mapSteps(t, tobe));
   const img = new Image();
   img.onload = () => {
     const scale = 2;
@@ -1200,32 +1067,30 @@ function exportPng(p, which) {
     ctx.scale(scale, scale);
     ctx.drawImage(img, 0, 0);
     canvas.toBlob(b => {
-      if (b) download(b, `${slug(p.nom)}-${which === 'tobe' ? 'cible' : 'actuel'}.png`);
-      else toast('Export PNG impossible dans ce navigateur : utilisez le SVG.');
+      if (b) download(b, mapFileName(t, tobe, 'png'));
+      else toast('Export image impossible dans ce navigateur : utilise le SVG.');
     }, 'image/png');
   };
-  img.onerror = () => toast('Export PNG impossible : utilisez le SVG.');
+  img.onerror = () => toast('Export image impossible : utilise le SVG.');
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 }
 // Tableau au format « Data Visualizer » de Visio (organigramme de base)
-function exportCsv(p) {
-  const steps = p.steps;
-  const idOf = i => 'P' + String(i + 1).padStart(2, '0');
+function exportCsv(t) {
+  const steps = t.steps;
+  const idOf = i => 'E' + String(i + 1).padStart(2, '0');
   const rows = [['Process Step ID', 'Process Step Description', 'Next Step ID', 'Connector Label', 'Shape Type', 'Function', 'Phase', 'Alt Description']];
-  rows.push(['DEBUT', p.declencheur || 'Début', steps.length ? idOf(0) : 'FIN', '', 'Start', (steps[0]?.acteur) || NA, '', '']);
+  rows.push(['DEBUT', t.origine || 'Début', steps.length ? idOf(0) : 'FIN', '', 'Start', steps[0]?.qui || NA, '', '']);
   steps.forEach((s, i) => {
     const next = i + 1 < steps.length ? idOf(i + 1) : 'FIN';
     let nextIds = next, labels = '';
-    if (s.type === 'decision') {
-      const t = steps.findIndex(x => x.id === s.cible);
-      if (t >= 0) { nextIds = next + ',' + idOf(t); labels = (s.labelSuite || 'Oui') + ',' + (s.labelCible || 'Non'); }
-    }
-    const alt = [s.outil && 'Outil : ' + s.outil, `${num(s.duree)} min`, s.irritant && 'Irritant : ' + s.irritant].filter(Boolean).join(' | ');
-    rows.push([idOf(i), s.nom, nextIds, labels, s.type === 'decision' ? 'Decision' : 'Process', s.acteur || NA, '', alt]);
+    const k = s.controle ? steps.findIndex(x => x.id === s.retour) : -1;
+    if (k >= 0) { nextIds = next + ',' + idOf(k); labels = 'OK,À reprendre'; }
+    const alt = [s.outil && 'Outil : ' + s.outil, `${num(s.duree)} min`, s.precision && 'Ce qui coince : ' + s.precision].filter(Boolean).join(' | ');
+    rows.push([idOf(i), s.quoi, nextIds, labels, s.controle ? 'Decision' : 'Process', s.qui || NA, '', alt]);
   });
-  rows.push(['FIN', p.resultat || 'Fin', '', '', 'End', (steps[steps.length - 1]?.acteur) || NA, '', '']);
+  rows.push(['FIN', t.resultat || 'Fin', '', '', 'End', steps[steps.length - 1]?.qui || NA, '', '']);
   const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
-  download(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), `${slug(p.nom)}-visio.csv`);
+  download(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), `${slug(t.nom)}-visio.csv`);
 }
 function exportJson() {
   const d = new Date().toISOString().slice(0, 10);
@@ -1236,11 +1101,11 @@ function importJson(file) {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      if (!data || !Array.isArray(data.processes)) throw new Error('format');
+      if (!data || !Array.isArray(data.taches)) throw new Error('format');
       if (!confirm('Remplacer les données actuelles par cette sauvegarde ?')) return;
       state = normalize(data);
       save();
-      go('#/tableau');
+      go('#/accueil');
       render();
       toast('Sauvegarde importée.');
     } catch (e) {
@@ -1254,110 +1119,121 @@ function importJson(file) {
    Actions
    ========================================================================== */
 function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => t.classList.remove('show'), 2600);
+  toast._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+function nextTask(phase, fromId) {
+  const key = 'p' + phase + 'Done';
+  const ts = state.taches;
+  const i = ts.findIndex(t => t.id === fromId);
+  const order = [...ts.slice(i + 1), ...ts.slice(0, i)];
+  return order.find(t => !t[key] && (phase === 1 || t['p' + (phase - 1) + 'Done']));
+}
+function addTask() {
+  const t = newTask();
+  state.taches.push(t);
+  save();
+  go(`#/1/${t.id}`);
+  setTimeout(() => { const el = document.querySelector('[data-bind="t|nom"]'); if (el) el.focus(); }, 30);
 }
 
 const actions = {
-  'add-process'() {
-    const p = newProcess();
-    state.processes.push(p);
+  'add-task': addTask,
+  'del-task'() {
+    const t = currentTask();
+    if (!t || !confirm(`Supprimer la tâche « ${t.nom || 'sans nom'} » et tout son contenu ?`)) return;
+    state.taches = state.taches.filter(x => x !== t);
+    save(); go('#/1');
+  },
+  'done'(el) {
+    const t = currentTask();
+    const phase = Number(el.dataset.phase);
+    if (phase === 1 && (!t.nom.trim() || !t.steps.length)) {
+      toast('Il manque le nom de la tâche ou au moins une étape.');
+      return;
+    }
+    t['p' + phase + 'Done'] = true;
     save();
-    go(`#/p/${p.id}/cadrage`);
+    if (el.dataset.next === 'new') { toast('Tâche relevée ✓ On passe à la suivante.'); addTask(); return; }
+    if (el.dataset.next === 'list') { go('#/1'); return; }
+    const n = nextTask(phase, t.id);
+    if (n) { toast('C\'est noté ✓ Tâche suivante.'); go(`#/${phase}/${n.id}`); }
+    else { toast('Toutes les tâches de cette phase sont faites ✓'); go(`#/${phase}`); }
   },
-  'dup-process'(el) {
-    const src = state.processes.find(p => p.id === el.dataset.id);
-    if (!src) return;
-    const copy = normalize({ processes: [JSON.parse(JSON.stringify(src))] }).processes[0];
-    const ids = {};
-    copy.id = uid();
-    copy.nom = src.nom + ' (copie)';
-    copy.steps.forEach(s => { const old = s.id; s.id = uid(); ids[old] = s.id; });
-    copy.steps.forEach(s => { if (s.cible) s.cible = ids[s.cible] || ''; });
-    copy.ameliorations.forEach(a => { a.id = uid(); a.stepId = ids[a.stepId] || ''; });
-    state.processes.splice(state.processes.indexOf(src) + 1, 0, copy);
-    save(); render();
-  },
-  'del-process'(el) {
-    const p = state.processes.find(x => x.id === el.dataset.id);
-    if (!p || !confirm(`Supprimer le processus « ${p.nom} » et toutes ses étapes ?`)) return;
-    state.processes = state.processes.filter(x => x !== p);
-    save();
-    if (route().page === 'p') go('#/processus'); else render();
-  },
+  'undone'(el) { const t = currentTask(); t['p' + el.dataset.phase + 'Done'] = false; save(); render(); },
   'add-step'(el) {
-    const p = currentProcess();
-    if (!p) return;
-    const last = p.steps[p.steps.length - 1];
-    const s = newStep({ acteur: last ? last.acteur : (splitList(p.acteurs)[0] || '') });
-    if (el.dataset.type === 'decision') { s.type = 'decision'; s.duree = '0'; }
-    const after = el.dataset.after ? p.steps.findIndex(x => x.id === el.dataset.after) : -1;
-    if (after >= 0) p.steps.splice(after + 1, 0, s); else p.steps.push(s);
-    if (p.statut === 'afaire') p.statut = 'encours';
-    flashStep = 'step-' + s.id;
+    const t = currentTask();
+    if (!t) return;
+    const after = el.dataset.after ? t.steps.findIndex(x => x.id === el.dataset.after) : -1;
+    const prev = after >= 0 ? t.steps[after] : t.steps[t.steps.length - 1];
+    const s = newStep({ qui: prev ? prev.qui : (state.mission.personne || ''), outil: prev ? prev.outil : '' });
+    if (after >= 0) t.steps.splice(after + 1, 0, s); else t.steps.push(s);
+    flashId = 'step-' + s.id;
     save(); render();
-    const input = document.querySelector(`[data-bind="s:${s.id}|nom"]`);
-    if (input) input.focus();
   },
   'del-step'(el) {
-    const p = currentProcess();
-    const s = p && stepOf(p, el.dataset.id);
-    if (!s) return;
-    const linked = p.ameliorations.filter(a => a.stepId === s.id);
-    const msg = `Supprimer l'étape « ${s.nom || 'sans nom'} » ?` + (linked.length ? `\n${linked.length} piste(s) d'amélioration liée(s) seront aussi supprimée(s).` : '');
-    if (!confirm(msg)) return;
-    p.steps = p.steps.filter(x => x !== s);
-    p.steps.forEach(x => { if (x.cible === s.id) x.cible = ''; });
-    p.ameliorations = p.ameliorations.filter(a => a.stepId !== s.id);
+    const t = currentTask();
+    const s = t && t.steps.find(x => x.id === el.dataset.id);
+    if (!s || !confirm(`Supprimer l'étape « ${s.quoi || 'sans nom'} » ?`)) return;
+    t.steps = t.steps.filter(x => x !== s);
+    t.steps.forEach(x => { if (x.retour === s.id) x.retour = ''; });
     save(); render();
   },
   'move-step'(el) {
-    const p = currentProcess();
-    const i = p.steps.findIndex(x => x.id === el.dataset.id);
+    const t = currentTask();
+    const i = t.steps.findIndex(x => x.id === el.dataset.id);
     const j = i + Number(el.dataset.dir);
-    if (i < 0 || j < 0 || j >= p.steps.length) return;
-    [p.steps[i], p.steps[j]] = [p.steps[j], p.steps[i]];
-    flashStep = 'step-' + el.dataset.id;
+    if (i < 0 || j < 0 || j >= t.steps.length) return;
+    [t.steps[i], t.steps[j]] = [t.steps[j], t.steps[i]];
+    flashId = 'step-' + el.dataset.id;
     save(); render();
   },
-  'add-imp'(el) {
-    const p = currentProcess();
-    if (!p) return;
-    const firstIrr = p.steps.find(s => isIrritant(s) && !p.ameliorations.some(a => a.stepId === s.id));
-    const a = newImp({ stepId: el.dataset.step || (firstIrr ? firstIrr.id : (p.steps[0]?.id || '')) });
-    p.ameliorations.push(a);
-    flashStep = 'imp-' + a.id;
-    save(); render();
-    const input = document.querySelector(`[data-bind="a:${a.id}|titre"]`);
-    if (input) input.focus();
-  },
-  'del-imp'(el) {
-    const p = currentProcess();
-    const a = p && p.ameliorations.find(x => x.id === el.dataset.id);
-    if (!a || !confirm(`Supprimer la piste « ${a.titre || 'sans titre'} » ?`)) return;
-    p.ameliorations = p.ameliorations.filter(x => x !== a);
+  'chip'(el) {
+    const obj = resolveScope(el.dataset.scope);
+    if (!obj) return;
+    const f = el.dataset.field, v = el.dataset.value;
+    obj[f] = obj[f] === v && f !== 'freqPer' ? '' : v;
     save(); render();
   },
-  'export-svg'(el) { const p = currentProcess(); if (p) exportSvg(p, el.dataset.which); },
-  'export-png'(el) { const p = currentProcess(); if (p) exportPng(p, el.dataset.which); },
-  'export-csv'() { const p = currentProcess(); if (p) exportCsv(p); },
-  'export-json'() { exportJson(); },
-  'import-json'() { document.getElementById('importFile').click(); },
-  'load-demo'() {
-    if (state.processes.length && !confirm('Remplacer les données actuelles par la démonstration ?')) return;
-    state = demoState();
-    save(); go('#/tableau'); render();
+  'toggle'(el) {
+    const obj = resolveScope(el.dataset.scope);
+    if (!obj) return;
+    obj[el.dataset.field] = !obj[el.dataset.field];
+    save(); render();
   },
-  'reset-all'() {
-    if (!confirm('Effacer toutes les données et repartir de zéro ?\nPensez à exporter une sauvegarde avant si besoin.')) return;
-    state = emptyState();
-    save(); go('#/mission'); render();
-    toast('Données effacées. Commencez par décrire la mission.');
+  'open-sol'(el) {
+    const s = currentTask().steps.find(x => x.id === el.dataset.id);
+    s.solOpen = true;
+    flashId = 'sol-' + s.id;
+    save(); render();
+  },
+  'idea'(el) {
+    const s = currentTask().steps.find(x => x.id === el.dataset.id);
+    const [lev, txt] = ideasFor(s)[Number(el.dataset.k)];
+    s.sol = String(s.sol || '').trim() ? s.sol.trim() + '\n+ ' + txt : txt;
+    if (!s.levier) s.levier = lev;
+    save(); render();
   },
   'toggle-fit'() { fitMaps = !fitMaps; render(); },
+  'export-svg'(el) { const t = currentTask(); if (t) exportSvg(t, !!el.dataset.tobe); },
+  'export-png'(el) { const t = currentTask(); if (t) exportPng(t, !!el.dataset.tobe); },
+  'export-csv'() { const t = currentTask(); if (t) exportCsv(t); },
+  'export-json': exportJson,
+  'import-json'() { document.getElementById('importFile').click(); },
+  'load-demo'() {
+    if (state.taches.length && !confirm('Remplacer les données actuelles par la démonstration ?')) return;
+    state = demoState();
+    save(); go('#/accueil'); render();
+  },
+  'reset-all'() {
+    if (!confirm('Effacer toutes les données et repartir de zéro ?\nPense à exporter une sauvegarde avant si besoin.')) return;
+    state = emptyState();
+    save(); go('#/accueil'); render();
+    toast('C\'est tout propre. Commence par renseigner la mission.');
+  },
   'print'() { window.print(); }
 };
 
@@ -1365,17 +1241,25 @@ document.addEventListener('click', e => {
   const btn = e.target.closest('[data-action]');
   if (btn) {
     e.preventDefault();
+    if (btn.disabled) return;
     const fn = actions[btn.dataset.action];
     if (fn) fn(btn);
     return;
   }
+  // Clic sur une étape du schéma : on retrouve l'étape dans la page (ou dans la fiche d'immersion)
   const node = e.target.closest('.map-wrap [data-step]');
-  const p = currentProcess();
-  if (node && p && stepOf(p, node.dataset.step)) {
-    flashStep = 'step-' + node.dataset.step;
-    go(`#/p/${p.id}/etapes`);
+  const t = currentTask();
+  if (node && t && t.steps.some(s => s.id === node.dataset.step)) {
+    const r = route();
+    flashId = (r.phase === 2 ? 'sol-' : r.phase === 3 ? 'val-' : 'step-') + node.dataset.step;
+    if (!document.getElementById(flashId)) { flashId = 'step-' + node.dataset.step; go(`#/1/${t.id}`); }
+    else render();
   }
 });
+document.addEventListener('toggle', e => {
+  const d = e.target;
+  if (d.dataset && d.dataset.detail) { if (d.open) openDetails.add(d.dataset.detail); else openDetails.delete(d.dataset.detail); }
+}, true);
 document.addEventListener('input', e => {
   const el = e.target.closest('[data-bind]');
   if (!el) return;
@@ -1395,134 +1279,120 @@ document.addEventListener('change', e => {
   save();
   scheduleRender();
 });
+// Entrée dans le libellé d'une étape : on enchaîne sur « Et ensuite ? »
+document.addEventListener('keydown', e => {
+  const el = e.target;
+  if (e.key === 'Enter' && el.dataset && /\|quoi$/.test(el.dataset.bind || '') && route().phase === 1) {
+    e.preventDefault();
+    applyBinding(el);
+    const id = el.dataset.bind.split('|')[0].split(':')[1];
+    actions['add-step']({ dataset: { after: id } });
+  }
+});
 window.addEventListener('hashchange', () => {
   render();
-  if (!flashStep) window.scrollTo(0, 0);
+  if (!flashId) window.scrollTo(0, 0);
 });
 
 /* ==========================================================================
    Données de démonstration (fictives)
    ========================================================================== */
 function demoState() {
-  const s = emptyState();
-  s.isDemo = true;
-  s.mission = {
-    service: 'Gestion de la connaissance',
-    poste: 'Chargé(e) de gestion de la connaissance',
-    titulaire: 'Titulaire du poste (fictif)',
-    analyste: 'Analyste mission',
-    debut: '2026-11-02',
-    fin: '2026-11-13',
-    contexte: 'Comprendre le fonctionnement actuel du poste avec l\'équipe : étapes, finalité, acteurs, données et outils, temps passé et irritants (ressaisies, retraitements manuels, difficultés de suivi).\nLivrable : une cartographie simple et rapide, puis l\'objectivation de la valeur apportée (temps gagné, manipulations évitées, traçabilité, sécurisation des contrôles).'
+  const st = emptyState();
+  st.isDemo = true;
+  st.mission = {
+    service: 'Gestion de la connaissance', personne: 'Sophie', poste: 'Chargée de gestion de la connaissance',
+    analyste: 'Analyste mission', debut: '2026-11-02', fin: '2026-11-13',
+    contexte: 'Reprise du poste de Sophie. Objectif : comprendre le travail actuel, repérer les ressaisies, retraitements manuels et difficultés de suivi, puis chiffrer le temps gagné avec les solutions proposées.'
   };
-  const G = 'Gestionnaire connaissance', E = 'Expert métier', M = 'Manager', A = 'Conseiller agence', CF = 'Conformité';
+  const S = 'Sophie', E = 'Expert métier', M = 'Manager', A = 'Conseiller agence', CF = 'Conformité';
 
-  const p1 = newProcess({
-    id: 'p1', nom: 'Mettre à jour une fiche procédure', domaine: 'Base de connaissance',
-    finalite: 'Garantir que les fiches procédures utilisées par le réseau sont à jour et validées par un expert.',
-    declencheur: 'Demande de mise à jour reçue', resultat: 'Fiche publiée et demandeur informé',
-    volQty: '40', volPer: 'mois', criticite: '3', statut: 'valide',
-    fournisseurs: 'Agences\nServices experts\nConformité', entrees: 'Demande par mail\nTexte réglementaire\nAncienne fiche',
-    sorties: 'Fiche publiée\nTableau de suivi à jour', clients: 'Conseillers du réseau\nServices du siège',
-    acteurs: `${G}, ${E}`, outils: 'Outlook, Excel, Word, SharePoint',
-    interlocuteurs: 'Titulaire du poste, 1 expert métier', dateEntretien: '2026-11-03',
-    notes: 'Pic de demandes en début de mois. 30 % des fiches repartent en correction après relecture.',
+  const t1 = newTask({
+    id: 't1', nom: 'Mettre à jour une fiche procédure', freqQty: '40', freqPer: 'mois',
+    description: 'Quand une procédure change, je modifie la fiche, je la fais valider par l\'expert puis je la publie pour les agences.',
+    origine: 'Demande de mise à jour reçue par mail', resultat: 'Fiche publiée et demandeur prévenu',
+    quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui',
+    notes: 'Pic de demandes en début de mois. Environ 30 % des fiches repartent en correction après relecture.',
+    notesValidation: 'Très favorable au formulaire. Souhaite garder la main sur la mise en forme finale.',
+    p1Done: true, p2Done: true, p3Done: true,
     steps: [
-      newStep({ id: 'p1s1', nom: 'Recevoir la demande par mail', acteur: G, outil: 'Outlook', donnees: 'Objet, demandeur, fiche concernée', duree: '5', suivi: true, irritant: 'Demandes dispersées dans la boîte mail, aucune vision du stock' }),
-      newStep({ id: 'p1s2', nom: 'Recopier la demande dans le tableau de suivi', acteur: G, outil: 'Excel', donnees: 'Objet, demandeur, date', duree: '4', ressaisie: true, irritant: 'Ressaisie des informations déjà présentes dans le mail' }),
-      newStep({ id: 'p1s3', nom: 'Rédiger ou modifier la fiche', acteur: G, outil: 'Word', donnees: 'Contenu de la procédure', duree: '35' }),
-      newStep({ id: 'p1s4', nom: 'Relire et valider la fiche', acteur: E, outil: 'Outlook', donnees: 'Fiche en pièce jointe', duree: '20', suivi: true, irritant: 'Relances manuelles, 6 jours de délai moyen, pas de trace de la validation' }),
-      newStep({ id: 'p1s5', type: 'decision', nom: 'Fiche validée ?', acteur: E, duree: '0', cible: 'p1s3', labelSuite: 'Oui', labelCible: 'Non (30 %)' }),
-      newStep({ id: 'p1s6', nom: 'Mettre en forme selon la charte', acteur: G, outil: 'Word', duree: '15', manuel: true, irritant: 'Mise en forme refaite à la main à chaque fiche' }),
-      newStep({ id: 'p1s7', nom: 'Publier dans la base (copier-coller)', acteur: G, outil: 'SharePoint', duree: '10', ressaisie: true, irritant: 'Copier-coller Word vers SharePoint, mise en page cassée' }),
-      newStep({ id: 'p1s8', nom: 'Mettre à jour le suivi et informer le demandeur', acteur: G, outil: 'Excel + Outlook', duree: '6', ressaisie: true, manuel: true, irritant: 'Double mise à jour Excel + mail' })
-    ],
-    ameliorations: [
-      newImp({ titre: 'Liste des demandes SharePoint (vue « en cours »)', stepId: 'p1s1', levier: 'simplifier', gain: '2', manips: '1', tracabilite: true, effort: '1', statut: 'retenue', description: 'Le stock de demandes devient visible par toute l\'équipe.' }),
-      newImp({ titre: 'Formulaire de demande en ligne (Microsoft Forms)', stepId: 'p1s2', levier: 'supprimer', manips: '3', tracabilite: true, effort: '1', statut: 'retenue', description: 'Le demandeur saisit lui-même ; la ligne de suivi est créée automatiquement.' }),
-      newImp({ titre: 'Circuit de validation avec relance automatique', stepId: 'p1s4', levier: 'automatiser', gain: '8', manips: '2', tracabilite: true, controle: true, effort: '2', statut: 'retenue', description: 'Approbation Power Automate : relance à J+3, validation horodatée.' }),
-      newImp({ titre: 'Modèle de fiche avec les styles de la charte', stepId: 'p1s6', levier: 'standardiser', gain: '10', manips: '5', effort: '1', statut: 'proposee' }),
-      newImp({ titre: 'Rédaction directe dans un modèle de page SharePoint', stepId: 'p1s7', levier: 'simplifier', gain: '7', manips: '4', effort: '2', statut: 'proposee' }),
-      newImp({ titre: 'Notification automatique au demandeur à la publication', stepId: 'p1s8', levier: 'automatiser', gain: '5', manips: '2', tracabilite: true, effort: '1', statut: 'proposee' })
+      newStep({ id: 't1s1', quoi: 'Lire la demande reçue par mail', qui: S, outil: 'Outlook', duree: '5', suivi: true, precision: 'Les demandes sont noyées dans la boîte mail, aucune vision du stock',
+        sol: 'Liste des demandes partagée, avec une vue « en cours »', levier: 'outiller', tracabilite: true, nouveauTemps: '3', avis: 'ok' }),
+      newStep({ id: 't1s2', quoi: 'Recopier la demande dans le fichier Excel de suivi', qui: S, outil: 'Excel', duree: '4', ressaisie: true, precision: 'Je recopie l\'objet, le demandeur et la date déjà présents dans le mail',
+        sol: 'Formulaire en ligne (Microsoft Forms) : le demandeur saisit lui-même, la ligne de suivi se crée toute seule', levier: 'supprimer', tracabilite: true, nouveauTemps: '0', avis: 'ok' }),
+      newStep({ id: 't1s3', quoi: 'Rédiger ou modifier la fiche', qui: S, outil: 'Word', duree: '35' }),
+      newStep({ id: 't1s4', quoi: 'Relire et valider la fiche', qui: E, outil: 'Outlook', duree: '20', suivi: true, precision: 'Relances à la main, 6 jours de délai moyen, aucune trace de la validation',
+        sol: 'Circuit de validation avec relance automatique à J+3 et validation horodatée', levier: 'automatiser', tracabilite: true, securise: true, nouveauTemps: '12', avis: 'ok' }),
+      newStep({ id: 't1s5', quoi: 'Fiche validée ?', qui: E, duree: '0', controle: true, retour: 't1s3' }),
+      newStep({ id: 't1s6', quoi: 'Mettre en forme selon la charte', qui: S, outil: 'Word', duree: '15', manuel: true, precision: 'Toute la mise en forme est refaite à la main à chaque fiche',
+        sol: 'Modèle de fiche avec les styles de la charte déjà en place', levier: 'modele', nouveauTemps: '5', avis: 'ok' }),
+      newStep({ id: 't1s7', quoi: 'Publier la fiche dans la base (copier-coller)', qui: S, outil: 'SharePoint', duree: '10', ressaisie: true, precision: 'Copier-coller de Word vers SharePoint, la mise en page casse',
+        sol: 'Rédiger directement dans un modèle de page SharePoint', levier: 'outiller', nouveauTemps: '4', avis: 'discuter' }),
+      newStep({ id: 't1s8', quoi: 'Mettre à jour le suivi et prévenir le demandeur', qui: S, outil: 'Excel + Outlook', duree: '6', ressaisie: true, manuel: true, precision: 'Double mise à jour : Excel puis mail',
+        sol: 'Notification automatique au demandeur à la publication', levier: 'automatiser', tracabilite: true, nouveauTemps: '1', avis: 'ok' })
     ]
   });
 
-  const p2 = newProcess({
-    id: 'p2', nom: 'Répondre aux questions des agences', domaine: 'Assistance réseau',
-    finalite: 'Apporter une réponse fiable et rapide aux conseillers sur les procédures.',
-    declencheur: 'Question d\'un conseiller', resultat: 'Réponse envoyée et tracée',
-    volQty: '10', volPer: 'jour', criticite: '3', statut: 'fait',
-    fournisseurs: 'Conseillers agence', entrees: 'Question par mail', sorties: 'Réponse écrite', clients: 'Conseillers agence',
-    acteurs: `${A}, ${G}, ${E}`, outils: 'Outlook, SharePoint, Excel, Teams',
+  const t2 = newTask({
+    id: 't2', nom: 'Répondre aux questions des agences', freqQty: '10', freqPer: 'jour',
+    description: 'Les conseillers m\'écrivent quand ils ne trouvent pas une procédure ; je cherche la réponse et je leur réponds.',
+    origine: 'Question d\'un conseiller par mail', resultat: 'Réponse envoyée au conseiller',
+    quiSait: 'une', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui',
+    notesValidation: 'D\'accord pour la boîte partagée ; la FAQ demandera du temps au démarrage.',
+    p1Done: true, p2Done: true, p3Done: true,
     steps: [
-      newStep({ id: 'p2s1', nom: 'Poser la question par mail', acteur: A, outil: 'Outlook', duree: '3' }),
-      newStep({ id: 'p2s2', nom: 'Lire et qualifier la question', acteur: G, outil: 'Outlook', duree: '3', suivi: true, irritant: 'Pas de catégorisation : impossible de savoir quels sujets reviennent' }),
-      newStep({ id: 'p2s3', nom: 'Rechercher la réponse dans la base', acteur: G, outil: 'SharePoint', duree: '8', manuel: true, irritant: 'Recherche peu pertinente, fiches mal indexées' }),
-      newStep({ id: 'p2s4', type: 'decision', nom: 'Réponse trouvée ?', acteur: G, duree: '0', cible: 'p2s6', labelSuite: 'Non (25 %)', labelCible: 'Oui' }),
-      newStep({ id: 'p2s5', nom: 'Solliciter l\'expert et attendre son retour', acteur: E, outil: 'Outlook / Teams', duree: '15', taux: '25', suivi: true, irritant: 'Relances, pas de délai de réponse partagé' }),
-      newStep({ id: 'p2s6', nom: 'Rédiger et envoyer la réponse', acteur: G, outil: 'Outlook', duree: '6' }),
-      newStep({ id: 'p2s7', nom: 'Consigner la question dans le fichier de suivi', acteur: G, outil: 'Excel', duree: '2', ressaisie: true, irritant: 'Double saisie mail + Excel, souvent oubliée' })
-    ],
-    ameliorations: [
-      newImp({ titre: 'Boîte partagée avec catégories par thème', stepId: 'p2s2', levier: 'simplifier', gain: '1', manips: '1', tracabilite: true, effort: '1', statut: 'retenue' }),
-      newImp({ titre: 'Mots-clés sur les fiches + FAQ des 50 questions récurrentes', stepId: 'p2s3', levier: 'simplifier', gain: '4', manips: '3', effort: '2', statut: 'retenue' }),
-      newImp({ titre: 'Canal Teams experts avec délai de réponse convenu', stepId: 'p2s5', levier: 'simplifier', gain: '5', manips: '1', tracabilite: true, effort: '1', statut: 'proposee' }),
-      newImp({ titre: 'Supprimer le fichier Excel : suivi par les catégories', stepId: 'p2s7', levier: 'supprimer', manips: '2', tracabilite: true, effort: '1', statut: 'retenue' })
+      newStep({ id: 't2s1', quoi: 'Envoyer la question par mail', qui: A, outil: 'Outlook', duree: '3' }),
+      newStep({ id: 't2s2', quoi: 'Lire et trier la question', qui: S, outil: 'Outlook', duree: '3', suivi: true, precision: 'Pas de classement : impossible de savoir quels sujets reviennent',
+        sol: 'Boîte mail partagée avec catégories par sujet', levier: 'organiser', tracabilite: true, nouveauTemps: '2', avis: 'ok' }),
+      newStep({ id: 't2s3', quoi: 'Chercher la réponse dans la base', qui: S, outil: 'SharePoint', duree: '8', manuel: true, precision: 'La recherche donne de mauvais résultats, les fiches sont mal indexées',
+        sol: 'Mots-clés sur les fiches + page FAQ des 50 questions les plus fréquentes', levier: 'outiller', nouveauTemps: '4', avis: 'ok' }),
+      newStep({ id: 't2s4', quoi: 'Demander à l\'expert et attendre sa réponse', qui: E, outil: 'Outlook / Teams', duree: '15', taux: '25', suivi: true, precision: 'Relances, aucun délai de réponse convenu',
+        sol: 'Canal Teams des experts avec un délai de réponse convenu', levier: 'organiser', tracabilite: true, nouveauTemps: '10', avis: 'discuter' }),
+      newStep({ id: 't2s5', quoi: 'Rédiger et envoyer la réponse', qui: S, outil: 'Outlook', duree: '6' }),
+      newStep({ id: 't2s6', quoi: 'Noter la question dans le fichier de suivi', qui: S, outil: 'Excel', duree: '2', ressaisie: true, precision: 'Double saisie mail + Excel, souvent oubliée',
+        sol: 'Supprimer le fichier Excel : le suivi se fait avec les catégories de la boîte partagée', levier: 'supprimer', tracabilite: true, nouveauTemps: '0', avis: 'ok' })
     ]
   });
 
-  const p3 = newProcess({
-    id: 'p3', nom: 'Produire le reporting mensuel d\'activité', domaine: 'Pilotage',
-    finalite: 'Rendre compte de l\'activité de la base de connaissance à la direction.',
-    declencheur: 'Début de mois', resultat: 'Reporting diffusé',
-    volQty: '1', volPer: 'mois', criticite: '2', statut: 'fait',
-    fournisseurs: 'Statistiques SharePoint\nFichiers de suivi', entrees: 'Exports de consultation\nTableaux Excel',
-    sorties: 'Présentation mensuelle', clients: 'Direction\nManager',
-    acteurs: `${G}, ${M}`, outils: 'SharePoint, Excel, PowerPoint, Outlook',
+  const t3 = newTask({
+    id: 't3', nom: 'Produire le reporting mensuel', freqQty: '1', freqPer: 'mois',
+    description: 'Chaque mois je prépare une présentation sur l\'activité de la base pour la direction.',
+    origine: 'Début de mois', resultat: 'Présentation envoyée à la direction',
+    quiSait: 'personne', modeOp: 'non',
+    p1Done: true, p2Done: true, p3Done: false,
     steps: [
-      newStep({ id: 'p3s1', nom: 'Extraire les statistiques de consultation', acteur: G, outil: 'SharePoint', duree: '30', manuel: true, irritant: 'Export manuel de 4 rapports différents' }),
-      newStep({ id: 'p3s2', nom: 'Consolider les données dans Excel', acteur: G, outil: 'Excel', duree: '90', ressaisie: true, manuel: true, irritant: 'Copier-coller et retraitements, risque d\'erreur' }),
-      newStep({ id: 'p3s3', nom: 'Construire graphiques et présentation', acteur: G, outil: 'PowerPoint', duree: '60', manuel: true, irritant: 'Graphiques refaits chaque mois' }),
-      newStep({ id: 'p3s4', nom: 'Relire et valider', acteur: M, outil: 'Outlook', duree: '20' }),
-      newStep({ id: 'p3s5', type: 'decision', nom: 'Corrections à faire ?', acteur: M, duree: '0', cible: 'p3s3', labelSuite: 'Non', labelCible: 'Oui' }),
-      newStep({ id: 'p3s6', nom: 'Diffuser le reporting', acteur: G, outil: 'Outlook', duree: '10' })
-    ],
-    ameliorations: [
-      newImp({ titre: 'Extraction planifiée des statistiques', stepId: 'p3s1', levier: 'automatiser', gain: '25', manips: '12', effort: '2', statut: 'proposee' }),
-      newImp({ titre: 'Rapport Power BI connecté aux sources', stepId: 'p3s2', levier: 'automatiser', gain: '80', manips: '40', tracabilite: true, controle: true, effort: '3', statut: 'proposee', description: 'Calculs fiabilisés et identiques chaque mois.' }),
-      newImp({ titre: 'Le rapport en ligne remplace la présentation', stepId: 'p3s3', levier: 'supprimer', manips: '20', effort: '2', statut: 'proposee' }),
-      newImp({ titre: 'Diffusion par lien vers le rapport', stepId: 'p3s6', levier: 'simplifier', gain: '7', manips: '2', effort: '1', statut: 'proposee' })
+      newStep({ id: 't3s1', quoi: 'Extraire les statistiques de consultation', qui: S, outil: 'SharePoint', duree: '30', manuel: true, precision: '4 exports différents à faire à la main',
+        sol: 'Extraction planifiée automatiquement chaque début de mois', levier: 'automatiser' }),
+      newStep({ id: 't3s2', quoi: 'Rassembler les chiffres dans Excel', qui: S, outil: 'Excel', duree: '90', ressaisie: true, manuel: true, precision: 'Copier-coller et calculs à la main, risque d\'erreur',
+        sol: 'Rapport Power BI branché directement sur les statistiques', levier: 'automatiser', securise: true, tracabilite: true }),
+      newStep({ id: 't3s3', quoi: 'Faire les graphiques et la présentation', qui: S, outil: 'PowerPoint', duree: '60', manuel: true, precision: 'Les mêmes graphiques sont refaits chaque mois',
+        sol: 'Le rapport en ligne remplace la présentation', levier: 'supprimer' }),
+      newStep({ id: 't3s4', quoi: 'Relire et valider', qui: M, outil: 'Outlook', duree: '20' }),
+      newStep({ id: 't3s5', quoi: 'Envoyer le reporting', qui: S, outil: 'Outlook', duree: '10' })
     ]
   });
 
-  const p4 = newProcess({
-    id: 'p4', nom: 'Veille réglementaire et lettre d\'information', domaine: 'Veille',
-    finalite: 'Informer le réseau des évolutions réglementaires impactant les procédures.',
-    declencheur: 'Chaque lundi', resultat: 'Lettre d\'information diffusée',
-    volQty: '1', volPer: 'semaine', criticite: '2', statut: 'encours',
-    acteurs: `${G}, ${CF}`, outils: 'Navigateur, Word, Outlook',
+  const t4 = newTask({
+    id: 't4', nom: 'Veille réglementaire hebdomadaire', freqQty: '1', freqPer: 'semaine',
+    description: 'Je consulte les sites officiels, je résume les nouveautés, je fais valider par la conformité puis j\'envoie une lettre au réseau.',
+    origine: 'Chaque lundi matin', resultat: 'Lettre d\'information envoyée au réseau',
+    quiSait: 'une', modeOp: 'partiel',
+    p1Done: true,
     steps: [
-      newStep({ id: 'p4s1', nom: 'Consulter les sources de veille', acteur: G, outil: 'Navigateur', duree: '45', manuel: true, irritant: '10 sites consultés un par un' }),
-      newStep({ id: 'p4s2', nom: 'Sélectionner et résumer les nouveautés', acteur: G, outil: 'Word', duree: '40' }),
-      newStep({ id: 'p4s3', type: 'attente', nom: 'Attendre le retour de la conformité', acteur: CF, duree: '0', suivi: true, irritant: 'Délai variable, aucune visibilité' }),
-      newStep({ id: 'p4s4', nom: 'Valider le contenu', acteur: CF, outil: 'Outlook', duree: '30', suivi: true, irritant: 'Validation par mail, pas d\'historique' }),
-      newStep({ id: 'p4s5', nom: 'Mettre en page et diffuser la lettre', acteur: G, outil: 'Outlook', duree: '20', manuel: true, irritant: 'Liste de diffusion tenue à la main' })
-    ],
-    ameliorations: [
-      newImp({ titre: 'Alertes de veille automatiques dans Teams', stepId: 'p4s1', levier: 'automatiser', gain: '20', manips: '10', effort: '1', statut: 'retenue' }),
-      newImp({ titre: 'Approbation tracée dans Teams', stepId: 'p4s4', levier: 'simplifier', gain: '10', manips: '2', tracabilite: true, controle: true, effort: '1', statut: 'proposee' }),
-      newImp({ titre: 'Actualité SharePoint avec abonnement', stepId: 'p4s5', levier: 'simplifier', gain: '15', manips: '3', effort: '2', statut: 'proposee' })
+      newStep({ id: 't4s1', quoi: 'Consulter les sites de veille', qui: S, outil: 'Navigateur', duree: '45', manuel: true, precision: '10 sites consultés un par un' }),
+      newStep({ id: 't4s2', quoi: 'Résumer les nouveautés', qui: S, outil: 'Word', duree: '40' }),
+      newStep({ id: 't4s3', quoi: 'Valider le contenu', qui: CF, outil: 'Outlook', duree: '30', suivi: true, precision: 'Validation par mail, aucun historique' }),
+      newStep({ id: 't4s4', quoi: 'Mettre en page et envoyer la lettre', qui: S, outil: 'Outlook', duree: '20', manuel: true, precision: 'Liste de diffusion tenue à la main' })
     ]
   });
 
-  const p5 = newProcess({ id: 'p5', nom: 'Revue annuelle des contenus obsolètes', domaine: 'Base de connaissance', volQty: '1', volPer: 'an', criticite: '2', statut: 'afaire', finalite: 'Retirer ou mettre à jour les fiches dépassées.' });
-  const p6 = newProcess({ id: 'p6', nom: 'Gérer les droits d\'accès à la base', domaine: 'Administration', volQty: '3', volPer: 'mois', criticite: '1', statut: 'afaire' });
+  const t5 = newTask({ id: 't5', nom: 'Revue annuelle des fiches obsolètes', freqQty: '1', freqPer: 'an', description: 'Une fois par an, repérer les fiches dépassées et les retirer ou les mettre à jour.' });
 
-  s.processes = [p1, p2, p3, p4, p5, p6];
-  return s;
+  st.taches = [t1, t2, t3, t4, t5];
+  return st;
 }
 
 /* ---------- Démarrage ---------- */
-if (!location.hash) history.replaceState(null, '', '#/tableau');
+if (!location.hash) history.replaceState(null, '', '#/accueil');
 save();
 render();
