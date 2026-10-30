@@ -164,6 +164,7 @@ const invest = s => num(s.coutJours) * 7 * coutH() + num(s.coutEuros);
 // Nombre de mois pour que le gain rembourse le coût de mise en place
 const payback = (inv, gainMin) => inv > 0 && gainMin > 0 ? inv / (eur(gainMin) / 12) : null;
 const fmtMois = m => m == null ? '—' : m < 1 ? 'moins d\'1 mois' : Math.ceil(m) + ' mois';
+const DEMO_IDS = ['imm-sophie', 'imm-credits', 'imm-successions', 'imm-assistance', 'imm-habilitations'];
 const QUAD_ORDER = ['quickwin', 'planifier', 'structurant', 'petit', 'arbitrer', 'ecarter', 'aevaluer'];
 
 function riskScore(qs, mo) {
@@ -278,6 +279,8 @@ function loadDb() {
 }
 function normalizeImm(s) {
   const out = newImm({ id: s.id || uid(), createdAt: s.createdAt || new Date().toISOString().slice(0, 10) });
+  if (s.dossier) out.dossier = s.dossier;
+  if (s.updatedAt) out.updatedAt = s.updatedAt;
   out.mission = Object.assign(newImm().mission, s.mission);
   out.taches = (s.taches || []).map(t => {
     const nt = newTask(t);
@@ -363,20 +366,54 @@ function scheduleDiskWrite() {
   clearTimeout(diskTimer);
   diskTimer = setTimeout(writeDirty, 600);
 }
-async function writeDirty() {
-  if (dirStatus !== 'ok') return;
+// Une seule écriture à la fois : sur un lecteur réseau lent, deux écritures simultanées
+// pouvaient créer deux sous-dossiers pour la même immersion
+let writing = Promise.resolve();
+function writeDirty() {
+  writing = writing.then(writeDirtyNow, writeDirtyNow);
+  return writing;
+}
+const exists = name => dirHandle.getDirectoryHandle(name).then(() => true, () => false);
+const baseOf = name => String(name || '').replace(/ \(\d+\)$/, '');
+async function freeName(base) {
+  let name = base, k = 2;
+  while (await exists(name)) name = `${base} (${k++})`;
+  return name;
+}
+// Renomme le sous-dossier (copie des fichiers puis suppression de l'ancien)
+async function moveFolder(imm, newName) {
+  const dst = await dirHandle.getDirectoryHandle(newName, { create: true });
+  const src = await dirHandle.getDirectoryHandle(imm.dossier).catch(() => null);
+  if (src) {
+    for await (const [n, e] of src.entries()) {
+      if (e.kind !== 'file') continue;
+      const fh = await dst.getFileHandle(n, { create: true });
+      const w = await fh.createWritable();
+      await w.write(await e.getFile());
+      await w.close();
+    }
+    await dirHandle.removeEntry(imm.dossier, { recursive: true });
+  }
+  written.delete(imm.dossier + '/immersion.json');
+  imm.dossier = newName;
+}
+async function writeDirtyNow() {
+  if (dirStatus !== 'ok' || db.isDemo) return;          // la démo n'est jamais écrite dans le dossier
   try {
     const settings = JSON.stringify(db.settings, null, 2);
     if (written.get('parametres.json') !== settings) { await writeText(dirHandle, 'parametres.json', settings); written.set('parametres.json', settings); }
     for (const imm of db.immersions) {
+      const want = folderName(imm);
+      if (!want) continue;                              // pas encore de poste ni de service : on attend
+      // Pendant la saisie de la mission, on ne fige pas le nom du dossier (évite « 2026-10 - C »)
+      const editing = imm === state && route().page === 'accueil';
       if (!imm.dossier) {
-        const base = folderName(imm);
-        if (!base) continue;                         // pas encore de poste ni de service : on attend
-        let name = base, k = 2;
-        while (await dirHandle.getDirectoryHandle(name).then(() => true, () => false)) name = `${base} (${k++})`;
-        imm.dossier = name;
-        localStorage.setItem(STORE_KEY, JSON.stringify(db));
+        if (editing) continue;
+        imm.dossier = await freeName(want);
+      } else if (baseOf(imm.dossier) !== want && !editing) {
+        await moveFolder(imm, await freeName(want));
       }
+      localStorage.setItem(STORE_KEY, JSON.stringify(db));
       const json = JSON.stringify(imm, null, 2);
       const key = imm.dossier + '/immersion.json';
       if (written.get(key) === json) continue;
@@ -403,14 +440,18 @@ async function loadFromDir() {
       const text = await file.text();
       const imm = normalizeImm(JSON.parse(text));
       imm.dossier = name;
-      disk.push(imm);
+      const twin = disk.find(d => d.id === imm.id);
+      if (!twin) disk.push(imm);
+      else if ((imm.updatedAt || '') > (twin.updatedAt || '')) disk.splice(disk.indexOf(twin), 1, imm);
+      if (twin) console.warn('Même immersion dans deux dossiers :', twin.dossier, '/', name);
     } catch (e) { /* sous-dossier sans immersion.json : ignoré */ }
   }
   try {
     const p = await (await dirHandle.getFileHandle('parametres.json')).getFile();
     db.settings = Object.assign(emptyDb().settings, db.settings, JSON.parse(await p.text()));
   } catch (e) { /* pas encore de paramètres enregistrés */ }
-  const local = db.isDemo ? [] : db.immersions;   // la démo n'est jamais copiée dans le dossier
+  // La démo n'est jamais copiée dans le dossier, mais une immersion créée pendant la démo est gardée
+  const local = db.isDemo ? db.immersions.filter(i => !DEMO_IDS.includes(i.id)) : db.immersions;
   const byId = new Map(disk.map(i => [i.id, i]));
   local.forEach(i => {
     const d = byId.get(i.id);
@@ -602,6 +643,22 @@ function viewTopbar() {
     }).join('<span class="sep">›</span>')}</nav>
     ${savedBadge()}`;
 }
+// Deux immersions sont des doublons si elles ont même service, poste, personne et date de début
+const immKey = imm => {
+  const m = imm.mission;
+  return (m.service || m.poste || m.personne) ? [m.service, m.poste, m.personne, m.debut].map(x => String(x || '').trim().toLowerCase()).join('|') : '';
+};
+const isEmptyImm = imm => !imm.taches.length && !['service', 'poste', 'personne', 'contexte'].some(k => String(imm.mission[k] || '').trim());
+function duplicateGroups() {
+  const groups = {};
+  db.immersions.forEach(i => { const k = immKey(i); if (k) (groups[k] = groups[k] || []).push(i); });
+  return Object.values(groups).filter(g => g.length > 1);
+}
+// Garde, dans chaque groupe, l'immersion la plus complète puis la plus récente
+const immWeight = i => i.taches.reduce((a, t) => a + 1 + t.steps.length, 0);
+function keeperOf(group) {
+  return group.slice().sort((a, b) => immWeight(b) - immWeight(a) || String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))[0];
+}
 const immLabel = imm => [imm.mission.service, imm.mission.personne].filter(Boolean).join(' · ') || 'Nouvelle immersion';
 
 /* ---------- Champs liés ---------- */
@@ -683,7 +740,11 @@ function viewPortfolio() {
   const ameliores = rows.filter(r => r.g.gain > 0.0001).length;
   const nbTaches = rows.reduce((a, r) => a + r.i.taches.length, 0);
 
-  const header = `<header class="phase-head">
+  const dups = duplicateGroups();
+  const dupBanner = dups.length ? `<div class="tip warn no-print"><b>⚠ ${plural(dups.length, 'immersion en double', 'immersions en double')} :</b>
+      ${dups.map(g => `« ${esc(immLabel(g[0]))} » ×${g.length}`).join(', ')}.
+      <button class="btn sm primary" data-action="dedupe">Nettoyer : garder la version la plus complète</button></div>` : '';
+  const header = dupBanner + `<header class="phase-head">
       <div><div class="eyebrow">Prendre de la hauteur</div><h1>Mes immersions</h1>
         <p class="sub">Toutes les immersions menées, le temps gagné par service et les postes améliorés. Ouvre une immersion pour la continuer, ou crées-en une nouvelle.</p></div>
       <div class="actions no-print">${toggle('settings', 'anonyme', db.settings.anonyme, db.settings.anonyme ? '🕶 Version anonyme' : '🕶 Anonymiser', 'anon')}<button class="btn lg" data-action="print">🖶 Imprimer le bilan</button><button class="btn primary lg" data-action="new-imm">+ Nouvelle immersion</button></div>
@@ -1843,9 +1904,18 @@ function importJson(file) {
         toast('Sauvegarde importée.');
       } else if (data && Array.isArray(data.taches)) {
         const imm = normalizeImm(data);
-        if (db.immersions.some(i => i.id === imm.id)) imm.id = uid();
-        db.immersions.push(imm);
-        toast('Immersion « ' + immLabel(imm) + ' » ajoutée.');
+        const same = db.immersions.find(i => i.id === imm.id) || db.immersions.find(i => immKey(i) && immKey(i) === immKey(imm));
+        if (same) {
+          if (!confirm(`L'immersion « ${immLabel(same)} » existe déjà.\nOK : la remplacer par celle du fichier.\nAnnuler : ne rien importer.`)) return;
+          imm.id = same.id;
+          imm.dossier = same.dossier;
+          db.immersions[db.immersions.indexOf(same)] = imm;
+          if (state === same) setActive(imm);
+          toast('Immersion « ' + immLabel(imm) + ' » remplacée.');
+        } else {
+          db.immersions.push(imm);
+          toast('Immersion « ' + immLabel(imm) + ' » ajoutée.');
+        }
       } else throw new Error('format');
       save();
       go('#/immersions');
@@ -1989,6 +2059,20 @@ const actions = {
     save(); go('#/immersions'); render();
   },
   'year'(el) { portfolioYear = el.dataset.value; render(); },
+  'dedupe'() {
+    const groups = duplicateGroups();
+    const remove = groups.flatMap(g => { const keep = keeperOf(g); return g.filter(i => i !== keep); });
+    if (!remove.length || !confirm(`Supprimer ${plural(remove.length, 'doublon')} ?\nPour chaque immersion, la version la plus complète (puis la plus récente) est gardée.`)) return;
+    remove.forEach(i => {
+      if (dirStatus === 'ok' && i.dossier && !db.immersions.some(k => k !== i && !remove.includes(k) && k.dossier === i.dossier)) {
+        dirHandle.removeEntry(i.dossier, { recursive: true }).catch(() => {});
+      }
+    });
+    db.immersions = db.immersions.filter(i => !remove.includes(i));
+    if (state && remove.includes(state)) setActive(null);
+    save(false); render();
+    toast(`${plural(remove.length, 'doublon supprimé', 'doublons supprimés')}.`);
+  },
   'connect-dir'() { connectDir(); },
   'reconnect-dir'() { reconnectDir(); },
   'import-json'() { document.getElementById('importFile').click(); },
@@ -1996,12 +2080,14 @@ const actions = {
     if (db.immersions.length && !confirm('Remplacer toutes les données actuelles par la démonstration ?')) return;
     db = demoDb();
     setActive(db.immersions.find(i => i.id === db.activeId) || null);
+    if (dirStatus === 'ok') { dirStatus = 'needs-permission'; toast('Démo chargée : le dossier de données est mis de côté, rien n\'y est écrit.'); }
     save(); go('#/immersions'); render();
   },
   'reset-all'() {
     if (!confirm('Effacer toutes les immersions et repartir de zéro ?\nPense à exporter une sauvegarde avant si besoin.')) return;
     db = emptyDb();
     setActive(null);
+    if (dirStatus === 'ok') { dirStatus = 'needs-permission'; toast('Le contenu du dossier de données n\'est pas effacé : rouvre-le pour le recharger.'); }
     save(); go('#/immersions'); render();
     toast('C\'est tout propre. Crée ta première immersion.');
   },
@@ -2061,6 +2147,13 @@ document.addEventListener('keydown', e => {
   }
 });
 window.addEventListener('hashchange', () => {
+  // Une immersion créée puis abandonnée sans rien saisir n'encombre pas le tableau de bord
+  if (route().page === 'immersions' && db.immersions.some(isEmptyImm)) {
+    db.immersions = db.immersions.filter(i => !isEmptyImm(i));
+    if (state && isEmptyImm(state)) setActive(null);
+    save(false);
+  }
+  scheduleDiskWrite();
   render();
   if (!flashId) window.scrollTo(0, 0);
 });
