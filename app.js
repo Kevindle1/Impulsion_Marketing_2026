@@ -62,6 +62,13 @@ const QUI_SAIT = { personne: 'Personne d\'autre', une: 'Une autre personne', plu
 const MODE_OP = { non: 'Non, rien d\'écrit', partiel: 'En partie / pas à jour', oui: 'Oui, à jour' };
 const AVIS = { ok: 'D\'accord', discuter: 'À discuter', non: 'Pas convaincu(e)' };
 const RISQUES = { 3: 'Élevé', 2: 'Moyen', 1: 'Faible' };
+const EFFORTS = { 1: 'Faible', 2: 'Moyen', 3: 'Fort' };
+const STATUTS_ACTION = { afaire: 'À lancer', encours: 'En cours', fait: 'En place' };
+const QUADRANTS = {
+  quickwin: 'Gain rapide', planifier: 'À planifier', structurant: 'Projet structurant',
+  petit: 'Petit plus', arbitrer: 'À arbitrer', ecarter: 'À reconsidérer', aevaluer: 'Effort à évaluer'
+};
+const FIN = '__fin';   // cible « fin du processus » d'un choix
 
 /* ---------- Utilitaires ---------- */
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -84,6 +91,7 @@ function fmtEtp(min) {
   const etp = min / 60 / (num(db.settings.heuresEtp) || 1607);
   return etp.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ETP';
 }
+const fmtJours = j => j ? fmtDec(j) + (j >= 2 ? ' jours' : ' jour') : '—';
 const pct = (a, b) => b ? Math.round(a / b * 100) + ' %' : '—';
 const who = () => (state.mission.personne || '').trim() || 'la personne';
 
@@ -92,11 +100,14 @@ function newStep(o) {
   return Object.assign({
     id: uid(), quoi: '', qui: '', outil: '', duree: '', taux: '100',
     ressaisie: false, manuel: false, suivi: false, precision: '',
-    controle: false, retour: '',
+    donnees: '', attente: '',               // attente : jours avant l'étape suivante
+    controle: false, retour: '', labelSuite: 'Oui', labelAutre: 'Non',
     // Phase 2
     solOpen: false, sol: '', levier: '', tracabilite: false, securise: false,
-    // Phase 3
-    nouveauTemps: '', avis: ''
+    // Phase 3 (estimations données par la personne)
+    nouveauTemps: '', manipsEvitees: '', nouvelleAttente: '', avis: '',
+    // Plan d'action et suivi après mise en place
+    effort: '', porteur: '', echeance: '', statutAction: '', tempsReel: '', dateMesure: ''
   }, o);
 }
 function newTask(o) {
@@ -104,6 +115,7 @@ function newTask(o) {
     id: uid(), nom: '', description: '', freqQty: '', freqPer: 'mois', origine: '', resultat: '',
     quiSait: '', modeOp: '', notes: '',
     quiSaitApres: '', modeOpApres: '', notesValidation: '',
+    cartoValidee: false, cartoValideeLe: '',
     p1Done: false, p2Done: false, p3Done: false,
     steps: []
   }, o);
@@ -116,18 +128,33 @@ function newImm(o) {
   }, o);
 }
 function emptyDb() {
-  return { version: 3, isDemo: false, activeId: null, settings: { heuresEtp: '1607' }, immersions: [] };
+  return { version: 3, isDemo: false, activeId: null, lastExport: '', settings: { heuresEtp: '1607', seuilGain: '20' }, immersions: [] };
 }
 
 /* ---------- Calculs ---------- */
 const volume = t => num(t.freqQty) * (PERIODES[t.freqPer]?.mult ?? 1);
 const taux = s => (s.taux === '' || s.taux == null) ? 100 : num(s.taux);
 const stepOcc = (t, s) => volume(t) * taux(s) / 100;
-const isIrritant = s => FLAGS.some(f => s[f.key]) || !!String(s.precision || '').trim();
+const attente = s => num(s.attente);
+const isIrritant = s => FLAGS.some(f => s[f.key]) || !!String(s.precision || '').trim() || attente(s) >= 1;
 const hasSol = s => !!(String(s.sol || '').trim() || s.levier);
 // Un gain ne compte que si la personne a donné son estimation et n'a pas rejeté la solution
 const isValidated = s => hasSol(s) && String(s.nouveauTemps ?? '') !== '' && s.avis !== 'non';
 const newDuree = s => isValidated(s) ? num(s.nouveauTemps) : num(s.duree);
+const delayValidated = s => hasSol(s) && String(s.nouvelleAttente ?? '') !== '' && s.avis !== 'non';
+const newAttente = s => delayValidated(s) ? num(s.nouvelleAttente) : attente(s);
+const stepGain = (t, s) => (num(s.duree) - newDuree(s)) * stepOcc(t, s);           // minutes / an
+const stepManips = (t, s) => isValidated(s) ? num(s.manipsEvitees) * stepOcc(t, s) : 0;
+const isMeasured = s => isValidated(s) && s.statutAction === 'fait' && String(s.tempsReel ?? '') !== '';
+// Priorité d'une solution : gain annuel (seuil réglable) croisé avec l'effort
+function quadrant(t, s) {
+  const e = num(s.effort);
+  if (!e) return 'aevaluer';
+  const high = stepGain(t, s) / 60 >= (num(db.settings.seuilGain) || 20);
+  if (high) return e <= 1 ? 'quickwin' : e === 2 ? 'planifier' : 'structurant';
+  return e <= 1 ? 'petit' : e === 2 ? 'arbitrer' : 'ecarter';
+}
+const QUAD_ORDER = ['quickwin', 'planifier', 'structurant', 'petit', 'arbitrer', 'ecarter', 'aevaluer'];
 
 function riskScore(qs, mo) {
   if (!qs || !mo) return 0;
@@ -138,7 +165,8 @@ function riskScore(qs, mo) {
 function taskStats(t) {
   const r = {
     avant: 0, apres: 0, irrit: 0, parFois: 0, nbIrr: 0, solutions: 0, validees: 0, supprimees: 0,
-    tracab: 0, controles: 0, flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 }
+    tracab: 0, controles: 0, manips: 0, delaiAvant: 0, delaiApres: 0,
+    actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0, flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 }
   };
   t.steps.forEach(s => {
     const occ = stepOcc(t, s);
@@ -146,6 +174,9 @@ function taskStats(t) {
     r.avant += num(s.duree) * occ;
     r.apres += newDuree(s) * occ;
     r.parFois += num(s.duree) * taux(s) / 100;
+    r.delaiAvant += attente(s) * taux(s) / 100;
+    r.delaiApres += newAttente(s) * taux(s) / 100;
+    r.manips += stepManips(t, s);
     if (isIrritant(s)) { r.nbIrr++; r.irrit += num(s.duree) * occ; }
     if (hasSol(s)) r.solutions++;
     FLAGS.forEach(f => { if (s[f.key]) { r.flagsAvant[f.key]++; if (v) r.flagsLeves[f.key]++; } });
@@ -154,6 +185,13 @@ function taskStats(t) {
       if (s.levier === 'supprimer') r.supprimees++;
       if (s.tracabilite) r.tracab++;
       if (s.securise) r.controles++;
+      r.actions++;
+      if (s.statutAction === 'fait') r.actionsFaites++;
+      if (isMeasured(s)) {
+        r.mesures++;
+        r.gainReel += (num(s.duree) - num(s.tempsReel)) * occ;
+        r.gainEstimeMesure += (num(s.duree) - num(s.nouveauTemps)) * occ;
+      }
     }
   });
   r.gain = r.avant - r.apres;
@@ -163,11 +201,13 @@ function taskStats(t) {
 }
 function globalStats(imm = state) {
   const g = { avant: 0, apres: 0, gain: 0, irrit: 0, solutions: 0, validees: 0, supprimees: 0, tracab: 0, controles: 0,
+    manips: 0, actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0,
     flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 },
     simplifiees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0 };
   imm.taches.forEach(t => {
     const s = taskStats(t);
-    ['avant', 'apres', 'gain', 'irrit', 'solutions', 'validees', 'supprimees', 'tracab', 'controles'].forEach(k => { g[k] += s[k]; });
+    ['avant', 'apres', 'gain', 'irrit', 'solutions', 'validees', 'supprimees', 'tracab', 'controles',
+      'manips', 'actions', 'actionsFaites', 'mesures', 'gainReel', 'gainEstimeMesure'].forEach(k => { g[k] += s[k]; });
     FLAGS.forEach(f => { g.flagsAvant[f.key] += s.flagsAvant[f.key]; g.flagsLeves[f.key] += s.flagsLeves[f.key]; });
     if (s.gain > 0.0001) g.simplifiees++;
     if (s.riskAvant === 3) g.riskHautAvant++;
@@ -296,15 +336,24 @@ function render() {
   }
 }
 
+// Les données ne vivent que dans le navigateur : on rappelle d'exporter tous les 3 jours
+function backupReminder() {
+  if (!db.immersions.some(i => i.taches.length)) return '';
+  const days = db.lastExport ? Math.floor((Date.now() - new Date(db.lastExport)) / 86400000) : null;
+  if (days !== null && days < 3) return '';
+  return `<div class="banner no-print"><span><b>Pense à sauvegarder.</b> ${days === null ? 'Aucune sauvegarde exportée pour l\'instant.' : `Dernière sauvegarde il y a ${days} jours.`}
+    Les données ne sont stockées que dans ce navigateur.</span><button class="btn sm primary" data-action="export-json">⭳ Exporter maintenant</button></div>`;
+}
+
 function viewMain() {
   const r = route();
   const banner = db.isDemo ? `
     <div class="banner no-print"><span><b>Données de démonstration (fictives).</b> Explore librement, puis repars de zéro pour tes missions.</span>
-    <button class="btn sm" data-action="reset-all">Repartir de zéro</button></div>` : '';
+    <button class="btn sm" data-action="reset-all">Repartir de zéro</button></div>` : backupReminder();
   let body;
   if (r.page === 'immersions' || !state) body = viewPortfolio();
   else if (!r.phase) body = viewAccueil();
-  else if (r.phase === 4) body = viewRestitution();
+  else if (r.phase === 4) body = r.id === 'plan' ? viewPlan() : viewRestitution();
   else if (r.id) {
     const t = currentTask();
     body = !t ? `<div class="empty">Tâche introuvable.<br><a class="btn" href="#/${r.phase}">Retour à la liste</a></div>`
@@ -373,6 +422,10 @@ function resolveScope(scope) {
   if (scope === 't') return t;
   const [k, id] = scope.split(':');
   if (k === 's' && t) return t.steps.find(s => s.id === id);
+  if (k === 'ts' && state) {
+    const tt = state.taches.find(x => x.id === id);
+    return tt ? tt.steps.find(s => s.id === scope.split(':')[2]) : null;
+  }
   return null;
 }
 function applyBinding(el) {
@@ -405,10 +458,12 @@ function viewPortfolio() {
     .slice().sort((a, b) => immDate(b).localeCompare(immDate(a)));
   const rows = list.map(i => ({ i, g: globalStats(i), st: immStatus(i) }));
   const T = rows.reduce((a, { g }) => {
-    ['avant', 'apres', 'gain', 'simplifiees', 'validees', 'supprimees', 'riskHautAvant', 'riskHautApres', 'riskBaisse'].forEach(k => { a[k] += g[k]; });
+    ['avant', 'apres', 'gain', 'simplifiees', 'validees', 'supprimees', 'riskHautAvant', 'riskHautApres', 'riskBaisse',
+      'manips', 'actions', 'actionsFaites', 'mesures', 'gainReel', 'gainEstimeMesure'].forEach(k => { a[k] += g[k]; });
     FLAGS.forEach(f => { a.leves += g.flagsLeves[f.key]; a.flags += g.flagsAvant[f.key]; });
     return a;
-  }, { avant: 0, apres: 0, gain: 0, simplifiees: 0, validees: 0, supprimees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0, leves: 0, flags: 0 });
+  }, { avant: 0, apres: 0, gain: 0, simplifiees: 0, validees: 0, supprimees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0, leves: 0, flags: 0,
+    manips: 0, actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0 });
   const ameliores = rows.filter(r => r.g.gain > 0.0001).length;
   const nbTaches = rows.reduce((a, r) => a + r.i.taches.length, 0);
 
@@ -446,8 +501,9 @@ function viewPortfolio() {
     <div class="kpis">
       ${kpi('Temps gagné', fmtDur(Math.max(0, T.gain)) + ' / an', `${fmtEtp(Math.max(0, T.gain))} · ${pct(Math.max(0, T.gain), T.avant)} du temps analysé`, 'good')}
       ${kpi('Immersions menées', rows.length, `${plural(ameliores, 'poste amélioré', 'postes améliorés')}`)}
-      ${kpi('Tâches simplifiées', `${T.simplifiees} / ${nbTaches}`, plural(T.validees, 'solution validée', 'solutions validées'))}
-      ${kpi('Irritants levés', `${T.leves} / ${T.flags}`, plural(T.supprimees, 'étape supprimée', 'étapes supprimées'))}
+      ${kpi('Manipulations évitées', fmtInt(T.manips), 'par an', 'good')}
+      ${kpi('Tâches simplifiées', `${T.simplifiees} / ${nbTaches}`, `${T.leves} / ${T.flags} irritants levés`)}
+      ${kpi('Actions en place', `${T.actionsFaites} / ${T.actions}`, T.mesures ? `gain mesuré ${fmtDur(T.gainReel)} / an (estimé ${fmtDur(T.gainEstimeMesure)})` : 'aucune mesure pour l\'instant', T.mesures ? 'good' : '')}
       ${kpi('Risque personne clé', `${T.riskHautAvant} → ${T.riskHautApres}`, `tâches à risque élevé · ${T.riskBaisse} en baisse`, T.riskHautApres < T.riskHautAvant ? 'good' : '')}
     </div>
 
@@ -625,6 +681,7 @@ function taskNav(t, n) {
 }
 function flagChips(s) {
   const c = FLAGS.filter(f => s[f.key]).map(f => `<span class="flag-chip ${f.short}" title="${f.nom}">${f.short}</span>`);
+  if (attente(s) >= 1) c.push(`<span class="flag-chip A" title="Attente avant la suite">⏳ ${fmtDec(attente(s))} j</span>`);
   if (!c.length && String(s.precision || '').trim()) c.push('<span class="flag-chip X" title="Ça coince">!</span>');
   return c.join(' ');
 }
@@ -682,6 +739,10 @@ function viewFiche1(t) {
           <h2 class="block-title"><span>✓</span> Le schéma de la tâche</h2>
           <p class="muted small">Généré automatiquement. Montre-le à ${name} pour vérifier qu'il ne manque rien.</p>
           ${mapBlock(t, false, 'p1')}
+          <div class="carto-ok${t.cartoValidee ? ' on' : ''}">
+            ${toggle('t', 'cartoValidee', t.cartoValidee, t.cartoValidee ? `✓ Schéma validé avec ${name}` : `Faire valider le schéma par ${name}`)}
+            ${t.cartoValidee ? `<label class="inline">le ${inp('t', 'cartoValideeLe', t.cartoValideeLe, 'type="date" class="w-date"')}</label>` : '<span class="muted small">Une fois le déroulé relu ensemble, clique ici.</span>'}
+          </div>
         </section>` : ''}
 
         <div class="finish no-print">
@@ -702,7 +763,9 @@ function viewFiche1(t) {
         <div class="recap-row"><span>Étapes</span><b>${t.steps.length}</b></div>
         <div class="recap-row"><span>Qui coincent</span><b class="${s.nbIrr ? 'bad' : ''}">${s.nbIrr}</b></div>
         <div class="recap-row"><span>Temps qui coince</span><b class="${s.irrit ? 'bad' : ''}">${fmtDur(s.irrit)} / an</b></div>
+        <div class="recap-row"><span>Attentes cumulées</span><b>${fmtJours(s.delaiAvant)}</b></div>
         <div class="recap-row"><span>Personne clé</span>${riskBadge(s.riskAvant)}</div>
+        <div class="recap-row"><span>Schéma validé</span>${t.cartoValidee ? '<span class="badge ok">✓ Oui</span>' : '<span class="badge">Pas encore</span>'}</div>
       </aside>
     </div>`;
 }
@@ -711,6 +774,7 @@ function stepEditor(t, s, i) {
   const sc = 's:' + s.id;
   const others = t.steps.filter(x => x.id !== s.id).map(x => [x.id, `${t.steps.indexOf(x) + 1}. ${x.quoi || 'Sans nom'}`]);
   const open = openDetails.has(s.id) || taux(s) < 100 || s.controle;
+  // les autres étapes, cibles possibles d'un choix
   return `
     <div class="step${isIrritant(s) ? ' irritant' : ''}" id="step-${s.id}" data-autofocus="1">
       <div class="step-n">${i + 1}</div>
@@ -721,6 +785,10 @@ function stepEditor(t, s, i) {
           <label>Avec quoi ? ${inp(sc, 'outil', s.outil, 'list="dl-outils" placeholder="ex : Outlook, Excel…"')}</label>
           <label class="dur">Combien de temps ? <span class="inline nowrap">${numInp(sc, 'duree', s.duree, 'placeholder="0"')}<span>min</span></span></label>
         </div>
+        <div class="step-meta two">
+          <label>Quelles données ? <small>(facultatif)</small> ${inp(sc, 'donnees', s.donnees, 'placeholder="ex : nom du client, n° de dossier, montant…"')}</label>
+          <label class="dur" title="Temps où le dossier attend (validation, retour d'un tiers…) avant l'étape suivante">Puis attente avant la suite ? <span class="inline nowrap">${numInp(sc, 'attente', s.attente, 'placeholder="0"')}<span>jours</span></span></label>
+        </div>
         <div class="step-pb">
           <span class="lbl">Ce qui coince :</span>
           ${FLAGS.map(f => toggle(sc, f.key, s[f.key], `<span class="flag-chip ${f.short}">${f.short}</span> ${f.label}`, 'flag')).join('')}
@@ -729,8 +797,11 @@ function stepEditor(t, s, i) {
         <details class="step-more" data-detail="${s.id}"${open ? ' open' : ''}>
           <summary>Cas particuliers</summary>
           <div class="more-row">Cette étape n'a lieu que dans ${numInp(sc, 'taux', s.taux, 'class="w-num" max="100"')} % des cas</div>
-          <div class="more-row">${chk(sc, 'controle', s.controle, 'C\'est une vérification : si ce n\'est pas bon, on revient à l\'étape')}
-            ${s.controle ? sel(sc, 'retour', s.retour, [['', '— choisir —'], ...others]) : ''}</div>
+          <div class="more-row">${chk(sc, 'controle', s.controle, 'C\'est un choix ou une vérification : la suite dépend de la réponse')}</div>
+          ${s.controle ? `<div class="more-row branch">
+            Si ${inp(sc, 'labelSuite', s.labelSuite, 'class="w-lbl"')} → on continue à l'étape suivante ;
+            si ${inp(sc, 'labelAutre', s.labelAutre, 'class="w-lbl"')} → on va à ${sel(sc, 'retour', s.retour, [['', '— choisir —'], ...others, [FIN, 'Fin de la tâche']])}
+          </div>` : ''}
         </details>
       </div>
       <div class="step-act">
@@ -746,6 +817,7 @@ function stepEditor(t, s, i) {
 function ideasFor(s) {
   const list = [];
   FLAGS.forEach(f => { if (s[f.key]) list.push(...IDEES[f.key]); });
+  if (attente(s) >= 1 && !s.suivi) list.push(...IDEES.suivi);
   list.push(...IDEES.general);
   return list;
 }
@@ -788,7 +860,8 @@ function solEditor(t, s, irritant) {
   const i = t.steps.indexOf(s) + 1;
   const head = `<div class="sol-head">
       <div><span class="step-n sm">${i}</span> <b>${esc(s.quoi || 'Étape sans nom')}</b> ${flagChips(s)}
-        <div class="muted small">${esc(s.qui || NA)}${s.outil ? ' · ' + esc(s.outil) : ''} · ${fmtDec(num(s.duree))} min${taux(s) < 100 ? ` (${fmtDec(taux(s))} % des cas)` : ''} · <b>${fmtDur(num(s.duree) * stepOcc(t, s))} / an</b></div>
+        <div class="muted small">${esc(s.qui || NA)}${s.outil ? ' · ' + esc(s.outil) : ''} · ${fmtDec(num(s.duree))} min${taux(s) < 100 ? ` (${fmtDec(taux(s))} % des cas)` : ''} · <b>${fmtDur(num(s.duree) * stepOcc(t, s))} / an</b>${attente(s) ? ` · attente ${fmtJours(attente(s))}` : ''}</div>
+        ${s.donnees ? `<div class="muted small">Données : ${esc(s.donnees)}</div>` : ''}
         ${s.precision ? `<div class="pb-text">« ${esc(s.precision)} »</div>` : ''}</div></div>`;
   if (!irritant && !hasSol(s) && !s.solOpen) {
     return `<div class="sol-card compact" id="sol-${s.id}">${head}<button class="btn sm" data-action="open-sol" data-id="${s.id}">+ Proposer une amélioration</button></div>`;
@@ -827,16 +900,22 @@ function viewFiche3(t) {
         <div class="val-today"><div class="lbl">Aujourd'hui</div><div class="big-num">${fmtDec(num(st.duree))}<small> min</small></div></div>
         <div class="val-sol"><div class="lbl">Solution proposée${st.levier ? ' · ' + esc(LEVIERS[st.levier]) : ''}</div><div class="pre">${esc(st.sol || LEVIERS[st.levier])}</div></div>
         <div class="val-ask">
-          <div class="lbl">« Avec cette solution, combien de temps ça te prendrait ? »</div>
-          <div class="inline">${numInp(sc, 'nouveauTemps', st.nouveauTemps, `class="w-num big" placeholder="${sup ? '0' : '?'}"`)}<span>min</span></div>
+          <div class="ask-row"><div class="lbl">« Avec cette solution, combien de temps ça te prendrait ? »</div>
+            <div class="inline nowrap">${numInp(sc, 'nouveauTemps', st.nouveauTemps, `class="w-num big" placeholder="${sup ? '0' : '?'}"`)}<span>min</span></div></div>
           ${sup ? '<div class="muted small">Étape supprimée : indique 0 si la suppression est confirmée.</div>' : ''}
+          <div class="ask-row"><div class="lbl">« Combien de saisies, copier-coller ou clics en moins, à chaque fois ? »</div>
+            <div class="inline nowrap">${numInp(sc, 'manipsEvitees', st.manipsEvitees, 'class="w-num" placeholder="?"')}<span>en moins</span></div></div>
+          ${attente(st) ? `<div class="ask-row"><div class="lbl">« Et l'attente avant la suite ? » (aujourd'hui ${fmtJours(attente(st))})</div>
+            <div class="inline nowrap">${numInp(sc, 'nouvelleAttente', st.nouvelleAttente, 'class="w-num" placeholder="?"')}<span>jours</span></div></div>` : ''}
         </div>
       </div>
       <div class="val-foot">
         <div><span class="lbl">Son avis :</span>${chips(sc, 'avis', st.avis, AVIS, 'small')}</div>
         <div class="val-gain">${String(st.nouveauTemps) === '' ? '<span class="muted">En attente de son estimation</span>'
           : st.avis === 'non' ? '<span class="muted">Non retenue : pas comptée dans les gains</span>'
-          : `Gain : <b class="${g >= 0 ? 'good' : 'bad'}">${g >= 0 ? '−' : '+'}${fmtDec(Math.abs(g))} min par fois · ${g >= 0 ? '−' : '+'}${fmtDur(Math.abs(g) * stepOcc(t, st))} / an</b>`}</div>
+          : `Gain : <b class="${g >= 0 ? 'good' : 'bad'}">${g >= 0 ? '−' : '+'}${fmtDec(Math.abs(g))} min par fois · ${g >= 0 ? '−' : '+'}${fmtDur(Math.abs(g) * stepOcc(t, st))} / an</b>${
+            num(st.manipsEvitees) ? ` · <b>${fmtInt(stepManips(t, st))}</b> manipulations évitées / an` : ''}${
+            delayValidated(st) && attente(st) ? ` · attente ${fmtJours(attente(st))} → <b>${fmtJours(num(st.nouvelleAttente))}</b>` : ''}`}</div>
       </div>
     </div>`;
   }).join('');
@@ -875,6 +954,8 @@ function viewFiche3(t) {
         <div class="recap-row"><span>Demain</span><b>${fmtDur(s.apres)} / an</b></div>
         <div class="recap-row big"><span>Temps gagné</span><b class="${s.gain >= 0 ? 'good' : 'bad'}">${s.gain >= 0 ? '−' : ''}${fmtDur(s.gain)}</b></div>
         <div class="recap-row"><span>Soit</span><b>${fmtEtp(Math.max(0, s.gain))}</b></div>
+        <div class="recap-row"><span>Manipulations évitées</span><b>${fmtInt(s.manips)} / an</b></div>
+        ${s.delaiAvant ? `<div class="recap-row"><span>Attentes cumulées</span><b>${fmtJours(s.delaiAvant)} → ${fmtJours(s.delaiApres)}</b></div>` : ''}
         <div class="recap-row"><span>Solutions estimées</span><b>${s.validees} / ${s.solutions}</b></div>
         <div class="recap-row"><span>Étapes supprimées</span><b>${s.supprimees}</b></div>
         <div class="recap-row"><span>Personne clé</span><span>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</span></div>
@@ -882,42 +963,120 @@ function viewFiche3(t) {
     </div>`;
 }
 
-/* ---------- Phase 4 : restitution ---------- */
+/* ---------- Phase 4 : plan d'action et restitution ---------- */
+// Toutes les solutions validées de l'immersion, triées par priorité puis par gain
+function allActions(imm = state) {
+  const list = [];
+  imm.taches.forEach(t => t.steps.forEach(s => { if (isValidated(s)) list.push({ t, s, q: quadrant(t, s), g: stepGain(t, s) }); }));
+  list.sort((a, b) => QUAD_ORDER.indexOf(a.q) - QUAD_ORDER.indexOf(b.q) || b.g - a.g);
+  list.forEach((x, i) => { x.n = i + 1; });
+  return list;
+}
+function phase4Tabs(active) {
+  return `<div class="subtabs no-print">
+    <a class="${active === 'plan' ? 'active' : ''}" href="#/4/plan">1. Plan d'action</a>
+    <a class="${active === 'dossier' ? 'active' : ''}" href="#/4">2. Dossier de restitution</a></div>`;
+}
+
+function viewPlan() {
+  const acts = allActions();
+  const g = globalStats();
+  const rows = acts.map(({ t, s, q, g: gain, n }) => {
+    const sc = `ts:${t.id}:${s.id}`;
+    const fait = s.statutAction === 'fait';
+    const reel = isMeasured(s) ? (num(s.duree) - num(s.tempsReel)) * stepOcc(t, s) : null;
+    return `<div class="act-card q-${q}" id="act-${s.id}">
+      <div class="act-n">${n}</div>
+      <div class="act-body">
+        <div class="act-top">
+          <div><b>${esc(s.sol || LEVIERS[s.levier] || 'Solution')}</b>
+            <div class="muted small">${esc(t.nom)} · étape ${t.steps.indexOf(s) + 1} « ${esc(s.quoi)} » · ${esc(LEVIERS[s.levier] || '')}</div></div>
+          <div class="act-gain"><span class="badge ${q}">${QUADRANTS[q]}</span><b class="good">−${fmtDur(gain)} / an</b></div>
+        </div>
+        <div class="act-fields">
+          <div><span class="lbl">Effort</span>${chips(sc, 'effort', s.effort, EFFORTS, 'small')}</div>
+          <label><span class="lbl">Qui porte ?</span>${inp(sc, 'porteur', s.porteur, 'placeholder="ex : DSI, équipe, manager…"')}</label>
+          <label><span class="lbl">Pour quand ?</span>${inp(sc, 'echeance', s.echeance, 'type="date"')}</label>
+          <div><span class="lbl">Statut</span>${chips(sc, 'statutAction', s.statutAction, STATUTS_ACTION, 'small')}</div>
+        </div>
+        ${fait ? `<div class="act-follow">
+          <span class="lbl">Suivi après mise en place :</span> temps réel mesuré
+          ${numInp(sc, 'tempsReel', s.tempsReel, 'class="w-num" placeholder="?"')} min (estimé : ${fmtDec(num(s.nouveauTemps))} min, avant : ${fmtDec(num(s.duree))} min)
+          le ${inp(sc, 'dateMesure', s.dateMesure, 'type="date" class="w-date"')}
+          ${reel != null ? `<span class="${reel >= gain ? 'good' : 'warn-text'}">→ gain réel <b>${fmtDur(reel)} / an</b> (${reel >= gain ? 'objectif atteint' : 'en dessous de l\'estimation'})</span>` : ''}
+        </div>` : ''}
+      </div></div>`;
+  }).join('');
+  return `
+    ${phaseHead(4, `<a class="btn lg" href="#/4">Voir le dossier →</a>`)}
+    ${phase4Tabs('plan')}
+    <div class="tip"><b>Comment faire :</b> pour chaque solution validée, indique l'effort de mise en place, qui la porte et pour quand.
+      La priorité se calcule toute seule (gain fort = au moins ${numInp('settings', 'seuilGain', db.settings.seuilGain, 'class="tiny"')} h par an).
+      Quand une solution est en place, passe-la en « En place » et note le <b>temps réel mesuré</b> quelques semaines plus tard : le dossier comparera estimé et réel.</div>
+    <div class="kpis">
+      ${kpi('Actions', `${g.actionsFaites} / ${acts.length}`, 'en place')}
+      ${kpi('Gains rapides', acts.filter(a => a.q === 'quickwin').length, 'effort faible, gain fort', 'good')}
+      ${kpi('Gain estimé', fmtDur(Math.max(0, g.gain)) + ' / an', fmtEtp(Math.max(0, g.gain)))}
+      ${kpi('Gain mesuré', g.mesures ? fmtDur(g.gainReel) + ' / an' : '—', g.mesures ? `sur ${plural(g.mesures, 'action mesurée', 'actions mesurées')} (estimé : ${fmtDur(g.gainEstimeMesure)})` : 'aucune mesure pour l\'instant', g.mesures ? 'good' : '')}
+    </div>
+    ${acts.length ? `<div class="card"><div class="card-head"><div><h2>Matrice effort / gain</h2><p class="muted small">Les numéros renvoient aux actions ci-dessous. Commence par les gains rapides.</p></div></div>${matrixHtml(acts)}</div>
+      <section class="block"><h2 class="block-title"><span>✓</span> Les actions</h2>${rows}</section>`
+      : `<div class="empty">Aucune solution validée pour l'instant.<br><a class="btn" href="#/3">Aller à la validation</a></div>`}`;
+}
+
+function matrixHtml(acts) {
+  const cell = (q, title) => `<div class="mcell ${q}"><h4>${title}</h4><div class="bubbles">${acts.filter(a => a.q === q).map(a =>
+    `<a class="bubble" href="#/4/plan" title="${esc((a.s.sol || '') + ' — ' + fmtDur(a.g) + ' / an')}">${a.n}</a>`).join('')}</div></div>`;
+  const todo = acts.filter(a => a.q === 'aevaluer');
+  return `<div class="matrix">
+    <div class="axis-y">Gain annuel ↑</div>
+    ${cell('quickwin', 'Gains rapides')}${cell('planifier', 'À planifier')}${cell('structurant', 'Projets structurants')}
+    ${cell('petit', 'Petits plus')}${cell('arbitrer', 'À arbitrer')}${cell('ecarter', 'À reconsidérer')}
+    <div></div><div class="axis-x"><span>Effort faible</span><span>Effort moyen</span><span>Effort fort</span></div>
+  </div>${todo.length ? `<p class="muted small" style="margin-top:8px">Effort à évaluer : ${todo.map(a => '#' + a.n).join(', ')}</p>` : ''}`;
+}
+
 function viewRestitution() {
   const m = state.mission;
   const g = globalStats();
   const ts = state.taches;
+  const acts = allActions();
   const pending = ts.filter(t => t.p1Done && !t.p3Done).length;
   const period = [m.debut, m.fin].filter(Boolean).map(d => new Date(d).toLocaleDateString('fr-FR')).join(' → ');
   const leves = FLAGS.reduce((a, f) => a + g.flagsLeves[f.key], 0);
   const avantFlags = FLAGS.reduce((a, f) => a + g.flagsAvant[f.key], 0);
   const max = Math.max(1, ...ts.map(t => taskStats(t).avant));
+  const fmtDate = d => d ? new Date(d).toLocaleDateString('fr-FR') : '';
 
   const details = ts.filter(t => t.steps.length).map((t, k) => {
     const s = taskStats(t);
     const sols = t.steps.filter(hasSol);
     return `<section class="report-task">
       <div class="card">
-        <div class="eyebrow">Tâche ${k + 1} · ${fmtInt(volume(t))} fois par an</div>
+        <div class="eyebrow">Tâche ${k + 1} · ${fmtInt(volume(t))} fois par an ${t.cartoValidee ? `<span class="badge ok">✓ Schéma validé par ${esc(who())}${t.cartoValideeLe ? ' le ' + fmtDate(t.cartoValideeLe) : ''}</span>` : '<span class="badge">Schéma non validé</span>'}</div>
         <h2>${esc(t.nom)}</h2>
         ${t.description ? `<p class="muted">${esc(t.description)}</p>` : ''}
         <div class="strip">
           <div>Aujourd'hui<b>${fmtDur(s.avant)} / an</b></div><div>Demain<b>${fmtDur(s.apres)} / an</b></div>
           <div>Temps gagné<b class="good">${fmtDur(Math.max(0, s.gain))} · ${pct(Math.max(0, s.gain), s.avant)}</b></div>
+          <div>Manipulations évitées<b>${fmtInt(s.manips)} / an</b></div>
+          ${s.delaiAvant ? `<div>Attentes cumulées<b>${fmtJours(s.delaiAvant)} → ${fmtJours(s.delaiApres)}</b></div>` : ''}
           <div>Étapes<b>${t.steps.length} → ${t.steps.length - s.supprimees}</b></div>
           <div>Personne clé<span>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</span></div>
         </div>
         <h3 class="h-sub">Aujourd'hui</h3>
         ${mapBlock(t, false, 'r' + k, false, true)}
+        ${dataTable(t)}
         ${sols.length ? `<h3 class="h-sub">Ce qu'on change</h3>
         <div class="table-wrap"><table>
-          <thead><tr><th>Étape</th><th>Ce qui coince</th><th>Solution</th><th class="right">Avant</th><th class="right">Après*</th><th>Avis</th></tr></thead>
+          <thead><tr><th>Étape</th><th>Ce qui coince</th><th>Solution</th><th class="right">Avant</th><th class="right">Après*</th><th class="right">Manip. évitées</th><th>Avis</th></tr></thead>
           <tbody>${sols.map(st => `<tr${st.avis === 'non' ? ' class="rejected"' : ''}>
             <td><b>${t.steps.indexOf(st) + 1}. ${esc(st.quoi)}</b></td>
             <td class="small">${flagChips(st)} ${esc(st.precision)}</td>
             <td class="small">${esc(st.sol || LEVIERS[st.levier])}${st.levier ? `<div class="muted">${esc(LEVIERS[st.levier])}${st.tracabilite ? ' · traçabilité' : ''}${st.securise ? ' · contrôle sécurisé' : ''}</div>` : ''}</td>
-            <td class="right num">${fmtDec(num(st.duree))} min</td>
-            <td class="right num">${String(st.nouveauTemps) === '' ? '<span class="muted">à estimer</span>' : fmtDec(num(st.nouveauTemps)) + ' min'}</td>
+            <td class="right num">${fmtDec(num(st.duree))} min${attente(st) ? `<div class="small muted">+ ${fmtJours(attente(st))}</div>` : ''}</td>
+            <td class="right num">${String(st.nouveauTemps) === '' ? '<span class="muted">à estimer</span>' : fmtDec(num(st.nouveauTemps)) + ' min'}${delayValidated(st) && attente(st) ? `<div class="small muted">+ ${fmtJours(num(st.nouvelleAttente))}</div>` : ''}</td>
+            <td class="right num">${num(st.manipsEvitees) ? fmtDec(num(st.manipsEvitees)) + ' / fois' : '—'}</td>
             <td class="small">${esc(AVIS[st.avis] || '—')}</td></tr>`).join('')}</tbody>
         </table></div>
         <h3 class="h-sub">Demain</h3>
@@ -928,7 +1087,8 @@ function viewRestitution() {
 
   return `
     <div class="report">
-      ${phaseHead(4, '<button class="btn primary lg" data-action="print">🖶 Imprimer / enregistrer en PDF</button>')}
+      ${phaseHead(4, '<button class="btn lg" data-action="export-pptx">⭳ PowerPoint</button><button class="btn primary lg" data-action="print">🖶 Imprimer / PDF</button>')}
+      ${phase4Tabs('dossier')}
       ${pending ? `<div class="tip warn no-print">${pending > 1 ? `${pending} tâches relevées ne sont pas encore validées` : '1 tâche relevée n\'est pas encore validée'} : seules les solutions déjà estimées comptent dans les gains.</div>` : ''}
       <div class="report-cover card">
         <div class="eyebrow">${esc(m.service || 'Diagnostic de poste')}${period ? ' · ' + esc(period) : ''}</div>
@@ -939,16 +1099,18 @@ function viewRestitution() {
 
       <div class="kpis">
         ${kpi('Temps gagné', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ${pct(Math.max(0, g.gain), g.avant)} du temps`, 'good')}
-        ${kpi('Tâches simplifiées', `${g.simplifiees} / ${ts.length}`, plural(g.validees, 'solution validée', 'solutions validées'))}
+        ${kpi('Manipulations évitées', fmtInt(g.manips), 'saisies, copier-coller, clics en moins par an', 'good')}
+        ${kpi('Traçabilité / contrôles', `${g.tracab} / ${g.controles}`, 'solutions qui tracent · qui sécurisent un contrôle')}
         ${kpi('Irritants levés', `${leves} / ${avantFlags}`, FLAGS.map(f => `${g.flagsLeves[f.key]} ${f.nom.toLowerCase()}`).join(' · '))}
-        ${kpi('Étapes supprimées', g.supprimees, `${g.tracab} traçabilité · ${plural(g.controles, 'contrôle sécurisé', 'contrôles sécurisés')}`)}
+        ${kpi('Tâches simplifiées', `${g.simplifiees} / ${ts.length}`, `${plural(g.validees, 'solution validée', 'solutions validées')} · ${plural(g.supprimees, 'étape supprimée', 'étapes supprimées')}`)}
         ${kpi('Risque personne clé', `${g.riskHautAvant} → ${g.riskHautApres}`, `tâches à risque élevé · ${g.riskBaisse} en baisse`, g.riskHautApres < g.riskHautAvant ? 'good' : '')}
+        ${g.mesures ? kpi('Gain mesuré', fmtDur(g.gainReel) + ' / an', `après mise en place · estimé : ${fmtDur(g.gainEstimeMesure)}`, 'good') : ''}
       </div>
 
       <div class="card">
         <div class="card-head"><div><h2>Vue d'ensemble des tâches</h2><p class="muted small">Temps annuel aujourd'hui (gris) et demain (bleu).</p></div></div>
         <div class="table-wrap"><table>
-          <thead><tr><th>Tâche</th><th class="right">Fréquence</th><th style="width:30%">Aujourd'hui → demain</th><th class="right">Avant</th><th class="right">Après</th><th class="right">Gain</th><th>Personne clé</th></tr></thead>
+          <thead><tr><th>Tâche</th><th class="right">Fréquence</th><th style="width:26%">Aujourd'hui → demain</th><th class="right">Avant</th><th class="right">Après</th><th class="right">Gain</th><th class="right">Manip. évitées</th><th>Personne clé</th></tr></thead>
           <tbody>${ts.map(t => { const s = taskStats(t); return `<tr>
             <td><b>${esc(t.nom || 'Sans nom')}</b>${t.p3Done ? '' : ' <span class="badge">non validée</span>'}</td>
             <td class="right num">${fmtInt(volume(t))} / an</td>
@@ -956,13 +1118,38 @@ function viewRestitution() {
                 <div class="bar-track mt"><div class="bar after" style="width:${s.apres / max * 100}%"></div></div></td>
             <td class="right num">${fmtDur(s.avant)}</td><td class="right num">${fmtDur(s.apres)}</td>
             <td class="right num good">${s.gain > 0 ? '−' + fmtDur(s.gain) : '—'}</td>
+            <td class="right num">${s.manips ? fmtInt(s.manips) : '—'}</td>
             <td>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</td></tr>`; }).join('')}
-            <tr class="total"><td><b>Total</b></td><td></td><td></td><td class="right num"><b>${fmtDur(g.avant)}</b></td><td class="right num"><b>${fmtDur(g.apres)}</b></td><td class="right num good"><b>−${fmtDur(Math.max(0, g.gain))}</b></td><td></td></tr>
+            <tr class="total"><td><b>Total</b></td><td></td><td></td><td class="right num"><b>${fmtDur(g.avant)}</b></td><td class="right num"><b>${fmtDur(g.apres)}</b></td><td class="right num good"><b>−${fmtDur(Math.max(0, g.gain))}</b></td><td class="right num"><b>${fmtInt(g.manips)}</b></td><td></td></tr>
           </tbody></table></div>
-        <p class="muted small" style="margin-top:10px">* Les temps « après » ont été estimés par ${esc(who())}, lors de l'entretien de validation.</p>
+        <p class="muted small" style="margin-top:10px">* Les temps « après » et les manipulations évitées ont été estimés par ${esc(who())}, lors de l'entretien de validation.</p>
       </div>
+
+      ${acts.length ? `<div class="card">
+        <div class="card-head"><div><h2>Plan d'action</h2><p class="muted small">Solutions validées, par priorité. <a class="no-print" href="#/4/plan">Modifier le plan</a></p></div></div>
+        ${matrixHtml(acts)}
+        <div class="table-wrap" style="margin-top:14px"><table>
+          <thead><tr><th>#</th><th>Solution</th><th>Tâche</th><th>Priorité</th><th>Effort</th><th>Porteur</th><th>Échéance</th><th>Statut</th><th class="right">Gain estimé</th><th class="right">Gain mesuré</th></tr></thead>
+          <tbody>${acts.map(({ t, s, q, g: gain, n }) => `<tr>
+            <td class="num">${n}</td><td><b>${esc(s.sol || LEVIERS[s.levier])}</b></td><td class="small">${esc(t.nom)}</td>
+            <td><span class="badge ${q}">${QUADRANTS[q]}</span></td><td class="small">${esc(EFFORTS[s.effort] || '—')}</td>
+            <td class="small">${esc(s.porteur || '—')}</td><td class="small">${fmtDate(s.echeance) || '—'}</td>
+            <td class="small">${esc(STATUTS_ACTION[s.statutAction] || 'À lancer')}</td>
+            <td class="right num good">${fmtDur(gain)}</td>
+            <td class="right num">${isMeasured(s) ? fmtDur((num(s.duree) - num(s.tempsReel)) * stepOcc(t, s)) : '—'}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>` : ''}
       ${details}
     </div>`;
+}
+// Données manipulées et outils, étape par étape (demande explicite du cadrage)
+function dataTable(t) {
+  const rows = t.steps.filter(s => s.donnees || s.outil);
+  if (!rows.length) return '';
+  return `<details class="data-table" open><summary class="h-sub">Données et outils utilisés</summary>
+    <div class="table-wrap"><table><thead><tr><th>Étape</th><th>Qui</th><th>Outil</th><th>Données</th><th class="right">Durée</th><th class="right">Attente</th></tr></thead>
+    <tbody>${t.steps.map((s, i) => `<tr><td>${i + 1}. ${esc(s.quoi)}</td><td class="small">${esc(s.qui)}</td><td class="small">${esc(s.outil || '—')}</td>
+      <td class="small">${esc(s.donnees || '—')}</td><td class="right num">${fmtDec(num(s.duree))} min</td><td class="right num">${attente(s) ? fmtJours(attente(s)) : '—'}</td></tr>`).join('')}</tbody></table></div></details>`;
 }
 function kpi(label, value, hint, cls = '') {
   return `<div class="kpi ${cls}"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`;
@@ -986,7 +1173,7 @@ function mapBlock(t, tobe, key, withCsv = false, report = false) {
 function mapLegend(tobe) {
   return `<div class="map-legend">
     <span>${miniSvg('start')} Début</span><span>${miniSvg('end')} Fin</span><span>${miniSvg('tache')} Étape</span>
-    <span>${miniSvg('decision')} Vérification</span>${tobe ? `<span>${miniSvg('auto')} Automatisée</span>` : ''}
+    <span>${miniSvg('decision')} Choix / vérification</span><span class="lg-wait">⏳ Attente (jours)</span>${tobe ? `<span>${miniSvg('auto')} Automatisée</span>` : ''}
     ${FLAGS.map(f => `<span><span class="flag-chip ${f.short}">${f.short}</span> ${f.nom}</span>`).join('')}
     ${tobe ? '<span><span class="flag-chip ok">✓</span> Étape améliorée</span>' : ''}
     <span class="muted">Un couloir = une personne. Clique sur une étape pour la retrouver.</span>
@@ -1010,8 +1197,10 @@ function mapSteps(t, tobe) {
     if (v && s.levier === 'supprimer') return;
     const duree = v ? num(s.nouveauTemps) : num(s.duree);
     out.push({
-      id: s.id, n: i + 1, nom: s.quoi, acteur: s.qui, outil: s.outil,
+      id: s.id, n: i + 1, nom: s.quoi, acteur: s.qui, outil: s.outil, donnees: s.donnees,
       duree, taux: taux(s), annual: duree * stepOcc(t, s),
+      attente: tobe ? newAttente(s) : attente(s), attenteAvant: attente(s),
+      labelSuite: s.labelSuite || 'Oui', labelAutre: s.labelAutre || 'Non',
       type: s.controle ? 'decision' : (v && s.levier === 'automatiser') ? 'auto' : 'tache',
       ressaisie: !v && s.ressaisie, manuel: !v && s.manuel, suivi: !v && s.suivi, precision: v ? '' : s.precision,
       improved: v, gain: v ? num(s.duree) - num(s.nouveauTemps) : 0, sol: v ? s.sol : '',
@@ -1020,7 +1209,7 @@ function mapSteps(t, tobe) {
   });
   const kept = new Set(out.map(s => s.id));
   out.forEach(c => {
-    if (c.cible && !kept.has(c.cible)) {
+    if (c.cible && c.cible !== FIN && !kept.has(c.cible)) {
       const idx = t.steps.findIndex(s => s.id === c.cible);
       const next = t.steps.slice(idx + 1).find(s => kept.has(s.id));
       c.cible = next ? next.id : '';
@@ -1068,7 +1257,7 @@ function renderMap(t, steps) {
   const loops = [];
   steps.forEach((s, i) => {
     if (s.type !== 'decision' || !s.cible) return;
-    const k = steps.findIndex(x => x.id === s.cible);
+    const k = s.cible === FIN ? n : steps.findIndex(x => x.id === s.cible);
     if (k >= 0 && k !== i + 1) loops.push({ i, t: k });
   });
   const LH = lanes.length * LANE;
@@ -1106,7 +1295,13 @@ function renderMap(t, steps) {
     const x1 = a.x + hw(a), y1 = a.y, x2 = b.x - hw(b), y2 = b.y;
     const d = y1 === y2 ? `M${x1} ${y1} H${x2}` : `M${x1} ${y1} H${(x1 + x2) / 2} V${y2} H${x2}`;
     o.push(`<path d="${d}" fill="none" stroke="${C.line}" stroke-width="1.4" marker-end="url(#${id})"/>`);
-    if (a.k === 'decision') o.push(`<text x="${x1 + 5}" y="${y1 - 6}" font-size="10.5" fill="${C.muted}">OK</text>`);
+    if (a.k === 'decision') o.push(`<text x="${x1 + 5}" y="${y1 - 6}" font-size="10.5" fill="${C.muted}">${esc(a.s.labelSuite)}</text>`);
+    // Attente avant l'étape suivante, affichée sur la flèche
+    if (a.s && a.s.attente > 0) {
+      const red = a.s.attente < a.s.attenteAvant ? ` (−${fmtDec(a.s.attenteAvant - a.s.attente)})` : '';
+      const lx = y1 === y2 ? (x1 + x2) / 2 : (x1 + x2) / 2 + 4;
+      o.push(`<text x="${lx}" y="${y1 === y2 ? y1 + 15 : y1 + 15}" text-anchor="${y1 === y2 ? 'middle' : 'start'}" font-size="10" font-weight="600" fill="${C.alt}">⏳ ${fmtDec(a.s.attente)} j${red}</text>`);
+    }
   }
   // Retours des vérifications (passent sous les couloirs)
   loops.forEach((lp, k) => {
@@ -1114,7 +1309,7 @@ function renderMap(t, steps) {
     const gy = LH + 10 + k * 14;
     const tx = tg.k === 'decision' ? tg.x : tg.x + BW / 2 - 12;
     o.push(`<path d="M${a.x} ${a.y + DR} V${gy} H${tx} V${tg.y + hh(tg)}" fill="none" stroke="${C.alt}" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#${id}b)"/>`);
-    o.push(`<text x="${a.x + 6}" y="${a.y + DR + 26}" font-size="10.5" fill="${C.alt}" font-weight="600">À reprendre</text>`);
+    o.push(`<text x="${a.x + 6}" y="${a.y + DR + 26}" font-size="10.5" fill="${C.alt}" font-weight="600">${esc(a.s.labelAutre)}</text>`);
   });
 
   nodes.forEach(nd => {
@@ -1126,7 +1321,8 @@ function renderMap(t, steps) {
     }
     const s = nd.s;
     const irr = isIrritant(s);
-    const tip = [`${s.n}. ${s.nom}`, `Qui : ${s.acteur || NA}`, s.outil && `Outil : ${s.outil}`,
+    const tip = [`${s.n}. ${s.nom}`, `Qui : ${s.acteur || NA}`, s.outil && `Outil : ${s.outil}`, s.donnees && `Données : ${s.donnees}`,
+      s.attente && `Puis attente : ${fmtDec(s.attente)} j`,
       `Durée : ${fmtDec(s.duree)} min${s.taux < 100 ? ` (${fmtDec(s.taux)} % des cas)` : ''} · ${fmtDur(s.annual)} / an`,
       s.precision && `Ce qui coince : ${s.precision}`, s.sol && `Solution : ${s.sol}`].filter(Boolean).join('\n');
     const g = [`<g data-step="${s.id}" style="cursor:pointer"><title>${esc(tip)}</title>`];
@@ -1206,27 +1402,140 @@ function exportSvg(t, tobe) {
   const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + renderMap(t, mapSteps(t, tobe));
   download(new Blob([svg], { type: 'image/svg+xml' }), mapFileName(t, tobe, 'svg'));
 }
+function svgToPng(svg) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      resolve({ canvas, data: canvas.toDataURL('image/png'), w: img.width, h: img.height });
+    };
+    img.onerror = reject;
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
 function exportPng(t, tobe) {
-  const svg = renderMap(t, mapSteps(t, tobe));
-  const img = new Image();
-  img.onload = () => {
-    const scale = 2;
-    const canvas = document.createElement('canvas');
-    canvas.width = img.width * scale;
-    canvas.height = img.height * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0);
-    canvas.toBlob(b => {
+  svgToPng(renderMap(t, mapSteps(t, tobe)))
+    .then(({ canvas }) => canvas.toBlob(b => {
       if (b) download(b, mapFileName(t, tobe, 'png'));
       else toast('Export image impossible dans ce navigateur : utilise le SVG.');
-    }, 'image/png');
-  };
-  img.onerror = () => toast('Export image impossible : utilise le SVG.');
-  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }, 'image/png'))
+    .catch(() => toast('Export image impossible : utilise le SVG.'));
 }
+
+// Dossier de restitution au format PowerPoint (bibliothèque locale lib/pptxgen.bundle.js)
+async function exportPptx() {
+  if (typeof PptxGenJS === 'undefined') {
+    toast('Module PowerPoint introuvable : garde le dossier « lib » à côté de index.html.');
+    return;
+  }
+  toast('Préparation du PowerPoint…');
+  const m = state.mission, g = globalStats(), ts = state.taches.filter(t => t.steps.length), acts = allActions();
+  const F = 'Segoe UI', INK = '1D2433', MUTED = '5B6578', OK = '1D8A5A', DARK = '16203A', LINE = 'E1E6EE', W = 13.33;
+  const pptx = new PptxGenJS();
+  pptx.layout = 'LAYOUT_WIDE';
+  pptx.title = 'Restitution — ' + immLabel(state);
+  const period = [m.debut, m.fin].filter(Boolean).map(d => new Date(d).toLocaleDateString('fr-FR')).join(' → ');
+  const base = { fontFace: F, color: INK };
+  const head = (sl, txt, sub) => {
+    sl.addText(txt, { ...base, x: 0.5, y: 0.3, w: W - 1, h: 0.6, fontSize: 24, bold: true });
+    if (sub) sl.addText(sub, { ...base, x: 0.5, y: 0.88, w: W - 1, h: 0.45, fontSize: 13, color: MUTED, fit: 'shrink' });
+    sl.addText(`${m.service || ''}${m.poste ? ' · ' + m.poste : ''}`, { ...base, x: 0.5, y: 7.05, w: W - 1, h: 0.3, fontSize: 9, color: '8A93A5' });
+  };
+  const th = txt => ({ text: txt, options: { bold: true, color: 'FFFFFF', fill: { color: DARK } } });
+  const tableOpts = (colW, y = 1.4) => ({ ...base, x: 0.5, y, w: W - 1, colW, fontSize: 11, valign: 'middle',
+    border: { type: 'solid', pt: 0.5, color: LINE }, autoPage: true, autoPageRepeatHeader: true, autoPageSlideStartY: 0.6 });
+  const addImage = (sl, img, y, maxH) => {
+    const ratio = img.w / img.h;
+    let w = W - 1, h = w / ratio;
+    if (h > maxH) { h = maxH; w = h * ratio; }
+    sl.addImage({ data: img.data, x: (W - w) / 2, y, w, h });
+  };
+
+  // 1. Couverture
+  let sl = pptx.addSlide();
+  sl.background = { color: DARK };
+  sl.addText(m.service || 'Diagnostic de poste', { fontFace: F, x: 0.8, y: 1.9, w: 11.7, h: 0.5, fontSize: 16, color: '93A0BB' });
+  sl.addText(`${m.poste || 'Poste analysé'}${m.personne ? ' — ' + m.personne : ''}`, { fontFace: F, x: 0.8, y: 2.4, w: 11.7, h: 1.3, fontSize: 34, bold: true, color: 'FFFFFF' });
+  sl.addText('Immersion, cartographie des tâches et pistes d\'amélioration', { fontFace: F, x: 0.8, y: 3.7, w: 11.7, h: 0.5, fontSize: 18, color: 'C4CDE0' });
+  sl.addText([period, m.analyste && 'Mission menée par ' + m.analyste].filter(Boolean).join('   ·   '), { fontFace: F, x: 0.8, y: 5.9, w: 11.7, h: 0.4, fontSize: 12, color: '93A0BB' });
+
+  // 2. Chiffres clés
+  sl = pptx.addSlide();
+  head(sl, 'Ce que l\'immersion apporte', m.contexte ? (c => c.length > 130 ? c.slice(0, 129) + '…' : c)(m.contexte.split('\n')[0]) : '');
+  const leves = FLAGS.reduce((a, f) => a + g.flagsLeves[f.key], 0), avantFlags = FLAGS.reduce((a, f) => a + g.flagsAvant[f.key], 0);
+  [
+    ['Temps gagné', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ${pct(Math.max(0, g.gain), g.avant)} du temps`, OK],
+    ['Manipulations évitées', fmtInt(g.manips), 'saisies, copier-coller, clics en moins par an', OK],
+    ['Irritants levés', `${leves} / ${avantFlags}`, FLAGS.map(f => `${g.flagsLeves[f.key]} ${f.nom.toLowerCase()}`).join(' · '), INK],
+    ['Tâches simplifiées', `${g.simplifiees} / ${state.taches.length}`, plural(g.supprimees, 'étape supprimée', 'étapes supprimées'), INK],
+    ['Traçabilité / contrôles', `${g.tracab} / ${g.controles}`, 'solutions qui tracent / sécurisent un contrôle', INK],
+    ['Risque personne clé', `${g.riskHautAvant} → ${g.riskHautApres}`, 'tâches à risque élevé, avant → après', g.riskHautApres < g.riskHautAvant ? OK : INK]
+  ].forEach(([label, value, hint, color], i) => {
+    const x = 0.5 + (i % 3) * 4.15, y = 1.6 + Math.floor(i / 3) * 2.6;
+    sl.addShape(pptx.ShapeType.roundRect, { x, y, w: 3.95, h: 2.3, fill: { color: 'F4F6F9' }, line: { color: LINE }, rectRadius: 0.08 });
+    sl.addText(label.toUpperCase(), { ...base, x: x + 0.25, y: y + 0.2, w: 3.5, h: 0.35, fontSize: 11, bold: true, color: MUTED });
+    sl.addText(value, { ...base, x: x + 0.25, y: y + 0.6, w: 3.5, h: 0.9, fontSize: 30, bold: true, color });
+    sl.addText(hint, { ...base, x: x + 0.25, y: y + 1.5, w: 3.5, h: 0.6, fontSize: 11, color: MUTED });
+  });
+
+  // 3. Vue d'ensemble
+  sl = pptx.addSlide();
+  head(sl, 'Vue d\'ensemble des tâches', `Temps « après » estimés par ${who()} lors de l'entretien de validation.`);
+  sl.addTable([
+    ['Tâche', 'Fréquence', 'Avant / an', 'Après / an', 'Gain / an', 'Manip. évitées', 'Personne clé'].map(th),
+    ...state.taches.map(t => { const s = taskStats(t); return [t.nom || 'Sans nom', `${fmtInt(volume(t))} / an`, fmtDur(s.avant), fmtDur(s.apres),
+      s.gain > 0 ? '−' + fmtDur(s.gain) : '—', s.manips ? fmtInt(s.manips) : '—', `${RISQUES[s.riskAvant] || '—'} → ${RISQUES[s.riskApres] || '—'}`]; }),
+    ['Total', '', fmtDur(g.avant), fmtDur(g.apres), '−' + fmtDur(Math.max(0, g.gain)), fmtInt(g.manips), ''].map(v => ({ text: v, options: { bold: true, fill: { color: 'F4F6F9' } } }))
+  ], tableOpts([4.13, 1.4, 1.4, 1.4, 1.4, 1.5, 1.1]));
+
+  // 4. Une série de diapositives par tâche
+  for (const t of ts) {
+    const s = taskStats(t);
+    sl = pptx.addSlide();
+    head(sl, t.nom, `Aujourd'hui · ${fmtInt(volume(t))} fois par an · ${fmtDur(s.avant)} par an${s.delaiAvant ? ' · ' + fmtJours(s.delaiAvant) + ' d\'attente' : ''}${t.cartoValidee ? ' · schéma validé par ' + who() : ''}`);
+    addImage(sl, await svgToPng(renderMap(t, mapSteps(t, false))), 1.4, 3.7);
+    const irr = t.steps.filter(isIrritant).slice(0, 6);
+    if (irr.length) {
+      sl.addText(irr.map(st => ({ text: `${t.steps.indexOf(st) + 1}. ${st.quoi}${st.precision ? ' — ' + st.precision : ''}`, options: { bullet: true } })),
+        { ...base, x: 0.5, y: 5.25, w: W - 1, h: 1.7, fontSize: 12, valign: 'top' });
+    }
+    const sols = t.steps.filter(hasSol);
+    if (!sols.length) continue;
+    sl = pptx.addSlide();
+    head(sl, t.nom + ' — ce qu\'on change', `Temps « après » et manipulations estimés par ${who()}.`);
+    sl.addTable([
+      ['Étape', 'Ce qui coince', 'Solution', 'Avant', 'Après', 'Manip. évitées', 'Avis'].map(th),
+      ...sols.map(st => [`${t.steps.indexOf(st) + 1}. ${st.quoi}`, st.precision || FLAGS.filter(f => st[f.key]).map(f => f.nom).join(', '),
+        st.sol || LEVIERS[st.levier] || '', `${fmtDec(num(st.duree))} min`,
+        String(st.nouveauTemps) === '' ? 'à estimer' : fmtDec(num(st.nouveauTemps)) + ' min',
+        num(st.manipsEvitees) ? fmtDec(num(st.manipsEvitees)) + ' / fois' : '—', AVIS[st.avis] || '—'])
+    ], tableOpts([2.5, 2.7, 3.4, 0.8, 0.9, 1.05, 0.98]));
+    sl = pptx.addSlide();
+    head(sl, t.nom + ' — demain', `${fmtDur(s.apres)} par an · gain ${fmtDur(Math.max(0, s.gain))} (${pct(Math.max(0, s.gain), s.avant)}) · ${fmtInt(s.manips)} manipulations évitées${s.delaiAvant ? ' · attentes ' + fmtJours(s.delaiAvant) + ' → ' + fmtJours(s.delaiApres) : ''}`);
+    addImage(sl, await svgToPng(renderMap(t, mapSteps(t, true))), 1.4, 5.4);
+  }
+
+  // 5. Plan d'action
+  if (acts.length) {
+    sl = pptx.addSlide();
+    head(sl, 'Plan d\'action', `Seuil « gain fort » : ${db.settings.seuilGain} h par an. Gains rapides en premier.`);
+    sl.addTable([
+      ['#', 'Solution', 'Tâche', 'Priorité', 'Effort', 'Porteur', 'Échéance', 'Statut', 'Gain / an'].map(th),
+      ...acts.map(({ t, s, q, g: gain, n }) => [String(n), s.sol || LEVIERS[s.levier] || '', t.nom, QUADRANTS[q], EFFORTS[s.effort] || '—',
+        s.porteur || '—', s.echeance ? new Date(s.echeance).toLocaleDateString('fr-FR') : '—', STATUTS_ACTION[s.statutAction] || 'À lancer', fmtDur(gain)])
+    ], tableOpts([0.4, 3.4, 2.0, 1.3, 0.8, 1.5, 1.1, 1.0, 0.83]));
+  }
+  await pptx.writeFile({ fileName: `restitution-${slug(immLabel(state))}.pptx` });
+}
+
 // Tableau au format « Data Visualizer » de Visio (organigramme de base)
 function exportCsv(t) {
   const steps = t.steps;
@@ -1236,9 +1545,10 @@ function exportCsv(t) {
   steps.forEach((s, i) => {
     const next = i + 1 < steps.length ? idOf(i + 1) : 'FIN';
     let nextIds = next, labels = '';
-    const k = s.controle ? steps.findIndex(x => x.id === s.retour) : -1;
-    if (k >= 0) { nextIds = next + ',' + idOf(k); labels = 'OK,À reprendre'; }
-    const alt = [s.outil && 'Outil : ' + s.outil, `${num(s.duree)} min`, s.precision && 'Ce qui coince : ' + s.precision].filter(Boolean).join(' | ');
+    const k = !s.controle ? -1 : s.retour === FIN ? steps.length : steps.findIndex(x => x.id === s.retour);
+    if (k >= 0) { nextIds = next + ',' + (k === steps.length ? 'FIN' : idOf(k)); labels = (s.labelSuite || 'Oui') + ',' + (s.labelAutre || 'Non'); }
+    const alt = [s.outil && 'Outil : ' + s.outil, s.donnees && 'Données : ' + s.donnees, `${num(s.duree)} min`, attente(s) && `attente ${num(s.attente)} j`,
+      s.precision && 'Ce qui coince : ' + s.precision].filter(Boolean).join(' | ');
     rows.push([idOf(i), s.quoi, nextIds, labels, s.controle ? 'Decision' : 'Process', s.qui || NA, '', alt]);
   });
   rows.push(['FIN', t.resultat || 'Fin', '', '', 'End', steps[steps.length - 1]?.qui || NA, '', '']);
@@ -1246,6 +1556,9 @@ function exportCsv(t) {
   download(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), `${slug(t.nom)}-visio.csv`);
 }
 function exportJson() {
+  db.lastExport = new Date().toISOString();
+  save();
+  scheduleRender();
   const d = new Date().toISOString().slice(0, 10);
   download(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }), `carto-process-sauvegarde-${d}.json`);
 }
@@ -1386,6 +1699,7 @@ const actions = {
   'export-svg'(el) { const t = currentTask(); if (t) exportSvg(t, !!el.dataset.tobe); },
   'export-png'(el) { const t = currentTask(); if (t) exportPng(t, !!el.dataset.tobe); },
   'export-csv'() { const t = currentTask(); if (t) exportCsv(t); },
+  'export-pptx'() { exportPptx().catch(e => { console.error(e); toast('Export PowerPoint impossible : ' + e.message); }); },
   'export-json': exportJson,
   'export-imm': exportImm,
   'new-imm'() {
@@ -1502,21 +1816,21 @@ function demoImmSophie() {
     quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui',
     notes: 'Pic de demandes en début de mois. Environ 30 % des fiches repartent en correction après relecture.',
     notesValidation: 'Très favorable au formulaire. Souhaite garder la main sur la mise en forme finale.',
-    p1Done: true, p2Done: true, p3Done: true,
+    p1Done: true, p2Done: true, p3Done: true, cartoValidee: true, cartoValideeLe: '2026-11-04',
     steps: [
-      newStep({ id: 't1s1', quoi: 'Lire la demande reçue par mail', qui: S, outil: 'Outlook', duree: '5', suivi: true, precision: 'Les demandes sont noyées dans la boîte mail, aucune vision du stock',
+      newStep({ id: 't1s1', donnees: 'Objet, demandeur, fiche concernée', manipsEvitees: '2', effort: '1', porteur: 'Sophie', echeance: '2026-11-30', statutAction: 'encours', quoi: 'Lire la demande reçue par mail', qui: S, outil: 'Outlook', duree: '5', suivi: true, precision: 'Les demandes sont noyées dans la boîte mail, aucune vision du stock',
         sol: 'Liste des demandes partagée, avec une vue « en cours »', levier: 'outiller', tracabilite: true, nouveauTemps: '3', avis: 'ok' }),
-      newStep({ id: 't1s2', quoi: 'Recopier la demande dans le fichier Excel de suivi', qui: S, outil: 'Excel', duree: '4', ressaisie: true, precision: 'Je recopie l\'objet, le demandeur et la date déjà présents dans le mail',
+      newStep({ id: 't1s2', donnees: 'Objet, demandeur, date', manipsEvitees: '6', effort: '1', porteur: 'Sophie + correspondant M365', echeance: '2026-11-30', statutAction: 'encours', quoi: 'Recopier la demande dans le fichier Excel de suivi', qui: S, outil: 'Excel', duree: '4', ressaisie: true, precision: 'Je recopie l\'objet, le demandeur et la date déjà présents dans le mail',
         sol: 'Formulaire en ligne (Microsoft Forms) : le demandeur saisit lui-même, la ligne de suivi se crée toute seule', levier: 'supprimer', tracabilite: true, nouveauTemps: '0', avis: 'ok' }),
-      newStep({ id: 't1s3', quoi: 'Rédiger ou modifier la fiche', qui: S, outil: 'Word', duree: '35' }),
-      newStep({ id: 't1s4', quoi: 'Relire et valider la fiche', qui: E, outil: 'Outlook', duree: '20', suivi: true, precision: 'Relances à la main, 6 jours de délai moyen, aucune trace de la validation',
+      newStep({ id: 't1s3', donnees: 'Texte de la procédure', quoi: 'Rédiger ou modifier la fiche', qui: S, outil: 'Word', duree: '35' }),
+      newStep({ id: 't1s4', donnees: 'Fiche en pièce jointe', attente: '6', nouvelleAttente: '2', manipsEvitees: '3', effort: '2', porteur: 'DSI (Power Automate)', echeance: '2027-01-31', quoi: 'Relire et valider la fiche', qui: E, outil: 'Outlook', duree: '20', suivi: true, precision: 'Relances à la main, 6 jours de délai moyen, aucune trace de la validation',
         sol: 'Circuit de validation avec relance automatique à J+3 et validation horodatée', levier: 'automatiser', tracabilite: true, securise: true, nouveauTemps: '12', avis: 'ok' }),
-      newStep({ id: 't1s5', quoi: 'Fiche validée ?', qui: E, duree: '0', controle: true, retour: 't1s3' }),
-      newStep({ id: 't1s6', quoi: 'Mettre en forme selon la charte', qui: S, outil: 'Word', duree: '15', manuel: true, precision: 'Toute la mise en forme est refaite à la main à chaque fiche',
+      newStep({ id: 't1s5', labelSuite: 'Oui', labelAutre: 'Non (30 %)', quoi: 'Fiche validée ?', qui: E, duree: '0', controle: true, retour: 't1s3' }),
+      newStep({ id: 't1s6', manipsEvitees: '10', effort: '1', porteur: 'Sophie', echeance: '2026-12-15', quoi: 'Mettre en forme selon la charte', qui: S, outil: 'Word', duree: '15', manuel: true, precision: 'Toute la mise en forme est refaite à la main à chaque fiche',
         sol: 'Modèle de fiche avec les styles de la charte déjà en place', levier: 'modele', nouveauTemps: '5', avis: 'ok' }),
-      newStep({ id: 't1s7', quoi: 'Publier la fiche dans la base (copier-coller)', qui: S, outil: 'SharePoint', duree: '10', ressaisie: true, precision: 'Copier-coller de Word vers SharePoint, la mise en page casse',
+      newStep({ id: 't1s7', donnees: 'Contenu de la fiche', manipsEvitees: '8', effort: '2', porteur: 'Équipe SharePoint', echeance: '2027-02-28', quoi: 'Publier la fiche dans la base (copier-coller)', qui: S, outil: 'SharePoint', duree: '10', ressaisie: true, precision: 'Copier-coller de Word vers SharePoint, la mise en page casse',
         sol: 'Rédiger directement dans un modèle de page SharePoint', levier: 'outiller', nouveauTemps: '4', avis: 'discuter' }),
-      newStep({ id: 't1s8', quoi: 'Mettre à jour le suivi et prévenir le demandeur', qui: S, outil: 'Excel + Outlook', duree: '6', ressaisie: true, manuel: true, precision: 'Double mise à jour : Excel puis mail',
+      newStep({ id: 't1s8', donnees: 'Statut, date de publication, demandeur', manipsEvitees: '4', effort: '2', porteur: 'DSI (Power Automate)', echeance: '2027-01-31', quoi: 'Mettre à jour le suivi et prévenir le demandeur', qui: S, outil: 'Excel + Outlook', duree: '6', ressaisie: true, manuel: true, precision: 'Double mise à jour : Excel puis mail',
         sol: 'Notification automatique au demandeur à la publication', levier: 'automatiser', tracabilite: true, nouveauTemps: '1', avis: 'ok' })
     ]
   });
@@ -1527,17 +1841,17 @@ function demoImmSophie() {
     origine: 'Question d\'un conseiller par mail', resultat: 'Réponse envoyée au conseiller',
     quiSait: 'une', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui',
     notesValidation: 'D\'accord pour la boîte partagée ; la FAQ demandera du temps au démarrage.',
-    p1Done: true, p2Done: true, p3Done: true,
+    p1Done: true, p2Done: true, p3Done: true, cartoValidee: true, cartoValideeLe: '2026-11-05',
     steps: [
-      newStep({ id: 't2s1', quoi: 'Envoyer la question par mail', qui: A, outil: 'Outlook', duree: '3' }),
-      newStep({ id: 't2s2', quoi: 'Lire et trier la question', qui: S, outil: 'Outlook', duree: '3', suivi: true, precision: 'Pas de classement : impossible de savoir quels sujets reviennent',
+      newStep({ id: 't2s1', donnees: 'Question, agence', quoi: 'Envoyer la question par mail', qui: A, outil: 'Outlook', duree: '3' }),
+      newStep({ id: 't2s2', manipsEvitees: '1', effort: '1', porteur: 'Sophie', echeance: '2026-12-01', quoi: 'Lire et trier la question', qui: S, outil: 'Outlook', duree: '3', suivi: true, precision: 'Pas de classement : impossible de savoir quels sujets reviennent',
         sol: 'Boîte mail partagée avec catégories par sujet', levier: 'organiser', tracabilite: true, nouveauTemps: '2', avis: 'ok' }),
-      newStep({ id: 't2s3', quoi: 'Chercher la réponse dans la base', qui: S, outil: 'SharePoint', duree: '8', manuel: true, precision: 'La recherche donne de mauvais résultats, les fiches sont mal indexées',
+      newStep({ id: 't2s3', donnees: 'Mots-clés de la question', manipsEvitees: '3', effort: '3', porteur: 'Sophie + experts', echeance: '2027-03-31', quoi: 'Chercher la réponse dans la base', qui: S, outil: 'SharePoint', duree: '8', manuel: true, precision: 'La recherche donne de mauvais résultats, les fiches sont mal indexées',
         sol: 'Mots-clés sur les fiches + page FAQ des 50 questions les plus fréquentes', levier: 'outiller', nouveauTemps: '4', avis: 'ok' }),
-      newStep({ id: 't2s4', quoi: 'Demander à l\'expert et attendre sa réponse', qui: E, outil: 'Outlook / Teams', duree: '15', taux: '25', suivi: true, precision: 'Relances, aucun délai de réponse convenu',
+      newStep({ id: 't2s4', attente: '2', nouvelleAttente: '1', manipsEvitees: '1', effort: '1', porteur: 'Manager', echeance: '2026-12-15', quoi: 'Demander à l\'expert et attendre sa réponse', qui: E, outil: 'Outlook / Teams', duree: '15', taux: '25', suivi: true, precision: 'Relances, aucun délai de réponse convenu',
         sol: 'Canal Teams des experts avec un délai de réponse convenu', levier: 'organiser', tracabilite: true, nouveauTemps: '10', avis: 'discuter' }),
       newStep({ id: 't2s5', quoi: 'Rédiger et envoyer la réponse', qui: S, outil: 'Outlook', duree: '6' }),
-      newStep({ id: 't2s6', quoi: 'Noter la question dans le fichier de suivi', qui: S, outil: 'Excel', duree: '2', ressaisie: true, precision: 'Double saisie mail + Excel, souvent oubliée',
+      newStep({ id: 't2s6', donnees: 'Thème, agence, date', manipsEvitees: '3', effort: '1', porteur: 'Sophie', echeance: '2026-12-01', quoi: 'Noter la question dans le fichier de suivi', qui: S, outil: 'Excel', duree: '2', ressaisie: true, precision: 'Double saisie mail + Excel, souvent oubliée',
         sol: 'Supprimer le fichier Excel : le suivi se fait avec les catégories de la boîte partagée', levier: 'supprimer', tracabilite: true, nouveauTemps: '0', avis: 'ok' })
     ]
   });
@@ -1551,7 +1865,7 @@ function demoImmSophie() {
     steps: [
       newStep({ id: 't3s1', quoi: 'Extraire les statistiques de consultation', qui: S, outil: 'SharePoint', duree: '30', manuel: true, precision: '4 exports différents à faire à la main',
         sol: 'Extraction planifiée automatiquement chaque début de mois', levier: 'automatiser' }),
-      newStep({ id: 't3s2', quoi: 'Rassembler les chiffres dans Excel', qui: S, outil: 'Excel', duree: '90', ressaisie: true, manuel: true, precision: 'Copier-coller et calculs à la main, risque d\'erreur',
+      newStep({ id: 't3s2', donnees: 'Nombre de consultations par fiche et par mois', quoi: 'Rassembler les chiffres dans Excel', qui: S, outil: 'Excel', duree: '90', ressaisie: true, manuel: true, precision: 'Copier-coller et calculs à la main, risque d\'erreur',
         sol: 'Rapport Power BI branché directement sur les statistiques', levier: 'automatiser', securise: true, tracabilite: true }),
       newStep({ id: 't3s3', quoi: 'Faire les graphiques et la présentation', qui: S, outil: 'PowerPoint', duree: '60', manuel: true, precision: 'Les mêmes graphiques sont refaits chaque mois',
         sol: 'Le rapport en ligne remplace la présentation', levier: 'supprimer' }),
@@ -1569,7 +1883,7 @@ function demoImmSophie() {
     steps: [
       newStep({ id: 't4s1', quoi: 'Consulter les sites de veille', qui: S, outil: 'Navigateur', duree: '45', manuel: true, precision: '10 sites consultés un par un' }),
       newStep({ id: 't4s2', quoi: 'Résumer les nouveautés', qui: S, outil: 'Word', duree: '40' }),
-      newStep({ id: 't4s3', quoi: 'Valider le contenu', qui: CF, outil: 'Outlook', duree: '30', suivi: true, precision: 'Validation par mail, aucun historique' }),
+      newStep({ id: 't4s3', attente: '3', quoi: 'Valider le contenu', qui: CF, outil: 'Outlook', duree: '30', suivi: true, precision: 'Validation par mail, aucun historique' }),
       newStep({ id: 't4s4', quoi: 'Mettre en page et envoyer la lettre', qui: S, outil: 'Outlook', duree: '20', manuel: true, precision: 'Liste de diffusion tenue à la main' })
     ]
   });
@@ -1588,7 +1902,7 @@ function D(quoi, qui, outil, duree, flags = '', precision = '', sol = '', levier
     avis: sol && nouveauTemps !== '' ? 'ok' : ''
   }, extra));
 }
-function doneTask(o) { return newTask(Object.assign({ p1Done: true, p2Done: true, p3Done: true }, o)); }
+function doneTask(o) { return newTask(Object.assign({ p1Done: true, p2Done: true, p3Done: true, cartoValidee: true }, o)); }
 
 function demoDb() {
   const d = emptyDb();
@@ -1600,16 +1914,16 @@ function demoDb() {
   credits.taches = [
     doneTask({ nom: 'Constituer le dossier de prêt', freqQty: '60', freqPer: 'mois', origine: 'Pièces envoyées par le client', resultat: 'Dossier complet transmis à l\'analyste',
       quiSait: 'une', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
-        D('Réceptionner les pièces par mail', 'Karim', 'Outlook', 10, 'S', 'Pièces manquantes relancées à la main', 'Portail de dépôt avec liste des pièces manquantes', 'outiller', 4, { tracabilite: true }),
-        D('Ressaisir les infos client dans l\'outil crédit', 'Karim', 'Outil crédit', 15, 'R', 'Infos déjà présentes dans le CRM', 'Pré-remplissage automatique depuis le CRM', 'automatiser', 3),
-        D('Contrôler la complétude du dossier', 'Karim', 'Checklist papier', 12, 'M', 'Checklist papier, cochée à la main', 'Checklist intégrée à l\'outil avec blocage', 'outiller', 6, { securise: true }),
+        D('Réceptionner les pièces par mail', 'Karim', 'Outlook', 10, 'S', 'Pièces manquantes relancées à la main', 'Portail de dépôt avec liste des pièces manquantes', 'outiller', 4, { tracabilite: true, attente: '5', nouvelleAttente: '2', manipsEvitees: '4', effort: '2', porteur: 'DSI', echeance: '2026-06-30', statutAction: 'fait', tempsReel: '5', dateMesure: '2026-09-15', donnees: 'Pièces justificatives' }),
+        D('Ressaisir les infos client dans l\'outil crédit', 'Karim', 'Outil crédit', 15, 'R', 'Infos déjà présentes dans le CRM', 'Pré-remplissage automatique depuis le CRM', 'automatiser', 3, { manipsEvitees: '25', effort: '3', porteur: 'DSI', echeance: '2026-12-31', statutAction: 'encours', donnees: 'Identité, revenus, charges' }),
+        D('Contrôler la complétude du dossier', 'Karim', 'Checklist papier', 12, 'M', 'Checklist papier, cochée à la main', 'Checklist intégrée à l\'outil avec blocage', 'outiller', 6, { securise: true, manipsEvitees: '5', effort: '1', porteur: 'Karim', echeance: '2026-04-30', statutAction: 'fait', tempsReel: '6', dateMesure: '2026-07-01' }),
         D('Transmettre à l\'analyste', 'Karim', 'Outlook', 5)
       ] }),
     doneTask({ nom: 'Éditer les offres de prêt', freqQty: '50', freqPer: 'mois', origine: 'Accord de l\'analyste', resultat: 'Offre signée reçue',
       quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
         D('Générer l\'offre', 'Karim', 'Outil crédit', 8),
-        D('Corriger la mise en page', 'Karim', 'Word', 10, 'M', 'Le modèle sort mal formaté', 'Modèle d\'offre corrigé dans l\'outil', 'modele', 2),
-        D('Envoyer et suivre le retour signé', 'Karim', 'Outlook', 10, 'S', 'Relances manuelles', 'Signature électronique avec relance automatique', 'automatiser', 2, { tracabilite: true })
+        D('Corriger la mise en page', 'Karim', 'Word', 10, 'M', 'Le modèle sort mal formaté', 'Modèle d\'offre corrigé dans l\'outil', 'modele', 2, { manipsEvitees: '8', effort: '1', porteur: 'Karim', echeance: '2026-04-15', statutAction: 'fait', tempsReel: '3', dateMesure: '2026-07-01' }),
+        D('Envoyer et suivre le retour signé', 'Karim', 'Outlook', 10, 'S', 'Relances manuelles', 'Signature électronique avec relance automatique', 'automatiser', 2, { tracabilite: true, attente: '7', nouvelleAttente: '2', manipsEvitees: '4', effort: '2', porteur: 'DSI', echeance: '2026-09-30', statutAction: 'encours' })
       ] })
   ];
 
@@ -1619,14 +1933,14 @@ function demoDb() {
   succ.taches = [
     doneTask({ nom: 'Ouvrir un dossier de succession', freqQty: '25', freqPer: 'mois', origine: 'Acte de décès reçu du notaire', resultat: 'Comptes bloqués et dossier ouvert',
       quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
-        D('Recevoir et scanner l\'acte du notaire', 'Nadia', 'Courrier', 10, 'M', 'Courrier papier scanné à la main', 'Réception dématérialisée via une boîte notaires', 'outiller', 4),
-        D('Bloquer chaque compte du défunt', 'Nadia', 'Outil comptes', 15, 'R', 'Saisie compte par compte', 'Blocage groupé de tous les comptes', 'automatiser', 5, { securise: true }),
-        D('Créer le dossier dans le tableau de suivi', 'Nadia', 'Excel', 8, 'RS', 'Double saisie, pas de vision des délais', 'Tableau de bord des dossiers partagé', 'outiller', 2, { tracabilite: true })
+        D('Recevoir et scanner l\'acte du notaire', 'Nadia', 'Courrier', 10, 'M', 'Courrier papier scanné à la main', 'Réception dématérialisée via une boîte notaires', 'outiller', 4, { manipsEvitees: '3', effort: '1', porteur: 'Nadia', echeance: '2026-07-15', statutAction: 'fait', tempsReel: '4', dateMesure: '2026-10-01' }),
+        D('Bloquer chaque compte du défunt', 'Nadia', 'Outil comptes', 15, 'R', 'Saisie compte par compte', 'Blocage groupé de tous les comptes', 'automatiser', 5, { securise: true, manipsEvitees: '12', effort: '3', porteur: 'DSI', echeance: '2027-03-31', statutAction: 'afaire' }),
+        D('Créer le dossier dans le tableau de suivi', 'Nadia', 'Excel', 8, 'RS', 'Double saisie, pas de vision des délais', 'Tableau de bord des dossiers partagé', 'outiller', 2, { tracabilite: true, manipsEvitees: '6', effort: '1', porteur: 'Nadia', echeance: '2026-07-15', statutAction: 'fait', tempsReel: '3', dateMesure: '2026-10-01' })
       ] }),
     doneTask({ nom: 'Répondre aux notaires', freqQty: '6', freqPer: 'jour', origine: 'Demande d\'un notaire', resultat: 'Réponse envoyée',
       quiSait: 'une', modeOp: 'non', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
-        D('Rechercher le dossier', 'Nadia', 'Excel', 4, 'M', 'Recherche dans plusieurs fichiers', 'Tableau de bord unique', 'outiller', 1),
-        D('Rédiger la réponse', 'Nadia', 'Outlook', 8, 'M', 'Réponses rédigées à chaque fois', 'Bibliothèque de réponses types', 'modele', 4)
+        D('Rechercher le dossier', 'Nadia', 'Excel', 4, 'M', 'Recherche dans plusieurs fichiers', 'Tableau de bord unique', 'outiller', 1, { manipsEvitees: '2', effort: '1', porteur: 'Nadia', statutAction: 'fait' }),
+        D('Rédiger la réponse', 'Nadia', 'Outlook', 8, 'M', 'Réponses rédigées à chaque fois', 'Bibliothèque de réponses types', 'modele', 4, { manipsEvitees: '3', effort: '1', porteur: 'Nadia', echeance: '2026-08-31', statutAction: 'encours' })
       ] })
   ];
 
@@ -1637,8 +1951,8 @@ function demoDb() {
     doneTask({ nom: 'Traiter une opposition carte', freqQty: '15', freqPer: 'jour', origine: 'Appel du client', resultat: 'Carte opposée, client informé',
       quiSait: 'plusieurs', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
         D('Prendre l\'appel et identifier le client', 'Thomas', 'Téléphone', 6),
-        D('Faire l\'opposition', 'Thomas', 'Outil cartes', 4, 'R', 'Ressaisie du numéro de carte', 'Opposition lancée depuis la fiche client', 'automatiser', 2),
-        D('Envoyer la confirmation au client', 'Thomas', 'Outlook', 3, 'M', 'Mail rédigé à la main', 'Mail type envoyé automatiquement', 'automatiser', 0, { tracabilite: true })
+        D('Faire l\'opposition', 'Thomas', 'Outil cartes', 4, 'R', 'Ressaisie du numéro de carte', 'Opposition lancée depuis la fiche client', 'automatiser', 2, { manipsEvitees: '3', effort: '2', porteur: 'DSI', echeance: '2027-01-31', statutAction: 'afaire' }),
+        D('Envoyer la confirmation au client', 'Thomas', 'Outlook', 3, 'M', 'Mail rédigé à la main', 'Mail type envoyé automatiquement', 'automatiser', 0, { tracabilite: true, manipsEvitees: '4', effort: '1', porteur: 'Thomas', echeance: '2026-10-31', statutAction: 'fait', tempsReel: '0.5', dateMesure: '2026-10-28' })
       ] })
   ];
 
@@ -1648,9 +1962,9 @@ function demoDb() {
   habil.taches = [
     doneTask({ nom: 'Créer les accès d\'un nouvel arrivant', freqQty: '8', freqPer: 'mois', origine: 'Demande des RH', resultat: 'Accès envoyés au manager',
       quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
-        D('Recevoir la demande des RH', 'Claire', 'Outlook', 5, 'S', 'Demandes incomplètes', 'Formulaire de demande obligatoire', 'outiller', 2),
-        D('Créer les comptes dans 5 outils', 'Claire', '5 outils', 45, 'R', 'La même information saisie 5 fois', 'Demande unique avec création automatique', 'automatiser', 15, { securise: true }),
-        D('Envoyer les accès au manager', 'Claire', 'Outlook', 10, 'M', 'Mail préparé à la main', 'Kit d\'arrivée généré automatiquement', 'automatiser', 2, { tracabilite: true })
+        D('Recevoir la demande des RH', 'Claire', 'Outlook', 5, 'S', 'Demandes incomplètes', 'Formulaire de demande obligatoire', 'outiller', 2, { attente: '4', nouvelleAttente: '1', manipsEvitees: '2', effort: '1', porteur: 'RH + Claire', echeance: '2025-12-15', statutAction: 'fait', tempsReel: '2', dateMesure: '2026-03-01' }),
+        D('Créer les comptes dans 5 outils', 'Claire', '5 outils', 45, 'R', 'La même information saisie 5 fois', 'Demande unique avec création automatique', 'automatiser', 15, { securise: true, manipsEvitees: '40', effort: '3', porteur: 'DSI', echeance: '2026-06-30', statutAction: 'fait', tempsReel: '18', dateMesure: '2026-09-01', donnees: 'Identité, service, profils d\'accès' }),
+        D('Envoyer les accès au manager', 'Claire', 'Outlook', 10, 'M', 'Mail préparé à la main', 'Kit d\'arrivée généré automatiquement', 'automatiser', 2, { tracabilite: true, manipsEvitees: '6', effort: '1', porteur: 'Claire', echeance: '2025-12-15', statutAction: 'fait', tempsReel: '2', dateMesure: '2026-03-01' })
       ] })
   ];
 
