@@ -1405,7 +1405,11 @@
             var h = Math.floor(min / 60), m = min % 60;
             return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
         }
-        function mondayOf(date) {
+        // Nom distinct de mondayOf(iso) ci-dessous (Coms attendues, prend une
+        // chaîne de date et renvoie une chaîne) : même page, deux fonctions du
+        // même nom se seraient écrasées l'une l'autre (la dernière déclarée
+        // dans le fichier l'emporte), cassant l'une des deux fonctionnalités.
+        function chargeMondayOfDate(date) {
             var d = new Date(date.getTime()); d.setHours(0, 0, 0, 0);
             var day = (d.getDay() + 6) % 7; // lundi=0 … dimanche=6
             d.setDate(d.getDate() - day);
@@ -1414,7 +1418,7 @@
         var CHARGE_WEEKS_AHEAD = 11; // fenêtre affichée : semaine courante + 11 suivantes (~3 mois)
         function buildWeekColumns() {
             var wf = IM.workflow;
-            var monday = mondayOf(new Date());
+            var monday = chargeMondayOfDate(new Date());
             var cols = [];
             for (var i = 0; i <= CHARGE_WEEKS_AHEAD; i++) {
                 var d = new Date(monday.getTime()); d.setDate(d.getDate() + i * 7);
