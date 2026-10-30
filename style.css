@@ -483,3 +483,19 @@ input.w-date { width: 160px; display: inline-block; }
 @media (max-width: 1100px) { .act-fields { grid-template-columns: 1fr 1fr; } .val-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .step-meta.two { grid-template-columns: 1fr; } .act-fields { grid-template-columns: 1fr; } }
 .recap-row b { white-space: nowrap; text-align: right; }
+
+/* ---------- Dossier de données, coûts ---------- */
+.saved { font: inherit; font-size: 11.5px; color: #93a0bb; background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 5px 9px; flex: none; cursor: default; white-space: nowrap; }
+a.saved, button.saved { cursor: pointer; }
+a.saved:hover { text-decoration: none; color: #fff; }
+.saved.ok { color: #9be3be; border-color: #2f6b52; }
+.saved.warn { color: #ffd38a; border-color: #8a6420; cursor: pointer; }
+.saved.warn:hover { background: rgba(255, 211, 138, .1); }
+.act-cost { display: grid; grid-template-columns: auto auto 1fr; gap: 14px; align-items: end; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.act-cost label { display: flex; flex-direction: column; gap: 4px; }
+.cost-sum { font-size: 13.5px; color: var(--muted); padding-bottom: 8px; }
+.cost-sum b { color: var(--ink); }
+.chip.anon { padding: 10px 14px; }
+.chip.anon.on { background: #16203a; border-color: #16203a; }
+code { background: #eef1f6; border-radius: 4px; padding: 1px 5px; font-size: 12.5px; }
+@media (max-width: 760px) { .act-cost { grid-template-columns: 1fr; } }

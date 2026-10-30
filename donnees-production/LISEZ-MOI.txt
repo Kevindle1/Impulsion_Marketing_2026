@@ -1,0 +1,17 @@
+Dossier de données de production de Carto Process
+==================================================
+
+Au premier lancement, dans Carto Process : « Mes immersions » > « Dossier de données »
+> « Choisir le dossier de données », puis sélectionner CE dossier.
+
+Ensuite tout s'enregistre ici automatiquement :
+  - parametres.json                      paramètres communs (ETP, coût horaire…)
+  - <AAAA-MM> - <Poste> - <Prénom>/       un sous-dossier par immersion (par poste)
+      immersion.json                     toutes les données de l'immersion
+      restitution-….pptx, schémas, CSV   les exports faits depuis l'outil
+
+Au démarrage, l'outil relit ce dossier. Si le navigateur le demande,
+cliquer sur « Ouvrir le dossier de données » (un clic par session).
+
+Navigateur : Microsoft Edge ou Google Chrome.
+Ne pas renommer les sous-dossiers à la main pendant que l'outil est ouvert.

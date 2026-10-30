@@ -107,7 +107,8 @@ function newStep(o) {
     // Phase 3 (estimations données par la personne)
     nouveauTemps: '', manipsEvitees: '', nouvelleAttente: '', avis: '',
     // Plan d'action et suivi après mise en place
-    effort: '', porteur: '', echeance: '', statutAction: '', tempsReel: '', dateMesure: ''
+    effort: '', porteur: '', echeance: '', statutAction: '', tempsReel: '', dateMesure: '',
+    coutJours: '', coutEuros: ''          // coût de mise en place : charge interne (jours) + achats (€)
   }, o);
 }
 function newTask(o) {
@@ -116,6 +117,8 @@ function newTask(o) {
     quiSait: '', modeOp: '', notes: '',
     quiSaitApres: '', modeOpApres: '', notesValidation: '',
     cartoValidee: false, cartoValideeLe: '',
+    penibilite: '', penibiliteApres: '',  // ressenti de 1 (pas pénible) à 5 (très pénible)
+    erreurs: '', erreursApres: '',        // erreurs ou reprises par mois
     p1Done: false, p2Done: false, p3Done: false,
     steps: []
   }, o);
@@ -128,7 +131,7 @@ function newImm(o) {
   }, o);
 }
 function emptyDb() {
-  return { version: 3, isDemo: false, activeId: null, lastExport: '', settings: { heuresEtp: '1607', seuilGain: '20' }, immersions: [] };
+  return { version: 3, isDemo: false, activeId: null, lastExport: '', settings: { heuresEtp: '1607', seuilGain: '20', coutHoraire: '40', anonyme: false }, immersions: [] };
 }
 
 /* ---------- Calculs ---------- */
@@ -154,6 +157,13 @@ function quadrant(t, s) {
   if (high) return e <= 1 ? 'quickwin' : e === 2 ? 'planifier' : 'structurant';
   return e <= 1 ? 'petit' : e === 2 ? 'arbitrer' : 'ecarter';
 }
+const coutH = () => num(db.settings.coutHoraire);
+const eur = min => min / 60 * coutH();
+const fmtEur = n => Math.round(n).toLocaleString('fr-FR') + ' €';
+const invest = s => num(s.coutJours) * 7 * coutH() + num(s.coutEuros);
+// Nombre de mois pour que le gain rembourse le coût de mise en place
+const payback = (inv, gainMin) => inv > 0 && gainMin > 0 ? inv / (eur(gainMin) / 12) : null;
+const fmtMois = m => m == null ? '—' : m < 1 ? 'moins d\'1 mois' : Math.ceil(m) + ' mois';
 const QUAD_ORDER = ['quickwin', 'planifier', 'structurant', 'petit', 'arbitrer', 'ecarter', 'aevaluer'];
 
 function riskScore(qs, mo) {
@@ -166,7 +176,7 @@ function taskStats(t) {
   const r = {
     avant: 0, apres: 0, irrit: 0, parFois: 0, nbIrr: 0, solutions: 0, validees: 0, supprimees: 0,
     tracab: 0, controles: 0, manips: 0, delaiAvant: 0, delaiApres: 0,
-    actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0, flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 }
+    actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0, invest: 0, flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 }
   };
   t.steps.forEach(s => {
     const occ = stepOcc(t, s);
@@ -186,6 +196,7 @@ function taskStats(t) {
       if (s.tracabilite) r.tracab++;
       if (s.securise) r.controles++;
       r.actions++;
+      r.invest += invest(s);
       if (s.statutAction === 'fait') r.actionsFaites++;
       if (isMeasured(s)) {
         r.mesures++;
@@ -195,6 +206,9 @@ function taskStats(t) {
     }
   });
   r.gain = r.avant - r.apres;
+  r.penAvant = num(t.penibilite);
+  r.penApres = t.penibiliteApres !== '' ? num(t.penibiliteApres) : r.penAvant;
+  r.erreursEvitees = t.erreursApres !== '' ? Math.max(0, num(t.erreurs) - num(t.erreursApres)) * 12 : 0;
   r.riskAvant = riskScore(t.quiSait, t.modeOp);
   r.riskApres = riskScore(t.quiSaitApres || t.quiSait, t.modeOpApres || t.modeOp);
   return r;
@@ -202,19 +216,43 @@ function taskStats(t) {
 function globalStats(imm = state) {
   const g = { avant: 0, apres: 0, gain: 0, irrit: 0, solutions: 0, validees: 0, supprimees: 0, tracab: 0, controles: 0,
     manips: 0, actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0,
+    invest: 0, erreursEvitees: 0, penN: 0, penAvant: 0, penApres: 0,
     flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 },
     simplifiees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0 };
   imm.taches.forEach(t => {
     const s = taskStats(t);
     ['avant', 'apres', 'gain', 'irrit', 'solutions', 'validees', 'supprimees', 'tracab', 'controles',
-      'manips', 'actions', 'actionsFaites', 'mesures', 'gainReel', 'gainEstimeMesure'].forEach(k => { g[k] += s[k]; });
+      'manips', 'actions', 'actionsFaites', 'mesures', 'gainReel', 'gainEstimeMesure', 'invest', 'erreursEvitees'].forEach(k => { g[k] += s[k]; });
+    if (s.penAvant) { g.penN++; g.penAvant += s.penAvant; g.penApres += s.penApres; }
     FLAGS.forEach(f => { g.flagsAvant[f.key] += s.flagsAvant[f.key]; g.flagsLeves[f.key] += s.flagsLeves[f.key]; });
     if (s.gain > 0.0001) g.simplifiees++;
     if (s.riskAvant === 3) g.riskHautAvant++;
     if (s.riskApres === 3) g.riskHautApres++;
     if (s.riskAvant && s.riskApres < s.riskAvant) g.riskBaisse++;
   });
+  g.penMoyAvant = g.penN ? g.penAvant / g.penN : 0;
+  g.penMoyApres = g.penN ? g.penApres / g.penN : 0;
   return g;
+}
+const fmtPen = p => p ? fmtDec(p) + ' / 5' : '—';
+const PENIBILITE = { 1: '1 · pas du tout', 2: '2', 3: '3 · moyen', 4: '4', 5: '5 · très pénible' };
+
+// Version « vitrine » : le prénom de la personne et les remarques personnelles sont retirés
+function anonClone(imm) {
+  const name = (imm.mission.personne || '').trim();
+  let json = JSON.stringify(imm);
+  if (name) json = json.replace(new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), 'Titulaire');
+  const c = JSON.parse(json);
+  c.mission.personne = '';
+  c.taches.forEach(t => { t.notes = ''; t.notesValidation = ''; });
+  return c;
+}
+// Exécute fn avec l'immersion ouverte anonymisée si le mode vitrine est actif
+function asShown(fn) {
+  if (!db.settings.anonyme || !state) return fn();
+  const real = state;
+  state = anonClone(real);
+  try { return fn(); } finally { state = real; }
 }
 
 /* ---------- Persistance ---------- */
@@ -258,19 +296,192 @@ function setActive(imm) {
   state = imm;
   db.activeId = imm ? imm.id : null;
 }
-function save() {
+function save(touch = true) {
+  if (touch && state) state.updatedAt = new Date().toISOString();
   try {
     localStorage.setItem(STORE_KEY, JSON.stringify(db));
     lastSaved = new Date();
-    const el = document.getElementById('savedAt');
-    if (el) el.textContent = savedLabel();
   } catch (e) {
-    toast('Enregistrement impossible dans ce navigateur : pense à exporter une sauvegarde.');
+    if (dirStatus !== 'ok') toast('Enregistrement impossible dans ce navigateur : pense à exporter une sauvegarde.');
+  }
+  scheduleDiskWrite();
+  const el = document.getElementById('savedAt');
+  if (el) el.outerHTML = savedBadge();
+}
+const hhmm = d => d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+function savedBadge() {
+  if (dirStatus === 'ok') return `<span class="saved ok" id="savedAt" title="Enregistrement automatique dans le dossier de données">💾 ${esc(dirHandle.name)} · ${dirSaved ? hhmm(dirSaved) : 'connecté'}</span>`;
+  if (dirStatus === 'needs-permission') return `<button class="saved warn" id="savedAt" data-action="reconnect-dir">🔒 Ouvrir le dossier de données</button>`;
+  if (dirStatus === 'error') return `<button class="saved warn" id="savedAt" data-action="reconnect-dir" title="${esc(dirError)}">⚠ Dossier inaccessible · réessayer</button>`;
+  return `<a class="saved" id="savedAt" href="#/immersions">${lastSaved ? '✓ Navigateur · ' + hhmm(lastSaved) : 'Enregistrement automatique'}${FS_OK ? ' · dossier non connecté' : ''}</a>`;
+}
+
+/* ---------- Dossier « données de production » ----------
+   On choisit une fois le dossier (ex : V:\…\carto-process\donnees-production).
+   Chaque immersion y a son sous-dossier avec immersion.json, enregistré automatiquement,
+   et les exports (PowerPoint, schémas, CSV) y sont déposés. Au démarrage, le dossier est relu. */
+const FS_OK = 'showDirectoryPicker' in window;
+let dirHandle = null;
+let dirStatus = 'none';          // none | needs-permission | ok | error
+let dirSaved = null;
+let dirError = '';
+let diskTimer = null;
+const written = new Map();       // dernier contenu écrit, par fichier
+
+function idbCall(mode, fn) {
+  return new Promise((resolve, reject) => {
+    const open = indexedDB.open('cartoProcess', 1);
+    open.onupgradeneeded = () => open.result.createObjectStore('kv');
+    open.onerror = () => reject(open.error);
+    open.onsuccess = () => {
+      const tx = open.result.transaction('kv', mode);
+      const req = fn(tx.objectStore('kv'));
+      tx.oncomplete = () => resolve(req && req.result);
+      tx.onerror = () => reject(tx.error);
+    };
+  });
+}
+const idbGet = k => idbCall('readonly', st => st.get(k));
+const idbSet = (k, v) => idbCall('readwrite', st => st.put(v, k));
+
+const cleanName = str => String(str).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 90);
+// Nom du sous-dossier d'une immersion : « 2026-11 - Poste - Prénom » (fixé à la première écriture)
+function folderName(imm) {
+  const m = imm.mission;
+  const label = m.poste || m.service;
+  if (!label) return '';
+  return cleanName(`${(m.debut || imm.createdAt || '').slice(0, 7)} - ${label}${m.personne ? ' - ' + m.personne : ''}`);
+}
+async function writeText(dir, name, text) {
+  const fh = await dir.getFileHandle(name, { create: true });
+  const w = await fh.createWritable();
+  await w.write(text);
+  await w.close();
+}
+function scheduleDiskWrite() {
+  if (dirStatus !== 'ok') return;
+  clearTimeout(diskTimer);
+  diskTimer = setTimeout(writeDirty, 600);
+}
+async function writeDirty() {
+  if (dirStatus !== 'ok') return;
+  try {
+    const settings = JSON.stringify(db.settings, null, 2);
+    if (written.get('parametres.json') !== settings) { await writeText(dirHandle, 'parametres.json', settings); written.set('parametres.json', settings); }
+    for (const imm of db.immersions) {
+      if (!imm.dossier) {
+        const base = folderName(imm);
+        if (!base) continue;                         // pas encore de poste ni de service : on attend
+        let name = base, k = 2;
+        while (await dirHandle.getDirectoryHandle(name).then(() => true, () => false)) name = `${base} (${k++})`;
+        imm.dossier = name;
+        localStorage.setItem(STORE_KEY, JSON.stringify(db));
+      }
+      const json = JSON.stringify(imm, null, 2);
+      const key = imm.dossier + '/immersion.json';
+      if (written.get(key) === json) continue;
+      const dir = await dirHandle.getDirectoryHandle(imm.dossier, { create: true });
+      await writeText(dir, 'immersion.json', json);
+      written.set(key, json);
+    }
+    dirSaved = new Date();
+  } catch (e) {
+    dirStatus = 'error';
+    dirError = e.message;
+    toast('Écriture impossible dans le dossier de données : ' + e.message);
+  }
+  const el = document.getElementById('savedAt');
+  if (el) el.outerHTML = savedBadge();
+}
+// Relit le dossier et le fusionne avec ce que le navigateur connaît (la version la plus récente gagne)
+async function loadFromDir() {
+  const disk = [];
+  for await (const [name, entry] of dirHandle.entries()) {
+    if (entry.kind !== 'directory' || name.startsWith('_') || name.startsWith('.')) continue;
+    try {
+      const file = await (await entry.getFileHandle('immersion.json')).getFile();
+      const text = await file.text();
+      const imm = normalizeImm(JSON.parse(text));
+      imm.dossier = name;
+      disk.push(imm);
+    } catch (e) { /* sous-dossier sans immersion.json : ignoré */ }
+  }
+  try {
+    const p = await (await dirHandle.getFileHandle('parametres.json')).getFile();
+    db.settings = Object.assign(emptyDb().settings, db.settings, JSON.parse(await p.text()));
+  } catch (e) { /* pas encore de paramètres enregistrés */ }
+  const local = db.isDemo ? [] : db.immersions;   // la démo n'est jamais copiée dans le dossier
+  const byId = new Map(disk.map(i => [i.id, i]));
+  local.forEach(i => {
+    const d = byId.get(i.id);
+    if (!d) byId.set(i.id, i);
+    else if ((i.updatedAt || '') > (d.updatedAt || '')) { i.dossier = d.dossier; byId.set(i.id, i); }
+  });
+  const activeId = db.activeId;
+  db.immersions = [...byId.values()];
+  if (db.isDemo) { db.isDemo = false; portfolioYear = String(new Date().getFullYear()); }
+  setActive(db.immersions.find(i => i.id === activeId) || null);
+  dirStatus = 'ok';
+  dirError = '';
+  save(false);
+  await writeDirty();
+}
+async function connectDir() {
+  try {
+    const h = await window.showDirectoryPicker({ id: 'carto-process-donnees', mode: 'readwrite' });
+    if (db.isDemo && !confirm(`Utiliser « ${h.name} » comme dossier de données ?\nLes données de démonstration ne seront pas copiées dedans.`)) return;
+    dirHandle = h;
+    await idbSet('dir', h);
+    await loadFromDir();
+    toast(`Dossier « ${h.name} » connecté : tout s'y enregistre automatiquement.`);
+    go('#/immersions');
+    render();
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('Impossible d\'utiliser ce dossier : ' + e.message);
   }
 }
-const savedLabel = () => lastSaved
-  ? '✓ Enregistré à ' + lastSaved.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  : 'Enregistrement automatique';
+async function reconnectDir() {
+  if (!dirHandle) return connectDir();
+  try {
+    if (await dirHandle.requestPermission({ mode: 'readwrite' }) !== 'granted') { toast('Accès au dossier refusé.'); return; }
+    await loadFromDir();
+    toast(`Dossier « ${dirHandle.name} » rechargé.`);
+    render();
+  } catch (e) {
+    dirStatus = 'error'; dirError = e.message;
+    toast('Dossier inaccessible : ' + e.message + '. Choisis-le à nouveau.');
+    render();
+  }
+}
+// Au démarrage : on retrouve le dossier choisi la dernière fois et on le recharge
+async function initDir() {
+  if (!FS_OK) return;
+  try {
+    const h = await idbGet('dir');
+    if (!h) { render(); return; }
+    dirHandle = h;
+    if (await h.queryPermission({ mode: 'readwrite' }) === 'granted') await loadFromDir();
+    else dirStatus = 'needs-permission';
+  } catch (e) {
+    dirStatus = 'error'; dirError = e.message;
+  }
+  render();
+}
+// Dépose un fichier dans le dossier de l'immersion ouverte, sinon téléchargement classique
+async function saveFile(blob, name) {
+  if (dirStatus === 'ok' && state && state.dossier) {
+    try {
+      const dir = await dirHandle.getDirectoryHandle(state.dossier, { create: true });
+      const fh = await dir.getFileHandle(name, { create: true });
+      const w = await fh.createWritable();
+      await w.write(blob);
+      await w.close();
+      toast(`Enregistré dans « ${state.dossier} » : ${name}`);
+      return;
+    } catch (e) { toast('Écriture dans le dossier impossible, téléchargement à la place.'); }
+  }
+  download(blob, name);
+}
 
 /* ---------- Navigation ---------- */
 function route() {
@@ -338,6 +549,11 @@ function render() {
 
 // Les données ne vivent que dans le navigateur : on rappelle d'exporter tous les 3 jours
 function backupReminder() {
+  if (dirStatus === 'needs-permission') return `<div class="banner no-print"><span><b>Dossier de données « ${esc(dirHandle.name)} ».</b> Le navigateur demande ton accord pour le rouvrir.</span>
+    <button class="btn sm primary" data-action="reconnect-dir">🔒 Ouvrir le dossier</button></div>`;
+  if (dirStatus === 'ok') return '';
+  if (FS_OK && dirStatus === 'none' && !db.isDemo) return `<div class="banner no-print"><span><b>Enregistrement automatique sur disque :</b> choisis une fois le dossier « donnees-production » (à côté de index.html).</span>
+    <button class="btn sm primary" data-action="connect-dir">📁 Choisir le dossier</button></div>`;
   if (!db.immersions.some(i => i.taches.length)) return '';
   const days = db.lastExport ? Math.floor((Date.now() - new Date(db.lastExport)) / 86400000) : null;
   if (days !== null && days < 3) return '';
@@ -376,7 +592,7 @@ function viewTopbar() {
   const r = route();
   const inImm = state && r.page !== 'immersions';
   const brand = `<a class="brand" href="#/immersions" title="Toutes mes immersions"><span class="logo">CP</span><span><strong>Carto Process</strong><small>${inImm ? '← Mes immersions' : 'Mes immersions'}</small></span></a>`;
-  if (!inImm) return `${brand}<div class="top-title">Tableau de bord de mes immersions</div><span class="saved" id="savedAt">${savedLabel()}</span>`;
+  if (!inImm) return `${brand}<div class="top-title">Tableau de bord de mes immersions</div>${savedBadge()}`;
   return `${brand}
     <a class="imm-name${r.page === 'accueil' ? ' active' : ''}" href="#/accueil" title="La mission de cette immersion">${esc(immLabel(state))}</a>
     <nav class="stepper">${PHASES.map(p => {
@@ -384,7 +600,7 @@ function viewTopbar() {
       return `<a class="phase-step${r.phase === p.n ? ' active' : ''}${pr.done ? ' done' : ''}" href="#/${p.n}">
         <span class="n">${pr.done ? '✓' : p.n}</span><span class="txt"><b>${p.titre}</b><small>${pr.txt}</small></span></a>`;
     }).join('<span class="sep">›</span>')}</nav>
-    <span class="saved" id="savedAt">${savedLabel()}</span>`;
+    ${savedBadge()}`;
 }
 const immLabel = imm => [imm.mission.service, imm.mission.personne].filter(Boolean).join(' · ') || 'Nouvelle immersion';
 
@@ -456,21 +672,21 @@ function viewPortfolio() {
   if (portfolioYear !== 'all' && !years.includes(portfolioYear)) portfolioYear = years[0] || String(new Date().getFullYear());
   const list = all.filter(i => portfolioYear === 'all' || immYear(i) === portfolioYear)
     .slice().sort((a, b) => immDate(b).localeCompare(immDate(a)));
-  const rows = list.map(i => ({ i, g: globalStats(i), st: immStatus(i) }));
+  const rows = list.map(i => ({ i: db.settings.anonyme ? anonClone(i) : i, g: globalStats(i), st: immStatus(i) }));
   const T = rows.reduce((a, { g }) => {
     ['avant', 'apres', 'gain', 'simplifiees', 'validees', 'supprimees', 'riskHautAvant', 'riskHautApres', 'riskBaisse',
-      'manips', 'actions', 'actionsFaites', 'mesures', 'gainReel', 'gainEstimeMesure'].forEach(k => { a[k] += g[k]; });
+      'manips', 'actions', 'actionsFaites', 'mesures', 'gainReel', 'gainEstimeMesure', 'invest', 'penN', 'penAvant', 'penApres'].forEach(k => { a[k] += g[k]; });
     FLAGS.forEach(f => { a.leves += g.flagsLeves[f.key]; a.flags += g.flagsAvant[f.key]; });
     return a;
   }, { avant: 0, apres: 0, gain: 0, simplifiees: 0, validees: 0, supprimees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0, leves: 0, flags: 0,
-    manips: 0, actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0 });
+    manips: 0, actions: 0, actionsFaites: 0, mesures: 0, gainReel: 0, gainEstimeMesure: 0, invest: 0, penN: 0, penAvant: 0, penApres: 0 });
   const ameliores = rows.filter(r => r.g.gain > 0.0001).length;
   const nbTaches = rows.reduce((a, r) => a + r.i.taches.length, 0);
 
   const header = `<header class="phase-head">
       <div><div class="eyebrow">Prendre de la hauteur</div><h1>Mes immersions</h1>
         <p class="sub">Toutes les immersions menées, le temps gagné par service et les postes améliorés. Ouvre une immersion pour la continuer, ou crées-en une nouvelle.</p></div>
-      <div class="actions no-print"><button class="btn lg" data-action="print">🖶 Imprimer le bilan</button><button class="btn primary lg" data-action="new-imm">+ Nouvelle immersion</button></div>
+      <div class="actions no-print">${toggle('settings', 'anonyme', db.settings.anonyme, db.settings.anonyme ? '🕶 Version anonyme' : '🕶 Anonymiser', 'anon')}<button class="btn lg" data-action="print">🖶 Imprimer le bilan</button><button class="btn primary lg" data-action="new-imm">+ Nouvelle immersion</button></div>
     </header>`;
   if (!all.length) {
     return `${header}<div class="empty">Aucune immersion pour l'instant.<br><button class="btn primary lg" data-action="new-imm">+ Créer ma première immersion</button>
@@ -499,7 +715,8 @@ function viewPortfolio() {
       ${[...years, 'all'].map(y => `<button class="chip${portfolioYear === y ? ' on' : ''}" data-action="year" data-value="${y}">${y === 'all' ? 'Toutes' : y}</button>`).join('')}</div>
 
     <div class="kpis">
-      ${kpi('Temps gagné', fmtDur(Math.max(0, T.gain)) + ' / an', `${fmtEtp(Math.max(0, T.gain))} · ${pct(Math.max(0, T.gain), T.avant)} du temps analysé`, 'good')}
+      ${kpi('Temps gagné', fmtDur(Math.max(0, T.gain)) + ' / an', `${fmtEtp(Math.max(0, T.gain))} · ≈ ${fmtEur(eur(Math.max(0, T.gain)))} / an · ${pct(Math.max(0, T.gain), T.avant)} du temps analysé`, 'good')}
+      ${kpi('Pénibilité moyenne', T.penN ? `${fmtDec(T.penAvant / T.penN)} → ${fmtDec(T.penApres / T.penN)}` : '—', `sur 5 · investissement ${T.invest ? fmtEur(T.invest) : 'non chiffré'}`, T.penApres < T.penAvant ? 'good' : '')}
       ${kpi('Immersions menées', rows.length, `${plural(ameliores, 'poste amélioré', 'postes améliorés')}`)}
       ${kpi('Manipulations évitées', fmtInt(T.manips), 'par an', 'good')}
       ${kpi('Tâches simplifiées', `${T.simplifiees} / ${nbTaches}`, `${T.leves} / ${T.flags} irritants levés`)}
@@ -536,7 +753,7 @@ function viewPortfolio() {
         <button class="btn primary no-print" data-action="new-imm">+ Nouvelle immersion</button></div>
       <div class="table-wrap"><table class="imm-table">
         <thead><tr><th>Période</th><th>Service</th><th>Poste · personne</th><th>Avancement</th><th class="right">Tâches</th><th class="right">Temps analysé</th><th class="right">Gain / an</th><th>Personne clé*</th><th class="no-print"></th></tr></thead>
-        <tbody>${rows.map(({ i, g, st }) => `<tr${i === state ? ' class="current"' : ''}>
+        <tbody>${rows.map(({ i, g, st }) => `<tr${state && i.id === state.id ? ' class="current"' : ''}>
           <td class="small">${i.mission.debut ? new Date(i.mission.debut).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : '—'}</td>
           <td><b>${esc(i.mission.service || '—')}</b></td>
           <td>${esc(i.mission.poste || '—')}<div class="small muted">${esc(i.mission.personne)}</div></td>
@@ -555,10 +772,24 @@ function viewPortfolio() {
     ${dataCard()}`;
 }
 function dataCard() {
+  const folder = !FS_OK
+    ? `<p class="muted">Ce navigateur ne permet pas l'enregistrement direct dans un dossier : utilise <b>Edge</b> ou <b>Chrome</b>. En attendant, exporte une sauvegarde chaque jour.</p>`
+    : dirStatus === 'ok'
+      ? `<p>✅ Connecté au dossier <b>« ${esc(dirHandle.name)} »</b>. Chaque immersion y a son sous-dossier avec <code>immersion.json</code> ; les PowerPoint, schémas et CSV y sont aussi déposés. Au prochain démarrage, le dossier est rechargé automatiquement.</p>
+         <div class="actions"><button class="btn" data-action="connect-dir">Changer de dossier</button></div>`
+      : dirStatus === 'needs-permission'
+        ? `<p>Le dossier <b>« ${esc(dirHandle.name)} »</b> est mémorisé. Le navigateur demande ton accord pour le rouvrir.</p><div class="actions"><button class="btn primary" data-action="reconnect-dir">🔒 Ouvrir le dossier</button></div>`
+        : `<p>Choisis <b>une seule fois</b> le dossier <code>donnees-production</code> situé à côté de <code>index.html</code> (par exemple sur le lecteur V:). Ensuite tout s'y enregistre automatiquement, un sous-dossier par poste, et il est rechargé à chaque démarrage.</p>
+           ${dirStatus === 'error' ? `<p class="bad small">Dernière erreur : ${esc(dirError)}</p>` : ''}
+           <div class="actions"><button class="btn primary" data-action="connect-dir">📁 Choisir le dossier de données</button></div>`;
   return `<div class="card no-print">
+    <div class="card-head"><div><h2>Dossier de données</h2></div></div>
+    ${folder}
+  </div>
+  <div class="card no-print">
     <div class="card-head"><div><h2>Sauvegarde</h2><p class="muted">Tout s'enregistre automatiquement dans ce navigateur, sur ce poste uniquement. Exporte une sauvegarde complète à la fin de chaque journée.</p></div></div>
     <div class="actions">
-      <button class="btn primary" data-action="export-json">⭳ Exporter la sauvegarde complète</button>
+      <button class="btn${dirStatus === 'ok' ? '' : ' primary'}" data-action="export-json">⭳ Exporter la sauvegarde complète</button>
       <button class="btn" data-action="import-json">⭱ Importer (sauvegarde ou immersion)</button>
       <button class="btn" data-action="load-demo">Recharger la démo</button>
       <button class="btn danger" data-action="reset-all">Tout effacer</button>
@@ -599,7 +830,7 @@ function viewAccueil() {
         <button class="btn danger" data-action="del-imm" data-id="${state.id}">Supprimer cette immersion</button>
       </div>
       <p class="muted small" style="margin-top:12px">Calcul : temps par an = minutes par fois × nombre de fois par an (1 jour = 220 jours ouvrés, 1 semaine = 47, 1 mois = 12).
-        Un ETP = ${numInp('settings', 'heuresEtp', db.settings.heuresEtp, 'class="tiny"')} heures par an.</p>
+        Un ETP = ${numInp('settings', 'heuresEtp', db.settings.heuresEtp, 'class="tiny"')} heures par an. Coût horaire chargé : ${numInp('settings', 'coutHoraire', db.settings.coutHoraire, 'class="tiny"')} € / h.</p>
     </div>`;
 }
 
@@ -725,9 +956,12 @@ function viewFiche1(t) {
         </section>
 
         <section class="block">
-          <h2 class="block-title"><span>C</span> En cas d'absence de ${name}</h2>
-          ${question(6, 'Qui d\'autre sait faire cette tâche ?', 'Pour mesurer le risque « personne clé ».', chips('t', 'quiSait', t.quiSait, QUI_SAIT))}
-          ${question(7, 'Existe-t-il un mode opératoire écrit ?', 'Une procédure, une fiche, une checklist qu\'un remplaçant pourrait suivre.', chips('t', 'modeOp', t.modeOp, MODE_OP))}
+          <h2 class="block-title"><span>C</span> Ressenti, erreurs et absences</h2>
+          ${question(6, 'Sur 5, à quel point cette tâche est-elle pénible pour toi ?', 'Le ressenti de ' + name + ' : répétitif, stressant, fastidieux…', chips('t', 'penibilite', t.penibilite, PENIBILITE))}
+          ${question(7, 'Combien d\'erreurs ou de reprises par mois, environ ?', 'Dossiers à refaire, oublis, corrections demandées. 0 si aucune.',
+            `<div class="inline nowrap">${numInp('t', 'erreurs', t.erreurs, 'class="w-num" placeholder="ex : 3"')}<span>par mois</span></div>`)}
+          ${question(8, `En cas d'absence de ${name}, qui d'autre sait faire cette tâche ?`, 'Pour mesurer le risque « personne clé ».', chips('t', 'quiSait', t.quiSait, QUI_SAIT))}
+          ${question(9, 'Existe-t-il un mode opératoire écrit ?', 'Une procédure, une fiche, une checklist qu\'un remplaçant pourrait suivre.', chips('t', 'modeOp', t.modeOp, MODE_OP))}
         </section>
 
         <section class="block">
@@ -764,6 +998,8 @@ function viewFiche1(t) {
         <div class="recap-row"><span>Qui coincent</span><b class="${s.nbIrr ? 'bad' : ''}">${s.nbIrr}</b></div>
         <div class="recap-row"><span>Temps qui coince</span><b class="${s.irrit ? 'bad' : ''}">${fmtDur(s.irrit)} / an</b></div>
         <div class="recap-row"><span>Attentes cumulées</span><b>${fmtJours(s.delaiAvant)}</b></div>
+        <div class="recap-row"><span>Pénibilité</span><b>${fmtPen(s.penAvant)}</b></div>
+        <div class="recap-row"><span>Erreurs</span><b>${t.erreurs !== '' ? fmtDec(num(t.erreurs)) + ' / mois' : '—'}</b></div>
         <div class="recap-row"><span>Personne clé</span>${riskBadge(s.riskAvant)}</div>
         <div class="recap-row"><span>Schéma validé</span>${t.cartoValidee ? '<span class="badge ok">✓ Oui</span>' : '<span class="badge">Pas encore</span>'}</div>
       </aside>
@@ -931,11 +1167,14 @@ function viewFiche3(t) {
           ${cards || `<div class="empty small">Aucune solution proposée pour cette tâche.<br><a class="btn" href="#/2/${t.id}">Retour à la réflexion</a></div>`}
         </section>
         <section class="block">
-          <h2 class="block-title"><span>B</span> Demain, en cas d'absence de ${name}</h2>
-          <p class="muted small">Aujourd'hui : ${esc(QUI_SAIT[t.quiSait] || 'non renseigné')} · mode opératoire : ${esc(MODE_OP[t.modeOp] || 'non renseigné')}.</p>
-          ${question(1, 'Avec ces changements, qui d\'autre pourrait faire cette tâche ?', 'Par exemple si le travail est mieux outillé ou documenté.', chips('t', 'quiSaitApres', t.quiSaitApres, QUI_SAIT))}
-          ${question(2, 'Y aura-t-il un mode opératoire écrit ?', 'S\'il est prévu dans les solutions, réponds « Oui, à jour ».', chips('t', 'modeOpApres', t.modeOpApres, MODE_OP))}
-          ${question(3, 'Remarques de ' + name, '', area('t', 'notesValidation', t.notesValidation, 'rows="2" placeholder="Son avis sur les solutions, ses conditions, ses craintes…"'))}
+          <h2 class="block-title"><span>B</span> Demain : ressenti, erreurs, absences</h2>
+          <p class="muted small">Aujourd'hui : pénibilité ${fmtPen(num(t.penibilite))} · ${t.erreurs !== '' ? fmtDec(num(t.erreurs)) + ' erreurs / mois' : 'erreurs non renseignées'} · ${esc(QUI_SAIT[t.quiSait] || 'remplaçant non renseigné')} · mode opératoire : ${esc(MODE_OP[t.modeOp] || 'non renseigné')}.</p>
+          ${question(1, 'Avec ces changements, la tâche serait pénible à combien sur 5 ?', 'Son ressenti, comme pour le temps.', chips('t', 'penibiliteApres', t.penibiliteApres, PENIBILITE))}
+          ${question(2, 'Et combien d\'erreurs ou de reprises par mois ?', '',
+            `<div class="inline nowrap">${numInp('t', 'erreursApres', t.erreursApres, 'class="w-num" placeholder="?"')}<span>par mois</span></div>`)}
+          ${question(3, 'Avec ces changements, qui d\'autre pourrait faire cette tâche ?', 'Par exemple si le travail est mieux outillé ou documenté.', chips('t', 'quiSaitApres', t.quiSaitApres, QUI_SAIT))}
+          ${question(4, 'Y aura-t-il un mode opératoire écrit ?', 'S\'il est prévu dans les solutions, réponds « Oui, à jour ».', chips('t', 'modeOpApres', t.modeOpApres, MODE_OP))}
+          ${question(5, 'Remarques de ' + name, '', area('t', 'notesValidation', t.notesValidation, 'rows="2" placeholder="Son avis sur les solutions, ses conditions, ses craintes…"'))}
         </section>
         ${sols.length ? `<section class="block">
           <h2 class="block-title"><span>C</span> Le déroulé demain</h2>
@@ -958,6 +1197,8 @@ function viewFiche3(t) {
         ${s.delaiAvant ? `<div class="recap-row"><span>Attentes cumulées</span><b>${fmtJours(s.delaiAvant)} → ${fmtJours(s.delaiApres)}</b></div>` : ''}
         <div class="recap-row"><span>Solutions estimées</span><b>${s.validees} / ${s.solutions}</b></div>
         <div class="recap-row"><span>Étapes supprimées</span><b>${s.supprimees}</b></div>
+        <div class="recap-row"><span>Pénibilité</span><b>${fmtPen(s.penAvant)} → ${fmtPen(s.penApres)}</b></div>
+        <div class="recap-row"><span>Erreurs évitées</span><b>${s.erreursEvitees ? fmtInt(s.erreursEvitees) + ' / an' : '—'}</b></div>
         <div class="recap-row"><span>Personne clé</span><span>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</span></div>
       </aside>
     </div>`;
@@ -999,6 +1240,12 @@ function viewPlan() {
           <label><span class="lbl">Pour quand ?</span>${inp(sc, 'echeance', s.echeance, 'type="date"')}</label>
           <div><span class="lbl">Statut</span>${chips(sc, 'statutAction', s.statutAction, STATUTS_ACTION, 'small')}</div>
         </div>
+        <div class="act-cost">
+          <label><span class="lbl">Charge interne</span><span class="inline nowrap">${numInp(sc, 'coutJours', s.coutJours, 'class="w-num" placeholder="0"')}<span>jours</span></span></label>
+          <label><span class="lbl">Achats, licences, prestataire</span><span class="inline nowrap">${numInp(sc, 'coutEuros', s.coutEuros, 'class="w-num" placeholder="0"')}<span>€</span></span></label>
+          <div class="cost-sum">${invest(s) ? `Coût ≈ <b>${fmtEur(invest(s))}</b> · gain ≈ <b>${fmtEur(eur(gain))} / an</b> · rentabilisé en <b>${fmtMois(payback(invest(s), gain))}</b>`
+            : `Gain ≈ <b>${fmtEur(eur(gain))} / an</b> · indique le coût pour calculer le retour sur investissement`}</div>
+        </div>
         ${fait ? `<div class="act-follow">
           <span class="lbl">Suivi après mise en place :</span> temps réel mesuré
           ${numInp(sc, 'tempsReel', s.tempsReel, 'class="w-num" placeholder="?"')} min (estimé : ${fmtDec(num(s.nouveauTemps))} min, avant : ${fmtDec(num(s.duree))} min)
@@ -1012,11 +1259,13 @@ function viewPlan() {
     ${phase4Tabs('plan')}
     <div class="tip"><b>Comment faire :</b> pour chaque solution validée, indique l'effort de mise en place, qui la porte et pour quand.
       La priorité se calcule toute seule (gain fort = au moins ${numInp('settings', 'seuilGain', db.settings.seuilGain, 'class="tiny"')} h par an).
+      Coût horaire chargé utilisé pour les euros : ${numInp('settings', 'coutHoraire', db.settings.coutHoraire, 'class="tiny"')} € / h (1 jour = 7 h).
       Quand une solution est en place, passe-la en « En place » et note le <b>temps réel mesuré</b> quelques semaines plus tard : le dossier comparera estimé et réel.</div>
     <div class="kpis">
       ${kpi('Actions', `${g.actionsFaites} / ${acts.length}`, 'en place')}
       ${kpi('Gains rapides', acts.filter(a => a.q === 'quickwin').length, 'effort faible, gain fort', 'good')}
-      ${kpi('Gain estimé', fmtDur(Math.max(0, g.gain)) + ' / an', fmtEtp(Math.max(0, g.gain)))}
+      ${kpi('Gain estimé', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ≈ ${fmtEur(eur(Math.max(0, g.gain)))} / an`)}
+      ${kpi('Investissement', g.invest ? fmtEur(g.invest) : '—', g.invest ? `rentabilisé en ${fmtMois(payback(g.invest, g.gain))}` : 'renseigne le coût des actions')}
       ${kpi('Gain mesuré', g.mesures ? fmtDur(g.gainReel) + ' / an' : '—', g.mesures ? `sur ${plural(g.mesures, 'action mesurée', 'actions mesurées')} (estimé : ${fmtDur(g.gainEstimeMesure)})` : 'aucune mesure pour l\'instant', g.mesures ? 'good' : '')}
     </div>
     ${acts.length ? `<div class="card"><div class="card-head"><div><h2>Matrice effort / gain</h2><p class="muted small">Les numéros renvoient aux actions ci-dessous. Commence par les gains rapides.</p></div></div>${matrixHtml(acts)}</div>
@@ -1036,7 +1285,8 @@ function matrixHtml(acts) {
   </div>${todo.length ? `<p class="muted small" style="margin-top:8px">Effort à évaluer : ${todo.map(a => '#' + a.n).join(', ')}</p>` : ''}`;
 }
 
-function viewRestitution() {
+function viewRestitution() { return asShown(restitutionHtml); }
+function restitutionHtml() {
   const m = state.mission;
   const g = globalStats();
   const ts = state.taches;
@@ -1061,6 +1311,8 @@ function viewRestitution() {
           <div>Temps gagné<b class="good">${fmtDur(Math.max(0, s.gain))} · ${pct(Math.max(0, s.gain), s.avant)}</b></div>
           <div>Manipulations évitées<b>${fmtInt(s.manips)} / an</b></div>
           ${s.delaiAvant ? `<div>Attentes cumulées<b>${fmtJours(s.delaiAvant)} → ${fmtJours(s.delaiApres)}</b></div>` : ''}
+          ${s.penAvant ? `<div>Pénibilité<b>${fmtPen(s.penAvant)} → ${fmtPen(s.penApres)}</b></div>` : ''}
+          ${t.erreurs !== '' ? `<div>Erreurs / mois<b>${fmtDec(num(t.erreurs))} → ${t.erreursApres !== '' ? fmtDec(num(t.erreursApres)) : '?'}</b></div>` : ''}
           <div>Étapes<b>${t.steps.length} → ${t.steps.length - s.supprimees}</b></div>
           <div>Personne clé<span>${riskBadge(s.riskAvant)} → ${riskBadge(s.riskApres)}</span></div>
         </div>
@@ -1087,8 +1339,9 @@ function viewRestitution() {
 
   return `
     <div class="report">
-      ${phaseHead(4, '<button class="btn lg" data-action="export-pptx">⭳ PowerPoint</button><button class="btn primary lg" data-action="print">🖶 Imprimer / PDF</button>')}
+      ${phaseHead(4, `${toggle('settings', 'anonyme', db.settings.anonyme, db.settings.anonyme ? '🕶 Version anonyme' : '🕶 Anonymiser', 'anon')}<button class="btn lg" data-action="export-pptx">⭳ PowerPoint</button><button class="btn primary lg" data-action="print">🖶 Imprimer / PDF</button>`)}
       ${phase4Tabs('dossier')}
+      ${db.settings.anonyme ? '<div class="tip no-print"><b>Version anonyme (vitrine) :</b> le prénom est remplacé par « Titulaire » et les remarques personnelles sont masquées, à l\'écran, à l\'impression et dans le PowerPoint.</div>' : ''}
       ${pending ? `<div class="tip warn no-print">${pending > 1 ? `${pending} tâches relevées ne sont pas encore validées` : '1 tâche relevée n\'est pas encore validée'} : seules les solutions déjà estimées comptent dans les gains.</div>` : ''}
       <div class="report-cover card">
         <div class="eyebrow">${esc(m.service || 'Diagnostic de poste')}${period ? ' · ' + esc(period) : ''}</div>
@@ -1098,8 +1351,11 @@ function viewRestitution() {
       </div>
 
       <div class="kpis">
-        ${kpi('Temps gagné', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ${pct(Math.max(0, g.gain), g.avant)} du temps`, 'good')}
+        ${kpi('Temps gagné', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ≈ ${fmtEur(eur(Math.max(0, g.gain)))} / an · ${pct(Math.max(0, g.gain), g.avant)} du temps`, 'good')}
         ${kpi('Manipulations évitées', fmtInt(g.manips), 'saisies, copier-coller, clics en moins par an', 'good')}
+        ${kpi('Erreurs évitées', g.erreursEvitees ? fmtInt(g.erreursEvitees) : '—', 'erreurs ou reprises en moins par an', g.erreursEvitees ? 'good' : '')}
+        ${kpi('Pénibilité moyenne', g.penN ? `${fmtDec(g.penMoyAvant)} → ${fmtDec(g.penMoyApres)}` : '—', 'sur 5, ressenti de la personne', g.penMoyApres < g.penMoyAvant ? 'good' : '')}
+        ${kpi('Investissement', g.invest ? fmtEur(g.invest) : '—', g.invest ? `rentabilisé en ${fmtMois(payback(g.invest, g.gain))}` : 'coût des actions non renseigné')}
         ${kpi('Traçabilité / contrôles', `${g.tracab} / ${g.controles}`, 'solutions qui tracent · qui sécurisent un contrôle')}
         ${kpi('Irritants levés', `${leves} / ${avantFlags}`, FLAGS.map(f => `${g.flagsLeves[f.key]} ${f.nom.toLowerCase()}`).join(' · '))}
         ${kpi('Tâches simplifiées', `${g.simplifiees} / ${ts.length}`, `${plural(g.validees, 'solution validée', 'solutions validées')} · ${plural(g.supprimees, 'étape supprimée', 'étapes supprimées')}`)}
@@ -1129,12 +1385,13 @@ function viewRestitution() {
         <div class="card-head"><div><h2>Plan d'action</h2><p class="muted small">Solutions validées, par priorité. <a class="no-print" href="#/4/plan">Modifier le plan</a></p></div></div>
         ${matrixHtml(acts)}
         <div class="table-wrap" style="margin-top:14px"><table>
-          <thead><tr><th>#</th><th>Solution</th><th>Tâche</th><th>Priorité</th><th>Effort</th><th>Porteur</th><th>Échéance</th><th>Statut</th><th class="right">Gain estimé</th><th class="right">Gain mesuré</th></tr></thead>
+          <thead><tr><th>#</th><th>Solution</th><th>Tâche</th><th>Priorité</th><th>Effort</th><th>Porteur</th><th>Échéance</th><th>Statut</th><th class="right">Coût</th><th class="right">Retour</th><th class="right">Gain estimé</th><th class="right">Gain mesuré</th></tr></thead>
           <tbody>${acts.map(({ t, s, q, g: gain, n }) => `<tr>
             <td class="num">${n}</td><td><b>${esc(s.sol || LEVIERS[s.levier])}</b></td><td class="small">${esc(t.nom)}</td>
             <td><span class="badge ${q}">${QUADRANTS[q]}</span></td><td class="small">${esc(EFFORTS[s.effort] || '—')}</td>
             <td class="small">${esc(s.porteur || '—')}</td><td class="small">${fmtDate(s.echeance) || '—'}</td>
             <td class="small">${esc(STATUTS_ACTION[s.statutAction] || 'À lancer')}</td>
+            <td class="right num">${invest(s) ? fmtEur(invest(s)) : '—'}</td><td class="right num small">${fmtMois(payback(invest(s), gain))}</td>
             <td class="right num good">${fmtDur(gain)}</td>
             <td class="right num">${isMeasured(s) ? fmtDur((num(s.duree) - num(s.tempsReel)) * stepOcc(t, s)) : '—'}</td></tr>`).join('')}</tbody>
         </table></div>
@@ -1400,7 +1657,7 @@ function download(blob, name) {
 const mapFileName = (t, tobe, ext) => `${slug(t.nom)}-${tobe ? 'demain' : 'aujourd-hui'}.${ext}`;
 function exportSvg(t, tobe) {
   const svg = '<?xml version="1.0" encoding="UTF-8"?>\n' + renderMap(t, mapSteps(t, tobe));
-  download(new Blob([svg], { type: 'image/svg+xml' }), mapFileName(t, tobe, 'svg'));
+  saveFile(new Blob([svg], { type: 'image/svg+xml' }), mapFileName(t, tobe, 'svg'));
 }
 function svgToPng(svg) {
   return new Promise((resolve, reject) => {
@@ -1424,7 +1681,7 @@ function svgToPng(svg) {
 function exportPng(t, tobe) {
   svgToPng(renderMap(t, mapSteps(t, tobe)))
     .then(({ canvas }) => canvas.toBlob(b => {
-      if (b) download(b, mapFileName(t, tobe, 'png'));
+      if (b) saveFile(b, mapFileName(t, tobe, 'png'));
       else toast('Export image impossible dans ce navigateur : utilise le SVG.');
     }, 'image/png'))
     .catch(() => toast('Export image impossible : utilise le SVG.'));
@@ -1437,6 +1694,11 @@ async function exportPptx() {
     return;
   }
   toast('Préparation du PowerPoint…');
+  const real = state;
+  if (db.settings.anonyme) state = anonClone(real);
+  try { await buildPptx(); } finally { state = real; }
+}
+async function buildPptx() {
   const m = state.mission, g = globalStats(), ts = state.taches.filter(t => t.steps.length), acts = allActions();
   const F = 'Segoe UI', INK = '1D2433', MUTED = '5B6578', OK = '1D8A5A', DARK = '16203A', LINE = 'E1E6EE', W = 13.33;
   const pptx = new PptxGenJS();
@@ -1472,11 +1734,11 @@ async function exportPptx() {
   head(sl, 'Ce que l\'immersion apporte', m.contexte ? (c => c.length > 130 ? c.slice(0, 129) + '…' : c)(m.contexte.split('\n')[0]) : '');
   const leves = FLAGS.reduce((a, f) => a + g.flagsLeves[f.key], 0), avantFlags = FLAGS.reduce((a, f) => a + g.flagsAvant[f.key], 0);
   [
-    ['Temps gagné', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ${pct(Math.max(0, g.gain), g.avant)} du temps`, OK],
-    ['Manipulations évitées', fmtInt(g.manips), 'saisies, copier-coller, clics en moins par an', OK],
+    ['Temps gagné', fmtDur(Math.max(0, g.gain)) + ' / an', `${fmtEtp(Math.max(0, g.gain))} · ≈ ${fmtEur(eur(Math.max(0, g.gain)))} / an · ${pct(Math.max(0, g.gain), g.avant)} du temps`, OK],
+    ['Manipulations évitées', fmtInt(g.manips), `par an · ${g.erreursEvitees ? fmtInt(g.erreursEvitees) + ' erreurs évitées / an' : 'saisies, copier-coller, clics en moins'}`, OK],
     ['Irritants levés', `${leves} / ${avantFlags}`, FLAGS.map(f => `${g.flagsLeves[f.key]} ${f.nom.toLowerCase()}`).join(' · '), INK],
-    ['Tâches simplifiées', `${g.simplifiees} / ${state.taches.length}`, plural(g.supprimees, 'étape supprimée', 'étapes supprimées'), INK],
-    ['Traçabilité / contrôles', `${g.tracab} / ${g.controles}`, 'solutions qui tracent / sécurisent un contrôle', INK],
+    ['Pénibilité moyenne', g.penN ? `${fmtDec(g.penMoyAvant)} → ${fmtDec(g.penMoyApres)}` : '—', 'sur 5, ressenti de la personne', g.penMoyApres < g.penMoyAvant ? OK : INK],
+    ['Investissement', g.invest ? fmtEur(g.invest) : '—', g.invest ? `rentabilisé en ${fmtMois(payback(g.invest, g.gain))}` : 'coût des actions non renseigné', INK],
     ['Risque personne clé', `${g.riskHautAvant} → ${g.riskHautApres}`, 'tâches à risque élevé, avant → après', g.riskHautApres < g.riskHautAvant ? OK : INK]
   ].forEach(([label, value, hint, color], i) => {
     const x = 0.5 + (i % 3) * 4.15, y = 1.6 + Math.floor(i / 3) * 2.6;
@@ -1526,14 +1788,16 @@ async function exportPptx() {
   // 5. Plan d'action
   if (acts.length) {
     sl = pptx.addSlide();
-    head(sl, 'Plan d\'action', `Seuil « gain fort » : ${db.settings.seuilGain} h par an. Gains rapides en premier.`);
+    head(sl, 'Plan d\'action', `Gains rapides en premier · investissement ${g.invest ? '≈ ' + fmtEur(g.invest) + ', rentabilisé en ' + fmtMois(payback(g.invest, g.gain)) : 'non chiffré'}`);
     sl.addTable([
-      ['#', 'Solution', 'Tâche', 'Priorité', 'Effort', 'Porteur', 'Échéance', 'Statut', 'Gain / an'].map(th),
+      ['#', 'Solution', 'Tâche', 'Priorité', 'Effort', 'Porteur', 'Échéance', 'Statut', 'Coût', 'Gain / an'].map(th),
       ...acts.map(({ t, s, q, g: gain, n }) => [String(n), s.sol || LEVIERS[s.levier] || '', t.nom, QUADRANTS[q], EFFORTS[s.effort] || '—',
-        s.porteur || '—', s.echeance ? new Date(s.echeance).toLocaleDateString('fr-FR') : '—', STATUTS_ACTION[s.statutAction] || 'À lancer', fmtDur(gain)])
-    ], tableOpts([0.4, 3.4, 2.0, 1.3, 0.8, 1.5, 1.1, 1.0, 0.83]));
+        s.porteur || '—', s.echeance ? new Date(s.echeance).toLocaleDateString('fr-FR') : '—', STATUTS_ACTION[s.statutAction] || 'À lancer',
+        invest(s) ? fmtEur(invest(s)) : '—', fmtDur(gain)])
+    ], tableOpts([0.4, 3.0, 1.9, 1.2, 0.8, 1.4, 1.0, 0.9, 0.85, 0.88]));
   }
-  await pptx.writeFile({ fileName: `restitution-${slug(immLabel(state))}.pptx` });
+  const blob = await pptx.write({ outputType: 'blob' });
+  await saveFile(blob, `restitution-${slug(immLabel(state))}.pptx`);
 }
 
 // Tableau au format « Data Visualizer » de Visio (organigramme de base)
@@ -1553,7 +1817,7 @@ function exportCsv(t) {
   });
   rows.push(['FIN', t.resultat || 'Fin', '', '', 'End', steps[steps.length - 1]?.qui || NA, '', '']);
   const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
-  download(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), `${slug(t.nom)}-visio.csv`);
+  saveFile(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }), `${slug(t.nom)}-visio.csv`);
 }
 function exportJson() {
   db.lastExport = new Date().toISOString();
@@ -1717,12 +1981,16 @@ const actions = {
   },
   'del-imm'(el) {
     const imm = db.immersions.find(i => i.id === el.dataset.id);
-    if (!imm || !confirm(`Supprimer l'immersion « ${immLabel(imm)} » et toutes ses tâches ?`)) return;
+    const onDisk = dirStatus === 'ok' && imm && imm.dossier;
+    if (!imm || !confirm(`Supprimer l'immersion « ${immLabel(imm)} » et toutes ses tâches ?${onDisk ? `\nSon dossier « ${imm.dossier} » (et les fichiers qu'il contient) sera aussi supprimé.` : ''}`)) return;
+    if (onDisk) dirHandle.removeEntry(imm.dossier, { recursive: true }).catch(e => toast('Dossier non supprimé : ' + e.message));
     db.immersions = db.immersions.filter(i => i !== imm);
     if (state === imm) setActive(null);
     save(); go('#/immersions'); render();
   },
   'year'(el) { portfolioYear = el.dataset.value; render(); },
+  'connect-dir'() { connectDir(); },
+  'reconnect-dir'() { reconnectDir(); },
   'import-json'() { document.getElementById('importFile').click(); },
   'load-demo'() {
     if (db.immersions.length && !confirm('Remplacer toutes les données actuelles par la démonstration ?')) return;
@@ -1817,20 +2085,21 @@ function demoImmSophie() {
     notes: 'Pic de demandes en début de mois. Environ 30 % des fiches repartent en correction après relecture.',
     notesValidation: 'Très favorable au formulaire. Souhaite garder la main sur la mise en forme finale.',
     p1Done: true, p2Done: true, p3Done: true, cartoValidee: true, cartoValideeLe: '2026-11-04',
+    penibilite: '4', penibiliteApres: '2', erreurs: '5', erreursApres: '1',
     steps: [
-      newStep({ id: 't1s1', donnees: 'Objet, demandeur, fiche concernée', manipsEvitees: '2', effort: '1', porteur: 'Sophie', echeance: '2026-11-30', statutAction: 'encours', quoi: 'Lire la demande reçue par mail', qui: S, outil: 'Outlook', duree: '5', suivi: true, precision: 'Les demandes sont noyées dans la boîte mail, aucune vision du stock',
+      newStep({ id: 't1s1', donnees: 'Objet, demandeur, fiche concernée', manipsEvitees: '2', effort: '1', coutJours: '1', porteur: 'Sophie', echeance: '2026-11-30', statutAction: 'encours', quoi: 'Lire la demande reçue par mail', qui: S, outil: 'Outlook', duree: '5', suivi: true, precision: 'Les demandes sont noyées dans la boîte mail, aucune vision du stock',
         sol: 'Liste des demandes partagée, avec une vue « en cours »', levier: 'outiller', tracabilite: true, nouveauTemps: '3', avis: 'ok' }),
-      newStep({ id: 't1s2', donnees: 'Objet, demandeur, date', manipsEvitees: '6', effort: '1', porteur: 'Sophie + correspondant M365', echeance: '2026-11-30', statutAction: 'encours', quoi: 'Recopier la demande dans le fichier Excel de suivi', qui: S, outil: 'Excel', duree: '4', ressaisie: true, precision: 'Je recopie l\'objet, le demandeur et la date déjà présents dans le mail',
+      newStep({ id: 't1s2', donnees: 'Objet, demandeur, date', manipsEvitees: '6', effort: '1', coutJours: '1', porteur: 'Sophie + correspondant M365', echeance: '2026-11-30', statutAction: 'encours', quoi: 'Recopier la demande dans le fichier Excel de suivi', qui: S, outil: 'Excel', duree: '4', ressaisie: true, precision: 'Je recopie l\'objet, le demandeur et la date déjà présents dans le mail',
         sol: 'Formulaire en ligne (Microsoft Forms) : le demandeur saisit lui-même, la ligne de suivi se crée toute seule', levier: 'supprimer', tracabilite: true, nouveauTemps: '0', avis: 'ok' }),
       newStep({ id: 't1s3', donnees: 'Texte de la procédure', quoi: 'Rédiger ou modifier la fiche', qui: S, outil: 'Word', duree: '35' }),
-      newStep({ id: 't1s4', donnees: 'Fiche en pièce jointe', attente: '6', nouvelleAttente: '2', manipsEvitees: '3', effort: '2', porteur: 'DSI (Power Automate)', echeance: '2027-01-31', quoi: 'Relire et valider la fiche', qui: E, outil: 'Outlook', duree: '20', suivi: true, precision: 'Relances à la main, 6 jours de délai moyen, aucune trace de la validation',
+      newStep({ id: 't1s4', donnees: 'Fiche en pièce jointe', attente: '6', nouvelleAttente: '2', manipsEvitees: '3', effort: '2', coutJours: '4', porteur: 'DSI (Power Automate)', echeance: '2027-01-31', quoi: 'Relire et valider la fiche', qui: E, outil: 'Outlook', duree: '20', suivi: true, precision: 'Relances à la main, 6 jours de délai moyen, aucune trace de la validation',
         sol: 'Circuit de validation avec relance automatique à J+3 et validation horodatée', levier: 'automatiser', tracabilite: true, securise: true, nouveauTemps: '12', avis: 'ok' }),
       newStep({ id: 't1s5', labelSuite: 'Oui', labelAutre: 'Non (30 %)', quoi: 'Fiche validée ?', qui: E, duree: '0', controle: true, retour: 't1s3' }),
-      newStep({ id: 't1s6', manipsEvitees: '10', effort: '1', porteur: 'Sophie', echeance: '2026-12-15', quoi: 'Mettre en forme selon la charte', qui: S, outil: 'Word', duree: '15', manuel: true, precision: 'Toute la mise en forme est refaite à la main à chaque fiche',
+      newStep({ id: 't1s6', manipsEvitees: '10', effort: '1', coutJours: '1', porteur: 'Sophie', echeance: '2026-12-15', quoi: 'Mettre en forme selon la charte', qui: S, outil: 'Word', duree: '15', manuel: true, precision: 'Toute la mise en forme est refaite à la main à chaque fiche',
         sol: 'Modèle de fiche avec les styles de la charte déjà en place', levier: 'modele', nouveauTemps: '5', avis: 'ok' }),
-      newStep({ id: 't1s7', donnees: 'Contenu de la fiche', manipsEvitees: '8', effort: '2', porteur: 'Équipe SharePoint', echeance: '2027-02-28', quoi: 'Publier la fiche dans la base (copier-coller)', qui: S, outil: 'SharePoint', duree: '10', ressaisie: true, precision: 'Copier-coller de Word vers SharePoint, la mise en page casse',
+      newStep({ id: 't1s7', donnees: 'Contenu de la fiche', manipsEvitees: '8', effort: '2', coutJours: '4', porteur: 'Équipe SharePoint', echeance: '2027-02-28', quoi: 'Publier la fiche dans la base (copier-coller)', qui: S, outil: 'SharePoint', duree: '10', ressaisie: true, precision: 'Copier-coller de Word vers SharePoint, la mise en page casse',
         sol: 'Rédiger directement dans un modèle de page SharePoint', levier: 'outiller', nouveauTemps: '4', avis: 'discuter' }),
-      newStep({ id: 't1s8', donnees: 'Statut, date de publication, demandeur', manipsEvitees: '4', effort: '2', porteur: 'DSI (Power Automate)', echeance: '2027-01-31', quoi: 'Mettre à jour le suivi et prévenir le demandeur', qui: S, outil: 'Excel + Outlook', duree: '6', ressaisie: true, manuel: true, precision: 'Double mise à jour : Excel puis mail',
+      newStep({ id: 't1s8', donnees: 'Statut, date de publication, demandeur', manipsEvitees: '4', effort: '2', coutJours: '4', porteur: 'DSI (Power Automate)', echeance: '2027-01-31', quoi: 'Mettre à jour le suivi et prévenir le demandeur', qui: S, outil: 'Excel + Outlook', duree: '6', ressaisie: true, manuel: true, precision: 'Double mise à jour : Excel puis mail',
         sol: 'Notification automatique au demandeur à la publication', levier: 'automatiser', tracabilite: true, nouveauTemps: '1', avis: 'ok' })
     ]
   });
@@ -1842,16 +2111,17 @@ function demoImmSophie() {
     quiSait: 'une', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui',
     notesValidation: 'D\'accord pour la boîte partagée ; la FAQ demandera du temps au démarrage.',
     p1Done: true, p2Done: true, p3Done: true, cartoValidee: true, cartoValideeLe: '2026-11-05',
+    penibilite: '3', penibiliteApres: '2', erreurs: '8', erreursApres: '3',
     steps: [
       newStep({ id: 't2s1', donnees: 'Question, agence', quoi: 'Envoyer la question par mail', qui: A, outil: 'Outlook', duree: '3' }),
-      newStep({ id: 't2s2', manipsEvitees: '1', effort: '1', porteur: 'Sophie', echeance: '2026-12-01', quoi: 'Lire et trier la question', qui: S, outil: 'Outlook', duree: '3', suivi: true, precision: 'Pas de classement : impossible de savoir quels sujets reviennent',
+      newStep({ id: 't2s2', manipsEvitees: '1', effort: '1', coutJours: '1', porteur: 'Sophie', echeance: '2026-12-01', quoi: 'Lire et trier la question', qui: S, outil: 'Outlook', duree: '3', suivi: true, precision: 'Pas de classement : impossible de savoir quels sujets reviennent',
         sol: 'Boîte mail partagée avec catégories par sujet', levier: 'organiser', tracabilite: true, nouveauTemps: '2', avis: 'ok' }),
-      newStep({ id: 't2s3', donnees: 'Mots-clés de la question', manipsEvitees: '3', effort: '3', porteur: 'Sophie + experts', echeance: '2027-03-31', quoi: 'Chercher la réponse dans la base', qui: S, outil: 'SharePoint', duree: '8', manuel: true, precision: 'La recherche donne de mauvais résultats, les fiches sont mal indexées',
+      newStep({ id: 't2s3', donnees: 'Mots-clés de la question', manipsEvitees: '3', effort: '3', coutJours: '12', porteur: 'Sophie + experts', echeance: '2027-03-31', quoi: 'Chercher la réponse dans la base', qui: S, outil: 'SharePoint', duree: '8', manuel: true, precision: 'La recherche donne de mauvais résultats, les fiches sont mal indexées',
         sol: 'Mots-clés sur les fiches + page FAQ des 50 questions les plus fréquentes', levier: 'outiller', nouveauTemps: '4', avis: 'ok' }),
-      newStep({ id: 't2s4', attente: '2', nouvelleAttente: '1', manipsEvitees: '1', effort: '1', porteur: 'Manager', echeance: '2026-12-15', quoi: 'Demander à l\'expert et attendre sa réponse', qui: E, outil: 'Outlook / Teams', duree: '15', taux: '25', suivi: true, precision: 'Relances, aucun délai de réponse convenu',
+      newStep({ id: 't2s4', attente: '2', nouvelleAttente: '1', manipsEvitees: '1', effort: '1', coutJours: '1', porteur: 'Manager', echeance: '2026-12-15', quoi: 'Demander à l\'expert et attendre sa réponse', qui: E, outil: 'Outlook / Teams', duree: '15', taux: '25', suivi: true, precision: 'Relances, aucun délai de réponse convenu',
         sol: 'Canal Teams des experts avec un délai de réponse convenu', levier: 'organiser', tracabilite: true, nouveauTemps: '10', avis: 'discuter' }),
       newStep({ id: 't2s5', quoi: 'Rédiger et envoyer la réponse', qui: S, outil: 'Outlook', duree: '6' }),
-      newStep({ id: 't2s6', donnees: 'Thème, agence, date', manipsEvitees: '3', effort: '1', porteur: 'Sophie', echeance: '2026-12-01', quoi: 'Noter la question dans le fichier de suivi', qui: S, outil: 'Excel', duree: '2', ressaisie: true, precision: 'Double saisie mail + Excel, souvent oubliée',
+      newStep({ id: 't2s6', donnees: 'Thème, agence, date', manipsEvitees: '3', effort: '1', coutJours: '1', porteur: 'Sophie', echeance: '2026-12-01', quoi: 'Noter la question dans le fichier de suivi', qui: S, outil: 'Excel', duree: '2', ressaisie: true, precision: 'Double saisie mail + Excel, souvent oubliée',
         sol: 'Supprimer le fichier Excel : le suivi se fait avec les catégories de la boîte partagée', levier: 'supprimer', tracabilite: true, nouveauTemps: '0', avis: 'ok' })
     ]
   });
@@ -1860,7 +2130,7 @@ function demoImmSophie() {
     id: 't3', nom: 'Produire le reporting mensuel', freqQty: '1', freqPer: 'mois',
     description: 'Chaque mois je prépare une présentation sur l\'activité de la base pour la direction.',
     origine: 'Début de mois', resultat: 'Présentation envoyée à la direction',
-    quiSait: 'personne', modeOp: 'non',
+    quiSait: 'personne', modeOp: 'non', penibilite: '5', erreurs: '2',
     p1Done: true, p2Done: true, p3Done: false,
     steps: [
       newStep({ id: 't3s1', quoi: 'Extraire les statistiques de consultation', qui: S, outil: 'SharePoint', duree: '30', manuel: true, precision: '4 exports différents à faire à la main',
@@ -1878,7 +2148,7 @@ function demoImmSophie() {
     id: 't4', nom: 'Veille réglementaire hebdomadaire', freqQty: '1', freqPer: 'semaine',
     description: 'Je consulte les sites officiels, je résume les nouveautés, je fais valider par la conformité puis j\'envoie une lettre au réseau.',
     origine: 'Chaque lundi matin', resultat: 'Lettre d\'information envoyée au réseau',
-    quiSait: 'une', modeOp: 'partiel',
+    quiSait: 'une', modeOp: 'partiel', penibilite: '3', erreurs: '1',
     p1Done: true,
     steps: [
       newStep({ id: 't4s1', quoi: 'Consulter les sites de veille', qui: S, outil: 'Navigateur', duree: '45', manuel: true, precision: '10 sites consultés un par un' }),
@@ -1902,7 +2172,10 @@ function D(quoi, qui, outil, duree, flags = '', precision = '', sol = '', levier
     avis: sol && nouveauTemps !== '' ? 'ok' : ''
   }, extra));
 }
-function doneTask(o) { return newTask(Object.assign({ p1Done: true, p2Done: true, p3Done: true, cartoValidee: true }, o)); }
+function doneTask(o) {
+  return newTask(Object.assign({ p1Done: true, p2Done: true, p3Done: true, cartoValidee: true,
+    penibilite: '4', penibiliteApres: '2', erreurs: '4', erreursApres: '1' }, o));
+}
 
 function demoDb() {
   const d = emptyDb();
@@ -1914,16 +2187,16 @@ function demoDb() {
   credits.taches = [
     doneTask({ nom: 'Constituer le dossier de prêt', freqQty: '60', freqPer: 'mois', origine: 'Pièces envoyées par le client', resultat: 'Dossier complet transmis à l\'analyste',
       quiSait: 'une', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
-        D('Réceptionner les pièces par mail', 'Karim', 'Outlook', 10, 'S', 'Pièces manquantes relancées à la main', 'Portail de dépôt avec liste des pièces manquantes', 'outiller', 4, { tracabilite: true, attente: '5', nouvelleAttente: '2', manipsEvitees: '4', effort: '2', porteur: 'DSI', echeance: '2026-06-30', statutAction: 'fait', tempsReel: '5', dateMesure: '2026-09-15', donnees: 'Pièces justificatives' }),
-        D('Ressaisir les infos client dans l\'outil crédit', 'Karim', 'Outil crédit', 15, 'R', 'Infos déjà présentes dans le CRM', 'Pré-remplissage automatique depuis le CRM', 'automatiser', 3, { manipsEvitees: '25', effort: '3', porteur: 'DSI', echeance: '2026-12-31', statutAction: 'encours', donnees: 'Identité, revenus, charges' }),
-        D('Contrôler la complétude du dossier', 'Karim', 'Checklist papier', 12, 'M', 'Checklist papier, cochée à la main', 'Checklist intégrée à l\'outil avec blocage', 'outiller', 6, { securise: true, manipsEvitees: '5', effort: '1', porteur: 'Karim', echeance: '2026-04-30', statutAction: 'fait', tempsReel: '6', dateMesure: '2026-07-01' }),
+        D('Réceptionner les pièces par mail', 'Karim', 'Outlook', 10, 'S', 'Pièces manquantes relancées à la main', 'Portail de dépôt avec liste des pièces manquantes', 'outiller', 4, { tracabilite: true, attente: '5', nouvelleAttente: '2', manipsEvitees: '4', effort: '2', coutJours: '4', porteur: 'DSI', coutEuros: '1500', echeance: '2026-06-30', statutAction: 'fait', tempsReel: '5', dateMesure: '2026-09-15', donnees: 'Pièces justificatives' }),
+        D('Ressaisir les infos client dans l\'outil crédit', 'Karim', 'Outil crédit', 15, 'R', 'Infos déjà présentes dans le CRM', 'Pré-remplissage automatique depuis le CRM', 'automatiser', 3, { manipsEvitees: '25', effort: '3', coutJours: '12', porteur: 'DSI', coutEuros: '1500', echeance: '2026-12-31', statutAction: 'encours', donnees: 'Identité, revenus, charges' }),
+        D('Contrôler la complétude du dossier', 'Karim', 'Checklist papier', 12, 'M', 'Checklist papier, cochée à la main', 'Checklist intégrée à l\'outil avec blocage', 'outiller', 6, { securise: true, manipsEvitees: '5', effort: '1', coutJours: '1', porteur: 'Karim', echeance: '2026-04-30', statutAction: 'fait', tempsReel: '6', dateMesure: '2026-07-01' }),
         D('Transmettre à l\'analyste', 'Karim', 'Outlook', 5)
       ] }),
     doneTask({ nom: 'Éditer les offres de prêt', freqQty: '50', freqPer: 'mois', origine: 'Accord de l\'analyste', resultat: 'Offre signée reçue',
       quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
         D('Générer l\'offre', 'Karim', 'Outil crédit', 8),
-        D('Corriger la mise en page', 'Karim', 'Word', 10, 'M', 'Le modèle sort mal formaté', 'Modèle d\'offre corrigé dans l\'outil', 'modele', 2, { manipsEvitees: '8', effort: '1', porteur: 'Karim', echeance: '2026-04-15', statutAction: 'fait', tempsReel: '3', dateMesure: '2026-07-01' }),
-        D('Envoyer et suivre le retour signé', 'Karim', 'Outlook', 10, 'S', 'Relances manuelles', 'Signature électronique avec relance automatique', 'automatiser', 2, { tracabilite: true, attente: '7', nouvelleAttente: '2', manipsEvitees: '4', effort: '2', porteur: 'DSI', echeance: '2026-09-30', statutAction: 'encours' })
+        D('Corriger la mise en page', 'Karim', 'Word', 10, 'M', 'Le modèle sort mal formaté', 'Modèle d\'offre corrigé dans l\'outil', 'modele', 2, { manipsEvitees: '8', effort: '1', coutJours: '1', porteur: 'Karim', echeance: '2026-04-15', statutAction: 'fait', tempsReel: '3', dateMesure: '2026-07-01' }),
+        D('Envoyer et suivre le retour signé', 'Karim', 'Outlook', 10, 'S', 'Relances manuelles', 'Signature électronique avec relance automatique', 'automatiser', 2, { tracabilite: true, attente: '7', nouvelleAttente: '2', manipsEvitees: '4', effort: '2', coutJours: '4', porteur: 'DSI', coutEuros: '1500', echeance: '2026-09-30', statutAction: 'encours' })
       ] })
   ];
 
@@ -1933,14 +2206,14 @@ function demoDb() {
   succ.taches = [
     doneTask({ nom: 'Ouvrir un dossier de succession', freqQty: '25', freqPer: 'mois', origine: 'Acte de décès reçu du notaire', resultat: 'Comptes bloqués et dossier ouvert',
       quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
-        D('Recevoir et scanner l\'acte du notaire', 'Nadia', 'Courrier', 10, 'M', 'Courrier papier scanné à la main', 'Réception dématérialisée via une boîte notaires', 'outiller', 4, { manipsEvitees: '3', effort: '1', porteur: 'Nadia', echeance: '2026-07-15', statutAction: 'fait', tempsReel: '4', dateMesure: '2026-10-01' }),
-        D('Bloquer chaque compte du défunt', 'Nadia', 'Outil comptes', 15, 'R', 'Saisie compte par compte', 'Blocage groupé de tous les comptes', 'automatiser', 5, { securise: true, manipsEvitees: '12', effort: '3', porteur: 'DSI', echeance: '2027-03-31', statutAction: 'afaire' }),
-        D('Créer le dossier dans le tableau de suivi', 'Nadia', 'Excel', 8, 'RS', 'Double saisie, pas de vision des délais', 'Tableau de bord des dossiers partagé', 'outiller', 2, { tracabilite: true, manipsEvitees: '6', effort: '1', porteur: 'Nadia', echeance: '2026-07-15', statutAction: 'fait', tempsReel: '3', dateMesure: '2026-10-01' })
+        D('Recevoir et scanner l\'acte du notaire', 'Nadia', 'Courrier', 10, 'M', 'Courrier papier scanné à la main', 'Réception dématérialisée via une boîte notaires', 'outiller', 4, { manipsEvitees: '3', effort: '1', coutJours: '1', porteur: 'Nadia', echeance: '2026-07-15', statutAction: 'fait', tempsReel: '4', dateMesure: '2026-10-01' }),
+        D('Bloquer chaque compte du défunt', 'Nadia', 'Outil comptes', 15, 'R', 'Saisie compte par compte', 'Blocage groupé de tous les comptes', 'automatiser', 5, { securise: true, manipsEvitees: '12', effort: '3', coutJours: '12', porteur: 'DSI', coutEuros: '1500', echeance: '2027-03-31', statutAction: 'afaire' }),
+        D('Créer le dossier dans le tableau de suivi', 'Nadia', 'Excel', 8, 'RS', 'Double saisie, pas de vision des délais', 'Tableau de bord des dossiers partagé', 'outiller', 2, { tracabilite: true, manipsEvitees: '6', effort: '1', coutJours: '1', porteur: 'Nadia', echeance: '2026-07-15', statutAction: 'fait', tempsReel: '3', dateMesure: '2026-10-01' })
       ] }),
     doneTask({ nom: 'Répondre aux notaires', freqQty: '6', freqPer: 'jour', origine: 'Demande d\'un notaire', resultat: 'Réponse envoyée',
       quiSait: 'une', modeOp: 'non', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
-        D('Rechercher le dossier', 'Nadia', 'Excel', 4, 'M', 'Recherche dans plusieurs fichiers', 'Tableau de bord unique', 'outiller', 1, { manipsEvitees: '2', effort: '1', porteur: 'Nadia', statutAction: 'fait' }),
-        D('Rédiger la réponse', 'Nadia', 'Outlook', 8, 'M', 'Réponses rédigées à chaque fois', 'Bibliothèque de réponses types', 'modele', 4, { manipsEvitees: '3', effort: '1', porteur: 'Nadia', echeance: '2026-08-31', statutAction: 'encours' })
+        D('Rechercher le dossier', 'Nadia', 'Excel', 4, 'M', 'Recherche dans plusieurs fichiers', 'Tableau de bord unique', 'outiller', 1, { manipsEvitees: '2', effort: '1', coutJours: '1', porteur: 'Nadia', statutAction: 'fait' }),
+        D('Rédiger la réponse', 'Nadia', 'Outlook', 8, 'M', 'Réponses rédigées à chaque fois', 'Bibliothèque de réponses types', 'modele', 4, { manipsEvitees: '3', effort: '1', coutJours: '1', porteur: 'Nadia', echeance: '2026-08-31', statutAction: 'encours' })
       ] })
   ];
 
@@ -1951,8 +2224,8 @@ function demoDb() {
     doneTask({ nom: 'Traiter une opposition carte', freqQty: '15', freqPer: 'jour', origine: 'Appel du client', resultat: 'Carte opposée, client informé',
       quiSait: 'plusieurs', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
         D('Prendre l\'appel et identifier le client', 'Thomas', 'Téléphone', 6),
-        D('Faire l\'opposition', 'Thomas', 'Outil cartes', 4, 'R', 'Ressaisie du numéro de carte', 'Opposition lancée depuis la fiche client', 'automatiser', 2, { manipsEvitees: '3', effort: '2', porteur: 'DSI', echeance: '2027-01-31', statutAction: 'afaire' }),
-        D('Envoyer la confirmation au client', 'Thomas', 'Outlook', 3, 'M', 'Mail rédigé à la main', 'Mail type envoyé automatiquement', 'automatiser', 0, { tracabilite: true, manipsEvitees: '4', effort: '1', porteur: 'Thomas', echeance: '2026-10-31', statutAction: 'fait', tempsReel: '0.5', dateMesure: '2026-10-28' })
+        D('Faire l\'opposition', 'Thomas', 'Outil cartes', 4, 'R', 'Ressaisie du numéro de carte', 'Opposition lancée depuis la fiche client', 'automatiser', 2, { manipsEvitees: '3', effort: '2', coutJours: '4', porteur: 'DSI', coutEuros: '1500', echeance: '2027-01-31', statutAction: 'afaire' }),
+        D('Envoyer la confirmation au client', 'Thomas', 'Outlook', 3, 'M', 'Mail rédigé à la main', 'Mail type envoyé automatiquement', 'automatiser', 0, { tracabilite: true, manipsEvitees: '4', effort: '1', coutJours: '1', porteur: 'Thomas', echeance: '2026-10-31', statutAction: 'fait', tempsReel: '0.5', dateMesure: '2026-10-28' })
       ] })
   ];
 
@@ -1962,9 +2235,9 @@ function demoDb() {
   habil.taches = [
     doneTask({ nom: 'Créer les accès d\'un nouvel arrivant', freqQty: '8', freqPer: 'mois', origine: 'Demande des RH', resultat: 'Accès envoyés au manager',
       quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
-        D('Recevoir la demande des RH', 'Claire', 'Outlook', 5, 'S', 'Demandes incomplètes', 'Formulaire de demande obligatoire', 'outiller', 2, { attente: '4', nouvelleAttente: '1', manipsEvitees: '2', effort: '1', porteur: 'RH + Claire', echeance: '2025-12-15', statutAction: 'fait', tempsReel: '2', dateMesure: '2026-03-01' }),
-        D('Créer les comptes dans 5 outils', 'Claire', '5 outils', 45, 'R', 'La même information saisie 5 fois', 'Demande unique avec création automatique', 'automatiser', 15, { securise: true, manipsEvitees: '40', effort: '3', porteur: 'DSI', echeance: '2026-06-30', statutAction: 'fait', tempsReel: '18', dateMesure: '2026-09-01', donnees: 'Identité, service, profils d\'accès' }),
-        D('Envoyer les accès au manager', 'Claire', 'Outlook', 10, 'M', 'Mail préparé à la main', 'Kit d\'arrivée généré automatiquement', 'automatiser', 2, { tracabilite: true, manipsEvitees: '6', effort: '1', porteur: 'Claire', echeance: '2025-12-15', statutAction: 'fait', tempsReel: '2', dateMesure: '2026-03-01' })
+        D('Recevoir la demande des RH', 'Claire', 'Outlook', 5, 'S', 'Demandes incomplètes', 'Formulaire de demande obligatoire', 'outiller', 2, { attente: '4', nouvelleAttente: '1', manipsEvitees: '2', effort: '1', coutJours: '1', porteur: 'RH + Claire', echeance: '2025-12-15', statutAction: 'fait', tempsReel: '2', dateMesure: '2026-03-01' }),
+        D('Créer les comptes dans 5 outils', 'Claire', '5 outils', 45, 'R', 'La même information saisie 5 fois', 'Demande unique avec création automatique', 'automatiser', 15, { securise: true, manipsEvitees: '40', effort: '3', coutJours: '12', porteur: 'DSI', coutEuros: '1500', echeance: '2026-06-30', statutAction: 'fait', tempsReel: '18', dateMesure: '2026-09-01', donnees: 'Identité, service, profils d\'accès' }),
+        D('Envoyer les accès au manager', 'Claire', 'Outlook', 10, 'M', 'Mail préparé à la main', 'Kit d\'arrivée généré automatiquement', 'automatiser', 2, { tracabilite: true, manipsEvitees: '6', effort: '1', coutJours: '1', porteur: 'Claire', echeance: '2025-12-15', statutAction: 'fait', tempsReel: '2', dateMesure: '2026-03-01' })
       ] })
   ];
 
@@ -1976,5 +2249,6 @@ function demoDb() {
 
 /* ---------- Démarrage ---------- */
 if (!location.hash) history.replaceState(null, '', '#/immersions');
-save();
+save(false);
 render();
+initDir();
