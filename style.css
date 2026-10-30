@@ -353,6 +353,35 @@ tr.rejected td { color: var(--faint); text-decoration: line-through; }
 .bar { height: 100%; background: #9aa8c4; }
 .bar.after { background: var(--accent); }
 
+/* ---------- Mes immersions ---------- */
+.top-title { flex: 1; text-align: center; font-weight: 600; color: #c4cde0; }
+.imm-name {
+  flex: none; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: #fff; font-weight: 600; font-size: 13.5px; padding: 6px 10px; border-radius: 8px; border: 1px solid #3a4870;
+}
+.imm-name:hover, .imm-name.active { background: #2b3a5f; text-decoration: none; }
+.year-bar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.grid-2 > .card { margin-bottom: 18px; }
+.hbars { display: flex; flex-direction: column; gap: 12px; }
+.hbar-row { display: grid; grid-template-columns: minmax(150px, 240px) 1fr 110px; gap: 12px; align-items: center; font-size: 13.5px; }
+.hbar-label { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hbar-label small, .hbar-val small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); }
+.hbar-val { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bar-track.lg { height: 16px; }
+.bar.gain { background: var(--ok); }
+.cols { display: flex; gap: 6px; align-items: stretch; height: 200px; }
+.col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.col-area { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; border-bottom: 1px solid var(--line-strong); }
+.col-bar { width: 70%; background: var(--ok); border-radius: 4px 4px 0 0; min-height: 0; }
+.col-val { font-size: 11px; color: var(--ink); font-weight: 600; margin-bottom: 3px; white-space: nowrap; }
+.col-lbl { font-size: 11.5px; color: var(--muted); text-align: center; margin-top: 5px; }
+.imm-table tr.current td { background: #f6f9ff; }
+.actions-cell { white-space: nowrap; text-align: right; }
+.actions-cell .icon-btn { display: inline-grid; vertical-align: middle; }
+.progress { height: 5px; background: #eef1f6; border-radius: 3px; margin-top: 6px; width: 140px; overflow: hidden; }
+.progress div { height: 100%; background: var(--accent); }
+
 /* ---------- Toast ---------- */
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -369,6 +398,7 @@ tr.rejected td { color: var(--faint); text-decoration: line-through; }
   .recap { position: static; order: -1; }
   .val-grid { grid-template-columns: 1fr; }
   .phase-cards { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) {
   .topbar { flex-wrap: wrap; padding: 10px 16px; }
@@ -380,6 +410,9 @@ tr.rejected td { color: var(--faint); text-decoration: line-through; }
   .phase-cards { grid-template-columns: 1fr; }
   .task-card { grid-template-columns: 34px 1fr; }
   .tc-side { grid-column: 2; align-items: flex-start; }
+  .hbar-row { grid-template-columns: 1fr 90px; }
+  .hbar-row > :nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  .imm-name { max-width: 140px; }
 }
 
 /* ---------- Impression ---------- */

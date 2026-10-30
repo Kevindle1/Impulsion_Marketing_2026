@@ -6,6 +6,8 @@ Mini-logiciel (HTML, CSS, JS, sans dépendance) qui accompagne une immersion aup
 
 Ouvrir `index.html` dans le navigateur (double-clic). Pas d'installation, pas de serveur, fonctionne hors ligne.
 
+La page d'accueil « Mes immersions » liste toutes les immersions (une par poste accompagné) et donne le bilan par année : temps gagné par service et par mois, avant / après poste par poste, risque « personne clé ». On ouvre une immersion pour la mener en 4 phases.
+
 Les données restent dans le navigateur du poste. Exporter une sauvegarde chaque soir (page d'accueil → Sauvegarde).
 
 ## Les 4 phases

@@ -7,7 +7,8 @@
    - Données enregistrées dans le navigateur (localStorage), export/import JSON.
    ========================================================================== */
 
-const STORE_KEY = 'cartoProcess.v2';
+const STORE_KEY = 'cartoProcess.v3';
+const OLD_KEY = 'cartoProcess.v2';   // version à une seule immersion, reprise automatiquement
 const NA = 'Non renseigné';
 
 const PHASES = [
@@ -80,7 +81,7 @@ function fmtDur(min) {
   return (neg ? '+' : '') + out;
 }
 function fmtEtp(min) {
-  const etp = min / 60 / (num(state.settings.heuresEtp) || 1607);
+  const etp = min / 60 / (num(db.settings.heuresEtp) || 1607);
   return etp.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ETP';
 }
 const pct = (a, b) => b ? Math.round(a / b * 100) + ' %' : '—';
@@ -107,13 +108,15 @@ function newTask(o) {
     steps: []
   }, o);
 }
-function emptyState() {
-  return {
-    version: 2, isDemo: false,
+function newImm(o) {
+  return Object.assign({
+    id: uid(), createdAt: new Date().toISOString().slice(0, 10),
     mission: { service: '', personne: '', poste: '', analyste: '', debut: '', fin: '', contexte: '' },
-    settings: { heuresEtp: '1607' },
     taches: []
-  };
+  }, o);
+}
+function emptyDb() {
+  return { version: 3, isDemo: false, activeId: null, settings: { heuresEtp: '1607' }, immersions: [] };
 }
 
 /* ---------- Calculs ---------- */
@@ -158,11 +161,11 @@ function taskStats(t) {
   r.riskApres = riskScore(t.quiSaitApres || t.quiSait, t.modeOpApres || t.modeOp);
   return r;
 }
-function globalStats() {
+function globalStats(imm = state) {
   const g = { avant: 0, apres: 0, gain: 0, irrit: 0, solutions: 0, validees: 0, supprimees: 0, tracab: 0, controles: 0,
     flagsAvant: { ressaisie: 0, manuel: 0, suivi: 0 }, flagsLeves: { ressaisie: 0, manuel: 0, suivi: 0 },
     simplifiees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0 };
-  state.taches.forEach(t => {
+  imm.taches.forEach(t => {
     const s = taskStats(t);
     ['avant', 'apres', 'gain', 'irrit', 'solutions', 'validees', 'supprimees', 'tracab', 'controles'].forEach(k => { g[k] += s[k]; });
     FLAGS.forEach(f => { g.flagsAvant[f.key] += s.flagsAvant[f.key]; g.flagsLeves[f.key] += s.flagsLeves[f.key]; });
@@ -175,20 +178,29 @@ function globalStats() {
 }
 
 /* ---------- Persistance ---------- */
-let state = loadState();
+// db : toutes les immersions ; state : l'immersion ouverte (mission + tâches)
+let db = loadDb();
+let state = db.immersions.find(i => i.id === db.activeId) || null;
 let lastSaved = null;
 
-function loadState() {
+function loadDb() {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return normalize(JSON.parse(raw));
+    if (raw) return normalizeDb(JSON.parse(raw));
+    const old = localStorage.getItem(OLD_KEY);
+    if (old) {
+      const d = emptyDb();
+      const imm = normalizeImm(JSON.parse(old));
+      d.immersions.push(imm);
+      d.activeId = imm.id;
+      return d;
+    }
   } catch (e) { /* stockage indisponible : on repart de la démo */ }
-  return demoState();
+  return demoDb();
 }
-function normalize(s) {
-  const out = Object.assign(emptyState(), s);
-  out.mission = Object.assign(emptyState().mission, s.mission);
-  out.settings = Object.assign(emptyState().settings, s.settings);
+function normalizeImm(s) {
+  const out = newImm({ id: s.id || uid(), createdAt: s.createdAt || new Date().toISOString().slice(0, 10) });
+  out.mission = Object.assign(newImm().mission, s.mission);
   out.taches = (s.taches || []).map(t => {
     const nt = newTask(t);
     nt.steps = (t.steps || []).map(newStep);
@@ -196,9 +208,19 @@ function normalize(s) {
   });
   return out;
 }
+function normalizeDb(s) {
+  const out = Object.assign(emptyDb(), s);
+  out.settings = Object.assign(emptyDb().settings, s.settings);
+  out.immersions = (s.immersions || []).map(normalizeImm);
+  return out;
+}
+function setActive(imm) {
+  state = imm;
+  db.activeId = imm ? imm.id : null;
+}
 function save() {
   try {
-    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    localStorage.setItem(STORE_KEY, JSON.stringify(db));
     lastSaved = new Date();
     const el = document.getElementById('savedAt');
     if (el) el.textContent = savedLabel();
@@ -212,13 +234,13 @@ const savedLabel = () => lastSaved
 
 /* ---------- Navigation ---------- */
 function route() {
-  const parts = (location.hash || '#/accueil').replace(/^#\/?/, '').split('/');
+  const parts = (location.hash || '#/immersions').replace(/^#\/?/, '').split('/');
   const phase = Number(parts[0]);
-  return { phase: phase >= 1 && phase <= 4 ? phase : 0, id: parts[1] || null };
+  return { page: parts[0] || 'immersions', phase: phase >= 1 && phase <= 4 ? phase : 0, id: parts[1] || null };
 }
 function currentTask() {
   const r = route();
-  return r.id ? state.taches.find(t => t.id === r.id) : null;
+  return r.id && state ? state.taches.find(t => t.id === r.id) : null;
 }
 const go = hash => { location.hash = hash; };
 
@@ -276,11 +298,12 @@ function render() {
 
 function viewMain() {
   const r = route();
-  const banner = state.isDemo ? `
-    <div class="banner no-print"><span><b>Données de démonstration (fictives).</b> Explore librement, puis repars de zéro pour ta mission.</span>
+  const banner = db.isDemo ? `
+    <div class="banner no-print"><span><b>Données de démonstration (fictives).</b> Explore librement, puis repars de zéro pour tes missions.</span>
     <button class="btn sm" data-action="reset-all">Repartir de zéro</button></div>` : '';
   let body;
-  if (!r.phase) body = viewAccueil();
+  if (r.page === 'immersions' || !state) body = viewPortfolio();
+  else if (!r.phase) body = viewAccueil();
   else if (r.phase === 4) body = viewRestitution();
   else if (r.id) {
     const t = currentTask();
@@ -302,8 +325,11 @@ function phaseProgress(n) {
 }
 function viewTopbar() {
   const r = route();
-  return `
-    <a class="brand" href="#/accueil" title="Accueil et mission"><span class="logo">CP</span><span><strong>Carto Process</strong><small>${esc(state.mission.service || 'Immersion sur un poste')}</small></span></a>
+  const inImm = state && r.page !== 'immersions';
+  const brand = `<a class="brand" href="#/immersions" title="Toutes mes immersions"><span class="logo">CP</span><span><strong>Carto Process</strong><small>${inImm ? '← Mes immersions' : 'Mes immersions'}</small></span></a>`;
+  if (!inImm) return `${brand}<div class="top-title">Tableau de bord de mes immersions</div><span class="saved" id="savedAt">${savedLabel()}</span>`;
+  return `${brand}
+    <a class="imm-name${r.page === 'accueil' ? ' active' : ''}" href="#/accueil" title="La mission de cette immersion">${esc(immLabel(state))}</a>
     <nav class="stepper">${PHASES.map(p => {
       const pr = phaseProgress(p.n);
       return `<a class="phase-step${r.phase === p.n ? ' active' : ''}${pr.done ? ' done' : ''}" href="#/${p.n}">
@@ -311,6 +337,7 @@ function viewTopbar() {
     }).join('<span class="sep">›</span>')}</nav>
     <span class="saved" id="savedAt">${savedLabel()}</span>`;
 }
+const immLabel = imm => [imm.mission.service, imm.mission.personne].filter(Boolean).join(' · ') || 'Nouvelle immersion';
 
 /* ---------- Champs liés ---------- */
 const bindAttr = (scope, field) => `data-bind="${esc(scope + '|' + field)}"`;
@@ -340,8 +367,8 @@ function question(n, titre, hint, control, cls = '') {
 }
 
 function resolveScope(scope) {
-  if (scope === 'mission') return state.mission;
-  if (scope === 'settings') return state.settings;
+  if (scope === 'mission') return state && state.mission;
+  if (scope === 'settings') return db.settings;
   const t = currentTask();
   if (scope === 't') return t;
   const [k, id] = scope.split(':');
@@ -352,6 +379,134 @@ function applyBinding(el) {
   const [scope, f] = el.dataset.bind.split('|');
   const obj = resolveScope(scope);
   if (obj) obj[f] = el.type === 'checkbox' ? el.checked : el.value;
+}
+
+/* ---------- Tableau de bord de toutes les immersions ---------- */
+const MOIS = ['Janv.', 'Févr.', 'Mars', 'Avr.', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
+let portfolioYear = String(new Date().getFullYear());
+const immDate = imm => imm.mission.debut || imm.createdAt || '';
+const immYear = imm => immDate(imm).slice(0, 4) || '—';
+
+function immStatus(imm) {
+  const ts = imm.taches;
+  if (!ts.length) return { label: 'À démarrer', cls: '', pct: 0 };
+  const pct = Math.round(ts.reduce((a, t) => a + (t.p1Done ? 1 : 0) + (t.p2Done ? 1 : 0) + (t.p3Done ? 1 : 0), 0) / (ts.length * 3) * 100);
+  if (ts.every(t => t.p3Done)) return { label: 'Terminée', cls: 'ok', pct: 100 };
+  if (ts.some(t => t.p2Done)) return { label: 'Phase 3 · Validation', cls: 'warn', pct };
+  if (ts.some(t => t.p1Done)) return { label: 'Phase 2 · Réflexion', cls: 'warn', pct };
+  return { label: 'Phase 1 · Immersion', cls: 'warn', pct };
+}
+
+function viewPortfolio() {
+  const all = db.immersions;
+  const years = [...new Set(all.map(immYear))].sort().reverse();
+  if (portfolioYear !== 'all' && !years.includes(portfolioYear)) portfolioYear = years[0] || String(new Date().getFullYear());
+  const list = all.filter(i => portfolioYear === 'all' || immYear(i) === portfolioYear)
+    .slice().sort((a, b) => immDate(b).localeCompare(immDate(a)));
+  const rows = list.map(i => ({ i, g: globalStats(i), st: immStatus(i) }));
+  const T = rows.reduce((a, { g }) => {
+    ['avant', 'apres', 'gain', 'simplifiees', 'validees', 'supprimees', 'riskHautAvant', 'riskHautApres', 'riskBaisse'].forEach(k => { a[k] += g[k]; });
+    FLAGS.forEach(f => { a.leves += g.flagsLeves[f.key]; a.flags += g.flagsAvant[f.key]; });
+    return a;
+  }, { avant: 0, apres: 0, gain: 0, simplifiees: 0, validees: 0, supprimees: 0, riskHautAvant: 0, riskHautApres: 0, riskBaisse: 0, leves: 0, flags: 0 });
+  const ameliores = rows.filter(r => r.g.gain > 0.0001).length;
+  const nbTaches = rows.reduce((a, r) => a + r.i.taches.length, 0);
+
+  const header = `<header class="phase-head">
+      <div><div class="eyebrow">Prendre de la hauteur</div><h1>Mes immersions</h1>
+        <p class="sub">Toutes les immersions menées, le temps gagné par service et les postes améliorés. Ouvre une immersion pour la continuer, ou crées-en une nouvelle.</p></div>
+      <div class="actions no-print"><button class="btn lg" data-action="print">🖶 Imprimer le bilan</button><button class="btn primary lg" data-action="new-imm">+ Nouvelle immersion</button></div>
+    </header>`;
+  if (!all.length) {
+    return `${header}<div class="empty">Aucune immersion pour l'instant.<br><button class="btn primary lg" data-action="new-imm">+ Créer ma première immersion</button>
+      <button class="btn" data-action="load-demo">Voir la démo</button></div>${dataCard()}`;
+  }
+
+  // Temps gagné par service
+  const bySvc = {};
+  rows.forEach(({ i, g }) => {
+    const k = i.mission.service || 'Service non renseigné';
+    bySvc[k] = bySvc[k] || { gain: 0, avant: 0, n: 0 };
+    bySvc[k].gain += Math.max(0, g.gain); bySvc[k].avant += g.avant; bySvc[k].n++;
+  });
+  const svc = Object.entries(bySvc).sort((a, b) => b[1].gain - a[1].gain);
+  const maxSvc = Math.max(1, ...svc.map(([, v]) => v.gain));
+
+  // Temps gagné par mois (ou par année si toutes les années)
+  const cols = portfolioYear === 'all'
+    ? years.slice().reverse().map(y => [y, all.filter(i => immYear(i) === y).reduce((a, i) => a + Math.max(0, globalStats(i).gain), 0)])
+    : MOIS.map((m, k) => [m, rows.filter(r => Number(immDate(r.i).slice(5, 7)) === k + 1).reduce((a, r) => a + Math.max(0, r.g.gain), 0)]);
+  const maxCol = Math.max(1, ...cols.map(c => c[1]));
+  const maxPoste = Math.max(1, ...rows.map(r => r.g.avant));
+
+  return `${header}
+    <div class="year-bar no-print"><span class="lbl">Année :</span>
+      ${[...years, 'all'].map(y => `<button class="chip${portfolioYear === y ? ' on' : ''}" data-action="year" data-value="${y}">${y === 'all' ? 'Toutes' : y}</button>`).join('')}</div>
+
+    <div class="kpis">
+      ${kpi('Temps gagné', fmtDur(Math.max(0, T.gain)) + ' / an', `${fmtEtp(Math.max(0, T.gain))} · ${pct(Math.max(0, T.gain), T.avant)} du temps analysé`, 'good')}
+      ${kpi('Immersions menées', rows.length, `${plural(ameliores, 'poste amélioré', 'postes améliorés')}`)}
+      ${kpi('Tâches simplifiées', `${T.simplifiees} / ${nbTaches}`, plural(T.validees, 'solution validée', 'solutions validées'))}
+      ${kpi('Irritants levés', `${T.leves} / ${T.flags}`, plural(T.supprimees, 'étape supprimée', 'étapes supprimées'))}
+      ${kpi('Risque personne clé', `${T.riskHautAvant} → ${T.riskHautApres}`, `tâches à risque élevé · ${T.riskBaisse} en baisse`, T.riskHautApres < T.riskHautAvant ? 'good' : '')}
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><div><h2>Temps gagné par service</h2><p class="muted small">Heures gagnées par an, cumulées sur les immersions du service.</p></div></div>
+        <div class="hbars">${svc.map(([k, v]) => `
+          <div class="hbar-row"><div class="hbar-label" title="${esc(k)}">${esc(k)}<small>${plural(v.n, 'immersion')} · ${pct(v.gain, v.avant)} du temps</small></div>
+            <div class="bar-track lg"><div class="bar gain" style="width:${v.gain / maxSvc * 100}%"></div></div>
+            <div class="hbar-val">${fmtDur(v.gain)}</div></div>`).join('')}</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div><h2>Temps gagné ${portfolioYear === 'all' ? 'par année' : 'par mois'}</h2><p class="muted small">Selon le mois de début de chaque immersion.</p></div></div>
+        <div class="cols">${cols.map(([l, v]) => `
+          <div class="col" title="${esc(l)} : ${fmtDur(v)} gagnées / an"><div class="col-area"><span class="col-val">${v ? fmtDur(v) : ''}</span><div class="col-bar" style="height:${v / maxCol * 100}%"></div></div><div class="col-lbl">${esc(l)}</div></div>`).join('')}</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><h2>Avant / après, poste par poste</h2><p class="muted small">Temps annuel des tâches analysées : aujourd'hui (gris) et demain (bleu).</p></div></div>
+      <div class="hbars">${rows.map(({ i, g }) => `
+        <div class="hbar-row"><div class="hbar-label">${esc(i.mission.poste || 'Poste non renseigné')}<small>${esc(immLabel(i))}</small></div>
+          <div><div class="bar-track"><div class="bar" style="width:${g.avant / maxPoste * 100}%"></div></div>
+            <div class="bar-track mt"><div class="bar after" style="width:${g.apres / maxPoste * 100}%"></div></div></div>
+          <div class="hbar-val">${g.gain > 0 ? `<b class="good">−${fmtDur(g.gain)}</b>` : '—'}<small>${fmtDur(g.avant)} → ${fmtDur(g.apres)}</small></div></div>`).join('')}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><h2>Toutes les immersions${portfolioYear === 'all' ? '' : ' ' + esc(portfolioYear)}</h2></div>
+        <button class="btn primary no-print" data-action="new-imm">+ Nouvelle immersion</button></div>
+      <div class="table-wrap"><table class="imm-table">
+        <thead><tr><th>Période</th><th>Service</th><th>Poste · personne</th><th>Avancement</th><th class="right">Tâches</th><th class="right">Temps analysé</th><th class="right">Gain / an</th><th>Personne clé*</th><th class="no-print"></th></tr></thead>
+        <tbody>${rows.map(({ i, g, st }) => `<tr${i === state ? ' class="current"' : ''}>
+          <td class="small">${i.mission.debut ? new Date(i.mission.debut).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : '—'}</td>
+          <td><b>${esc(i.mission.service || '—')}</b></td>
+          <td>${esc(i.mission.poste || '—')}<div class="small muted">${esc(i.mission.personne)}</div></td>
+          <td><span class="badge ${st.cls}">${st.label}</span><div class="progress"><div style="width:${st.pct}%"></div></div></td>
+          <td class="right num">${i.taches.length}</td>
+          <td class="right num">${fmtDur(g.avant)}</td>
+          <td class="right num good"><b>${g.gain > 0 ? '−' + fmtDur(g.gain) : '—'}</b></td>
+          <td class="small">${g.riskHautAvant} → ${g.riskHautApres}</td>
+          <td class="actions-cell no-print"><button class="btn sm primary" data-action="open-imm" data-id="${i.id}">Ouvrir</button>
+            <button class="btn sm" data-action="open-imm" data-id="${i.id}" data-to="#/4">Dossier</button>
+            <button class="icon-btn danger" title="Supprimer" data-action="del-imm" data-id="${i.id}">✕</button></td></tr>`).join('')}
+          <tr class="total"><td colspan="5"><b>Total</b></td><td class="right num"><b>${fmtDur(T.avant)}</b></td><td class="right num good"><b>−${fmtDur(Math.max(0, T.gain))}</b></td><td class="small">${T.riskHautAvant} → ${T.riskHautApres}</td><td class="no-print"></td></tr>
+        </tbody></table></div>
+      <p class="muted small" style="margin-top:8px">* Nombre de tâches à risque « personne clé » élevé, avant → après. Les gains ne comptent que les temps estimés par les personnes en phase 3.</p>
+    </div>
+    ${dataCard()}`;
+}
+function dataCard() {
+  return `<div class="card no-print">
+    <div class="card-head"><div><h2>Sauvegarde</h2><p class="muted">Tout s'enregistre automatiquement dans ce navigateur, sur ce poste uniquement. Exporte une sauvegarde complète à la fin de chaque journée.</p></div></div>
+    <div class="actions">
+      <button class="btn primary" data-action="export-json">⭳ Exporter la sauvegarde complète</button>
+      <button class="btn" data-action="import-json">⭱ Importer (sauvegarde ou immersion)</button>
+      <button class="btn" data-action="load-demo">Recharger la démo</button>
+      <button class="btn danger" data-action="reset-all">Tout effacer</button>
+    </div></div>`;
 }
 
 /* ---------- Accueil ---------- */
@@ -382,15 +537,13 @@ function viewAccueil() {
     </div>
 
     <div class="card">
-      <div class="card-head"><div><h2>Sauvegarde</h2><p class="muted">Tout s'enregistre automatiquement dans ce navigateur, sur ce poste uniquement. Exporte une sauvegarde à la fin de chaque journée.</p></div></div>
+      <div class="card-head"><div><h2>Cette immersion</h2><p class="muted">Tout s'enregistre automatiquement dans ce navigateur. La sauvegarde complète (toutes les immersions) se fait depuis <a href="#/immersions">Mes immersions</a>.</p></div></div>
       <div class="actions">
-        <button class="btn primary" data-action="export-json">⭳ Exporter la sauvegarde</button>
-        <button class="btn" data-action="import-json">⭱ Importer une sauvegarde</button>
-        <button class="btn" data-action="load-demo">Recharger la démo</button>
-        <button class="btn danger" data-action="reset-all">Tout effacer et repartir de zéro</button>
+        <button class="btn" data-action="export-imm">⭳ Exporter cette immersion seule</button>
+        <button class="btn danger" data-action="del-imm" data-id="${state.id}">Supprimer cette immersion</button>
       </div>
       <p class="muted small" style="margin-top:12px">Calcul : temps par an = minutes par fois × nombre de fois par an (1 jour = 220 jours ouvrés, 1 semaine = 47, 1 mois = 12).
-        Un ETP = ${numInp('settings', 'heuresEtp', state.settings.heuresEtp, 'class="tiny"')} heures par an.</p>
+        Un ETP = ${numInp('settings', 'heuresEtp', db.settings.heuresEtp, 'class="tiny"')} heures par an.</p>
     </div>`;
 }
 
@@ -1094,20 +1247,32 @@ function exportCsv(t) {
 }
 function exportJson() {
   const d = new Date().toISOString().slice(0, 10);
-  download(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }), `carto-process-${slug(state.mission.service || 'mission')}-${d}.json`);
+  download(new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }), `carto-process-sauvegarde-${d}.json`);
 }
+function exportImm() {
+  const d = new Date().toISOString().slice(0, 10);
+  download(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }), `carto-process-${slug(immLabel(state))}-${d}.json`);
+}
+// Une sauvegarde complète remplace tout ; une immersion seule est ajoutée aux autres
 function importJson(file) {
   const reader = new FileReader();
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      if (!data || !Array.isArray(data.taches)) throw new Error('format');
-      if (!confirm('Remplacer les données actuelles par cette sauvegarde ?')) return;
-      state = normalize(data);
+      if (data && Array.isArray(data.immersions)) {
+        if (!confirm('Sauvegarde complète : remplacer toutes les immersions actuelles par celles du fichier ?')) return;
+        db = normalizeDb(data);
+        setActive(db.immersions.find(i => i.id === db.activeId) || null);
+        toast('Sauvegarde importée.');
+      } else if (data && Array.isArray(data.taches)) {
+        const imm = normalizeImm(data);
+        if (db.immersions.some(i => i.id === imm.id)) imm.id = uid();
+        db.immersions.push(imm);
+        toast('Immersion « ' + immLabel(imm) + ' » ajoutée.');
+      } else throw new Error('format');
       save();
-      go('#/accueil');
+      go('#/immersions');
       render();
-      toast('Sauvegarde importée.');
     } catch (e) {
       toast('Fichier invalide : ce n\'est pas une sauvegarde Carto Process.');
     }
@@ -1222,17 +1387,41 @@ const actions = {
   'export-png'(el) { const t = currentTask(); if (t) exportPng(t, !!el.dataset.tobe); },
   'export-csv'() { const t = currentTask(); if (t) exportCsv(t); },
   'export-json': exportJson,
+  'export-imm': exportImm,
+  'new-imm'() {
+    const imm = newImm();
+    db.immersions.push(imm);
+    setActive(imm);
+    save(); go('#/accueil');
+    setTimeout(() => { const el = document.querySelector('[data-bind="mission|service"]'); if (el) el.focus(); }, 30);
+  },
+  'open-imm'(el) {
+    const imm = db.immersions.find(i => i.id === el.dataset.id);
+    if (!imm) return;
+    setActive(imm);
+    save(); go(el.dataset.to || '#/accueil');
+  },
+  'del-imm'(el) {
+    const imm = db.immersions.find(i => i.id === el.dataset.id);
+    if (!imm || !confirm(`Supprimer l'immersion « ${immLabel(imm)} » et toutes ses tâches ?`)) return;
+    db.immersions = db.immersions.filter(i => i !== imm);
+    if (state === imm) setActive(null);
+    save(); go('#/immersions'); render();
+  },
+  'year'(el) { portfolioYear = el.dataset.value; render(); },
   'import-json'() { document.getElementById('importFile').click(); },
   'load-demo'() {
-    if (state.taches.length && !confirm('Remplacer les données actuelles par la démonstration ?')) return;
-    state = demoState();
-    save(); go('#/accueil'); render();
+    if (db.immersions.length && !confirm('Remplacer toutes les données actuelles par la démonstration ?')) return;
+    db = demoDb();
+    setActive(db.immersions.find(i => i.id === db.activeId) || null);
+    save(); go('#/immersions'); render();
   },
   'reset-all'() {
-    if (!confirm('Effacer toutes les données et repartir de zéro ?\nPense à exporter une sauvegarde avant si besoin.')) return;
-    state = emptyState();
-    save(); go('#/accueil'); render();
-    toast('C\'est tout propre. Commence par renseigner la mission.');
+    if (!confirm('Effacer toutes les immersions et repartir de zéro ?\nPense à exporter une sauvegarde avant si besoin.')) return;
+    db = emptyDb();
+    setActive(null);
+    save(); go('#/immersions'); render();
+    toast('C\'est tout propre. Crée ta première immersion.');
   },
   'print'() { window.print(); }
 };
@@ -1297,9 +1486,8 @@ window.addEventListener('hashchange', () => {
 /* ==========================================================================
    Données de démonstration (fictives)
    ========================================================================== */
-function demoState() {
-  const st = emptyState();
-  st.isDemo = true;
+function demoImmSophie() {
+  const st = newImm({ id: 'imm-sophie', createdAt: '2026-11-02' });
   st.mission = {
     service: 'Gestion de la connaissance', personne: 'Sophie', poste: 'Chargée de gestion de la connaissance',
     analyste: 'Analyste mission', debut: '2026-11-02', fin: '2026-11-13',
@@ -1392,7 +1580,87 @@ function demoState() {
   return st;
 }
 
+// Étape de démo compacte : flags = combinaison de R, M, S
+function D(quoi, qui, outil, duree, flags = '', precision = '', sol = '', levier = '', nouveauTemps = '', extra = {}) {
+  return newStep(Object.assign({
+    quoi, qui, outil, duree: String(duree), precision, sol, levier, nouveauTemps: String(nouveauTemps),
+    ressaisie: flags.includes('R'), manuel: flags.includes('M'), suivi: flags.includes('S'),
+    avis: sol && nouveauTemps !== '' ? 'ok' : ''
+  }, extra));
+}
+function doneTask(o) { return newTask(Object.assign({ p1Done: true, p2Done: true, p3Done: true }, o)); }
+
+function demoDb() {
+  const d = emptyDb();
+  d.isDemo = true;
+
+  const credits = newImm({ id: 'imm-credits', createdAt: '2026-03-09' });
+  credits.mission = { service: 'Back-office crédits', personne: 'Karim', poste: 'Gestionnaire back-office crédits', analyste: 'Analyste mission',
+    debut: '2026-03-09', fin: '2026-03-20', contexte: 'Délais de traitement des dossiers de prêt jugés trop longs.' };
+  credits.taches = [
+    doneTask({ nom: 'Constituer le dossier de prêt', freqQty: '60', freqPer: 'mois', origine: 'Pièces envoyées par le client', resultat: 'Dossier complet transmis à l\'analyste',
+      quiSait: 'une', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
+        D('Réceptionner les pièces par mail', 'Karim', 'Outlook', 10, 'S', 'Pièces manquantes relancées à la main', 'Portail de dépôt avec liste des pièces manquantes', 'outiller', 4, { tracabilite: true }),
+        D('Ressaisir les infos client dans l\'outil crédit', 'Karim', 'Outil crédit', 15, 'R', 'Infos déjà présentes dans le CRM', 'Pré-remplissage automatique depuis le CRM', 'automatiser', 3),
+        D('Contrôler la complétude du dossier', 'Karim', 'Checklist papier', 12, 'M', 'Checklist papier, cochée à la main', 'Checklist intégrée à l\'outil avec blocage', 'outiller', 6, { securise: true }),
+        D('Transmettre à l\'analyste', 'Karim', 'Outlook', 5)
+      ] }),
+    doneTask({ nom: 'Éditer les offres de prêt', freqQty: '50', freqPer: 'mois', origine: 'Accord de l\'analyste', resultat: 'Offre signée reçue',
+      quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
+        D('Générer l\'offre', 'Karim', 'Outil crédit', 8),
+        D('Corriger la mise en page', 'Karim', 'Word', 10, 'M', 'Le modèle sort mal formaté', 'Modèle d\'offre corrigé dans l\'outil', 'modele', 2),
+        D('Envoyer et suivre le retour signé', 'Karim', 'Outlook', 10, 'S', 'Relances manuelles', 'Signature électronique avec relance automatique', 'automatiser', 2, { tracabilite: true })
+      ] })
+  ];
+
+  const succ = newImm({ id: 'imm-successions', createdAt: '2026-06-01' });
+  succ.mission = { service: 'Successions', personne: 'Nadia', poste: 'Conseillère successions', analyste: 'Analyste mission',
+    debut: '2026-06-01', fin: '2026-06-12', contexte: 'Stock de dossiers en hausse, une seule personne formée.' };
+  succ.taches = [
+    doneTask({ nom: 'Ouvrir un dossier de succession', freqQty: '25', freqPer: 'mois', origine: 'Acte de décès reçu du notaire', resultat: 'Comptes bloqués et dossier ouvert',
+      quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
+        D('Recevoir et scanner l\'acte du notaire', 'Nadia', 'Courrier', 10, 'M', 'Courrier papier scanné à la main', 'Réception dématérialisée via une boîte notaires', 'outiller', 4),
+        D('Bloquer chaque compte du défunt', 'Nadia', 'Outil comptes', 15, 'R', 'Saisie compte par compte', 'Blocage groupé de tous les comptes', 'automatiser', 5, { securise: true }),
+        D('Créer le dossier dans le tableau de suivi', 'Nadia', 'Excel', 8, 'RS', 'Double saisie, pas de vision des délais', 'Tableau de bord des dossiers partagé', 'outiller', 2, { tracabilite: true })
+      ] }),
+    doneTask({ nom: 'Répondre aux notaires', freqQty: '6', freqPer: 'jour', origine: 'Demande d\'un notaire', resultat: 'Réponse envoyée',
+      quiSait: 'une', modeOp: 'non', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
+        D('Rechercher le dossier', 'Nadia', 'Excel', 4, 'M', 'Recherche dans plusieurs fichiers', 'Tableau de bord unique', 'outiller', 1),
+        D('Rédiger la réponse', 'Nadia', 'Outlook', 8, 'M', 'Réponses rédigées à chaque fois', 'Bibliothèque de réponses types', 'modele', 4)
+      ] })
+  ];
+
+  const assist = newImm({ id: 'imm-assistance', createdAt: '2026-09-14' });
+  assist.mission = { service: 'Assistance clientèle', personne: 'Thomas', poste: 'Conseiller assistance', analyste: 'Analyste mission',
+    debut: '2026-09-14', fin: '2026-09-25', contexte: 'Temps d\'appel moyen en hausse.' };
+  assist.taches = [
+    doneTask({ nom: 'Traiter une opposition carte', freqQty: '15', freqPer: 'jour', origine: 'Appel du client', resultat: 'Carte opposée, client informé',
+      quiSait: 'plusieurs', modeOp: 'partiel', quiSaitApres: 'plusieurs', modeOpApres: 'oui', steps: [
+        D('Prendre l\'appel et identifier le client', 'Thomas', 'Téléphone', 6),
+        D('Faire l\'opposition', 'Thomas', 'Outil cartes', 4, 'R', 'Ressaisie du numéro de carte', 'Opposition lancée depuis la fiche client', 'automatiser', 2),
+        D('Envoyer la confirmation au client', 'Thomas', 'Outlook', 3, 'M', 'Mail rédigé à la main', 'Mail type envoyé automatiquement', 'automatiser', 0, { tracabilite: true })
+      ] })
+  ];
+
+  const habil = newImm({ id: 'imm-habilitations', createdAt: '2025-11-03' });
+  habil.mission = { service: 'Gestion des habilitations', personne: 'Claire', poste: 'Gestionnaire habilitations', analyste: 'Analyste mission',
+    debut: '2025-11-03', fin: '2025-11-14', contexte: 'Délais d\'ouverture des accès pour les nouveaux arrivants.' };
+  habil.taches = [
+    doneTask({ nom: 'Créer les accès d\'un nouvel arrivant', freqQty: '8', freqPer: 'mois', origine: 'Demande des RH', resultat: 'Accès envoyés au manager',
+      quiSait: 'personne', modeOp: 'non', quiSaitApres: 'une', modeOpApres: 'oui', steps: [
+        D('Recevoir la demande des RH', 'Claire', 'Outlook', 5, 'S', 'Demandes incomplètes', 'Formulaire de demande obligatoire', 'outiller', 2),
+        D('Créer les comptes dans 5 outils', 'Claire', '5 outils', 45, 'R', 'La même information saisie 5 fois', 'Demande unique avec création automatique', 'automatiser', 15, { securise: true }),
+        D('Envoyer les accès au manager', 'Claire', 'Outlook', 10, 'M', 'Mail préparé à la main', 'Kit d\'arrivée généré automatiquement', 'automatiser', 2, { tracabilite: true })
+      ] })
+  ];
+
+  const sophie = demoImmSophie();
+  d.immersions = [habil, credits, succ, assist, sophie];
+  d.activeId = sophie.id;
+  return d;
+}
+
 /* ---------- Démarrage ---------- */
-if (!location.hash) history.replaceState(null, '', '#/accueil');
+if (!location.hash) history.replaceState(null, '', '#/immersions');
 save();
 render();
