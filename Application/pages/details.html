@@ -47,7 +47,7 @@
         .tag { display: inline-block; padding: 4px 11px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); border-radius: 999px; font-size: 0.68rem; font-weight: 700; border: 1px solid var(--green-100, #ccebdd); }
         .channel-card { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 14px; padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--shadow-xs); }
         .channel-card h4 { margin: 0 0 10px 0; color: var(--ink, #0c1a14); font-size: 0.9375rem; font-weight: 700; letter-spacing: -0.2px; }
-        .error-message { background: var(--red-50, #fdeaec); border: 1px solid #fecaca; color: #991b1b; padding: 18px; border-radius: 14px; text-align: center; margin: 32px 0; font-size: 0.875rem; }
+        .error-message { background: var(--red-50, #fdeaec); border: 1px solid var(--red, #fecaca); color: var(--red, #991b1b); padding: 18px; border-radius: 14px; text-align: center; margin: 32px 0; font-size: 0.875rem; }
         .loading-container { text-align: center; padding: 48px 20px; }
         .spinner { border: 3px solid var(--line, #eaefec); border-top: 3px solid var(--primary, #00875A); border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; margin: 0 auto 16px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -61,8 +61,8 @@
         .actor-section--mep { border-left-color: var(--violet, #7C3AED); }
         .actor-section--revision { border-left-color: var(--red, #E2001A); }
         .actor-section--revision h3 { color: var(--red, #E2001A); }
-        .badge-revision { display: inline-block; background: var(--red-50, #fdeaec); color: var(--red, #E2001A); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 8px; text-transform: none; letter-spacing: 0; border: 1px solid #fecaca; }
-        .revision-alert { background: var(--red-50, #fdeaec); border: 1px solid #fecaca; border-radius: 12px; padding: 11px 14px; margin-bottom: 14px; font-size: 13px; color: var(--red, #E2001A); white-space: pre-wrap; word-break: break-word; }
+        .badge-revision { display: inline-block; background: var(--red-50, #fdeaec); color: var(--red, #E2001A); border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 8px; text-transform: none; letter-spacing: 0; border: 1px solid var(--red, #fecaca); }
+        .revision-alert { background: var(--red-50, #fdeaec); border: 1px solid var(--red, #fecaca); border-radius: 12px; padding: 11px 14px; margin-bottom: 14px; font-size: 13px; color: var(--red, #E2001A); white-space: pre-wrap; word-break: break-word; }
 
         /* ── Actor section header ── */
         .actor-section h3 {
@@ -96,11 +96,11 @@
         .form-control:disabled, .form-control[readonly] { background: var(--line-2, #f0f4f1); color: var(--muted-2, #8b988f); cursor: not-allowed; border-color: var(--line, #eaefec); }
         .radio-group { display: flex; gap: 20px; padding: 6px 0; }
         .radio-group label { display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13.5px; text-transform: none; letter-spacing: 0; color: var(--ink, #0c1a14); cursor: pointer; }
-        .btn-actor-save { background: #fff; border: 1px solid var(--line, #eaefec); border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 650; cursor: pointer; color: var(--gray-700, #33403a); transition: all 0.15s; margin-top: 4px; }
+        .btn-actor-save { background: var(--bg-card, #fff); border: 1px solid var(--line, #eaefec); border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 650; cursor: pointer; color: var(--gray-700, #33403a); transition: all 0.15s; margin-top: 4px; }
         .btn-actor-save:hover { background: var(--green-50, #e8f6ef); border-color: var(--primary, #00875A); color: var(--green-600, #00734C); }
         .btn-actor-save:disabled { opacity: 0.5; cursor: not-allowed; }
         /* Dépôt enregistré (brouillon) mais pas encore soumis à validation. */
-        .draft-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #9a6b00; background: var(--amber-50, #fdf3e2); border: 1px solid var(--amber, #E8A100); border-radius: 999px; padding: 3px 10px; margin-bottom: 10px; cursor: help; }
+        .draft-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--status-valid, #9a6b00); background: var(--amber-50, #fdf3e2); border: 1px solid var(--amber, #E8A100); border-radius: 999px; padding: 3px 10px; margin-bottom: 10px; cursor: help; }
         .btn-actor-submit { background: var(--primary, #00875A); color: #fff; border: none; border-radius: 10px; padding: 10px 22px; font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; box-shadow: 0 2px 6px rgba(0,135,90,0.22); }
         .btn-actor-submit:hover { background: var(--primary-hover, #00734C); box-shadow: 0 6px 16px rgba(0,135,90,0.3); }
         .btn-actor-submit:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; }
@@ -116,7 +116,7 @@
         .depot-readonly-item { font-size: 12px; color: var(--gray-700, #33403a); min-width: 0; overflow-wrap: anywhere; }
         .depot-readonly-item strong { display: block; color: var(--muted-2, #8b988f); font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
         .depot-status-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-        .depot-status-badge--submitted { background: var(--blue-50, #e8f0fe); color: #1d4ed8; }
+        .depot-status-badge--submitted { background: var(--blue-50, #e8f0fe); color: var(--status-maq, #1d4ed8); }
         .depot-status-badge--saved { background: var(--line-2, #f0f4f1); color: var(--muted, #56655e); }
 
         /* ── Onglets de navigation horizontaux ── */
@@ -175,7 +175,7 @@
         /* ── Bandeau d'action sticky (haut de l'onglet Infos) : résume l'étape la
            plus ancienne encore bloquée, tous canaux confondus, avec raccourci. ── */
         .sticky-banner { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: linear-gradient(135deg, var(--amber-50, #fdf3e2), #fff); border: 1px solid var(--amber-50, #fdf3e2); border-bottom: 2px solid var(--amber, #E8A100); border-radius: 10px; padding: 11px 16px; margin-bottom: 16px; box-shadow: 0 6px 14px rgba(232,161,0,.10); }
-        .sticky-banner-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: #9a6b00; background: var(--amber-50, #fdf3e2); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+        .sticky-banner-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; color: var(--status-valid, #9a6b00); background: var(--amber-50, #fdf3e2); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
         .sticky-banner-text { font-size: 13px; color: var(--ink, #0c1a14); flex: 1; min-width: 220px; }
         .sticky-banner-cta { background: var(--primary, #00875A); color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap; font-family: inherit; }
         .sticky-banner-cta:hover { background: var(--primary-hover, #00734C); }
@@ -213,15 +213,15 @@
         .wf-head .wf-title { font-size: 13px; font-weight: 750; color: var(--ink, #0c1a14); display: flex; align-items: center; gap: 8px; }
         .wf-badge { font-size: 11px; font-weight: 700; padding: 4px 11px; border-radius: 999px; background: var(--green-50, #e8f6ef); color: var(--green-600, #00734C); white-space: nowrap; }
         .wf-badge.done { background: var(--green-50); color: var(--green-700); }
-        .wf-badge.wait { background: var(--amber-50); color: #9a6b00; }
-        .wf-badge.val  { background: var(--blue-50); color: #1d4ed8; }
+        .wf-badge.wait { background: var(--amber-50); color: var(--status-valid, #9a6b00); }
+        .wf-badge.val  { background: var(--blue-50); color: var(--status-maq, #1d4ed8); }
         .wf-badge.rev  { background: var(--red-50); color: var(--red); }
         .wf-stepper { display: flex; align-items: flex-start; overflow-x: auto; padding: 2px 0 4px; }
         .wf-step { display: flex; flex-direction: column; align-items: center; flex: 1 1 0; min-width: 78px; position: relative; }
         .wf-step::before { content: ""; position: absolute; top: 16px; left: -50%; width: 100%; height: 2px; background: var(--line, #eaefec); z-index: 0; }
         .wf-step:first-child::before { display: none; }
         .wf-step.done::before, .wf-step.submitted::before, .wf-step.current::before, .wf-step.revision::before { background: var(--primary, #00875A); }
-        .wf-node { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; z-index: 1; border: 2px solid var(--line, #eaefec); background: #fff; color: var(--muted-2, #8b988f); }
+        .wf-node { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; z-index: 1; border: 2px solid var(--line, #eaefec); background: var(--bg-card, #fff); color: var(--muted-2, #8b988f); }
         .wf-step.done .wf-node { background: var(--primary, #00875A); border-color: var(--primary, #00875A); color: #fff; }
         .wf-step.current .wf-node { border-color: var(--amber, #E8A100); color: var(--amber, #E8A100); box-shadow: 0 0 0 4px var(--amber-50, #fdf3e2); }
         .wf-step.submitted .wf-node { border-color: var(--blue, #2563EB); color: var(--blue, #2563EB); box-shadow: 0 0 0 4px var(--blue-50, #e8f0fe); }
@@ -245,7 +245,7 @@
            Cf. workflow.getChannelStepDate(). */
         .wf-stepper--cal .wf-node { width: 40px; height: 40px; }
         .wf-stepper--cal .wf-step::before { top: 20px; }
-        .wf-cal { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 2px solid var(--line, #eaefec); background: #fff; flex-shrink: 0; display: flex; flex-direction: column; z-index: 1; }
+        .wf-cal { width: 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 2px solid var(--line, #eaefec); background: var(--bg-card, #fff); flex-shrink: 0; display: flex; flex-direction: column; z-index: 1; }
         .wf-cal-tag { font-size: 7.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; text-align: center; padding: 2.5px 0; background: var(--muted-2, #8b988f); color: #fff; }
         .wf-cal-num { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: var(--ink, #0c1a14); font-variant-numeric: tabular-nums; }
         .wf-step.done .wf-cal { border-color: var(--primary, #00875A); }
@@ -415,7 +415,7 @@
         .chat-bubble-btn:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 14px 28px rgba(0,115,76,.42), 0 2px 5px rgba(12,30,22,.12); }
         .chat-bubble-btn svg { width: 24px; height: 24px; }
         .chat-bubble-badge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--red, #E2001A); color: #fff; font-size: 11px; font-weight: 800; display: none; align-items: center; justify-content: center; border: 2.5px solid #fff; }
-        .chat-panel { display: none; position: fixed; bottom: 90px; right: 24px; width: 340px; max-height: 65vh; background: #fff; border-radius: 16px; box-shadow: 0 16px 40px rgba(12,30,22,.22); border: 1px solid var(--line, #eaefec); overflow: hidden; flex-direction: column; z-index: 51; }
+        .chat-panel { display: none; position: fixed; bottom: 90px; right: 24px; width: 340px; max-height: 65vh; background: var(--bg-card, #fff); border-radius: 16px; box-shadow: 0 16px 40px rgba(12,30,22,.22); border: 1px solid var(--line, #eaefec); overflow: hidden; flex-direction: column; z-index: 51; }
         .chat-panel.open { display: flex; }
         .chat-panel-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; background: linear-gradient(135deg, #12C386, #00734C); color: #fff; font-size: 13.5px; font-weight: 750; flex-shrink: 0; }
         .chat-panel-close { cursor: pointer; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; opacity: .9; border: none; background: none; color: #fff; padding: 0; }
@@ -426,10 +426,10 @@
             .chat-panel { width: calc(100vw - 24px); right: 12px; bottom: 74px; }
         }
         /* ── Éditeur de texte enrichi (demande de modification) ── */
-        .rich-editor { border: 1px solid var(--amber, #E8A100); border-radius: 6px; overflow: hidden; background: #fff; }
+        .rich-editor { border: 1px solid var(--amber, #E8A100); border-radius: 6px; overflow: hidden; background: var(--bg-card, #fff); }
         .rich-toolbar { display: flex; gap: 3px; padding: 4px 6px; background: var(--line-2, #f0f4f1); border-bottom: 1px solid var(--line, #eaefec); flex-wrap: wrap; }
         .rich-tb-btn { background: none; border: 1px solid transparent; border-radius: 4px; min-width: 27px; height: 24px; font-size: 13px; cursor: pointer; color: var(--muted, #444); line-height: 1; padding: 0 6px; }
-        .rich-tb-btn:hover { background: #fff; border-color: var(--line, #eaefec); }
+        .rich-tb-btn:hover { background: var(--bg-card, #fff); border-color: var(--line, #eaefec); }
         .rich-input { min-height: 70px; padding: 8px 10px; font-size: 13px; font-family: inherit; color: var(--ink, #0c1a14); outline: none; line-height: 1.5; }
         .rich-input:empty:before { content: attr(data-placeholder); color: var(--muted-2, #8b988f); }
         .rich-input ul, .rich-input ol { margin: 4px 0; padding-left: 22px; }
@@ -980,7 +980,8 @@
             h += '<span class="details-sidenav-label">Canaux</span>';
             channels.forEach(function(ch, idx) {
                 var label = ch.deliverableName || ('Canal ' + (idx + 1));
-                h += '<button class="details-nav-item" id="nav-item-' + idx + '" data-page="' + idx + '" title="' + security.escapeHtml(label) + '">📡 ' + security.escapeHtml(label) + '</button>';
+                var blocked = ch.blocageTechnique && ch.blocageTechnique.actif;
+                h += '<button class="details-nav-item" id="nav-item-' + idx + '" data-page="' + idx + '" title="' + security.escapeHtml(label) + (blocked ? ' — Blocage technique en cours' : '') + '">📡 ' + security.escapeHtml(label) + (blocked ? ' 🚫' : '') + '</button>';
             });
         }
         // Bilan : onglet masqué le temps de retravailler le calcul/la présentation
@@ -1088,7 +1089,7 @@
         // rôle, un manager à n'importe quel rôle qu'il gère.
         if (editableRoles.length) {
             html += '<div style="' + (teamParts.length ? 'margin-top:10px;' : '') + '">';
-            html += '<button type="button" id="btn-team-add-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">➕ Ajouter quelqu\'un à l\'équipe</button>';
+            html += '<button type="button" id="btn-team-add-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--muted, #555);">➕ Ajouter quelqu\'un à l\'équipe</button>';
             html += '</div>';
             html += '<div id="team-add-form" style="display:none;margin-top:10px;background:var(--line-2);border-radius:6px;padding:10px 12px;">';
             html += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.5;">La personne ajoutée devient affectée sur toute la campagne. Le motif est obligatoire — l\'ajout est tracé dans l\'onglet Activité.</div>';
@@ -1112,7 +1113,7 @@
             html += '<div style="' + (teamParts.length ? 'margin-top:12px;padding-top:12px;border-top:1px solid var(--line);' : '') + 'font-size:13px;">';
             html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">';
             html += '<span><strong>Co-PO (suppléance) :</strong> ' + (coPo.length ? coPo.map(security.escapeHtml).join(', ') : '<em style="color:var(--muted-2);">aucun</em>') + '</span>';
-            html += '<button id="btn-copo-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">✏️ Gérer</button>';
+            html += '<button id="btn-copo-toggle" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--muted, #555);">✏️ Gérer</button>';
             html += '</div>';
             html += '<div id="copo-form" style="display:none;margin-top:8px;">';
             html += '<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Un co-PO a les mêmes droits que vous sur cette campagne (validations, retours, test en prod…). Idéal pour vos congés.</div>';
@@ -1265,7 +1266,7 @@
             jurHtml += '<div class="detail-section" style="border-left-color:' + (jurAllDone ? 'var(--primary)' : 'var(--amber)') + ';">';
             jurHtml += '<h3>⚖️ Validation juridique et conformité</h3>';
             jurHtml += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">';
-            jurHtml += '<span style="background:' + (jurAllDone ? 'var(--green-50)' : 'var(--amber-50)') + ';color:' + (jurAllDone ? 'var(--primary-hover)' : '#d97706') + ';border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurAllDone ? '✅ Validée sur tous les canaux' : ('⏳ ' + jurDone + '/' + jurTotal + ' canal(aux) validé(s)')) + '</span>';
+            jurHtml += '<span style="background:' + (jurAllDone ? 'var(--green-50)' : 'var(--amber-50)') + ';color:' + (jurAllDone ? 'var(--primary-hover)' : 'var(--status-valid, #d97706)') + ';border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">' + (jurAllDone ? '✅ Validée sur tous les canaux' : ('⏳ ' + jurDone + '/' + jurTotal + ' canal(aux) validé(s)')) + '</span>';
             jurHtml += '</div>';
             jurHtml += '<div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Validation requise par la Com sur chaque canal, après validation de la maquette par le PO et avant transmission à l\'EBF.</div>';
             if (jur.comment) jurHtml += '<div style="font-size:13px;color:var(--gray-700);background:var(--line-2);border-radius:8px;padding:8px 12px;">' + security.escapeHtml(jur.comment) + '</div>';
@@ -1410,7 +1411,7 @@
         var lbl = _REOPEN_LABELS[stepId] || stepId;
         var uid = stepId + '-' + idx;
         var h = '<div style="margin:-4px 0 14px;">';
-        h += '<button type="button" class="btn-reopen-step" data-step="' + stepId + '" data-ch="' + idx + '" style="background:none;border:1px solid var(--amber);color:#9a6b00;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">↩️ Revenir à l\'étape « ' + security.escapeHtml(lbl) + ' »</button>';
+        h += '<button type="button" class="btn-reopen-step" data-step="' + stepId + '" data-ch="' + idx + '" style="background:none;border:1px solid var(--amber);color:var(--status-valid, #9a6b00);border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">↩️ Revenir à l\'étape « ' + security.escapeHtml(lbl) + ' »</button>';
         h += '<div id="reopen-form-' + uid + '" style="display:none;margin-top:8px;background:var(--amber-50,#fdf3e2);border:1px solid var(--amber);border-radius:8px;padding:10px 12px;">';
         h += '<div style="font-size:12px;color:var(--status-valid,#7a5a00);margin-bottom:6px;line-height:1.5;">⚠️ Cette étape et les étapes suivantes qui en dépendent seront à refaire. Motif <strong>obligatoire</strong> :</div>';
         h += buildRichEditor('reopen-motif-' + uid, 'Décrivez pourquoi vous revenez à cette étape…');
@@ -1474,6 +1475,7 @@
         // Codes saisis dans les dépôts (EBF/Data) puis recopiés sur le canal :
         // on les restitue aussi dans l'en-tête général du canal.
         if (ch.codeCom)    html += '<div class="detail-item"><span class="detail-label">Code Com</span><span class="detail-value">' + security.escapeHtml(ch.codeCom) + '</span></div>';
+        if (ch.codeApporteur) html += '<div class="detail-item"><span class="detail-label">Code apporteur</span><span class="detail-value">' + security.escapeHtml(ch.codeApporteur) + '</span></div>';
         if (ch.refParacom) html += '<div class="detail-item"><span class="detail-label">Réf Paracom</span><span class="detail-value">' + security.escapeHtml(ch.refParacom) + '</span></div>';
         if (ch.codeProjet) html += '<div class="detail-item"><span class="detail-label">Code Projet</span><span class="detail-value">' + security.escapeHtml(ch.codeProjet) + '</span></div>';
         if (ch.codeAction) html += '<div class="detail-item"><span class="detail-label">Code Action</span><span class="detail-value">' + security.escapeHtml(ch.codeAction) + '</span></div>';
@@ -1485,6 +1487,29 @@
         var isAssignedCom  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'com').indexOf(currentUser.name)  !== -1);
         var isAssignedEbf  = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'ebf').indexOf(currentUser.name)  !== -1);
         var isAssignedData = _isSuperAdmin || (currentUser && workflow.channelAssignees(data, idx, 'data').indexOf(currentUser.name) !== -1);
+
+        // Blocage technique du canal — indépendant de la progression du
+        // workflow (ex. plateforme d'envoi en panne) : signalé ici, avec si
+        // besoin un numéro de ticket CA Nous (incident interne Crédit Agricole).
+        // Éditable par toute personne affectée au canal, pas seulement le PO.
+        var blocage = ch.blocageTechnique || {};
+        var canEditBlocage = _isSuperAdmin || isPO || isAssignedCom || isAssignedEbf || isAssignedData;
+        html += '<div class="detail-section" style="border:1px solid ' + (blocage.actif ? 'var(--red,#E2001A)' : 'var(--line,#eaefec)') + ';background:' + (blocage.actif ? 'var(--red-50,#fdeaec)' : 'var(--bg-card,#fff)') + ';border-radius:12px;padding:14px 16px;margin-bottom:14px;">';
+        html += '<label style="display:flex;align-items:center;gap:8px;cursor:' + (canEditBlocage ? 'pointer' : 'default') + ';font-weight:700;font-size:13.5px;color:' + (blocage.actif ? 'var(--red,#E2001A)' : 'var(--ink)') + ';margin:0;">';
+        html += '<input type="checkbox" id="blocage-actif-' + idx + '"' + (blocage.actif ? ' checked' : '') + (canEditBlocage ? '' : ' disabled') + ' style="width:auto;">';
+        html += '🚫 Blocage technique en cours</label>';
+        if (canEditBlocage) {
+            html += '<div id="blocage-form-' + idx + '" style="margin-top:10px;' + (blocage.actif ? '' : 'display:none;') + '">';
+            html += '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">Motif</label>';
+            html += '<textarea id="blocage-motif-' + idx + '" rows="2" style="width:100%;box-sizing:border-box;margin-bottom:8px;" placeholder="Ex : plateforme d\'envoi indisponible">' + security.escapeHtml(blocage.motif || '') + '</textarea>';
+            html += '<label style="font-size:12px;color:var(--muted);display:block;margin-bottom:4px;">N° de ticket CA Nous</label>';
+            html += '<input type="text" id="blocage-ticket-' + idx + '" value="' + security.escapeHtml(blocage.ticketCANous || '') + '" style="width:100%;box-sizing:border-box;margin-bottom:10px;" placeholder="Ex : INC0012345">';
+            html += '<button id="btn-blocage-save-' + idx + '" style="padding:8px 14px;border:none;border-radius:8px;background:var(--primary,#00875A);color:#fff;font-weight:700;font-size:13px;cursor:pointer;">💾 Enregistrer</button>';
+            html += '</div>';
+        } else if (blocage.actif) {
+            html += '<div style="margin-top:8px;font-size:12.5px;color:var(--ink);">' + (blocage.motif ? security.escapeHtml(blocage.motif) + '<br>' : '') + (blocage.ticketCANous ? 'Ticket CA Nous : <strong>' + security.escapeHtml(blocage.ticketCANous) + '</strong>' : '') + '</div>';
+        }
+        html += '</div>';
         // Autorisation d'agir sur une étape donnée, acteur résolu PAR CANAL
         // (surcharge admin éventuelle — Administration ▸ Workflow, ex. la Com
         // peut déposer le test en prod pour le canal Courrier).
@@ -1578,7 +1603,7 @@
         var h = '<div class="detail-section" id="revision-history-' + idx + '">';
         h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;">';
         h += '<h3 style="margin:0;">🔁 Historique des demandes de modification</h3>';
-        h += '<span style="font-size:12px;font-weight:700;background:var(--amber-50);color:#9a6b00;border-radius:999px;padding:4px 12px;">' + log.length + ' aller' + (log.length > 1 ? 's' : '') + '-retour' + (log.length > 1 ? 's' : '') + '</span>';
+        h += '<span style="font-size:12px;font-weight:700;background:var(--amber-50);color:var(--status-valid, #9a6b00);border-radius:999px;padding:4px 12px;">' + log.length + ' aller' + (log.length > 1 ? 's' : '') + '-retour' + (log.length > 1 ? 's' : '') + '</span>';
         h += '</div>';
         h += '<div style="display:flex;flex-direction:column;gap:10px;">';
         // Plus récent en premier.
@@ -1672,7 +1697,7 @@
         var h = '<div class="actor-section actor-section--com" id="com-juridique-section-' + idx + '">';
         h += '<h3>⚖️ Validation juridique et conformité';
         if (validated) h += ' <span style="font-size:11px;background:var(--green-50);color:var(--green-600);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">✅ Validé</span>';
-        else if (st === 'pending') h += ' <span style="font-size:11px;background:var(--amber-50);color:#d97706;border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ À valider</span>';
+        else if (st === 'pending') h += ' <span style="font-size:11px;background:var(--amber-50);color:var(--status-valid, #d97706);border-radius:4px;padding:2px 8px;margin-left:8px;font-weight:700;text-transform:none;letter-spacing:0;">⏳ À valider</span>';
         h += '</h3>';
         h += '<p style="color:var(--muted);font-size:13px;margin:4px 0 8px;">La maquette a été validée par le PO. La Com vérifie la conformité juridique avant transmission à l\'EBF pour le BAT.</p>';
         if (data.juridique && data.juridique.comment) {
@@ -2002,7 +2027,7 @@
             // dynamique d'utilisateurs (users.USERS) : hors périmètre du moteur
             // générique (pas de configRef équivalent), reste en dur.
             h += '<div class="form-row"><label>Destinataires du test en prod <small style="font-weight:normal;color:var(--muted);">(pourront déposer le test reçu)</small></label>';
-            h += '<div style="max-height:150px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;padding:6px;background:#fff;">';
+            h += '<div style="max-height:150px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;padding:6px;background:var(--bg-card, #fff);">';
             var _curReceivers = ch.testReceivers || [];
             users.USERS.filter(function(u) { return !u.inactive; }).sort(function(a, b) { return a.name.localeCompare(b.name); }).forEach(function(u) {
                 var ck = _curReceivers.indexOf(u.name) !== -1 ? ' checked' : '';
@@ -2051,7 +2076,7 @@
         var uid   = role + '-' + idx;
         var h = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">';
         h += '<span style="font-size:13px;color:var(--muted);">' + roleLbl + ' assigné(s) : <strong>' + (eff.length ? eff.map(security.escapeHtml).join(', ') : 'non assigné') + '</strong></span>';
-        h += '<button class="btn-team-reassign" data-role="' + role + '" data-ch="' + idx + '" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#555;">👥 Gérer l\'équipe</button>';
+        h += '<button class="btn-team-reassign" data-role="' + role + '" data-ch="' + idx + '" style="background:none;border:1px solid var(--muted-2);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--muted, #555);">👥 Gérer l\'équipe</button>';
         h += '</div>';
         h += '<div id="reassign-form-' + uid + '" style="display:none;background:var(--line-2);border-radius:6px;padding:10px 12px;margin-bottom:12px;">';
         // Partie 1 : équipe de la campagne (managers uniquement)
@@ -2257,10 +2282,10 @@
         }
 
         // Légende
-        html += '<div class="wf-legend"><span><i style="background:var(--primary)"></i> Fait</span><span><i style="background:var(--amber)"></i> En cours</span><span><i style="background:var(--blue)"></i> En validation</span><span><i style="background:var(--red)"></i> Révision</span><span><i style="background:#fff;border:1px solid var(--muted-2)"></i> À venir</span></div>';
+        html += '<div class="wf-legend"><span><i style="background:var(--primary)"></i> Fait</span><span><i style="background:var(--amber)"></i> En cours</span><span><i style="background:var(--blue)"></i> En validation</span><span><i style="background:var(--red)"></i> Révision</span><span><i style="background:var(--bg-card, #fff);border:1px solid var(--muted-2)"></i> À venir</span></div>';
 
         if (isCompleted) {
-            html += '<div style="background:#c8e6c9;color:var(--green-700);border-radius:8px;padding:12px 16px;font-weight:700;margin-bottom:12px;">🏁 Campagne terminée !</div>';
+            html += '<div style="background:var(--green-50, #c8e6c9);color:var(--green-700);border-radius:8px;padding:12px 16px;font-weight:700;margin-bottom:12px;">🏁 Campagne terminée !</div>';
             html += '</div>';
             return html;
         }
@@ -2427,7 +2452,7 @@
             return h;
         }
 
-        var poStyle    = { bg:'#fff8e1', border:'var(--amber)', color:'var(--amber)', icon:'⚠️', btnBg:'var(--amber)' };
+        var poStyle    = { bg:'var(--amber-50, #fff8e1)', border:'var(--amber)', color:'var(--amber)', icon:'⚠️', btnBg:'var(--amber)' };
         var actStyle   = { bg:'var(--blue-50)', border:'var(--blue)', color:'var(--blue)', icon:'⚡', btnBg:'var(--blue)' };
         var revStyle   = { bg:'var(--amber-50)', border:'var(--amber)', color:'var(--amber)', icon:'🔄', btnBg:'var(--amber)' };
 
@@ -2624,6 +2649,7 @@
             webmaster: (document.getElementById('ebf-webmaster-' + idx) || {}).value || '',
             emailObject: (document.getElementById('ebf-emailobject-' + idx) || {}).value || '',
             codeCom: (document.getElementById('ebf-codecom-' + idx) || {}).value || '',
+            codeApporteur: (document.getElementById('ebf-codeapporteur-' + idx) || {}).value || '',
             refParacom: (document.getElementById('ebf-refpara-' + idx) || {}).value || '',
             numCta: numCta, ctaUrls: ctaUrls,
             pdfBatFileName: _primaryEbfFileName(pdfBatEl && pdfBatEl.files),
@@ -2720,6 +2746,7 @@
     function fillEbfForm(idx, d) {
         setVal('ebf-webmaster-' + idx, d.webmaster);
         setVal('ebf-codecom-' + idx, d.codeCom);
+        setVal('ebf-codeapporteur-' + idx, d.codeApporteur);
         setVal('ebf-refpara-' + idx, d.refParacom);
         setVal('ebf-emailobject-' + idx, d.emailObject);
         setVal('ebf-numcta-' + idx, d.numCta || 0);
@@ -2910,6 +2937,7 @@
         if (d.emailObject) h += '<div class="depot-readonly-item"><strong>Objet de l\'email</strong>' + security.escapeHtml(d.emailObject) + '</div>';
         if (d.webmaster) h += '<div class="depot-readonly-item"><strong>Webmaster</strong>' + security.escapeHtml(d.webmaster) + '</div>';
         if (d.codeCom) h += '<div class="depot-readonly-item"><strong>Code Com</strong>' + security.escapeHtml(d.codeCom) + '</div>';
+        if (d.codeApporteur) h += '<div class="depot-readonly-item"><strong>Code apporteur</strong>' + security.escapeHtml(d.codeApporteur) + '</div>';
         if (d.refParacom) h += '<div class="depot-readonly-item"><strong>Ref Paracom</strong>' + security.escapeHtml(d.refParacom) + '</div>';
         if (d.numCta) h += '<div class="depot-readonly-item"><strong>CTA</strong>' + d.numCta + '</div>';
         if (d.pdfBatFileName) h += '<div class="depot-readonly-item"><strong>Fichier BAT</strong>' + security.escapeHtml(d.pdfBatFileName) + '</div>';
@@ -2922,7 +2950,7 @@
         if (poExtra) {
             var pe = '';
             if (d.emailObject) {
-                pe += '<div style="margin-top:10px;background:#fff;border:1px solid var(--blue);border-radius:6px;padding:9px 11px;">'
+                pe += '<div style="margin-top:10px;background:var(--bg-card, #fff);border:1px solid var(--blue);border-radius:6px;padding:9px 11px;">'
                     + '<div style="font-size:12px;font-weight:700;color:var(--gray-700);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:4px;">Objet de l\'email — à valider</div>'
                     + '<div style="font-size:13px;margin-bottom:7px;">' + security.escapeHtml(d.emailObject) + '</div>'
                     + '<label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--gray-700);"><input type="checkbox" id="po-obj-ok-' + idx + '"> J\'ai vérifié et je valide l\'objet du mail</label>'
@@ -3341,7 +3369,7 @@
         var ch = currentCampaignData.channels[idx];
         if (!ch) return false;
         var changed = false;
-        ['codeCom', 'refParacom', 'codeProjet', 'codeAction', 'codeMK', 'emailObject'].forEach(function(k) {
+        ['codeCom', 'codeApporteur', 'refParacom', 'codeProjet', 'codeAction', 'codeMK', 'emailObject'].forEach(function(k) {
             var v = (depot[k] || '').toString().trim();
             if (v && ch[k] !== v) { ch[k] = v; changed = true; }
         });
@@ -3481,6 +3509,36 @@
     function setupChannelPageEvents(idx) {
         var chForCfWire = currentCampaignData.channels[idx];
         ALL_STEP_IDS.forEach(function (sid) { wireCustomFieldsSection(sid, chForCfWire); });
+
+        // Blocage technique du canal — la case affiche/masque le formulaire,
+        // mais rien n'est sauvegardé avant un clic explicite sur « Enregistrer »
+        // (cohérent avec le reste de la page : une case seule ne mute jamais
+        // currentCampaignData).
+        var blocageCb = document.getElementById('blocage-actif-' + idx);
+        if (blocageCb) {
+            blocageCb.addEventListener('change', function () {
+                var f = document.getElementById('blocage-form-' + idx);
+                if (f) f.style.display = blocageCb.checked ? 'block' : 'none';
+            });
+        }
+        var btnBlocageSave = document.getElementById('btn-blocage-save-' + idx);
+        if (btnBlocageSave) {
+            btnBlocageSave.addEventListener('click', function () {
+                var ch = currentCampaignData.channels[idx];
+                if (!ch) return;
+                var actif = document.getElementById('blocage-actif-' + idx).checked;
+                var motif = (document.getElementById('blocage-motif-' + idx) || {}).value || '';
+                var ticket = (document.getElementById('blocage-ticket-' + idx) || {}).value || '';
+                ch.blocageTechnique = { actif: actif, motif: motif.trim(), ticketCANous: ticket.trim(), date: new Date().toISOString() };
+                disableBtn(btnBlocageSave, 'Enregistrement...');
+                workflow.saveCampaignWorkflow(currentRootHandle, currentCampaignName, currentCampaignData)
+                    .then(function () {
+                        logActivity(currentCampaignName, 'canal', (actif ? 'Blocage technique signalé' : 'Blocage technique levé') + ' — ' + (ch.deliverableName || ('Canal ' + (idx + 1))) + (ticket.trim() ? ' (ticket ' + ticket.trim() + ')' : ''));
+                        refreshCurrentPage();
+                    })
+                    .catch(function (err) { enableBtn(btnBlocageSave, '💾 Enregistrer'); notify('Erreur : ' + errors.getErrorMessage(err), 'error'); });
+            });
+        }
 
         // COM : numImages → dynamic URL inputs
         var numImgInput = document.getElementById('com-numimages-' + idx);
@@ -5448,7 +5506,7 @@
         // Glisser-déposer : zone racine + chaque dossier comme cible.
         function setupDrop(el, folderName) {
             if (!el || !campDir) return;
-            el.addEventListener('dragover', function(e) { e.preventDefault(); el.style.borderColor = 'var(--primary)'; el.style.background = '#eff6ff'; });
+            el.addEventListener('dragover', function(e) { e.preventDefault(); el.style.borderColor = 'var(--primary)'; el.style.background = 'var(--blue-50, #eff6ff)'; });
             el.addEventListener('dragleave', function() { el.style.borderColor = ''; el.style.background = ''; });
             el.addEventListener('drop', function(e) {
                 e.preventDefault();
@@ -5718,7 +5776,7 @@
         if (input.parentNode && getComputedStyle(input.parentNode).position === 'static') input.parentNode.style.position = 'relative';
 
         var dd = document.createElement('div');
-        dd.style.cssText = 'position:absolute;z-index:50;background:#fff;border:1px solid var(--line,#eaefec);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:200px;overflow-y:auto;display:none;min-width:220px;';
+        dd.style.cssText = 'position:absolute;z-index:50;background:var(--bg-card, #fff);border:1px solid var(--line,#eaefec);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:200px;overflow-y:auto;display:none;min-width:220px;';
         input.parentNode.appendChild(dd);
 
         var anchor = -1; // position du « @ » courant

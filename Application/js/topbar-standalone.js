@@ -108,6 +108,7 @@
   // (le tableau de bord) appellent la première mais pas la seconde (cf.
   // initEasterEggs ci-dessous, même raison), le bouton doit donc rester
   // joignable partout indépendamment de mount().
+  var _paintThemeBtn = null;
   function wireThemeToggle(btn) {
     if (!btn || !IM.theme) return;
     function paint() {
@@ -116,9 +117,11 @@
       btn.title = dark ? 'Passer au thème clair' : 'Passer au thème sombre';
     }
     paint();
-    // 5 clics rapprochés (< 2 s) sur ce bouton déclenchent le mode Spritz en
-    // plus du basculement normal clair/sombre, qui continue de s'appliquer
-    // à chaque clic (pas de délai, contrairement à l'egg du logo).
+    _paintThemeBtn = paint;
+    // 5 clics rapprochés (< 2 s) sur ce bouton ouvrent la modale de choix de
+    // thème (cf. showThemeChoiceModal), en plus du basculement normal clair/
+    // sombre, qui continue de s'appliquer à chaque clic (pas de délai,
+    // contrairement à l'egg du logo).
     var eggClicks = 0, eggTimer = null;
     btn.addEventListener('click', function () {
       IM.theme.toggle();
@@ -129,7 +132,7 @@
       if (eggClicks >= 5) {
         eggClicks = 0;
         clearTimeout(eggTimer);
-        activateSpritzEgg();
+        showThemeChoiceModal();
       }
     });
   }
@@ -647,14 +650,14 @@
     }
   }
 
-  // ── Easter egg : Mode Spritz (5 clics rapides sur le bouton thème) ──
-  // Habillage temporaire orange Aperol par-dessus le thème courant : variables
-  // CSS redéfinies sur <body> (cf. .egg-spritz-active dans theme.css) + un
-  // décor injecté (verres, rondelle d'agrume, badge, signature). Se retire
-  // tout seul après SPRITZ_DURATION, ou immédiatement si redéclenché / si
-  // l'utilisateur reclique 5 fois pendant qu'il est actif.
-  var SPRITZ_DURATION = 22000;
-  var _spritzTimer = null;
+  // ── Easter egg : Mode Spritz (choisi dans la modale de thème, cf.
+  // showThemeChoiceModal) ──
+  // Habillage orange Aperol par-dessus le thème courant : variables CSS
+  // redéfinies sur <body> (cf. .egg-spritz-active dans theme.css) + un décor
+  // injecté (verres, rondelle d'agrume, badge, signature). Persiste tant que
+  // l'utilisateur ne choisit pas un autre thème dans la modale (pas de retrait
+  // automatique) — le choix est mémorisé dans localStorage (EGG_THEME_KEY) et
+  // réappliqué à chaque chargement de page via restorePersistedEggTheme().
   function buildSpritzOverlayHtml() {
     var svgNS = 'http://www.w3.org/2000/svg';
     function glass(idPrefix) {
@@ -754,26 +757,82 @@
       '<div class="egg-spritz-label">Impulsion Marketing <span>— Édition Spritz</span></div>'
     );
   }
-  function activateSpritzEgg() {
-    if (_spritzTimer) clearTimeout(_spritzTimer);
+  function activateSpritzEgg(silent) {
     if (!document.querySelector('.egg-spritz-overlay')) {
       var overlay = document.createElement('div');
       overlay.className = 'egg-spritz-overlay';
       overlay.innerHTML = buildSpritzOverlayHtml();
       document.body.appendChild(overlay);
       document.body.classList.add('egg-spritz-active');
-      notify('🍹 Édition Spritz activée !', 'success');
+      if (!silent) notify('🍹 Édition Spritz activée — jusqu\'à ce que vous choisissiez un autre thème', 'success');
     }
-    _spritzTimer = setTimeout(deactivateSpritzEgg, SPRITZ_DURATION);
   }
   function deactivateSpritzEgg() {
-    if (_spritzTimer) { clearTimeout(_spritzTimer); _spritzTimer = null; }
     document.body.classList.remove('egg-spritz-active');
     var overlay = document.querySelector('.egg-spritz-overlay');
     if (overlay) {
       overlay.classList.add('egg-spritz-leaving');
       setTimeout(function () { if (overlay.parentNode) overlay.remove(); }, 500);
     }
+  }
+
+  // ── Modale de choix de thème (ouverte par les 5 clics rapides ci-dessus) ──
+  // Clair/Sombre pilotent IM.theme (persisté par ce module) ; Spritz est un
+  // habillage orné indépendant, persisté séparément (EGG_THEME_KEY) puisqu'il
+  // se superpose au thème clair/sombre plutôt que de le remplacer.
+  var EGG_THEME_KEY = 'im_egg_theme';
+  function currentEggThemeChoice() {
+    var spritz = false;
+    try { spritz = localStorage.getItem(EGG_THEME_KEY) === 'spritz'; } catch (e) {}
+    return spritz ? 'spritz' : (IM.theme ? IM.theme.get() : 'light');
+  }
+  function applyThemeChoice(value) {
+    if (value === 'spritz') {
+      try { localStorage.setItem(EGG_THEME_KEY, 'spritz'); } catch (e) {}
+      activateSpritzEgg();
+      return;
+    }
+    try { localStorage.removeItem(EGG_THEME_KEY); } catch (e) {}
+    deactivateSpritzEgg();
+    if (IM.theme) IM.theme.set(value);
+    if (_paintThemeBtn) _paintThemeBtn();
+  }
+  function themeOptionHtml(value, icon, label, current) {
+    return '<button type="button" class="egg-theme-opt' + (current === value ? ' is-active' : '') + '" data-theme-choice="' + value + '">' +
+      '<span class="egg-theme-opt-ic">' + icon + '</span><span class="egg-theme-opt-label">' + esc(label) + '</span></button>';
+  }
+  function showThemeChoiceModal() {
+    if (document.querySelector('.egg-theme-overlay')) return;
+    var current = currentEggThemeChoice();
+    var overlay = document.createElement('div');
+    overlay.className = 'egg-overlay egg-theme-overlay';
+    overlay.innerHTML =
+      '<div class="egg-card egg-theme-card">' +
+      '<span class="egg-icon">🎨</span>' +
+      '<div class="egg-title">Choisissez un thème</div>' +
+      '<div class="egg-text">Trouvé en 5 clics rapides — votre choix reste actif jusqu\'à ce que vous en choisissiez un autre.</div>' +
+      '<div class="egg-theme-options">' +
+      themeOptionHtml('light', '☀️', 'Clair', current) +
+      themeOptionHtml('dark', '🌙', 'Sombre', current) +
+      themeOptionHtml('spritz', '🍹', 'Spritz', current) +
+      '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    function close() { if (overlay.parentNode) overlay.remove(); }
+    overlay.addEventListener('click', close);
+    var card = overlay.querySelector('.egg-theme-card');
+    card.addEventListener('click', function (e) { e.stopPropagation(); });
+    Array.prototype.slice.call(card.querySelectorAll('.egg-theme-opt')).forEach(function (optBtn) {
+      optBtn.addEventListener('click', function () {
+        applyThemeChoice(optBtn.getAttribute('data-theme-choice'));
+        close();
+      });
+    });
+  }
+  // Réapplique le choix Spritz mémorisé à chaque chargement de page (silencieux :
+  // pas de notification répétée à chaque navigation).
+  function restorePersistedEggTheme() {
+    try { if (localStorage.getItem(EGG_THEME_KEY) === 'spritz') activateSpritzEgg(true); } catch (e) {}
   }
 
   // ── Easter egg : jumpscare Halloween (30 octobre et 2 novembre uniquement) ──
@@ -922,6 +981,7 @@
     wireLogoEasterEgg();
     applySpecialDate();
     continueJumpscareIfPending();
+    restorePersistedEggTheme();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initEasterEggs);

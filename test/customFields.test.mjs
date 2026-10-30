@@ -287,14 +287,14 @@ test('renderFields — creation.step3.canal.base avec idSuffix : tous les id/nam
   });
 });
 
-test('getFields — ebf_bat : repli DEFAULT_FIELDS (objet email + code Com), objet email restreint aux canaux mail (canalTypes)', () => {
+test('getFields — ebf_bat : repli DEFAULT_FIELDS (objet email + code Com + code apporteur), objet email restreint aux canaux mail (canalTypes)', () => {
   withConfig({}, () => {
-    assert.deepEqual(cf.getFields('ebf_bat').map(f => f.id), ['ebf-emailobject-', 'ebf-codecom-']);
+    assert.deepEqual(cf.getFields('ebf_bat').map(f => f.id), ['ebf-emailobject-', 'ebf-codecom-', 'ebf-codeapporteur-']);
     // Sans canalType précisé (repli permissif) : tous les champs, y compris l'objet email.
     assert.deepEqual(cf.getFields('ebf_bat').map(f => f.id), cf.getFields('ebf_bat', undefined).map(f => f.id));
-    // Canal SMS : l'objet email (canalTypes MAIL uniquement) est filtré, code Com reste.
-    assert.deepEqual(cf.getFields('ebf_bat', 'SMS').map(f => f.id), ['ebf-codecom-']);
-    assert.deepEqual(cf.getFields('ebf_bat', 'MAIL').map(f => f.id), ['ebf-emailobject-', 'ebf-codecom-']);
+    // Canal SMS : l'objet email (canalTypes MAIL uniquement) est filtré, code Com et code apporteur restent.
+    assert.deepEqual(cf.getFields('ebf_bat', 'SMS').map(f => f.id), ['ebf-codecom-', 'ebf-codeapporteur-']);
+    assert.deepEqual(cf.getFields('ebf_bat', 'MAIL').map(f => f.id), ['ebf-emailobject-', 'ebf-codecom-', 'ebf-codeapporteur-']);
   });
 });
 

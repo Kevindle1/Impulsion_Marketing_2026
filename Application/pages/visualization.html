@@ -128,12 +128,26 @@
                     </select>
                 </div>
 
+                <div class="filter-group">
+                    <label for="filter-etat-exclude">Masquer les statuts :</label>
+                    <select id="filter-etat-exclude" multiple size="1" title="Ctrl/Cmd-clic (ou glisser) pour en sélectionner plusieurs à masquer">
+                        <option value="Affectation">Affectation</option>
+                        <option value="Kick-off">Kick-off</option>
+                        <option value="Maquette">Maquette</option>
+                        <option value="En Fabrication">En Fabrication</option>
+                        <option value="À valider">À valider</option>
+                        <option value="Révision">Révision</option>
+                        <option value="Terminée">Terminée</option>
+                    </select>
+                </div>
+
                 <button type="button" id="toggle-more-filters" class="btn secondary small">
                     Plus de filtres<span id="more-filters-badge" class="filters-badge" style="display:none;"></span>
                     <span class="chev">▾</span>
                 </button>
                 <button id="reset-filters-btn" class="btn secondary small">Réinitialiser</button>
                 <button id="toggle-my-campaigns" class="btn secondary small" title="Afficher uniquement mes campagnes">👤 Mes campagnes</button>
+                <button id="export-campaigns-btn" class="btn secondary small" title="Exporter les campagnes actuellement filtrées (CSV)">⬇️ Exporter</button>
             </div>
 
             <!-- Filtres avancés : repliés par défaut, sur les champs renseignés pendant
@@ -540,7 +554,7 @@
             document.getElementById('search-input').addEventListener('input',
                 performance.debounce(function() { currentPage = 0; filterCampaigns(); }, 300)
             );
-            var FILTER_IDS = ['filter-ub', 'filter-canal', 'filter-type', 'filter-etat', 'filter-comtypology', 'filter-typology', 'filter-selfcare'];
+            var FILTER_IDS = ['filter-ub', 'filter-canal', 'filter-type', 'filter-etat', 'filter-etat-exclude', 'filter-comtypology', 'filter-typology', 'filter-selfcare'];
             FILTER_IDS.forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.addEventListener('change', function() { currentPage = 0; filterCampaigns(); });
@@ -561,6 +575,8 @@
                 currentPage = 0;
                 filterCampaigns();
             });
+            var exportBtn = document.getElementById('export-campaigns-btn');
+            if (exportBtn) exportBtn.addEventListener('click', exportCampaignsCsv);
             var toggleBtn = document.getElementById('toggle-my-campaigns');
             if (toggleBtn) {
                 toggleBtn.addEventListener('click', function() {
@@ -651,7 +667,10 @@
                             return {
                                 name: name,
                                 data: cached[name],
-                                lastModified: Date.parse(cached[name].instantiation) || Date.now(),
+                                // lastModified : vraie date de dernière sauvegarde (posée à chaque
+                                // écriture de campagne.json) — repli sur instantiation (date de
+                                // création) pour une campagne sauvegardée avant l'ajout de ce champ.
+                                lastModified: cached[name].lastModified || Date.parse(cached[name].instantiation) || Date.now(),
                                 completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
                             };
                         }
@@ -664,7 +683,7 @@
                             return {
                                 name: name,
                                 data: data,
-                                lastModified: Date.parse(data.instantiation) || Date.now(),
+                                lastModified: data.lastModified || Date.parse(data.instantiation) || Date.now(),
                                 completionStatus: { percentage: -1, completed: 0, total: 0, isComplete: false }
                             };
                         } catch(e) {
@@ -781,12 +800,47 @@
             return false;
         }
 
+        // Export CSV (ouvrable dans Excel) des campagnes actuellement filtrées —
+        // mêmes filtres actifs (recherche, canal, état, exclusions…) que ce qui
+        // est affiché, pas toutes les campagnes du dossier.
+        function exportCampaignsCsv() {
+            var wfMod = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var cols = ['Nom', 'PO', 'État', 'Typologie', 'Marché', 'Univers de besoin', 'Canaux', 'Date d\'envoi', 'Date de saisie', 'Dernière MAJ'];
+            var lines = [cols];
+            filteredCampaigns.forEach(function (campaign) {
+                var data = campaign.data || {};
+                var st = vcStatus(data, wfMod);
+                var canaux = (data.channels || []).map(function (ch) { return ch.deliverableName || ch.content || ''; }).filter(Boolean).join(', ');
+                lines.push([
+                    campaign.name || '',
+                    data.po || '',
+                    st.text || '',
+                    data.typology || '',
+                    data.market || '',
+                    (data.ubs || []).join(', '),
+                    canaux,
+                    data.launchDate || '',
+                    data.instantiation || '',
+                    campaign.lastModified ? new Date(campaign.lastModified).toISOString().slice(0, 10) : ''
+                ]);
+            });
+            var csv = lines.map(function (r) { return r.map(function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(';'); }).join('\r\n');
+            var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'campagnes.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        }
+
         function filterCampaigns() {
             var searchTerm  = document.getElementById('search-input').value.toLowerCase();
             var ubFilter    = document.getElementById('filter-ub').value;
             var canalFilter = document.getElementById('filter-canal').value;
             var typeFilter  = document.getElementById('filter-type').value;
             var etatFilter  = (document.getElementById('filter-etat') || {}).value || '';
+            var etatExcludeSel = document.getElementById('filter-etat-exclude');
+            var etatExcludeVals = etatExcludeSel ? Array.prototype.map.call(etatExcludeSel.selectedOptions, function(o) { return o.value; }) : [];
             var comTypologyFilter = (document.getElementById('filter-comtypology') || {}).value || '';
             var typologyFilter    = (document.getElementById('filter-typology') || {}).value || '';
             var selfcareFilter    = (document.getElementById('filter-selfcare') || {}).value || '';
@@ -840,10 +894,12 @@
 
                 var matchesKpi = matchesKpiCategory(campaign);
 
-                var matchesEtat = !etatFilter || (vcStatus(campaign.data, wfMod).text === etatFilter);
+                var etatText = (etatFilter || etatExcludeVals.length) ? vcStatus(campaign.data, wfMod).text : '';
+                var matchesEtat = !etatFilter || etatText === etatFilter;
+                var excludedByEtat = etatExcludeVals.length && etatExcludeVals.indexOf(etatText) !== -1;
 
                 return matchesSearch && matchesUB && matchesCanal && matchesType && matchesComTypology
-                    && matchesTypology && matchesSelfcare && matchesUser && matchesKpi && matchesEtat;
+                    && matchesTypology && matchesSelfcare && matchesUser && matchesKpi && matchesEtat && !excludedByEtat;
             });
 
             currentPage = 0;

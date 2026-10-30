@@ -728,7 +728,7 @@
         // Sous-page active : 'triage' | 'lots' | 'archive' | 'recherche'.
         var incView = 'triage';
         var activeLot = null; // nom du lot ouvert dans la sous-page « Lots à dev »
-        var sigSearch = { q: '', type: '', lot: '', dev: '' };
+        var sigSearch = { q: '', type: '', lot: '', dev: '', etape: '', anciennete: '' };
 
         // Suivi des lots (statut agrégé), persisté à part des signalements (Données/signalement_lots.json).
         var sigLots = []; // [{ nom, statut }]
@@ -853,7 +853,9 @@
             var devBadge = it.livraison ? '<span class="dev-status-badge dev-status-' + (it.devStatut || 'a_venir') + '">' + esc(devStatutLabel(it.devStatut)) + '</span>' : '';
             return '<div class="inc-head"><span class="inc-type ' + (it.type === 'amelioration' ? 'amelioration' : 'incident') + '">' + (it.type === 'amelioration' ? '💡 Amélioration' : '🐞 Incident') + '</span>'
                 + prioBadge + devBadge
-                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10)) + (it.livraison ? ' · <span class="inc-lot-tag">📦 ' + esc(it.livraison) + '</span>' : '') + '</span></div>'
+                + '<span class="inc-meta"><strong>' + esc(it.auteur || '?') + '</strong> · ' + esc(it.page || '') + ' · ' + esc((it.date || '').slice(0, 10))
+                + (it.etapeLabel ? ' · 🔀 ' + esc(it.etapeLabel) : '') + (it.campagne ? ' · 🗂 ' + esc(it.campagne) : '')
+                + (it.livraison ? ' · <span class="inc-lot-tag">📦 ' + esc(it.livraison) + '</span>' : '') + '</span></div>'
                 + '<div class="inc-desc">' + esc(it.description || '') + '</div>';
         }
 
@@ -966,21 +968,48 @@
             cont.querySelectorAll('[data-archlot]').forEach(function (b) { b.addEventListener('click', function () { activeLot = b.getAttribute('data-archlot'); incView = 'lots'; renderIncidents(); }); });
         }
 
+        // ── Ancienneté de la campagne liée à un signalement (campagneDate, posée
+        // à la création si le signalement a été fait depuis la fiche d'une
+        // campagne) relativement à sa propre date de signalement — pas de lien
+        // structuré ni de date pour un signalement plus ancien/sans campagne.
+        var ANCIENNETE_BUCKETS = [
+            { value: 'lt30', label: '< 1 mois' },
+            { value: '30-90', label: '1 à 3 mois' },
+            { value: 'gt90', label: '> 3 mois' },
+            { value: 'inconnue', label: 'Inconnue (sans campagne liée)' }
+        ];
+        function incidentAncienneteBucket(it) {
+            if (!it.campagneDate) return 'inconnue';
+            var d1 = new Date(it.campagneDate), d2 = new Date(it.date);
+            if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return 'inconnue';
+            var days = Math.round((d2 - d1) / 86400000);
+            if (days < 0) return 'inconnue';
+            if (days < 30) return 'lt30';
+            if (days <= 90) return '30-90';
+            return 'gt90';
+        }
+
         // ── Page 4 : Recherche ──
         function renderRecherche(cont) {
             var lotOpts = knownLotNames();
+            var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
+            var etapeOpts = (wf && Array.isArray(wf.STEPS)) ? wf.STEPS : [];
             var html = '<div class="admin-card"><div class="sig-search-row">'
                 + '<input type="text" class="admin-input" id="sig-q" placeholder="Rechercher (description, auteur, page…)" value="' + esc(sigSearch.q) + '">'
                 + '<select class="admin-select" id="sig-f-type"><option value="">Tous types</option><option value="incident"' + (sigSearch.type === 'incident' ? ' selected' : '') + '>🐞 Incident</option><option value="amelioration"' + (sigSearch.type === 'amelioration' ? ' selected' : '') + '>💡 Amélioration</option></select>'
                 + '<select class="admin-select" id="sig-f-lot"><option value="">Tous les lots</option>' + lotOpts.map(function (n) { return '<option value="' + esc(n) + '"' + (sigSearch.lot === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select>'
                 + '<select class="admin-select" id="sig-f-dev"><option value="">Tous statuts</option>' + DEV_STATUTS.map(function (d) { return '<option value="' + d.value + '"' + (sigSearch.dev === d.value ? ' selected' : '') + '>' + d.label + '</option>'; }).join('') + '</select>'
+                + '<select class="admin-select" id="sig-f-etape"><option value="">Toutes étapes</option>' + etapeOpts.map(function (s) { return '<option value="' + esc(s.id) + '"' + (sigSearch.etape === s.id ? ' selected' : '') + '>' + esc(wf.stepLabel(s.id)) + '</option>'; }).join('') + '</select>'
+                + '<select class="admin-select" id="sig-f-anciennete"><option value="">Toute ancienneté de campagne</option>' + ANCIENNETE_BUCKETS.map(function (b) { return '<option value="' + b.value + '"' + (sigSearch.anciennete === b.value ? ' selected' : '') + '>' + esc(b.label) + '</option>'; }).join('') + '</select>'
                 + '</div></div>';
             var q = (sigSearch.q || '').toLowerCase();
             var list = incidents.filter(function (it) {
                 if (sigSearch.type && it.type !== sigSearch.type) return false;
                 if (sigSearch.lot && it.livraison !== sigSearch.lot) return false;
                 if (sigSearch.dev && (it.devStatut || 'a_venir') !== sigSearch.dev) return false;
-                if (q && (String(it.description || '') + ' ' + String(it.auteur || '') + ' ' + String(it.page || '')).toLowerCase().indexOf(q) === -1) return false;
+                if (sigSearch.etape && it.etapeId !== sigSearch.etape) return false;
+                if (sigSearch.anciennete && incidentAncienneteBucket(it) !== sigSearch.anciennete) return false;
+                if (q && (String(it.description || '') + ' ' + String(it.auteur || '') + ' ' + String(it.page || '') + ' ' + String(it.campagne || '')).toLowerCase().indexOf(q) === -1) return false;
                 return true;
             });
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Résultats</h3><span class="count-pill">' + list.length + '</span></div>';
@@ -992,6 +1021,8 @@
             document.getElementById('sig-f-type').addEventListener('change', function (e) { sigSearch.type = e.target.value; renderIncidents(); });
             document.getElementById('sig-f-lot').addEventListener('change', function (e) { sigSearch.lot = e.target.value; renderIncidents(); });
             document.getElementById('sig-f-dev').addEventListener('change', function (e) { sigSearch.dev = e.target.value; renderIncidents(); });
+            document.getElementById('sig-f-etape').addEventListener('change', function (e) { sigSearch.etape = e.target.value; renderIncidents(); });
+            document.getElementById('sig-f-anciennete').addEventListener('change', function (e) { sigSearch.anciennete = e.target.value; renderIncidents(); });
             wireManageBlocks(cont);
             wireLotSelects(cont);
             wireReplyBlocks(cont);
@@ -1609,6 +1640,7 @@
             if (!pc.chargeCom) pc.chargeCom = {};
             if (!pc.chargeData) pc.chargeData = {};
             if (!Array.isArray(pc.prioritesMarketing)) pc.prioritesMarketing = [];
+            if (!pc.decalageSemaines) pc.decalageSemaines = { com: 2, ebf: 2, data: 2 };
             var canaux = config.CANAUX || [];
             var typologies = config.TYPOLOGIES || [];
             var b = pc.bareme;
@@ -1683,6 +1715,14 @@
                 html += '</tbody></table></div></div>';
             }
 
+            html += '<div class="admin-card"><div class="admin-card-title"><h3>Charge de travail — décalage par semaine</h3></div>'
+                + '<div class="empty-hint" style="padding-top:0;">Nombre de semaines entre la date d\'envoi d\'un livrable et la semaine où la charge correspondante est affectée au coéquipier dans Pilotage ▸ Charge (ex. envoi S52, décalage 2 → charge affectée à S50).</div>'
+                + '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">'
+                + ['com', 'ebf', 'data'].map(function (role) {
+                    return '<div><label class="admin-label">' + esc(roleLabel(role)) + '</label><input type="number" min="0" class="admin-input prio-num" data-decalage="' + role + '" value="' + (typeof pc.decalageSemaines[role] === 'number' ? pc.decalageSemaines[role] : 2) + '" style="width:100%;"></div>';
+                }).join('')
+                + '</div></div>';
+
             html += '<div class="admin-card"><div class="admin-card-title"><h3>Niveaux de priorité marketing</h3><span class="count-pill">' + pc.prioritesMarketing.length + '</span></div>' + chipsHtml(pc.prioritesMarketing, 'delpriorite')
                 + '<div class="add-row"><input class="admin-input" id="add-priorite" placeholder="Nouveau niveau…" style="flex:1;min-width:200px;"><button class="btn btn-primary" id="addbtn-priorite">+ Ajouter</button></div></div>';
 
@@ -1718,6 +1758,9 @@
                     var stateKey = parts[0], canal = parts[1], origine = parts[2];
                     if (!pc[stateKey][canal]) pc[stateKey][canal] = {};
                     pc[stateKey][canal][origine] = parseFloat(inp.value) || 0;
+                });
+                cont.querySelectorAll('[data-decalage]').forEach(function (inp) {
+                    pc.decalageSemaines[inp.getAttribute('data-decalage')] = parseInt(inp.value, 10) || 0;
                 });
                 var out = JSON.parse(JSON.stringify(pc));
                 saveConfig({ priorisation: out }, 'Priorisation enregistrée.').then(function () {

@@ -1237,12 +1237,11 @@
                             </select>
                         </div>
 
-                        <div class="form-group fg-full" id="prioReutilBox" style="display:none;align-items:center;gap:12px;background:var(--line-2,#f0f4f1);border-radius:10px;padding:12px 14px;">
-                            <div style="flex:1;">
-                                <strong style="font-size:13.5px;">Réutilisabilité / amélioration d'un existant</strong>
-                                <div style="font-size:12.5px;color:var(--muted);margin-top:2px;">Déduit automatiquement de la typologie choisie à l'étape « Informations générales » — aucune saisie requise ici.</div>
-                            </div>
-                            <span id="prioReutilBadge" style="font-size:12px;font-weight:700;white-space:nowrap;"></span>
+                        <div class="form-group">
+                            <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="prioReutilisabilite" style="width:auto;flex:none;margin-top:3px;">
+                                <span>Réutilisabilité / amélioration d'un existant <small style="font-weight:400;color:var(--muted);display:block;">La campagne réutilise ou améliore un dispositif déjà existant.</small></span>
+                            </label>
                         </div>
 
                         <div class="form-group">
@@ -2096,28 +2095,21 @@
             // dupliquer le calcul du barème ici.
             function updatePrioValeurMetierPreview() {
                 var wf = window.ImpulsionMarketing && window.ImpulsionMarketing.workflow;
-                var badge = document.getElementById('prioReutilBadge');
                 var out = document.getElementById('prioValeurMetier');
                 if (!wf || !out) return;
-                var typologyEl = document.getElementById('typology');
                 var fakeData = {
-                    typology: typologyEl ? typologyEl.value : '',
                     priorisation: {
                         potentielBusiness: parseInt(($('#potentielBusiness') || {}).value, 10) || 0,
                         satisfactionClient: parseInt(($('#satisfactionClient') || {}).value, 10) || 0,
                         volumeClientCible: parseInt(($('#volumeClientCible') || {}).value, 10) || 0,
+                        reutilisabilite: !!(document.getElementById('prioReutilisabilite') && document.getElementById('prioReutilisabilite').checked),
                         impactStrategique: !!(document.getElementById('impactStrategique') && document.getElementById('impactStrategique').checked),
                         reglementaire: !!(document.getElementById('prioReglementaire') && document.getElementById('prioReglementaire').checked)
                     }
                 };
                 out.textContent = wf.computeValeurMetier(fakeData);
-                if (badge) {
-                    var applicable = wf.reutilisabiliteApplicable(fakeData);
-                    badge.textContent = applicable ? 'Oui — points ajoutés' : 'Non applicable';
-                    badge.style.color = applicable ? 'var(--primary,#00875A)' : 'var(--muted,#8b988f)';
-                }
             }
-            ['potentielBusiness', 'satisfactionClient', 'volumeClientCible', 'impactStrategique', 'prioReglementaire'].forEach(function (id) {
+            ['potentielBusiness', 'satisfactionClient', 'volumeClientCible', 'prioReutilisabilite', 'impactStrategique', 'prioReglementaire'].forEach(function (id) {
                 var el = document.getElementById(id);
                 if (el) el.addEventListener('change', updatePrioValeurMetierPreview);
             });
@@ -2375,7 +2367,7 @@
                     html += '<div class="summary-section">';
                     html += '  <h4>📢 Canaux de communication (' + numChannels + ')</h4>';
                     for (var i = 1; i <= numChannels; i++) {
-                        html += '  <div style="margin-bottom: 16px; padding: 12px; background: white; border-radius: 8px;">';
+                        html += '  <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-card, #fff); border-radius: 8px;">';
                         html += '    <strong>Canal ' + i + ' :</strong><br>';
                         html += '    <div class="summary-item"><span class="summary-label">Nom du livrable :</span><span class="summary-value">' + ($(`#deliverableName${i}`)?.value || '-') + '</span></div>';
                         html += '    <div class="summary-item"><span class="summary-label">Canal du contenu :</span><span class="summary-value">' + ($(`#channelContent${i}`)?.value || '-') + '</span></div>';
@@ -2403,6 +2395,7 @@
                         potentielBusiness: parseInt(($("#potentielBusiness") || {}).value, 10) || 0,
                         satisfactionClient: parseInt(($("#satisfactionClient") || {}).value, 10) || 0,
                         volumeClientCible: parseInt(($("#volumeClientCible") || {}).value, 10) || 0,
+                        reutilisabilite: !!(document.getElementById('prioReutilisabilite') && document.getElementById('prioReutilisabilite').checked),
                         impactStrategique: !!(document.getElementById('impactStrategique') && document.getElementById('impactStrategique').checked),
                         reglementaire: !!(document.getElementById('prioReglementaire') && document.getElementById('prioReglementaire').checked)
                     }
@@ -2410,7 +2403,7 @@
                 html += '  <div class="summary-item"><span class="summary-label">Potentiel business :</span><span class="summary-value">' + (($("#potentielBusiness") || {}).selectedOptions?.[0]?.text || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Satisfaction client :</span><span class="summary-value">' + (($("#satisfactionClient") || {}).selectedOptions?.[0]?.text || '-') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Volume de clients ciblés :</span><span class="summary-value">' + (($("#volumeClientCible") || {}).selectedOptions?.[0]?.text || '-') + '</span></div>';
-                html += '  <div class="summary-item"><span class="summary-label">Réutilisabilité (auto) :</span><span class="summary-value">' + ((_wfSummary && _wfSummary.reutilisabiliteApplicable(_prioFake)) ? 'Oui' : 'Non') + '</span></div>';
+                html += '  <div class="summary-item"><span class="summary-label">Réutilisabilité :</span><span class="summary-value">' + (_prioFake.priorisation.reutilisabilite ? 'Oui' : 'Non') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Impact stratégique :</span><span class="summary-value">' + (_prioFake.priorisation.impactStrategique ? 'Oui' : 'Non') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Réglementaire :</span><span class="summary-value">' + (_prioFake.priorisation.reglementaire ? 'Oui' : 'Non') + '</span></div>';
                 html += '  <div class="summary-item"><span class="summary-label">Valeur métier :</span><span class="summary-value">' + (_wfSummary ? _wfSummary.computeValeurMetier(_prioFake) : '-') + ' points</span></div>';
@@ -3275,6 +3268,7 @@
                         potentielBusiness: parseInt(($("#potentielBusiness") || {}).value, 10) || 0,
                         satisfactionClient: parseInt(($("#satisfactionClient") || {}).value, 10) || 0,
                         volumeClientCible: parseInt(($("#volumeClientCible") || {}).value, 10) || 0,
+                        reutilisabilite: !!(document.getElementById('prioReutilisabilite') && document.getElementById('prioReutilisabilite').checked),
                         impactStrategique: !!(document.getElementById('impactStrategique') && document.getElementById('impactStrategique').checked),
                         reglementaire: !!(document.getElementById('prioReglementaire') && document.getElementById('prioReglementaire').checked)
                     },
@@ -3373,6 +3367,10 @@
                         _wfMod.applyAutoAssignments(data, _rules);
                     }
                 } catch (e) { console.warn('Affectation automatique ignorée :', e && e.message); }
+
+                // Horodatage de la vraie dernière modification (distinct de
+                // data.instantiation, posé une seule fois à la création).
+                data.lastModified = Date.now();
 
                 // Write JSON file
                 const jsonHandle = await campaignDir.getFileHandle("campagne.json", { create: true });

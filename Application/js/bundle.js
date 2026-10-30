@@ -2251,7 +2251,13 @@ window.ImpulsionMarketing.workflow = (function () {
       Campagne: { Natio: 300, CR: 420 },
       Étude:    { Natio: 360, CR: 480 }
     },
-    prioritesMarketing: ['Incontournable', 'Elevé', 'Standard', 'Faible', 'Ne pas lancer']
+    prioritesMarketing: ['Incontournable', 'Elevé', 'Standard', 'Faible', 'Ne pas lancer'],
+    // Charge de travail par personne (Pilotage ▸ Charge) : nombre de semaines
+    // entre la date d'envoi d'un livrable et la semaine où la charge
+    // correspondante est réputée réalisée (ex. envoi S52, décalage 2 → charge
+    // affectée à S50). Un décalage par équipe (le travail Data démarre
+    // généralement plus tôt que la mise en forme Com/EBF).
+    decalageSemaines: { com: 2, ebf: 2, data: 2 }
   };
   // Config effective (fusion defaults + surcharge admin — comme _stepDef pour
   // le workflow). Le barème et les libellés fusionnent clé par clé (une admin
@@ -2268,29 +2274,22 @@ window.ImpulsionMarketing.workflow = (function () {
       chargeEbf: (p.chargeEbf && typeof p.chargeEbf === 'object') ? p.chargeEbf : DEFAULT_PRIORISATION.chargeEbf,
       chargeCom: (p.chargeCom && typeof p.chargeCom === 'object') ? p.chargeCom : DEFAULT_PRIORISATION.chargeCom,
       chargeData: (p.chargeData && typeof p.chargeData === 'object') ? p.chargeData : DEFAULT_PRIORISATION.chargeData,
-      prioritesMarketing: (Array.isArray(p.prioritesMarketing) && p.prioritesMarketing.length) ? p.prioritesMarketing : DEFAULT_PRIORISATION.prioritesMarketing
+      prioritesMarketing: (Array.isArray(p.prioritesMarketing) && p.prioritesMarketing.length) ? p.prioritesMarketing : DEFAULT_PRIORISATION.prioritesMarketing,
+      decalageSemaines: Object.assign({}, DEFAULT_PRIORISATION.decalageSemaines, p.decalageSemaines || {})
     };
   }
   function getPriorisationConfig() { return _priorisationCfg(); }
 
-  // Réutilisabilité / amélioration d'un existant : auto-dérivée de la
-  // Typologie de la campagne (pas de saisie PO) — toute typologie dont le
-  // libellé évoque une réutilisation/amélioration (ex. « Amélioration d'un
-  // existant ») déclenche les points de réutilisabilité du barème.
-  function reutilisabiliteApplicable(campaignData) {
-    var t = (campaignData && campaignData.typology) || '';
-    return /r[ée]utilis|am[ée]lior/i.test(t);
-  }
-
   // Valeur métier = somme du barème : les 3 critères à paliers saisis par le
   // PO (campaignData.priorisation.{potentielBusiness,satisfactionClient,
-  // volumeClientCible} — valeurs de points, pas des index) + réutilisabilité
-  // auto + impact stratégique/réglementaire si cochés.
+  // volumeClientCible} — valeurs de points, pas des index) + réutilisabilité/
+  // impact stratégique/réglementaire si cochés (cases à cocher manuelles,
+  // cf. campaign.html ▸ étape « Bénéfices attendus »).
   function computeValeurMetier(campaignData) {
     var cfg = _priorisationCfg();
     var p = (campaignData && campaignData.priorisation) || {};
     var total = (p.potentielBusiness || 0) + (p.satisfactionClient || 0) + (p.volumeClientCible || 0);
-    if (reutilisabiliteApplicable(campaignData)) total += (cfg.bareme.reutilisabilite || 0);
+    if (p.reutilisabilite) total += (cfg.bareme.reutilisabilite || 0);
     if (p.impactStrategique) total += (cfg.bareme.impactStrategique || 0);
     if (p.reglementaire) total += (cfg.bareme.reglementaire || 0);
     return total;
@@ -2319,22 +2318,72 @@ window.ImpulsionMarketing.workflow = (function () {
   // Priorisation). L'origine DATA retenue est CR dès qu'au moins un canal
   // est en CR (le travail de coordination Data est traité au plus lourd des
   // deux dès qu'une partie de la campagne sort du cadre national).
+  // Charge Com/EBF d'UN SEUL canal (pas la campagne entière) — utilisé par
+  // computeChargeBreakdown ci-dessous (charge totale) et par le calcul de
+  // charge par personne (Pilotage ▸ Charge), qui doit répartir la charge
+  // canal par canal selon qui est affecté sur CE canal précis.
+  function computeChannelCharge(campaignData, ch) {
+    var cfg = _priorisationCfg();
+    var canal = ch && ch.content;
+    if (!canal) return { com: 0, ebf: 0 };
+    var origine = _channelOrigine(ch);
+    return {
+      com: ((cfg.chargeCom[canal] || {})[origine]) || 0,
+      ebf: ((cfg.chargeEbf[canal] || {})[origine]) || 0
+    };
+  }
   function computeChargeBreakdown(campaignData) {
     var cfg = _priorisationCfg();
     var channels = (campaignData && campaignData.channels) || [];
     var chargeEbf = 0, chargeCom = 0, anyCr = false;
     channels.forEach(function (ch) {
-      var canal = ch && ch.content;
-      if (!canal) return;
-      var origine = _channelOrigine(ch);
-      if (origine === 'CR') anyCr = true;
-      chargeEbf += ((cfg.chargeEbf[canal] || {})[origine]) || 0;
-      chargeCom += ((cfg.chargeCom[canal] || {})[origine]) || 0;
+      if (!(ch && ch.content)) return;
+      var c = computeChannelCharge(campaignData, ch);
+      chargeCom += c.com;
+      chargeEbf += c.ebf;
+      if (_channelOrigine(ch) === 'CR') anyCr = true;
     });
     var dataOrigine = anyCr ? 'CR' : 'Natio';
     var type = (campaignData && campaignData.typology) || '';
     var chargeData = ((cfg.chargeData[type] || {})[dataOrigine]) || 0;
     return { com: chargeCom, ebf: chargeEbf, data: chargeData };
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // SEMAINE ISO 8601 — pour répartir la charge de travail par semaine
+  // (Pilotage ▸ Charge). Le jeudi de la semaine détermine son année.
+  // ─────────────────────────────────────────────────────────
+  function _isoWeekInfo(date) {
+    var d = new Date(date.getTime());
+    d.setHours(0, 0, 0, 0);
+    var day = (d.getDay() + 6) % 7; // lundi=0 … dimanche=6
+    d.setDate(d.getDate() - day + 3); // jeudi de cette semaine
+    var firstThursday = new Date(d.getFullYear(), 0, 4);
+    var fDay = (firstThursday.getDay() + 6) % 7;
+    firstThursday.setDate(firstThursday.getDate() - fDay + 3);
+    var week = 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000));
+    return { year: d.getFullYear(), week: week };
+  }
+  function _weekKeyFromInfo(info) {
+    return info.year + '-S' + (info.week < 10 ? '0' : '') + info.week;
+  }
+  function isoWeekKey(dateStr) {
+    if (!dateStr) return null;
+    var d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    return _weekKeyFromInfo(_isoWeekInfo(d));
+  }
+  // Semaine d'affectation de la charge pour une équipe donnée : date d'envoi
+  // décalée en arrière du nombre de semaines configuré (Admin ▸ Priorisation
+  // ▸ Charge de travail). Ex. envoi S52, décalage 2 → charge affectée à S50.
+  function chargeWeekKey(envoiDateStr, role) {
+    if (!envoiDateStr) return null;
+    var d = new Date(envoiDateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return null;
+    var cfg = _priorisationCfg();
+    var weeks = (cfg.decalageSemaines && cfg.decalageSemaines[role]) || 0;
+    d.setDate(d.getDate() - weeks * 7);
+    return _weekKeyFromInfo(_isoWeekInfo(d));
   }
   // Charge de réalisation = somme du détail par équipe (cf. computeChargeBreakdown).
   function computeChargeRealisation(campaignData) {
@@ -3381,6 +3430,10 @@ window.ImpulsionMarketing.workflow = (function () {
         return fileHandle.createWritable();
       })
       .then(function (writable) {
+        // Horodatage de la vraie dernière modification (affiché « Dernière MAJ »,
+        // ex. visualization.html) — distinct de campaignData.instantiation (date de
+        // création, posée une seule fois et jamais mise à jour).
+        campaignData.lastModified = Date.now();
         var json = JSON.stringify(campaignData, null, 2);
         return writable.write(json).then(function () {
           return writable.close();
@@ -3649,11 +3702,13 @@ window.ImpulsionMarketing.workflow = (function () {
     updateCampaignIndexFromDir: updateCampaignIndexFromDir,
     buildFullIndex:           buildFullIndex,
     getPriorisationConfig:        getPriorisationConfig,
-    reutilisabiliteApplicable:    reutilisabiliteApplicable,
     computeValeurMetier:          computeValeurMetier,
     computeValeurMetierCorrigee:  computeValeurMetierCorrigee,
     computeChargeRealisation:     computeChargeRealisation,
     computeChargeBreakdown:       computeChargeBreakdown,
+    computeChannelCharge:         computeChannelCharge,
+    isoWeekKey:                   isoWeekKey,
+    chargeWeekKey:                chargeWeekKey,
     computeValeurCampagne:        computeValeurCampagne
   };
 })();
@@ -3758,7 +3813,8 @@ window.ImpulsionMarketing.customFields = (function () {
     // référence encore l'id complet 'data-mepdate-' + idx directement.
     'ebf_bat': [
       { id: 'ebf-emailobject-', label: 'Objet de l\'email', type: 'text', order: 1, canalTypes: ['MAIL', 'MAIL + E-MESSAGE'], help: 'Ex : Découvrez notre offre exclusive...' },
-      { id: 'ebf-codecom-', label: 'Code Com', type: 'text', order: 2 }
+      { id: 'ebf-codecom-', label: 'Code Com', type: 'text', order: 2 },
+      { id: 'ebf-codeapporteur-', label: 'Code apporteur', type: 'text', order: 3 }
     ],
     // Volume cible reste en dur (libellé avec seuil d'alerte configurable par
     // caisse, non exprimable dans une définition de champ statique).
@@ -4420,6 +4476,48 @@ window.ImpulsionMarketing.incident = (function () {
     return t || (location.pathname.split('/').pop() || 'Page inconnue');
   }
 
+  // Campagne de contexte (ex. ouverte depuis details.html?name=...) — pré-remplit
+  // le champ "Campagne concernée" et permet de capturer silencieusement sa date
+  // de création (campagneDate), pour le filtre « ancienneté » en Administration
+  // ▸ Signalements ▸ Recherche. Sans lien structuré (texte libre modifiable par
+  // l'utilisateur), on n'attache la date que si le champ n'a pas été changé.
+  var _ctxCampagne = null; // { name, instantiation } | null
+  function currentCampaignNameFromUrl() {
+    try {
+      var n = new URLSearchParams(location.search).get('name');
+      return n ? n.trim() : '';
+    } catch (e) { return ''; }
+  }
+  function prefetchCtxCampagne(name) {
+    _ctxCampagne = null;
+    if (!name || !IM.directoryStorage) return;
+    IM.directoryStorage.getRootHandleWithCheck()
+      .then(function (res) {
+        if (res.status !== 'success') throw new Error('no root');
+        return res.handle.getDirectoryHandle('Campagnes');
+      })
+      .then(function (d) { return d.getDirectoryHandle(name); })
+      .then(function (d) { return d.getFileHandle('campagne.json'); })
+      .then(function (fh) { return fh.getFile(); })
+      .then(function (f) { return f.text(); })
+      .then(function (txt) {
+        var data = JSON.parse(txt);
+        _ctxCampagne = { name: name, instantiation: data.instantiation || null };
+      })
+      .catch(function () { _ctxCampagne = null; });
+  }
+  function populateEtapeOptions() {
+    var sel = $('im-inc-etape');
+    var wf = IM.workflow;
+    if (!sel || !wf || !Array.isArray(wf.STEPS) || sel.options.length > 1) return;
+    wf.STEPS.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.id;
+      o.textContent = wf.stepLabel ? wf.stepLabel(s.id) : s.label;
+      sel.appendChild(o);
+    });
+  }
+
   function frDate(iso) {
     if (!iso) return '';
     var d = new Date(iso);
@@ -4434,8 +4532,16 @@ window.ImpulsionMarketing.incident = (function () {
     var type = $('im-inc-type').value;
     var name = $('im-inc-name').value.trim();
     var page = $('im-inc-page').value.trim();
+    var etapeId = $('im-inc-etape').value;
+    var campagne = $('im-inc-campagne').value.trim();
     var desc = $('im-inc-desc').value.trim();
     if (!name || !desc) { showErr('Merci d\'indiquer au moins votre nom et une description.'); return; }
+    var wf = IM.workflow;
+    // On n'attache la date de création de la campagne (pour le filtre
+    // « ancienneté » en Administration) que si le champ campagne n'a pas été
+    // modifié par rapport à la campagne détectée automatiquement — un texte
+    // libre tapé/modifié à la main n'a pas de date fiable à y associer.
+    var campagneDate = (_ctxCampagne && _ctxCampagne.name === campagne) ? _ctxCampagne.instantiation : null;
 
     var btn = $('im-inc-submit');
     btn.disabled = true; btn.textContent = 'Envoi…';
@@ -4458,6 +4564,10 @@ window.ImpulsionMarketing.incident = (function () {
               type: type,
               auteur: name,
               page: page,
+              etapeId: etapeId || '',
+              etapeLabel: (etapeId && wf && wf.stepLabel) ? wf.stepLabel(etapeId) : '',
+              campagne: campagne || '',
+              campagneDate: campagneDate || null,
               description: desc,
               statut: 'nouveau'
             });
@@ -4609,6 +4719,12 @@ window.ImpulsionMarketing.incident = (function () {
     var user = IM.users && IM.users.getCurrentUser ? IM.users.getCurrentUser() : null;
     if (user && !$('im-inc-name').value) $('im-inc-name').value = user.name;
     if (!$('im-inc-page').value) $('im-inc-page').value = currentPageLabel();
+    populateEtapeOptions();
+    var ctxName = currentCampaignNameFromUrl();
+    if (ctxName && !$('im-inc-campagne').value) {
+      $('im-inc-campagne').value = ctxName;
+      prefetchCtxCampagne(ctxName);
+    }
     $('im-incident-error').style.display = 'none';
     activateTab('new');
     m.style.display = 'flex';
@@ -4675,6 +4791,8 @@ window.ImpulsionMarketing.incident = (function () {
             '<label style="' + lab + '">Type<select id="im-inc-type" style="' + fld + 'cursor:pointer;"><option value="incident">🐞 Incident / bug</option><option value="amelioration">💡 Amélioration</option></select></label>' +
             '<label style="' + lab + '">Nom et prénom<input id="im-inc-name" type="text" style="' + fld + '" placeholder="Votre nom"></label>' +
             '<label style="' + lab + '">Page concernée<input id="im-inc-page" type="text" style="' + fld + '" placeholder="Ex : Détails, Pilotage…"></label>' +
+            '<label style="' + lab + '">Étape du workflow concernée <span style="font-weight:400;">(optionnel)</span><select id="im-inc-etape" style="' + fld + 'cursor:pointer;"><option value="">— Non applicable / général —</option></select></label>' +
+            '<label style="' + lab + '">Campagne concernée <span style="font-weight:400;">(optionnel)</span><input id="im-inc-campagne" type="text" style="' + fld + '" placeholder="Ex : BAQ_Mars2026"></label>' +
             '<label style="' + lab + '">Description<textarea id="im-inc-desc" rows="4" style="' + fld + 'resize:vertical;" placeholder="Décrivez le problème ou l\'amélioration…"></textarea></label>' +
             '<button id="im-inc-submit" style="margin-top:4px;padding:12px;border:none;border-radius:12px;background:var(--primary,#00875A);color:#fff;font-weight:700;font-size:15px;cursor:pointer;">Envoyer</button>' +
           '</div>' +
@@ -5163,6 +5281,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
   // (le tableau de bord) appellent la première mais pas la seconde (cf.
   // initEasterEggs ci-dessous, même raison), le bouton doit donc rester
   // joignable partout indépendamment de mount().
+  var _paintThemeBtn = null;
   function wireThemeToggle(btn) {
     if (!btn || !IM.theme) return;
     function paint() {
@@ -5171,9 +5290,11 @@ window.ImpulsionMarketing.adminConfig = (function () {
       btn.title = dark ? 'Passer au thème clair' : 'Passer au thème sombre';
     }
     paint();
-    // 5 clics rapprochés (< 2 s) sur ce bouton déclenchent le mode Spritz en
-    // plus du basculement normal clair/sombre, qui continue de s'appliquer
-    // à chaque clic (pas de délai, contrairement à l'egg du logo).
+    _paintThemeBtn = paint;
+    // 5 clics rapprochés (< 2 s) sur ce bouton ouvrent la modale de choix de
+    // thème (cf. showThemeChoiceModal), en plus du basculement normal clair/
+    // sombre, qui continue de s'appliquer à chaque clic (pas de délai,
+    // contrairement à l'egg du logo).
     var eggClicks = 0, eggTimer = null;
     btn.addEventListener('click', function () {
       IM.theme.toggle();
@@ -5184,7 +5305,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
       if (eggClicks >= 5) {
         eggClicks = 0;
         clearTimeout(eggTimer);
-        activateSpritzEgg();
+        showThemeChoiceModal();
       }
     });
   }
@@ -5702,14 +5823,14 @@ window.ImpulsionMarketing.adminConfig = (function () {
     }
   }
 
-  // ── Easter egg : Mode Spritz (5 clics rapides sur le bouton thème) ──
-  // Habillage temporaire orange Aperol par-dessus le thème courant : variables
-  // CSS redéfinies sur <body> (cf. .egg-spritz-active dans theme.css) + un
-  // décor injecté (verres, rondelle d'agrume, badge, signature). Se retire
-  // tout seul après SPRITZ_DURATION, ou immédiatement si redéclenché / si
-  // l'utilisateur reclique 5 fois pendant qu'il est actif.
-  var SPRITZ_DURATION = 22000;
-  var _spritzTimer = null;
+  // ── Easter egg : Mode Spritz (choisi dans la modale de thème, cf.
+  // showThemeChoiceModal) ──
+  // Habillage orange Aperol par-dessus le thème courant : variables CSS
+  // redéfinies sur <body> (cf. .egg-spritz-active dans theme.css) + un décor
+  // injecté (verres, rondelle d'agrume, badge, signature). Persiste tant que
+  // l'utilisateur ne choisit pas un autre thème dans la modale (pas de retrait
+  // automatique) — le choix est mémorisé dans localStorage (EGG_THEME_KEY) et
+  // réappliqué à chaque chargement de page via restorePersistedEggTheme().
   function buildSpritzOverlayHtml() {
     var svgNS = 'http://www.w3.org/2000/svg';
     function glass(idPrefix) {
@@ -5809,26 +5930,82 @@ window.ImpulsionMarketing.adminConfig = (function () {
       '<div class="egg-spritz-label">Impulsion Marketing <span>— Édition Spritz</span></div>'
     );
   }
-  function activateSpritzEgg() {
-    if (_spritzTimer) clearTimeout(_spritzTimer);
+  function activateSpritzEgg(silent) {
     if (!document.querySelector('.egg-spritz-overlay')) {
       var overlay = document.createElement('div');
       overlay.className = 'egg-spritz-overlay';
       overlay.innerHTML = buildSpritzOverlayHtml();
       document.body.appendChild(overlay);
       document.body.classList.add('egg-spritz-active');
-      notify('🍹 Édition Spritz activée !', 'success');
+      if (!silent) notify('🍹 Édition Spritz activée — jusqu\'à ce que vous choisissiez un autre thème', 'success');
     }
-    _spritzTimer = setTimeout(deactivateSpritzEgg, SPRITZ_DURATION);
   }
   function deactivateSpritzEgg() {
-    if (_spritzTimer) { clearTimeout(_spritzTimer); _spritzTimer = null; }
     document.body.classList.remove('egg-spritz-active');
     var overlay = document.querySelector('.egg-spritz-overlay');
     if (overlay) {
       overlay.classList.add('egg-spritz-leaving');
       setTimeout(function () { if (overlay.parentNode) overlay.remove(); }, 500);
     }
+  }
+
+  // ── Modale de choix de thème (ouverte par les 5 clics rapides ci-dessus) ──
+  // Clair/Sombre pilotent IM.theme (persisté par ce module) ; Spritz est un
+  // habillage orné indépendant, persisté séparément (EGG_THEME_KEY) puisqu'il
+  // se superpose au thème clair/sombre plutôt que de le remplacer.
+  var EGG_THEME_KEY = 'im_egg_theme';
+  function currentEggThemeChoice() {
+    var spritz = false;
+    try { spritz = localStorage.getItem(EGG_THEME_KEY) === 'spritz'; } catch (e) {}
+    return spritz ? 'spritz' : (IM.theme ? IM.theme.get() : 'light');
+  }
+  function applyThemeChoice(value) {
+    if (value === 'spritz') {
+      try { localStorage.setItem(EGG_THEME_KEY, 'spritz'); } catch (e) {}
+      activateSpritzEgg();
+      return;
+    }
+    try { localStorage.removeItem(EGG_THEME_KEY); } catch (e) {}
+    deactivateSpritzEgg();
+    if (IM.theme) IM.theme.set(value);
+    if (_paintThemeBtn) _paintThemeBtn();
+  }
+  function themeOptionHtml(value, icon, label, current) {
+    return '<button type="button" class="egg-theme-opt' + (current === value ? ' is-active' : '') + '" data-theme-choice="' + value + '">' +
+      '<span class="egg-theme-opt-ic">' + icon + '</span><span class="egg-theme-opt-label">' + esc(label) + '</span></button>';
+  }
+  function showThemeChoiceModal() {
+    if (document.querySelector('.egg-theme-overlay')) return;
+    var current = currentEggThemeChoice();
+    var overlay = document.createElement('div');
+    overlay.className = 'egg-overlay egg-theme-overlay';
+    overlay.innerHTML =
+      '<div class="egg-card egg-theme-card">' +
+      '<span class="egg-icon">🎨</span>' +
+      '<div class="egg-title">Choisissez un thème</div>' +
+      '<div class="egg-text">Trouvé en 5 clics rapides — votre choix reste actif jusqu\'à ce que vous en choisissiez un autre.</div>' +
+      '<div class="egg-theme-options">' +
+      themeOptionHtml('light', '☀️', 'Clair', current) +
+      themeOptionHtml('dark', '🌙', 'Sombre', current) +
+      themeOptionHtml('spritz', '🍹', 'Spritz', current) +
+      '</div>' +
+      '</div>';
+    document.body.appendChild(overlay);
+    function close() { if (overlay.parentNode) overlay.remove(); }
+    overlay.addEventListener('click', close);
+    var card = overlay.querySelector('.egg-theme-card');
+    card.addEventListener('click', function (e) { e.stopPropagation(); });
+    Array.prototype.slice.call(card.querySelectorAll('.egg-theme-opt')).forEach(function (optBtn) {
+      optBtn.addEventListener('click', function () {
+        applyThemeChoice(optBtn.getAttribute('data-theme-choice'));
+        close();
+      });
+    });
+  }
+  // Réapplique le choix Spritz mémorisé à chaque chargement de page (silencieux :
+  // pas de notification répétée à chaque navigation).
+  function restorePersistedEggTheme() {
+    try { if (localStorage.getItem(EGG_THEME_KEY) === 'spritz') activateSpritzEgg(true); } catch (e) {}
   }
 
   // ── Easter egg : jumpscare Halloween (30 octobre et 2 novembre uniquement) ──
@@ -5977,6 +6154,7 @@ window.ImpulsionMarketing.adminConfig = (function () {
     wireLogoEasterEgg();
     applySpecialDate();
     continueJumpscareIfPending();
+    restorePersistedEggTheme();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initEasterEggs);

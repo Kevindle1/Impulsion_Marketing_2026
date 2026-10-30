@@ -127,54 +127,59 @@
  * tout composant qui utilise déjà var(--xxx) s'adapte automatiquement.
  */
 :root[data-theme="dark"] {
-  --ink: #e9efec;
-  --muted: #a7b6ad;
-  --muted-2: #7c8c82;
-  --line: #2b362f;
-  --line-2: #202a23;
+  /* Palette révisée pour un contraste net (vérifié WCAG) : le fond des
+     cartes (--bg-card) est nettement plus clair que le fond de page
+     (--bg) — à l'inverse du clair, où un simple ombrage suffit à
+     détacher une carte blanche, le noir profond ne se détache pas tout
+     seul du noir profond. Textes et bordures remontés en conséquence. */
+  --ink: #f1f5f2;
+  --muted: #b7c6bc;
+  --muted-2: #90a096;
+  --line: #5a6e60;
+  --line-2: #33443a;
 
   --primary: #1fb37a;
   --primary-hover: #28c989;
   --primary-light: #123025;
   --primary-rgb: 31, 179, 122;
-  --green-50: #102921;
-  --green-100: #184231;
+  --green-50: #1b5140;
+  --green-100: #1f6448;
   --green-600: #2fd08a;
   --green-700: #52dca2;
 
-  --red: #ff5a6b;
-  --red-50: #3a141a;
+  --red: #ff7585;
+  --red-50: #681e2a;
   --amber: #f2b33d;
-  --amber-50: #3a2b0d;
-  --blue: #5b8def;
-  --blue-50: #11233f;
-  --violet: #a47bf5;
-  --violet-50: #241a3d;
+  --amber-50: #634812;
+  --blue: #6fa0ff;
+  --blue-50: #173769;
+  --violet: #b495f7;
+  --violet-50: #442d7b;
   --pink: #f472b6;
-  --pink-50: #3d1a2c;
+  --pink-50: #5c223f;
   --cyan: #22d3ee;
-  --cyan-50: #0d2e36;
+  --cyan-50: #145565;
 
-  --amber-100: #4a3712;
-  --cat-ges-50: #112a4a;
-  --cat-ges-100: #163a63;
-  --cat-pal3-50: #241a3d;
-  --cat-pal3-100: #332454;
-  --cat-pal4-50: #3d1a2c;
-  --cat-pal4-100: #54243b;
-  --cat-pal5-50: #0d2e36;
-  --cat-pal5-100: #12404b;
+  --amber-100: #6f5116;
+  --cat-ges-50: #1d569e;
+  --cat-ges-100: #1c579b;
+  --cat-pal3-50: #6041af;
+  --cat-pal3-100: #6240ad;
+  --cat-pal4-50: #8e3462;
+  --cat-pal4-100: #8f3560;
+  --cat-pal5-50: #165e6f;
+  --cat-pal5-100: #165f70;
 
   --status-valid: #f2b33d;
-  --status-maq: #5b8def;
-  --status-urgent: #ff5a6b;
+  --status-maq: #6fa0ff;
+  --status-urgent: #ff7585;
   --status-done: #2fd08a;
   --status-stopped: #94a3b8;
 
   --bg: #0e1512;
-  --bg-card: #161f1a;
-  --bg-header: #161f1a;
-  --accent: #13251d;
+  --bg-card: #28362e;
+  --bg-header: #28362e;
+  --accent: #215a3d;
 
   --sidebar-bg: #121a16;
   --sidebar-line: #26312a;

@@ -805,27 +805,23 @@ test('getPriorisationConfig — repli complet sur les valeurs par défaut sans c
   assert.ok(cfg.prioritesMarketing.includes('Incontournable'));
 });
 
-test('reutilisabiliteApplicable — détecte une typologie de réutilisation/amélioration', () => {
-  assert.equal(workflow.reutilisabiliteApplicable({ typology: 'Amélioration d\'un existant' }), true);
-  assert.equal(workflow.reutilisabiliteApplicable({ typology: 'Réutilisation' }), true);
-  assert.equal(workflow.reutilisabiliteApplicable({ typology: 'PR' }), false);
-  assert.equal(workflow.reutilisabiliteApplicable({}), false);
-});
-
-test('computeValeurMetier — somme le barème (paliers + réutilisabilité auto + cases cochées)', () => {
+test('computeValeurMetier — somme le barème (paliers + cases cochées manuellement)', () => {
   const data = {
     typology: 'Campagne',
     priorisation: { potentielBusiness: 8, satisfactionClient: 3, volumeClientCible: 2, impactStrategique: true, reglementaire: false }
   };
-  // 8 + 3 + 2 + impactStrategique(21), pas de réutilisabilité (typologie "Campagne"), pas de réglementaire
+  // 8 + 3 + 2 + impactStrategique(21), réutilisabilité non cochée, pas de réglementaire
   assert.equal(workflow.computeValeurMetier(data), 8 + 3 + 2 + 21);
 });
 
-test('computeValeurMetier — réutilisabilité auto ajoutée quand la typologie l\'indique', () => {
+test('computeValeurMetier — réutilisabilité ajoutée uniquement si la case est cochée, indépendamment de la typologie', () => {
   const data = {
     typology: 'Amélioration d\'un existant',
     priorisation: { potentielBusiness: 1, satisfactionClient: 1, volumeClientCible: 1 }
   };
+  // Case non cochée : pas de points de réutilisabilité, même si la typologie évoque une amélioration
+  assert.equal(workflow.computeValeurMetier(data), 1 + 1 + 1);
+  data.priorisation.reutilisabilite = true;
   assert.equal(workflow.computeValeurMetier(data), 1 + 1 + 1 + 5);
 });
 
